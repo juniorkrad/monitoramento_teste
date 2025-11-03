@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Monitoramento</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">    
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body>
+    <div id="toast-container"></div>
+
+    <div class="page-container">
+        <div id="header-placeholder"></div>
+
+        <main class="main-content">
+            <div id="overview-grid" class="grid-container">
+                </div>
+        </main>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script>
+        const oltsConfig = [
+            { id: 'HEL-1', sheetTab: 'HEL1', type: 'nokia' },
+            { id: 'HEL-2', sheetTab: 'HEL2', type: 'nokia' },
+            { id: 'PQA-1', sheetTab: 'PQA1', type: 'nokia' },
+            { id: 'PSV-1', sheetTab: 'PSV1', type: 'nokia' },
+            { id: 'MGP',   sheetTab: 'MGP',  type: 'nokia' },
+            { id: 'LTXV-1', sheetTab: 'LTXV1', type: 'furukawa' },
+            { id: 'LTXV-2', sheetTab: 'LTXV2', type: 'furukawa' },
+            { id: 'PQA-2',  sheetTab: 'PQA2',  type: 'furukawa' },
+            { id: 'PQA-3',  sheetTab: 'PQA3',  type: 'furukawa' },
+            { id: 'SB-1',   sheetTab: 'SB1',   type: 'furukawa' },
+            { id: 'SB-2',   sheetTab: 'SB2',   type: 'furukawa' },
+            { id: 'SB-3',   sheetTab: 'SB3',   type: 'furukawa' },
+            { id: 'PSV-7',  sheetTab: 'PSV7',  type: 'furukawa' },
+            { id: 'SBO-1',  sheetTab: 'SBO1',  type: 'furukawa' },
+            { id: 'SBO-2',  sheetTab: 'SBO2',  type: 'furukawa' },
+            { id: 'SBO-3',  sheetTab: 'SBO3',  type: 'furukawa' },
+            { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa' },
+        ];
+
+        const API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
+        const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
+        const REFRESH_INTERVAL_SECONDS = 300;
+        
+        let currentProblems = new Set();
+        function showToast(message, type = '') { /* (função toast) */ }
+
+        function createCardPlaceholders() {
+            const grid = document.getElementById('overview-grid');
+            grid.innerHTML = '';
+            oltsConfig.forEach(olt => {
+                const pageUrl = olt.id.toLowerCase().replace('-', '') + '.html';
+                grid.innerHTML += `
+                    <div class="overview-card" id="card-${olt.id}">
+                        <div class="card-header">
+                            <h3>${olt.id}</h3>
+                            <a href="${pageUrl}" class="card-header-button">Detalhes →</a>
+                        </div>
+                        <div class="card-body">
+                             <div class="card-stats">
+                                <p>Carregando...</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        async function fetchOltData(olt) {
+            const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:C`;
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Falha ao buscar dados da aba ${olt.sheetTab}`);
+                const data = await response.json();
+                const rows = (data.values || []).slice(1);
+                let onlineCount = 0;
+                let offlineCount = 0;
+                rows.forEach(columns => {
+                    if (columns.length === 0) return;
+                    if (olt.type === 'nokia') {
+                        const status = columns[4] || '';
+                        if (status.trim().toLowerCase().includes('up')) onlineCount++;
+                        else offlineCount++;
+                    } else {
+                        const status = columns[2] || '';
+                        if (status.trim().toLowerCase() === 'active') onlineCount++;
+                        else if (status.trim().toLowerCase() === 'inactive') offlineCount++;
+                    }
+                });
+                updateCardUI(olt.id, { onlineCount, offlineCount, type: olt.type });
+            } catch (error) {
+                console.error(`Erro para OLT ${olt.id}:`, error);
+                updateCardUI(olt.id, { error: true });
+            }
+        }
+        
+        function updateCardUI(oltId, data) {
+            const card = document.getElementById(`card-${oltId}`);
+            if (!card) return;
+            if (data.error) {
+                card.querySelector('.card-stats').innerHTML = `<p>Erro ao carregar.</p>`;
+                return;
+            }
+            const { onlineCount, offlineCount, type } = data;
+            const total = onlineCount + offlineCount;
+            const onlinePercent = total > 0 ? (onlineCount / total) * 100 : 0;
+            const offlinePercent = 100 - onlinePercent;
+            const header = card.querySelector('.card-header');
+            header.classList.remove('status-normal', 'status-atencao', 'status-problema');
+            if (offlinePercent > 10) {
+                 header.classList.add('status-problema');
+            } else if (offlinePercent > 5) {
+                 header.classList.add('status-atencao');
+            } else {
+                 header.classList.add('status-normal');
+            }
+            const statsHtml = `<div class="stat-item"><span>${total}</span><label>Total</label></div><div class="stat-item online"><span>${onlineCount}</span><label>${type === 'nokia' ? 'Up' : 'Active'}</label></div><div class="stat-item offline"><span>${offlineCount}</span><label>${type === 'nokia' ? 'Down' : 'Inactive'}</label></div>`;
+            
+            // --- INÍCIO DA ALTERAÇÃO ---
+            const newRadius = 40; // Novo raio do círculo (era 45)
+            const circumference = 2 * Math.PI * newRadius; // Recalcula a circunferência
+            const offset = circumference - (onlinePercent / 100) * circumference;
+            const chartHtml = `
+                <div class="donut-chart-container">
+                    <svg class="donut-chart" width="100" height="100" viewBox="0 0 100 100">
+                        <circle class="donut-bg" cx="50" cy="50" r="${newRadius}"></circle>
+                        <circle class="donut-fg" cx="50" cy="50" r="${newRadius}"
+                            stroke-dasharray="${circumference}"
+                            stroke-dashoffset="${offset}">
+                        </circle>
+                    </svg>
+                    <div class="chart-text">${Math.round(onlinePercent)}%</div>
+                </div>
+            `;
+            // --- FIM DA ALTERAÇÃO ---
+
+            card.querySelector('.card-body').innerHTML = `<div class="card-stats">${statsHtml}</div>${chartHtml}`;
+        }
+
+        async function runOverview() {
+            // ... (código do runOverview sem alterações) ...
+            const timestampEl = document.getElementById('update-timestamp');
+            if (timestampEl) {
+                timestampEl.textContent = "Buscando dados...";
+            }
+            createCardPlaceholders();
+            const promises = oltsConfig.map(olt => fetchOltData(olt));
+            await Promise.all(promises);
+            // Atualiza o timestamp *após* a conclusão das buscas
+            const now = new Date();
+            const timestampText = `Atualizado em: ${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR')}`;
+            if(timestampEl) timestampEl.textContent = timestampText;
+        }
+        
+        // --- PONTO DE PARTIDA UNIFICADO E CORRIGIDO ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Carrega o layout
+            loadHeader({
+                title: "Painel de Monitoramento",
+                //buttonText: "Home",
+                //buttonLink: "index.html"
+            });
+            loadFooter();
+
+            // 2. Inicia a busca de dados da página
+            runOverview();
+            setInterval(runOverview, REFRESH_INTERVAL_SECONDS * 1000);
+        });
+    </script>
+    
+    <script src="layout.js"></script>
+    <script src="notifications.js"></script>
+
+</body>
+</html>
