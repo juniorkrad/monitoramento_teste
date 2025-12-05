@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HEL-1</title>
-    <!-- Removemos os links de fonte daqui, pois já estão no styles.css -->
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
@@ -16,8 +15,7 @@
         <div id="header-placeholder"></div>
 
         <div class="grid-container">
-            <!-- As tabelas serão geradas aqui -->
-        </div>
+            </div>
     </div>
 
     <div id="footer-placeholder"></div>
@@ -37,7 +35,24 @@
         function createTableStructure() {
              for (let i = 1; i <= 8; i++) {
                 const placaId = i.toString().padStart(2, '0');
-                container.innerHTML += `<table><caption>PLACA ${placaId}</caption><thead><tr><th>Porta</th><th>UP</th><th>DOWN</th><th>Total</th><th>Status</th></tr></thead><tbody id="tbody-placa-${i}"></tbody></table>`;
+                
+                // ATUALIZAÇÃO AQUI: Adicionada a div class="table-responsive" ao redor da table
+                container.innerHTML += `
+                <div class="table-responsive">
+                    <table>
+                        <caption>PLACA ${placaId}</caption>
+                        <thead>
+                            <tr>
+                                <th>Porta</th>
+                                <th>UP</th>
+                                <th>DOWN</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-placa-${i}"></tbody>
+                    </table>
+                </div>`;
             }
         }
 
