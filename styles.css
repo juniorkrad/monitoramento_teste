@@ -211,14 +211,33 @@ table {
     border: 1px solid var(--m3-outline); 
     margin-top: 10px;
 }
-caption { font-size: 1.2em; font-weight: 500; padding: 12px; text-align: left; color: var(--m3-on-surface); }
+
+caption { 
+    font-size: 1.2em; 
+    font-weight: 500; 
+    padding: 12px; 
+    text-align: left; 
+    color: var(--m3-on-surface); 
+}
+
 th, td { 
     padding: 10px 12px; 
     text-align: left; 
     border-top: 1px solid var(--m3-outline); 
     color: var(--m3-on-surface); 
 }
-th { font-weight: 500; color: var(--m3-on-surface-variant); border-top: none; }
+
+/* --- ESTILO DOS TÍTULOS DA TABELA (ATUALIZADO) --- */
+th { 
+    font-weight: 700; /* Negrito mais forte */
+    color: var(--m3-on-primary); /* Cor branca para destaque */
+    background-color: rgba(103, 7, 159, 0.3); /* Fundo roxo translúcido */
+    border-top: none; 
+    text-transform: uppercase; /* Caixa alta */
+    font-size: 1.1em; /* Fonte um pouco maior */
+    letter-spacing: 0.5px;
+}
+
 tr:first-child td { border-top: none; }
 tr:hover td { background-color: var(--m3-state-layer-hover); } /* Hover suave na tabela */
 
@@ -286,4 +305,8 @@ tr:hover td { background-color: var(--m3-state-layer-hover); } /* Hover suave na
     .header { flex-direction: column; gap: 15px; }
     .header-nav { flex-wrap: wrap; justify-content: center; }
     .grid-container { grid-template-columns: 1fr; }
+    
+    #main-menu-block { padding: 30px; min-width: auto; width: 100%; box-sizing: border-box; }
+    .main-menu-button { min-width: auto; }
+    .sub-menu-block { padding: 20px; }
 }
