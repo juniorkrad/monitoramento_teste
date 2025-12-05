@@ -14,8 +14,7 @@
     <div class="page-container">
         <div id="header-placeholder"></div>
 
-        <!-- <div class="grid-container grid-4-cols"> -->
-            <div class="grid-container">
+        <div class="grid-container grid-4-cols">
             </div>
     </div>
 
@@ -25,7 +24,7 @@
         const API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
         const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
         
-        // Define os ranges para dados e para o timestamp
+        // Define os ranges para dados (colunas A-J para Nokia) e para o timestamp (célula K1)
         const RANGE_DATA = 'HEL1!A:J';
         const RANGE_TIMESTAMP = 'HEL1!K1';
 
@@ -105,6 +104,7 @@
                     }
                 }
 
+                // Chama a função centralizada do notifications.js
                 checkAndNotifyForNewProblems(newProblems);
 
             } catch (error) {
@@ -118,6 +118,7 @@
     <script src="notifications.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // 1. Carrega o layout
             loadHeader({
                 title: "HEL-1",
                 buttonText: "Home",
@@ -125,13 +126,17 @@
             });
             loadFooter();
             
+            // 2. Cria a estrutura das tabelas
             createTableStructure();
             
+            // 3. Define uma função para rodar a atualização de dados E do timestamp
             function refreshAllData() {
                 populateTables();
+                // Chama a função do layout.js, passando os dados necessários
                 loadTimestamp('HEL1', API_KEY, SHEET_ID);
             }
             
+            // 4. Executa pela primeira vez e agenda as próximas atualizações
             refreshAllData();
             setInterval(refreshAllData, REFRESH_INTERVAL_SECONDS * 1000);
         });
