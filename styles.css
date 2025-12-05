@@ -279,7 +279,7 @@ body.home-page {
     color: var(--m3-on-surface); 
 }
 
-/* --- Tabelas --- */
+/* --- Tabelas (Atualizado) --- */
 table { 
     width: 100%; 
     border-collapse: separate; 
@@ -290,13 +290,25 @@ table {
     border: 1px solid var(--m3-outline); 
 }
 caption { font-size: 1.2em; font-weight: 500; padding: 12px; text-align: left; color: var(--m3-on-surface); }
+
+/* Edição 1: "white-space: nowrap" impede que o texto quebre para a linha de baixo */
 th, td { 
-    padding: 10px 14px; /* Levemente maior para leitura */
+    padding: 10px 14px; 
     text-align: left; 
     border-top: 1px solid var(--m3-outline); 
-    color: var(--m3-on-surface); 
+    color: var(--m3-on-surface);
+    white-space: nowrap; /* Força o texto a ficar em uma única linha */
 }
-th { font-weight: 500; color: var(--m3-on-surface-variant); border-top: none; }
+
+/* Edição 2: Destaque para o cabeçalho (th) */
+th { 
+    font-weight: 700; /* Negrito */
+    color: var(--m3-on-surface); /* Cor mais clara/viva */
+    border-top: none;
+    text-transform: uppercase; /* Letras maiúsculas */
+    background-color: rgba(255, 255, 255, 0.05); /* Fundo sutil para destacar do corpo */
+    letter-spacing: 0.5px;
+}
 tr:first-child td { border-top: none; }
 
 /* Micro-interação: Hover na linha da tabela */
