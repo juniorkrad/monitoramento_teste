@@ -6,7 +6,7 @@
     --m3-primary-hover: #7b2cbf;
     --m3-on-primary: #FFFFFF;
     
-    --m3-surface: #22003a; /* Aquele roxo bem escuro original */
+    --m3-surface: #22003a; /* Roxo escuro original */
     --m3-on-surface: #EADDFF;
     --m3-on-surface-variant: #CAC4D0;
     
@@ -50,7 +50,7 @@ body {
     animation: fadeInPage 0.4s ease-in-out;
 }
 
-/* Scrollbar Webkit */
+/* Scrollbar Webkit (Chrome, Edge, Safari) */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--m3-surface); }
 ::-webkit-scrollbar-thumb { background: var(--m3-outline); border-radius: 4px; }
@@ -105,7 +105,7 @@ body {
     border-color: var(--m3-outline);
 }
 
-/* --- GRID E CARDS (Layout mantido, cores restauradas) --- */
+/* --- GRID E CARDS --- */
 .grid-container {
     display: grid;
     gap: 20px;
@@ -116,7 +116,7 @@ body {
 }
 
 .overview-card { 
-    background-color: var(--m3-surface-container); /* Seu fundo original */
+    background-color: var(--m3-surface-container); /* Fundo Roxo Original */
     border-radius: 12px; 
     border: 1px solid var(--m3-outline); 
     overflow: hidden; 
@@ -185,7 +185,7 @@ body {
 .donut-chart-container { position: relative; display: flex; justify-content: center; align-items: center; }
 .donut-chart { transform: rotate(-90deg); }
 .donut-chart circle { fill: none; stroke-width: 10; }
-.donut-chart .donut-bg { stroke: var(--m3-surface-container-high); } /* Fundo do anel nas suas cores */
+.donut-chart .donut-bg { stroke: var(--m3-surface-container-high); } 
 .donut-chart .donut-fg { stroke: var(--m3-color-success); stroke-linecap: round; }
 .chart-text { position: absolute; font-size: 1.6em; font-weight: 700; color: var(--m3-on-surface); }
 
@@ -237,12 +237,46 @@ tr:hover td { background-color: var(--m3-state-layer-hover); } /* Hover suave na
     font-size: 0.9em; 
 }
 
-/* --- TOASTS --- */
-#toast-container { position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
-.toast { background-color: #333; color: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); font-size: 14px; opacity: 0; transform: translateX(100%); transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
-.toast.show { opacity: 1; transform: translateX(0); }
-.toast.problem { background-color: var(--m3-color-error); color: #fff; font-weight: 500; }
+/* --- TOASTS (NOTIFICAÇÕES) --- */
+#toast-container { 
+    position: fixed; 
+    top: 20px; 
+    right: 20px; 
+    z-index: 1000; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px; 
+}
 
+.toast { 
+    background-color: #333; 
+    color: #fff; 
+    padding: 15px 20px; 
+    border-radius: 8px; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4); 
+    font-size: 14px; 
+    opacity: 0; 
+    transform: translateX(100%); 
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); 
+}
+
+.toast.show { opacity: 1; transform: translateX(0); }
+
+/* Fundo Vermelho para Problemas */
+.toast.problem { 
+    background-color: var(--m3-color-error); 
+    color: #fff; 
+    font-weight: 500; 
+}
+
+/* Fundo Verde para Sucesso (RESOLVIDO) */
+.toast.success { 
+    background-color: var(--m3-color-success); 
+    color: #fff; 
+    font-weight: 500; 
+}
+
+/* --- RESPONSIVIDADE --- */
 @keyframes fadeInPage {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
