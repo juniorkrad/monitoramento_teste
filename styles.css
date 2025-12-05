@@ -201,6 +201,7 @@ body.home-page {
 .header-nav .nav-button { font-size: 13.5px; padding: 9px 18px; }
 
 /* --- Grid e Cards --- */
+/* Configuração Padrão (Fallback Responsivo) */
 .grid-container {
     display: grid;
     gap: 20px;
@@ -208,6 +209,35 @@ body.home-page {
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     align-content: flex-start;
     width: 100%;
+}
+
+/* === LAYOUTS ESPECÍFICOS PARA OS GRUPOS DE PÁGINAS === */
+/* Adicione estas classes junto com 'grid-container' no HTML das respectivas páginas */
+
+/* Grupo 10 Placas (5x2): ltxv1.html, sbo1.html */
+/* Ativa apenas se a tela for larga o suficiente para 5 cartões de 320px */
+@media (min-width: 1700px) {
+    .grid-container.grid-cols-5 {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+/* Grupo 8 Placas (4x2): hel1, hel2, pqa1, psv1, mgp */
+/* Ativa se a tela suportar 4 cartões */
+@media (min-width: 1380px) {
+    .grid-container.grid-cols-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Grupo 2 Placas (lado a lado): ltxv2, pqa2, pqa3, etc... */
+/* Garante que fiquem lado a lado a partir de tablets */
+@media (min-width: 700px) {
+    .grid-container.grid-cols-2 {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 1200px; /* Opcional: limita a largura para não esticar demais */
+        margin: 0 auto;    /* Centraliza se não usar a largura total */
+    }
 }
 
 /* Micro-interação: Hover no Card */
