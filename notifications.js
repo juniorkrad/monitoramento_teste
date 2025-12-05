@@ -1,79 +1,44 @@
 // ==============================================================================
-// notifications.js - Sistema Avançado de Alertas (Visual + Sonoro)
+// notifications.js - Sistema Central de Alertas (Visual e Silencioso)
 // ==============================================================================
 
+// "Memória" global para armazenar os problemas e evitar alertas repetidos.
 let currentProblems = new Set();
-const MAX_VISIBLE_TOASTS = 5; // Limite para não poluir a tela
+const MAX_VISIBLE_TOASTS = 5; // Limite para não poluir a tela visualmente
 
 /**
- * Toca um bip curto para chamar atenção (AudioContext).
- * Funciona sem arquivos externos.
- */
-function playAlertSound(type) {
-    try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        
-        const ctx = new AudioContext();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-
-        if (type === 'problem') {
-            // Som grave e pulsante para erro
-            osc.type = 'sawtooth';
-            osc.frequency.value = 150;
-            gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.5);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.5);
-        } else {
-            // Som agudo e limpo para sucesso (resolução)
-            osc.type = 'sine';
-            osc.frequency.value = 800;
-            gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.3);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.3);
-        }
-    } catch (e) {
-        // Navegadores bloqueiam áudio sem interação do usuário, ignoramos o erro silenciosamente
-        console.warn("Áudio bloqueado pelo navegador até primeira interação.");
-    }
-}
-
-/**
- * Exibe notificação visual e toca som.
+ * Cria e exibe um pop-up (toast) na tela.
+ * @param {string} message - A mensagem a ser exibida.
+ * @param {string} type - 'problem' (vermelho) ou 'success' (verde).
  */
 function showToast(message, type = '') {
     const container = document.getElementById('toast-container');
-    if (!container) return;
+    if (!container) return; // Não faz nada se o container não existir
 
-    // Controle de Spam: Remove o mais antigo se tiver muitos na tela
+    // Controle de Spam: Remove o alerta mais antigo se tiver muitos na tela
     if (container.childElementCount >= MAX_VISIBLE_TOASTS) {
         container.removeChild(container.firstChild);
     }
 
     const toast = document.createElement('div');
-    // Adicionamos ícones baseados no tipo
+    
+    // Define ícones visuais baseados no tipo
     let icon = '';
     if (type === 'problem') icon = '⚠️ ';
     if (type === 'success') icon = '✅ ';
-    
+
     toast.className = `toast ${type}`;
     toast.innerHTML = `<strong>${icon}</strong> ${message}`;
     
     container.appendChild(toast);
     
-    // Toca o som correspondente
-    playAlertSound(type);
-
     // Animação de entrada
+    // Usamos requestAnimationFrame para garantir que a transição CSS funcione
     requestAnimationFrame(() => {
         toast.classList.add('show');
     });
 
-    // Remove após 6 segundos
+    // Remove o toast automaticamente após 6 segundos
     setTimeout(() => {
         toast.classList.remove('show');
         toast.addEventListener('transitionend', () => {
@@ -84,11 +49,12 @@ function showToast(message, type = '') {
 
 /**
  * Lógica Inteligente: Detecta novos problemas E problemas resolvidos.
- * @param {Set} newProblems - Set com chaves dos problemas atuais.
+ * @param {Set} newProblems - Set com chaves dos problemas atuais da verificação.
  */
 function checkAndNotifyForNewProblems(newProblems) {
     // 1. Detectar NOVOS problemas (Caiu)
     for (const problemKey of newProblems) {
+        // Se o problema atual NÃO estava na lista antiga...
         if (!currentProblems.has(problemKey)) {
             const msg = formatMessage(problemKey);
             showToast(`ALERTA: ${msg} ficou OFFLINE`, 'problem');
@@ -97,22 +63,22 @@ function checkAndNotifyForNewProblems(newProblems) {
 
     // 2. Detectar problemas RESOLVIDOS (Voltou)
     for (const oldProblem of currentProblems) {
+        // Se estava na lista antiga, mas NÃO está na nova...
         if (!newProblems.has(oldProblem)) {
-            // Se estava na lista antiga, mas não está na nova, é porque voltou!
             const msg = formatMessage(oldProblem);
             showToast(`RESOLVIDO: ${msg} está ONLINE novamente`, 'success');
         }
     }
     
-    // Atualiza a memória
+    // Atualiza a memória com a lista de problemas da verificação atual.
     currentProblems = newProblems;
 }
 
 /**
- * Helper para formatar a mensagem da placa/porta bonitinha.
+ * Helper para formatar a mensagem da placa/porta de forma legível.
+ * Transforma "GPON1/5" em "PLACA 01 / PORTA 05"
  */
 function formatMessage(key) {
-    // Tenta separar por barra (ex: "1/1", "GPON1/5")
     const parts = key.split('/');
     
     if (parts.length >= 2) {

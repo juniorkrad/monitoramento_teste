@@ -1,30 +1,26 @@
 // ==============================================================================
-// layout.js - Construtor de Layout Otimizado
+// layout.js - Construtor de Layout (Corrigido e Formatado)
 // ==============================================================================
 
 /**
  * Constrói o cabeçalho da página de forma dinâmica.
- * @param {Object} config - { title: string, buttonText?: string, buttonLink?: string }
  */
 function loadHeader(config) {
     const headerPlaceholder = document.getElementById('header-placeholder');
     
-    // 1. Atualiza o título da aba do navegador automaticamente
+    // Atualiza o título da aba do navegador
     if (config.title) {
         document.title = `${config.title} | Monitoramento`;
     }
 
     if (!headerPlaceholder) return;
 
-    // 2. Lógica inteligente para o botão
+    // Lógica inteligente para o botão (Voltar vs Normal)
     let buttonHtml = '';
     if (config.buttonText && config.buttonLink) {
-        // Se o texto contiver "Voltar", usa a classe específica .back-button (que tem borda)
-        // Caso contrário, usa .nav-button (estilo padrão)
         const cssClass = config.buttonText.toLowerCase().includes('voltar') 
             ? 'back-button' 
             : 'nav-button';
-            
         buttonHtml = `<a href="${config.buttonLink}" class="${cssClass}">${config.buttonText}</a>`;
     }
 
@@ -64,40 +60,51 @@ function loadFooter() {
 }
 
 /**
- * Busca e exibe o timestamp da célula K1 da planilha.
- * Inclui "Cache Busting" para garantir dados frescos.
+ * Busca a data na planilha e remove os segundos para visual limpo.
  */
 async function loadTimestamp(sheetTab, apiKey, sheetId) {
     const timestampEl = document.getElementById('update-timestamp');
     if (!timestampEl) return;
 
-    // Estado de carregamento com classe CSS (se quiser estilizar depois)
-    timestampEl.textContent = 'Verificando atualização...';
+    // Texto inicial discreto
+    timestampEl.textContent = 'Atualizando...';
     timestampEl.classList.add('loading-timestamp');
 
     const range = `${sheetTab}!K1`;
-    // Adiciona o parâmetro &cacheBust para evitar cache do navegador/API
-    const cacheBust = new Date().getTime(); 
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}&cacheBust=${cacheBust}`;
+    // Usamos um número aleatório para garantir que o Google não nos dê dados velhos (Cache)
+    const cacheBust = Math.floor(Math.random() * 10000);
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}&cb=${cacheBust}`;
 
     try {
         const response = await fetch(url);
+        
         if (!response.ok) throw new Error('Erro na API');
         
         const data = await response.json();
         
         if (data.values && data.values.length > 0 && data.values[0][0]) {
-            // Sucesso
-            timestampEl.textContent = data.values[0][0];
-            // Remove animação de carregamento se houver
+            let rawText = data.values[0][0]; // Ex: "Atualizado em: 05/12/2025 12:25:04"
+            
+            // --- MÁGICA PARA REMOVER SEGUNDOS ---
+            // Procura por ":dois digitos" no final da frase e remove
+            // Transforma "12:25:04" em "12:25"
+            let formattedText = rawText.replace(/:\d{2}$/, '');
+            
+            timestampEl.textContent = formattedText;
             timestampEl.classList.remove('loading-timestamp');
         } else {
-            timestampEl.textContent = 'Data indisponível';
+            throw new Error('Célula vazia');
         }
     } catch (error) {
-        console.warn('Não foi possível carregar a data da planilha:', error);
-        // Em caso de erro, mostramos a hora do navegador como fallback
+        console.warn('Usando data local devido a erro na planilha:', error);
+        
+        // FALLBACK: Se der erro, mostra a data do PC no formato correto (sem "Ref")
         const now = new Date();
-        timestampEl.textContent = `Ref: ${now.toLocaleTimeString()}`;
+        const options = { 
+            day: '2-digit', month: '2-digit', year: 'numeric', 
+            hour: '2-digit', minute: '2-digit' // Sem segundos!
+        };
+        const dataLocal = now.toLocaleDateString('pt-BR', options);
+        timestampEl.textContent = `Atualizado em: ${dataLocal}`;
     }
 }
