@@ -107,15 +107,30 @@ body {
     border-color: var(--m3-outline);
 }
 
-/* --- GRID E CARDS --- */
+/* --- GRID E CARDS (ATUALIZADO - SISTEMA DE COLUNAS FORÇADAS) --- */
 .grid-container {
     display: grid;
     gap: 20px;
     padding-bottom: 20px;
-    /* Ajustei levemente para 300px para facilitar o encaixe lado a lado */
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    align-content: flex-start;
     width: 100%;
+    
+    /* Padrão Mobile: 1 coluna */
+    grid-template-columns: 1fr; 
+    align-content: start;
+}
+
+/* Tela Média (Tablet/Laptop): Força 2 Colunas */
+@media (min-width: 768px) {
+    .grid-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Tela Grande (Monitor): Força 4 Colunas */
+@media (min-width: 1400px) {
+    .grid-container {
+        grid-template-columns: repeat(4, 1fr);
+    }
 }
 
 .overview-card { 
@@ -205,19 +220,19 @@ body {
 
 /* --- TABELAS --- */
 
-/* --- NOVO: Container Responsivo para Tabela --- */
+/* --- CONTAINER RESPONSIVO PARA TABELA (ATUALIZADO) --- */
 .table-responsive {
-    width: 100%;
+    /* CORREÇÃO CRÍTICA: max-width em vez de width */
+    max-width: 100%; 
     
-    /* --- CORREÇÃO DO GRID --- */
-    min-width: 0; /* Permite que o container encolha dentro do Grid */
+    min-width: 0; /* Essencial para o Grid funcionar */
     display: flex; 
     flex-direction: column;
-    /* ------------------------ */
     
-    overflow-x: auto; /* Cria scroll horizontal se necessário */
+    overflow-x: auto; 
     -webkit-overflow-scrolling: touch;
-    margin-bottom: 20px;
+    margin-bottom: 0;
+    
     border-radius: 12px;
     border: 1px solid var(--m3-outline);
     background-color: var(--m3-surface-container);
@@ -333,7 +348,7 @@ tr:hover td { background-color: var(--m3-state-layer-hover); } /* Hover suave na
 @media (max-width: 768px) {
     .header { flex-direction: column; gap: 15px; }
     .header-nav { flex-wrap: wrap; justify-content: center; }
-    .grid-container { grid-template-columns: 1fr; }
+    /* A regra do Grid para mobile já está definida acima no .grid-container */
     
     #main-menu-block { padding: 30px; min-width: auto; width: 100%; box-sizing: border-box; }
     .main-menu-button { min-width: auto; }
