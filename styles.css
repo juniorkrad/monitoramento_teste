@@ -61,14 +61,17 @@ body {
     max-width: 1880px; 
     margin: 0 auto; 
     width: 100%; 
-    display: flex;
-    flex-direction: column;
+    display: flex; 
+    flex-direction: column; 
     min-height: 90vh;
 }
 
 .main-content { 
     flex: 1; 
     display: flex; 
+    /* --- CORREÇÃO APLICADA AQUI: Garante que os itens fiquem um abaixo do outro --- */
+    flex-direction: column; 
+    width: 100%;
     position: relative; 
     margin-top: 20px;
 }
@@ -201,6 +204,25 @@ body {
 }
 
 /* --- TABELAS --- */
+
+/* --- NOVO: Container Responsivo para Tabela --- */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto; /* Cria scroll horizontal se necessário */
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--m3-outline);
+    background-color: var(--m3-surface-container);
+}
+
+/* Ajuste para quando a tabela estiver dentro do container responsivo */
+.table-responsive table {
+    margin-top: 0;
+    border: none;
+    border-radius: 0;
+}
+
 table { 
     width: 100%; 
     border-collapse: separate; 
