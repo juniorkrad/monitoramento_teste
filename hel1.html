@@ -14,7 +14,7 @@
     <div class="page-container">
         <div id="header-placeholder"></div>
 
-        <div class="grid-container grid-4-cols">
+        <div class="grid-container">
             </div>
     </div>
 
@@ -24,10 +24,9 @@
         const API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
         const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
         
-        // Define os ranges para dados (colunas A-J para Nokia) e para o timestamp (célula K1)
+        // Ranges específicos para esta página
         const RANGE_DATA = 'HEL1!A:J';
-        const RANGE_TIMESTAMP = 'HEL1!K1';
-
+        
         const API_URL_DATA = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE_DATA}?key=${API_KEY}`;
         
         const REFRESH_INTERVAL_SECONDS = 300;
@@ -69,9 +68,11 @@
                     const placa = ponParts[2];
                     const porta = ponParts[3];
                     const portKey = `${placa}/${porta}`;
+                    
                     if (!portData[portKey]) {
                         portData[portKey] = { up: 0, down: 0 };
                     }
+                    
                     if (status.trim().toLowerCase().includes('up')) {
                         portData[portKey].up++;
                     } else {
@@ -84,6 +85,7 @@
                     const { up, down } = portData[portKey];
                     const total = up + down;
                     let statusClass = 'status-normal', statusText = 'Normal';
+                    
                     if (total > 0 && (down / total === 1 || down / total === 0.5)) {
                         statusClass = 'status-problema';
                         statusText = 'Problema';
@@ -116,9 +118,10 @@
     
     <script src="layout.js"></script>
     <script src="notifications.js"></script>
+    
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. Carrega o layout
+            // 1. Carrega o layout (Cabeçalho e Rodapé)
             loadHeader({
                 title: "HEL-1",
                 buttonText: "Home",
@@ -126,17 +129,17 @@
             });
             loadFooter();
             
-            // 2. Cria a estrutura das tabelas
+            // 2. Cria as tabelas vazias
             createTableStructure();
             
-            // 3. Define uma função para rodar a atualização de dados E do timestamp
+            // 3. Função que atualiza tudo (Tabelas + Timestamp)
             function refreshAllData() {
                 populateTables();
-                // Chama a função do layout.js, passando os dados necessários
+                // Busca a data/hora da célula K1 na aba HEL1
                 loadTimestamp('HEL1', API_KEY, SHEET_ID);
             }
             
-            // 4. Executa pela primeira vez e agenda as próximas atualizações
+            // 4. Executa agora e agenda a repetição
             refreshAllData();
             setInterval(refreshAllData, REFRESH_INTERVAL_SECONDS * 1000);
         });
