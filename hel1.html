@@ -14,7 +14,8 @@
     <div class="page-container">
         <div id="header-placeholder"></div>
 
-        <div class="grid-container">
+        <!-- <div class="grid-container grid-4-cols"> -->
+            <div class="grid-container">
             </div>
     </div>
 
@@ -24,7 +25,8 @@
         const API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
         const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
         
-        const RANGE_DATA = 'HEL1!A:J'; // Nokia usa até a coluna J
+        // Define os ranges para dados e para o timestamp
+        const RANGE_DATA = 'HEL1!A:J';
         const RANGE_TIMESTAMP = 'HEL1!K1';
 
         const API_URL_DATA = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE_DATA}?key=${API_KEY}`;
@@ -35,24 +37,7 @@
         function createTableStructure() {
              for (let i = 1; i <= 8; i++) {
                 const placaId = i.toString().padStart(2, '0');
-                
-                // ATUALIZAÇÃO AQUI: Adicionada a div class="table-responsive" ao redor da table
-                container.innerHTML += `
-                <div class="table-responsive">
-                    <table>
-                        <caption>PLACA ${placaId}</caption>
-                        <thead>
-                            <tr>
-                                <th>Porta</th>
-                                <th>UP</th>
-                                <th>DOWN</th>
-                                <th>Total</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbody-placa-${i}"></tbody>
-                    </table>
-                </div>`;
+                container.innerHTML += `<table><caption>PLACA ${placaId}</caption><thead><tr><th>Porta</th><th>UP</th><th>DOWN</th><th>Total</th><th>Status</th></tr></thead><tbody id="tbody-placa-${i}"></tbody></table>`;
             }
         }
 
@@ -73,26 +58,21 @@
                 const rows = data.values || []; 
                 const dataRows = rows.slice(1);
                 const portData = {};
-                const newProblems = new Set();
+                const newProblems = new Set(); // Cria a lista de problemas para esta verificação
 
                 dataRows.forEach(columns => {
                     if (columns.length === 0) return;
                     const pon = columns[0];
-                    const status = columns[4]; // Coluna E (Status)
+                    const status = columns[4];
                     if (!pon || !status) return;
-                    
                     const ponParts = pon.split('/');
                     if (ponParts.length < 4) return;
-                    
                     const placa = ponParts[2];
                     const porta = ponParts[3];
                     const portKey = `${placa}/${porta}`;
-                    
                     if (!portData[portKey]) {
                         portData[portKey] = { up: 0, down: 0 };
                     }
-                    
-                    // Lógica Nokia: 'up' vs 'down'
                     if (status.trim().toLowerCase().includes('up')) {
                         portData[portKey].up++;
                     } else {
@@ -104,10 +84,7 @@
                     const [placa, porta] = portKey.split('/');
                     const { up, down } = portData[portKey];
                     const total = up + down;
-                    
                     let statusClass = 'status-normal', statusText = 'Normal';
-                    
-                    // Regras de negócio Nokia (ajustadas conforme seu padrão)
                     if (total > 0 && (down / total === 1 || down / total === 0.5)) {
                         statusClass = 'status-problema';
                         statusText = 'Problema';
@@ -128,7 +105,6 @@
                     }
                 }
 
-                // Notificações
                 checkAndNotifyForNewProblems(newProblems);
 
             } catch (error) {

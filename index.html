@@ -25,7 +25,7 @@
 
     <div id="footer-placeholder"></div>
 
-<script>
+    <script>
         const oltsConfig = [
             { id: 'HEL-1', sheetTab: 'HEL1', type: 'nokia' },
             { id: 'HEL-2', sheetTab: 'HEL2', type: 'nokia' },
@@ -50,16 +50,14 @@
         const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
         const REFRESH_INTERVAL_SECONDS = 300;
         
-        // Função para criar os cards APENAS UMA VEZ
+        let currentProblems = new Set();
+        function showToast(message, type = '') { /* (função toast) */ }
+
         function createCardPlaceholders() {
             const grid = document.getElementById('overview-grid');
-            // Se o grid já tiver conteúdo, não recria
-            if (grid.children.length > 0) return;
-
             grid.innerHTML = '';
             oltsConfig.forEach(olt => {
                 const pageUrl = olt.id.toLowerCase().replace('-', '') + '.html';
-                // Adicionamos classes para animação CSS no SVG
                 grid.innerHTML += `
                     <div class="overview-card" id="card-${olt.id}">
                         <div class="card-header">
@@ -68,7 +66,7 @@
                         </div>
                         <div class="card-body">
                              <div class="card-stats">
-                                <p class="loading-text">Carregando dados...</p>
+                                <p>Carregando...</p>
                             </div>
                         </div>
                     </div>
@@ -77,37 +75,30 @@
         }
         
         async function fetchOltData(olt) {
-            // Nokia usa coluna E (index 4), Furukawa usa C (index 2) - Otimizando range
-            const range = olt.type === 'nokia' ? `${olt.sheetTab}!E:E` : `${olt.sheetTab}!C:C`;
+            const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:C`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
-            
             try {
                 const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                if (!response.ok) throw new Error(`Falha ao buscar dados da aba ${olt.sheetTab}`);
                 const data = await response.json();
-                
-                // Remove cabeçalho se houver e filtra vazios
-                const rows = (data.values || []).slice(1).flat();
-                
+                const rows = (data.values || []).slice(1);
                 let onlineCount = 0;
                 let offlineCount = 0;
-
-                rows.forEach(status => {
-                    if (!status) return;
-                    const s = status.trim().toLowerCase();
-                    
+                rows.forEach(columns => {
+                    if (columns.length === 0) return;
                     if (olt.type === 'nokia') {
-                        if (s.includes('up')) onlineCount++;
+                        const status = columns[4] || '';
+                        if (status.trim().toLowerCase().includes('up')) onlineCount++;
                         else offlineCount++;
                     } else {
-                        if (s === 'active') onlineCount++;
-                        else if (s === 'inactive') offlineCount++;
+                        const status = columns[2] || '';
+                        if (status.trim().toLowerCase() === 'active') onlineCount++;
+                        else if (status.trim().toLowerCase() === 'inactive') offlineCount++;
                     }
                 });
-
                 updateCardUI(olt.id, { onlineCount, offlineCount, type: olt.type });
             } catch (error) {
-                console.error(`Erro OLT ${olt.id}:`, error);
+                console.error(`Erro para OLT ${olt.id}:`, error);
                 updateCardUI(olt.id, { error: true });
             }
         }
@@ -115,86 +106,73 @@
         function updateCardUI(oltId, data) {
             const card = document.getElementById(`card-${oltId}`);
             if (!card) return;
-
-            const cardBody = card.querySelector('.card-body');
-
             if (data.error) {
-                // Mantém o tamanho do card mesmo com erro para não quebrar o grid
-                cardBody.innerHTML = `
-                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color: var(--status-problem);">
-                        <span>⚠️ Falha na conexão</span>
-                        <small>Tentando novamente...</small>
-                    </div>`;
+                card.querySelector('.card-stats').innerHTML = `<p>Erro ao carregar.</p>`;
                 return;
             }
-
             const { onlineCount, offlineCount, type } = data;
             const total = onlineCount + offlineCount;
             const onlinePercent = total > 0 ? (onlineCount / total) * 100 : 0;
             const offlinePercent = 100 - onlinePercent;
-
-            // Atualiza status do header
             const header = card.querySelector('.card-header');
-            header.className = 'card-header'; // Reseta classes
-            if (offlinePercent > 10) header.classList.add('status-problema');
-            else if (offlinePercent > 5) header.classList.add('status-atencao');
-            else header.classList.add('status-normal');
-
-            // HTML dos números
-            const statsHtml = `
-                <div class="stat-item"><span>${total}</span><label>Total</label></div>
-                <div class="stat-item online"><span>${onlineCount}</span><label>${type === 'nokia' ? 'Up' : 'Active'}</label></div>
-                <div class="stat-item offline"><span>${offlineCount}</span><label>${type === 'nokia' ? 'Down' : 'Inactive'}</label></div>
-            `;
+            header.classList.remove('status-normal', 'status-atencao', 'status-problema');
+            if (offlinePercent > 10) {
+                 header.classList.add('status-problema');
+            } else if (offlinePercent > 5) {
+                 header.classList.add('status-atencao');
+            } else {
+                 header.classList.add('status-normal');
+            }
+            const statsHtml = `<div class="stat-item"><span>${total}</span><label>Total</label></div><div class="stat-item online"><span>${onlineCount}</span><label>${type === 'nokia' ? 'Up' : 'Active'}</label></div><div class="stat-item offline"><span>${offlineCount}</span><label>${type === 'nokia' ? 'Down' : 'Inactive'}</label></div>`;
             
-            // Lógica do Gráfico
-            const newRadius = 40;
-            const circumference = 2 * Math.PI * newRadius;
+            // --- INÍCIO DA ALTERAÇÃO ---
+            const newRadius = 40; // Novo raio do círculo (era 45)
+            const circumference = 2 * Math.PI * newRadius; // Recalcula a circunferência
             const offset = circumference - (onlinePercent / 100) * circumference;
-            
-            // Adicionado style="transition..." para animação suave
             const chartHtml = `
                 <div class="donut-chart-container">
                     <svg class="donut-chart" width="100" height="100" viewBox="0 0 100 100">
                         <circle class="donut-bg" cx="50" cy="50" r="${newRadius}"></circle>
                         <circle class="donut-fg" cx="50" cy="50" r="${newRadius}"
                             stroke-dasharray="${circumference}"
-                            stroke-dashoffset="${offset}"
-                            style="transition: stroke-dashoffset 1s ease-in-out;">
+                            stroke-dashoffset="${offset}">
                         </circle>
                     </svg>
                     <div class="chart-text">${Math.round(onlinePercent)}%</div>
                 </div>
             `;
+            // --- FIM DA ALTERAÇÃO ---
 
-            cardBody.innerHTML = `<div class="card-stats">${statsHtml}</div>${chartHtml}`;
+            card.querySelector('.card-body').innerHTML = `<div class="card-stats">${statsHtml}</div>${chartHtml}`;
         }
 
         async function runOverview() {
+            // ... (código do runOverview sem alterações) ...
             const timestampEl = document.getElementById('update-timestamp');
-            if (timestampEl) timestampEl.textContent = "Atualizando dados...";
-
-            // Removido createCardPlaceholders daqui para não recriar o DOM
-            
+            if (timestampEl) {
+                timestampEl.textContent = "Buscando dados...";
+            }
+            createCardPlaceholders();
             const promises = oltsConfig.map(olt => fetchOltData(olt));
             await Promise.all(promises);
-
+            // Atualiza o timestamp *após* a conclusão das buscas
             const now = new Date();
             const timestampText = `Atualizado em: ${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR')}`;
             if(timestampEl) timestampEl.textContent = timestampText;
         }
         
+        // --- PONTO DE PARTIDA UNIFICADO E CORRIGIDO ---
         document.addEventListener('DOMContentLoaded', () => {
-            loadHeader({ title: "Painel de Monitoramento" });
+            // 1. Carrega o layout
+            loadHeader({
+                title: "Painel de Monitoramento",
+                //buttonText: "Home",
+                //buttonLink: "index.html"
+            });
             loadFooter();
 
-            // 1. Cria a estrutura (placeholders) uma única vez
-            createCardPlaceholders();
-
-            // 2. Busca os dados imediatamente
+            // 2. Inicia a busca de dados da página
             runOverview();
-
-            // 3. Configura o intervalo
             setInterval(runOverview, REFRESH_INTERVAL_SECONDS * 1000);
         });
     </script>
