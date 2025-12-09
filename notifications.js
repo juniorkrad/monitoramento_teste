@@ -3,26 +3,21 @@
 // ==============================================================================
 
 // "Memória" global para armazenar os problemas e evitar alertas repetidos.
+// Cada página que usar este script compartilhará a mesma memória enquanto estiver aberta.
 let currentProblems = new Set();
 
 /**
  * Cria e exibe um pop-up (toast) na tela.
  * @param {string} message - A mensagem a ser exibida.
- * @param {string} type - A classe CSS do tipo (ex: 'toast-error' ou 'toast-success').
+ * @param {string} type - O tipo de toast (ex: 'problem') para estilização.
  */
 function showToast(message, type = '') {
     const container = document.getElementById('toast-container');
-    
-    // Se o container ainda não existir (segurança), cria ele rapidinho para não dar erro
-    if (!container) return; 
+    if (!container) return; // Não faz nada se o container não existir
 
     const toast = document.createElement('div');
-    // Aplica a classe base 'toast' e o tipo específico (error ou success)
     toast.className = `toast ${type}`;
-    
-    // Adiciona um ícone simples baseado no tipo para ficar visualmente claro
-    const icon = type.includes('error') ? '⚠️' : '✅';
-    toast.innerHTML = `<strong>${icon}</strong> ${message}`;
+    toast.textContent = message;
     
     container.appendChild(toast);
     
@@ -34,46 +29,26 @@ function showToast(message, type = '') {
     // Remove o toast após 5 segundos
     setTimeout(() => {
         toast.classList.remove('show');
-        toast.addEventListener('transitionend', () => {
-            if (toast.parentElement) toast.remove();
-        });
+        toast.addEventListener('transitionend', () => toast.remove());
     }, 5000);
 }
 
 /**
- * Helper simples para formatar o texto (Evita repetir código)
- */
-function formatarTextoOLT(problemKey) {
-    const [placa, porta] = problemKey.split('/');
-    // Remove qualquer texto (GPON, EPON) e deixa só numeros, com 2 digitos
-    const placaFmt = placa.replace(/\D/g, '').padStart(2, '0'); 
-    const portaFmt = porta.padStart(2, '0');
-    return `PLACA ${placaFmt} / PORTA ${portaFmt}`;
-}
-
-/**
- * Compara a nova lista de problemas com a memória.
- * Dispara alertas para NOVOS problemas e para NORMALIZAÇÕES.
- * @param {Set} newProblems - Set com os problemas atuais.
+ * Compara a nova lista de problemas com a memória e dispara alertas apenas para novos problemas.
+ * @param {Set} newProblems - Um Set contendo as chaves dos problemas da verificação atual (ex: '1/1', 'GPON2/5').
  */
 function checkAndNotifyForNewProblems(newProblems) {
-    
-    // 1. Verifica se entrou um NOVO problema (Vermelho)
     for (const problemKey of newProblems) {
+        // Se o problema atual NÃO estava na lista de problemas antigos...
         if (!currentProblems.has(problemKey)) {
-            const msg = formatarTextoOLT(problemKey);
-            showToast(`FALHA: ${msg}`, 'toast-error');
+            // ...então é um problema novo! Dispara o alerta.
+            const [placa, porta] = problemKey.split('/');
+            const placaFmt = placa.replace('GPON', '').padStart(2, '0');
+            const portaFmt = porta.padStart(2, '0');
+            showToast(`Novo PROBLEMA detectado: PLACA ${placaFmt} / PORTA ${portaFmt}`, 'problem');
         }
     }
     
-    // 2. Verifica se um problema SAIU (Verde/Normalizado) - [ATUALIZAÇÃO QUE VOCÊ PEDIU]
-    for (const problemKey of currentProblems) {
-        if (!newProblems.has(problemKey)) {
-            const msg = formatarTextoOLT(problemKey);
-            showToast(`NORMALIZADO: ${msg}`, 'toast-success');
-        }
-    }
-    
-    // Atualiza a memória
+    // Atualiza a memória com a lista de problemas da verificação atual.
     currentProblems = newProblems;
 }
