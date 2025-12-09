@@ -29,11 +29,10 @@ body {
     font-size: 14px;
     box-sizing: border-box;
 
-    /* --- INÍCIO DA ADIÇÃO DA TRANSIÇÃO --- */
     /* Aplica esta animação a CADA página que for carregada */
     animation: fadeInPage 0.4s ease-in-out;
-    /* --- FIM DA ADIÇÃO DA TRANSIÇÃO --- */
 }
+
 body.home-page {
     height: 100vh; display: flex; flex-direction: column; overflow: hidden;
 }
@@ -49,14 +48,48 @@ body.home-page {
 .logo-title-group img { width: 140px; height: auto; display: block; }
 .logo-title-group h1 { font-size: 1.7em; font-weight: 500; margin: 0; color: var(--m3-on-surface); }
 .header-nav { display: flex; align-items: center; gap: 20px; }
-#update-timestamp { font-size: 1.1em; color: var(--m3-on-surface-variant); }
+
+/* --- NOVO ESTILO DO TIMESTAMP (Animado) --- */
+.timestamp-badge { 
+    font-size: 1.1em; 
+    color: var(--m3-on-surface-variant); 
+    transition: color 0.3s ease;
+}
+@keyframes textFlash {
+    0% { color: var(--m3-primary); text-shadow: 0 0 10px var(--m3-primary); }
+    100% { color: var(--m3-on-surface-variant); text-shadow: none; }
+}
+.updated-anim {
+    animation: textFlash 1s ease-out;
+}
+/* ------------------------------------------ */
 
 .footer { margin-top: 10px; padding: 8px 0; border-top: 1px solid var(--m3-outline); text-align: center; color: var(--m3-on-surface-variant); font-size: 0.9em; }
 
+/* --- SISTEMA DE TOAST NOTIFICATIONS --- */
 #toast-container { position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
-.toast { background-color: #333; color: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); font-size: 14px; opacity: 0; transform: translateX(100%); transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+
+.toast { 
+    background-color: #333; 
+    color: #fff; 
+    padding: 15px 20px; 
+    border-radius: 8px; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4); 
+    font-size: 14px; 
+    opacity: 0; 
+    transform: translateX(100%); 
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    cursor: pointer; /* Indica que é clicável */
+}
+
 .toast.show { opacity: 1; transform: translateX(0); }
+
+/* Estilo para Erro (Vermelho) */
 .toast.problem { background-color: var(--m3-color-error); color: #fff; font-weight: 500; }
+
+/* Estilo para Sucesso/Normalizado (Verde) */
+.toast.status-normal { background-color: var(--m3-color-success); color: #fff; font-weight: 500; }
+/* -------------------------------------- */
 
 .main-content { display: flex; position: relative; }
 .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0.4s ease; }
@@ -84,7 +117,19 @@ body.home-page {
     width: 100%;
 }
 
-table { width: 100%; border-collapse: separate; border-spacing: 0; background-color: var(--m3-surface-container); border-radius: 12px; overflow: hidden; border: 1px solid var(--m3-outline); }
+/* --- ESTILOS DE TABELA (Com Sticky Header) --- */
+table { 
+    width: 100%; 
+    border-collapse: separate; 
+    border-spacing: 0; 
+    background-color: var(--m3-surface-container); 
+    border-radius: 12px; 
+    overflow: hidden; 
+    border: 1px solid var(--m3-outline); 
+    
+    /* Permite rolagem se a tabela for muito grande dentro do card, se necessário */
+    display: table;
+}
 caption { font-size: 1.2em; font-weight: 500; padding: 12px; text-align: left; color: var(--m3-on-surface); }
 th, td { 
     padding: 8px 10px;
@@ -92,7 +137,18 @@ th, td {
     border-top: 1px solid var(--m3-outline); 
     color: var(--m3-on-surface); 
 }
-th { font-weight: 500; color: var(--m3-on-surface-variant); border-top: none; }
+th { 
+    font-weight: 500; 
+    color: var(--m3-on-surface-variant); 
+    border-top: none;
+    
+    /* --- EFEITO STICKY (Fixa o cabeçalho) --- */
+    position: sticky;
+    top: 0;
+    background-color: var(--m3-surface-container); /* Garante que o texto não apareça por trás */
+    z-index: 1;
+    box-shadow: 0 1px 0 var(--m3-outline); /* Borda inferior sutil quando rola */
+}
 tr:first-child td { border-top: none; }
 
 .status { font-weight: bold; padding: 4px 10px; border-radius: 16px; display: inline-block; font-size: 0.9em; }
@@ -135,21 +191,19 @@ tr:first-child td { border-top: none; }
     color: var(--m3-on-surface); 
 }
 
-/* --- INÍCIO DA ADIÇÃO DA TRANSIÇÃO (Keyframes) --- */
 /* Define a animação de fade-in */
 @keyframes fadeInPage {
     from {
         opacity: 0;
-        transform: translateY(-10px); /* Efeito opcional de deslizar de cima */
+        transform: translateY(-10px);
     }
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
-/* --- FIM DA ADIÇÃO DA TRANSIÇÃO --- */
 
-/* SEÇÃO DE RESPONSIVIDADE (AQUI ESTÁ A CORREÇÃO) */
+/* SEÇÃO DE RESPONSIVIDADE */
 @media (max-width: 768px) {
     body { height: auto; }
     

@@ -11,8 +11,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
-<body>
-    <div id="toast-container"></div>
+<body class="home-page"> <div id="toast-container"></div>
 
     <div class="page-container">
         <div id="header-placeholder"></div>
@@ -24,6 +23,9 @@
     </div>
 
     <div id="footer-placeholder"></div>
+
+    <script src="layout.js"></script>
+    <script src="notifications.js"></script>
 
     <script>
         const oltsConfig = [
@@ -50,9 +52,6 @@
         const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
         const REFRESH_INTERVAL_SECONDS = 300;
         
-        let currentProblems = new Set();
-        function showToast(message, type = '') { /* (função toast) */ }
-
         function createCardPlaceholders() {
             const grid = document.getElementById('overview-grid');
             grid.innerHTML = '';
@@ -84,6 +83,7 @@
                 const rows = (data.values || []).slice(1);
                 let onlineCount = 0;
                 let offlineCount = 0;
+                
                 rows.forEach(columns => {
                     if (columns.length === 0) return;
                     if (olt.type === 'nokia') {
@@ -114,8 +114,10 @@
             const total = onlineCount + offlineCount;
             const onlinePercent = total > 0 ? (onlineCount / total) * 100 : 0;
             const offlinePercent = 100 - onlinePercent;
+            
             const header = card.querySelector('.card-header');
             header.classList.remove('status-normal', 'status-atencao', 'status-problema');
+            
             if (offlinePercent > 10) {
                  header.classList.add('status-problema');
             } else if (offlinePercent > 5) {
@@ -123,11 +125,11 @@
             } else {
                  header.classList.add('status-normal');
             }
+            
             const statsHtml = `<div class="stat-item"><span>${total}</span><label>Total</label></div><div class="stat-item online"><span>${onlineCount}</span><label>${type === 'nokia' ? 'Up' : 'Active'}</label></div><div class="stat-item offline"><span>${offlineCount}</span><label>${type === 'nokia' ? 'Down' : 'Inactive'}</label></div>`;
             
-            // --- INÍCIO DA ALTERAÇÃO ---
-            const newRadius = 40; // Novo raio do círculo (era 45)
-            const circumference = 2 * Math.PI * newRadius; // Recalcula a circunferência
+            const newRadius = 40; 
+            const circumference = 2 * Math.PI * newRadius; 
             const offset = circumference - (onlinePercent / 100) * circumference;
             const chartHtml = `
                 <div class="donut-chart-container">
@@ -141,33 +143,45 @@
                     <div class="chart-text">${Math.round(onlinePercent)}%</div>
                 </div>
             `;
-            // --- FIM DA ALTERAÇÃO ---
 
             card.querySelector('.card-body').innerHTML = `<div class="card-stats">${statsHtml}</div>${chartHtml}`;
         }
 
         async function runOverview() {
-            // ... (código do runOverview sem alterações) ...
             const timestampEl = document.getElementById('update-timestamp');
             if (timestampEl) {
-                timestampEl.textContent = "Buscando dados...";
+                if (timestampEl.textContent === "" || timestampEl.textContent === "Aguardando dados...") {
+                    timestampEl.textContent = "Buscando dados...";
+                }
             }
+            
             createCardPlaceholders();
+            
+            // Dispara todas as requisições em paralelo
             const promises = oltsConfig.map(olt => fetchOltData(olt));
             await Promise.all(promises);
-            // Atualiza o timestamp *após* a conclusão das buscas
+            
+            // Atualiza o timestamp APÓS tudo carregar
             const now = new Date();
             const timestampText = `Atualizado em: ${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR')}`;
-            if(timestampEl) timestampEl.textContent = timestampText;
+            
+            if(timestampEl) {
+                timestampEl.textContent = timestampText;
+                
+                // --- INÍCIO DA ANIMAÇÃO DE ATUALIZAÇÃO ---
+                // Adiciona o efeito visual de "piscar" igual ao layout.js
+                timestampEl.classList.remove('updated-anim');
+                void timestampEl.offsetWidth; // Força o reflow para reiniciar a animação
+                timestampEl.classList.add('updated-anim');
+                // --- FIM DA ANIMAÇÃO DE ATUALIZAÇÃO ---
+            }
         }
         
-        // --- PONTO DE PARTIDA UNIFICADO E CORRIGIDO ---
         document.addEventListener('DOMContentLoaded', () => {
             // 1. Carrega o layout
             loadHeader({
-                title: "Painel de Monitoramento",
-                //buttonText: "Home",
-                //buttonLink: "index.html"
+                title: "Painel de Monitoramento"
+                // Sem botão de voltar na Home
             });
             loadFooter();
 
@@ -176,9 +190,6 @@
             setInterval(runOverview, REFRESH_INTERVAL_SECONDS * 1000);
         });
     </script>
-    
-    <script src="layout.js"></script>
-    <script src="notifications.js"></script>
 
 </body>
 </html>
