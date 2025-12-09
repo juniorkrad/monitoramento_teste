@@ -14,131 +14,32 @@
     <div class="page-container">
         <div id="header-placeholder"></div>
 
-        <!--<div class="grid-container grid-2-cols">-->
-            <div class="grid-container">
-
+        <div class="grid-container">
             </div>
     </div>
 
     <div id="footer-placeholder"></div>
 
-    <script>
-        const API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
-        const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
-        
-        const RANGE_DATA = 'PSV7!A:C';
-        const RANGE_TIMESTAMP = 'PSV7!K1';
-
-        const API_URL_DATA = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE_DATA}?key=${API_KEY}`;
-        
-        const REFRESH_INTERVAL_SECONDS = 300;
-        const container = document.querySelector('.grid-container');
-
-        function createTableStructure() {
-             for (let i = 1; i <= 2; i++) {
-                const placaId = i.toString().padStart(2, '0');
-                container.innerHTML += `<table><caption>PLACA ${placaId}</caption><thead><tr><th>Porta</th><th>Active</th><th>Inactive</th><th>Total</th><th>Status</th></tr></thead><tbody id="tbody-placa-${i}"></tbody></table>`;
-            }
-        }
-
-        async function populateTables() {
-            for (let i = 1; i <= 2; i++) {
-                const tbody = document.getElementById(`tbody-placa-${i}`);
-                if (tbody) { tbody.innerHTML = ''; }
-            }
-            try {
-                const response = await fetch(API_URL_DATA);
-                if (!response.ok) {
-                    throw new Error('Falha ao buscar dados das portas.');
-                }
-                const data = await response.json();
-                
-                const rows = data.values || []; 
-                const dataRows = rows.slice(1);
-                const portData = {};
-                const newProblems = new Set(); // Cria a lista de problemas para esta verificação
-
-                dataRows.forEach(columns => {
-                    if (columns.length === 0) return;
-                    const oltPort = columns[0];
-                    const status = columns[2]; 
-                    if (!oltPort || !status) return;
-
-                    const match = oltPort.match(/GPON(\d+)\/(\d+)/);
-                    if (!match) return;
-
-                    const placa = match[1];
-                    const porta = match[2];
-                    const portKey = `${placa}/${porta}`;
-
-                    if (!portData[portKey]) {
-                        portData[portKey] = { active: 0, inactive: 0 };
-                    }
-
-                    if (status.trim().toLowerCase() === 'active') {
-                        portData[portKey].active++;
-                    } else if (status.trim().toLowerCase() === 'inactive') {
-                        portData[portKey].inactive++;
-                    }
-                });
-
-                for (const portKey in portData) {
-                    const [placa, porta] = portKey.split('/');
-                    const { active, inactive } = portData[portKey];
-                    const total = active + inactive;
-                    let statusClass = 'status-normal', statusText = 'Normal';
-                    if (inactive > 16) {
-                        statusClass = 'status-problema';
-                        statusText = 'Problema';
-                    } else if (inactive === 16) {
-                        statusClass = 'status-atencao';
-                        statusText = 'Atenção';
-                    } else if (total > 0 && inactive / total >= 0.5) {
-                        statusClass = 'status-problema';
-                        statusText = 'Problema';
-                    }
-                    
-                    if (statusClass === 'status-problema') {
-                        newProblems.add(portKey);
-                    }
-                    
-                    const tableRowHTML = `<tr><td>Porta ${porta.padStart(2, '0')}</td><td>${active}</td><td>${inactive}</td><td>${total}</td><td><span class="status ${statusClass}">${statusText}</span></td></tr>`;
-                    
-                    const targetTbody = document.getElementById(`tbody-placa-${placa}`);
-                    if (targetTbody) {
-                        targetTbody.innerHTML += tableRowHTML;
-                    }
-                }
-
-                checkAndNotifyForNewProblems(newProblems);
-
-            } catch (error) {
-                showToast("Falha ao atualizar dados das portas.", "problem");
-                console.error('Falha na operação:', error);
-            }
-        }
-    </script>
-    
     <script src="layout.js"></script>
     <script src="notifications.js"></script>
+    <script src="olt-engine.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // 1. Carrega Layout
             loadHeader({
                 title: "PSV-7",
                 buttonText: "Home",
                 buttonLink: "index.html"
             });
             loadFooter();
-            
-            createTableStructure();
-            
-            function refreshAllData() {
-                populateTables();
-                loadTimestamp('PSV7', API_KEY, SHEET_ID);
-            }
-            
-            refreshAllData();
-            setInterval(refreshAllData, REFRESH_INTERVAL_SECONDS * 1000);
+
+            // 2. Inicia Monitoramento
+            startOltMonitoring({
+                id: 'PSV7',         // Aba da planilha
+                type: 'furukawa-2', // Lógica Furukawa 2 placas (Regex GPON)
+                boards: 2           // 2 Placas
+            });
         });
     </script>
 </body>
