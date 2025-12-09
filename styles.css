@@ -88,73 +88,25 @@ body.home-page {
 .footer { margin-top: 10px; padding: 8px 0; border-top: 1px solid var(--m3-outline); text-align: center; color: var(--m3-on-surface-variant); font-size: 0.9em; }
 
 /* ==========================================================================
-   --- Toasts (ATUALIZADO PARA CORES VIBRANTES) --- 
+   --- Toasts --- 
    ========================================================================== */
 #toast-container { 
-    position: fixed; 
-    top: 20px; 
-    right: 20px; 
-    z-index: 9999; 
-    display: flex; 
-    flex-direction: column; 
-    gap: 10px; 
-    pointer-events: none; 
+    position: fixed; top: 20px; right: 20px; z-index: 9999; 
+    display: flex; flex-direction: column; gap: 10px; pointer-events: none; 
 }
 
 .toast { 
-    /* Base comum */
-    background-color: var(--m3-surface-container-high); /* Cor padrão caso não tenha tipo */
-    color: #fff; 
-    padding: 16px 20px; 
-    border-radius: 8px; 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5); 
-    font-size: 14px; 
-    font-weight: 600; /* Texto um pouco mais grosso para leitura */
-    opacity: 0; 
-    transform: translateX(100%); 
-    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); 
-    
-    /* Layout Flex para alinhar ícone e texto */
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    
-    pointer-events: auto; 
-    cursor: pointer;
-    border: 1px solid rgba(255,255,255,0.1); /* Borda sutil */
+    background-color: var(--m3-surface-container-high); 
+    color: #fff; padding: 16px 20px; border-radius: 8px; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 14px; font-weight: 600; 
+    opacity: 0; transform: translateX(100%); transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); 
+    display: flex; align-items: center; gap: 12px; pointer-events: auto; 
+    cursor: pointer; border: 1px solid rgba(255,255,255,0.1); 
 }
-
-.toast.show { 
-    opacity: 1; 
-    transform: translateX(0); 
-}
-
-/* ATENÇÃO: Aqui definimos as cores de FUNDO (background-color) 
-   para garantir que o alerta seja visível instantaneamente.
-*/
-
-/* Variação: ERRO (Fundo Vermelho, Texto Branco) */
-.toast-error { 
-    background-color: var(--m3-color-error); 
-    color: #fff; 
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-/* Variação: SUCESSO (Fundo Verde, Texto Branco) */
-.toast-success { 
-    background-color: var(--m3-color-success); 
-    color: #fff; 
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-/* Variação: INFO (Padrão do tema) */
-.toast-info {
-    background-color: var(--m3-surface-container-high);
-    color: var(--m3-on-surface);
-    border-left: 4px solid var(--m3-primary); /* Apenas uma tarja lateral */
-}
-/* ========================================================================== */
-
+.toast.show { opacity: 1; transform: translateX(0); }
+.toast-error { background-color: var(--m3-color-error); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); }
+.toast-success { background-color: var(--m3-color-success); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); }
+.toast-info { background-color: var(--m3-surface-container-high); color: var(--m3-on-surface); border-left: 4px solid var(--m3-primary); }
 
 /* --- Layout Principal e Menus --- */
 .main-content { display: flex; position: relative; }
@@ -162,90 +114,58 @@ body.home-page {
 .screen.active { opacity: 1; visibility: visible; }
 
 #main-menu-block { 
-    background-color: rgba(0, 0, 0, 0.2); 
-    backdrop-filter: blur(5px); 
-    padding: 40px 60px; 
-    border-radius: 16px; 
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); 
-    display: flex; flex-direction: column; 
-    gap: 20px; 
-    border: 1px solid var(--m3-outline); 
+    background-color: rgba(0, 0, 0, 0.2); backdrop-filter: blur(5px); padding: 40px 60px; 
+    border-radius: 16px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); 
+    display: flex; flex-direction: column; gap: 20px; border: 1px solid var(--m3-outline); 
 }
 
 .main-menu-button { 
-    background-color: var(--m3-primary); 
-    color: var(--m3-on-primary); 
-    padding: 18px 40px; 
-    border-radius: 24px; 
-    text-decoration: none; 
-    font-size: 1.5em; 
-    font-weight: 700; 
+    background-color: var(--m3-primary); color: var(--m3-on-primary); padding: 18px 40px; 
+    border-radius: 24px; text-decoration: none; font-size: 1.5em; font-weight: 700; 
     transition: background-color 0.2s ease-in-out, transform 0.2s var(--ease-bounce), box-shadow 0.2s ease; 
-    border: none; 
-    cursor: pointer; 
-    min-width: 450px; 
-    text-align: center; 
+    border: none; cursor: pointer; min-width: 450px; text-align: center; 
 }
-.main-menu-button:hover { 
-    background-color: var(--m3-primary-hover); 
-    transform: translateY(-2px); 
-    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-}
+.main-menu-button:hover { background-color: var(--m3-primary-hover); transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.3); }
 
 .sub-menu-block { 
-    background-color: var(--m3-surface-container); 
-    padding: 30px 40px; 
-    border-radius: 16px; 
-    border: 1px solid var(--m3-outline); 
-    width: 100%; 
-    max-width: 1000px; 
-    text-align: center; 
-    display: flex; 
-    flex-direction: column; 
+    background-color: var(--m3-surface-container); padding: 30px 40px; border-radius: 16px; 
+    border: 1px solid var(--m3-outline); width: 100%; max-width: 1000px; text-align: center; 
+    display: flex; flex-direction: column; 
 }
 
 .back-button { 
-    align-self: flex-start; 
-    margin-bottom: 25px; 
-    background-color: transparent; 
-    color: var(--m3-primary); 
-    border: 1px solid var(--m3-primary); 
-    font-weight: 500; 
-    padding: 10px 20px; 
-    border-radius: 24px; 
-    text-decoration: none; 
-    cursor: pointer; 
-    transition: all 0.2s ease; 
-    position: relative; 
-    overflow: hidden; 
+    align-self: flex-start; margin-bottom: 25px; background-color: transparent; 
+    color: var(--m3-primary); border: 1px solid var(--m3-primary); font-weight: 500; 
+    padding: 10px 20px; border-radius: 24px; text-decoration: none; cursor: pointer; 
+    transition: all 0.2s ease; position: relative; overflow: hidden; 
 }
 .back-button:hover { background-color: var(--m3-primary); color: var(--m3-on-primary); }
 
 .sub-menu-block h3 { font-size: 1.8em; font-weight: 500; margin: 0 0 25px 0; padding-bottom: 10px; border-bottom: 1px solid var(--m3-outline); color: var(--m3-on-surface); }
-
 .menu-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; }
 
 .menu-button, .header-nav .nav-button { 
-    background-color: var(--m3-surface-container-high); 
-    color: var(--m3-on-surface); 
-    padding: 12px 30px; 
-    border-radius: 24px; 
-    text-decoration: none; 
-    font-weight: 500; 
-    transition: background-color 0.2s ease, transform 0.2s ease; 
-    border: none; 
-    cursor: pointer; 
-    position: relative; 
-    overflow: hidden; 
+    background-color: var(--m3-surface-container-high); color: var(--m3-on-surface); 
+    padding: 12px 30px; border-radius: 24px; text-decoration: none; font-weight: 500; 
+    transition: background-color 0.2s ease, transform 0.2s ease; border: none; cursor: pointer; 
+    position: relative; overflow: hidden; 
 }
 .menu-button:hover, .header-nav .nav-button:hover { background-color: var(--m3-state-layer-hover); transform: translateY(-2px); }
 .header-nav .nav-button { font-size: 13.5px; padding: 9px 18px; }
+
+/* ========================================================================== 
+   --- GRID E CARDS (CORREÇÃO DE SOBREPOSIÇÃO) ---
+   ========================================================================== 
+*/
 
 .grid-container {
     display: grid;
     gap: 20px;
     padding-bottom: 20px;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    /* ALTERADO: Aumentei o minmax de 320px para 500px. 
+       Isso força os cards a pularem de linha se não tiverem espaço suficiente, 
+       evitando que uma tabela fique em cima da outra. */
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
     align-content: flex-start;
     width: 100%;
 }
@@ -254,7 +174,13 @@ body.home-page {
     background-color: var(--m3-surface-container); 
     border-radius: 12px; 
     border: 1px solid var(--m3-outline); 
-    overflow: hidden; 
+    
+    /* ALTERADO: Mudei de 'hidden' para 'auto'. 
+       Se a tabela for maior que o card, aparece uma barra de rolagem horizontal 
+       em vez de estourar o layout. */
+    overflow-x: auto; 
+    overflow-y: hidden; /* Evita rolagem vertical desnecessária */
+    
     display: flex; 
     flex-direction: column; 
     box-shadow: 0 2px 8px rgba(0,0,0,0.3); 
@@ -271,13 +197,8 @@ body.home-page {
 .card-header.status-atencao h3 { color: #000; }
 
 .card-header-button { 
-    background-color: rgba(0, 0, 0, 0.2); 
-    color: var(--m3-on-surface-variant); 
-    padding: 4px 12px; 
-    border-radius: 16px; 
-    text-decoration: none; 
-    font-size: 0.9em; 
-    font-weight: 500; 
+    background-color: rgba(0, 0, 0, 0.2); color: var(--m3-on-surface-variant); 
+    padding: 4px 12px; border-radius: 16px; text-decoration: none; font-size: 0.9em; font-weight: 500; 
     transition: background-color 0.2s ease, color 0.2s ease; 
 }
 .card-header-button:hover { background-color: rgba(0, 0, 0, 0.4); color: var(--m3-on-surface); }
@@ -320,12 +241,8 @@ th, td {
 }
 
 th { 
-    font-weight: 700; 
-    color: var(--m3-on-surface); 
-    border-top: none;
-    text-transform: uppercase; 
-    background-color: rgba(255, 255, 255, 0.05); 
-    letter-spacing: 0.5px;
+    font-weight: 700; color: var(--m3-on-surface); border-top: none;
+    text-transform: uppercase; background-color: rgba(255, 255, 255, 0.05); letter-spacing: 0.5px;
 }
 tr:first-child td { border-top: none; }
 
