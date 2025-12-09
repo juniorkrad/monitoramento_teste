@@ -70,7 +70,7 @@ body.home-page {
 .logo-title-group h1 { font-size: 1.5em; font-weight: 500; margin: 0; color: var(--m3-on-surface); }
 .header-nav { display: flex; align-items: center; gap: 15px; }
 
-/* --- CORREÇÃO: Estilo do Botão Home/Voltar (.nav-button) --- */
+/* Estilo do Botão Home/Voltar */
 .nav-button {
     background-color: var(--m3-primary);
     color: var(--m3-on-primary);
@@ -89,7 +89,6 @@ body.home-page {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
-/* ----------------------------------------------------------- */
 
 /* Timestamp Animado */
 .timestamp-badge { 
@@ -151,9 +150,9 @@ table {
     margin-bottom: 10px;
 }
 
-/* LINHA 1: TÍTULO (PLACA XX) - Sem Destaque de Fundo */
+/* LINHA 1: TÍTULO (PLACA XX) */
 .table-title-row th {
-    background-color: var(--m3-surface-container); /* Mesmo fundo da tabela */
+    background-color: var(--m3-surface-container); 
     color: var(--m3-on-surface); 
     font-size: 1.1em;
     padding: 10px 12px;
@@ -162,9 +161,9 @@ table {
     font-weight: 700;
 }
 
-/* LINHA 2: COLUNAS (PORTA, UP, DOWN...) - COM DESTAQUE */
+/* LINHA 2: COLUNAS (PORTA, UP, DOWN...) */
 .table-header-row th {
-    background-color: var(--m3-surface-container-high); /* Destaque aqui! */
+    background-color: var(--m3-surface-container-high); 
     color: var(--m3-on-surface);
     font-weight: 700;
     text-transform: uppercase;
@@ -180,12 +179,17 @@ table {
     z-index: 1;
 }
 
-td { 
+/* --- CORREÇÃO GERAL DE CÉLULAS (th e td) --- */
+th, td { 
     padding: 8px 10px; 
     text-align: left; 
     border-top: 1px solid var(--m3-outline); 
     color: var(--m3-on-surface); 
     font-size: 0.9em; 
+    
+    /* AQUI ESTÁ A MÁGICA: */
+    white-space: nowrap;    /* 1. Proíbe quebra de linha (Adeus "Porta" em cima de "01") */
+    vertical-align: middle; /* 2. Alinha verticalmente no centro */
 }
 
 /* Ajuste para não duplicar borda entre cabeçalho e primeira linha */
