@@ -14,125 +14,32 @@
     <div class="page-container">
         <div id="header-placeholder"></div>
 
-        <!-- <div class="grid-container grid-4-cols"> -->
-            <div class="grid-container">
+        <div class="grid-container">
             </div>
     </div>
 
     <div id="footer-placeholder"></div>
 
-    <script>
-        const API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
-        const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
-        
-        const RANGE_DATA = 'PSV1!A:J';
-        const RANGE_TIMESTAMP = 'PSV1!K1';
-
-        const API_URL_DATA = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE_DATA}?key=${API_KEY}`;
-        
-        const REFRESH_INTERVAL_SECONDS = 300;
-        const container = document.querySelector('.grid-container');
-
-        function createTableStructure() {
-             for (let i = 1; i <= 8; i++) {
-                const placaId = i.toString().padStart(2, '0');
-                container.innerHTML += `<table><caption>PLACA ${placaId}</caption><thead><tr><th>Porta</th><th>UP</th><th>DOWN</th><th>Total</th><th>Status</th></tr></thead><tbody id="tbody-placa-${i}"></tbody></table>`;
-            }
-        }
-
-        async function populateTables() {
-            for (let i = 1; i <= 8; i++) {
-                const tbody = document.getElementById(`tbody-placa-${i}`);
-                if (tbody) {
-                    tbody.innerHTML = '';
-                }
-            }
-            try {
-                const response = await fetch(API_URL_DATA);
-                if (!response.ok) {
-                    throw new Error('Falha ao buscar dados das portas.');
-                }
-                const data = await response.json();
-                
-                const rows = data.values || []; 
-                const dataRows = rows.slice(1);
-                const portData = {};
-                const newProblems = new Set(); // Cria a lista de problemas para esta verificação
-
-                dataRows.forEach(columns => {
-                    if (columns.length === 0) return;
-                    const pon = columns[0];
-                    const status = columns[4];
-                    if (!pon || !status) return;
-                    const ponParts = pon.split('/');
-                    if (ponParts.length < 4) return;
-                    const placa = ponParts[2];
-                    const porta = ponParts[3];
-                    const portKey = `${placa}/${porta}`;
-                    if (!portData[portKey]) {
-                        portData[portKey] = { up: 0, down: 0 };
-                    }
-                    if (status.trim().toLowerCase().includes('up')) {
-                        portData[portKey].up++;
-                    } else {
-                        portData[portKey].down++;
-                    }
-                });
-
-                for (const portKey in portData) {
-                    const [placa, porta] = portKey.split('/');
-                    const { up, down } = portData[portKey];
-                    const total = up + down;
-                    let statusClass = 'status-normal', statusText = 'Normal';
-                    if (total > 0 && (down / total === 1 || down / total === 0.5)) {
-                        statusClass = 'status-problema';
-                        statusText = 'Problema';
-                    } else if (down >= 16) {
-                        statusClass = 'status-atencao';
-                        statusText = 'Atenção';
-                    }
-                    
-                    if (statusClass === 'status-problema') {
-                        newProblems.add(portKey);
-                    }
-                    
-                    const tableRowHTML = `<tr><td>Porta ${porta.padStart(2, '0')}</td><td>${up}</td><td>${down}</td><td>${total}</td><td><span class="status ${statusClass}">${statusText}</span></td></tr>`;
-                    
-                    const targetTbody = document.getElementById(`tbody-placa-${placa}`);
-                    if (targetTbody) {
-                        targetTbody.innerHTML += tableRowHTML;
-                    }
-                }
-
-                checkAndNotifyForNewProblems(newProblems);
-
-            } catch (error) {
-                showToast("Falha ao atualizar dados das portas.", "problem");
-                console.error('Falha na operação:', error);
-            }
-        }
-    </script>
-    
     <script src="layout.js"></script>
     <script src="notifications.js"></script>
+    <script src="olt-engine.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // 1. Carrega Layout
             loadHeader({
                 title: "PSV-1",
                 buttonText: "Home",
                 buttonLink: "index.html"
             });
             loadFooter();
-            
-            createTableStructure();
-            
-            function refreshAllData() {
-                populateTables();
-                loadTimestamp('PSV1', API_KEY, SHEET_ID);
-            }
-            
-            refreshAllData();
-            setInterval(refreshAllData, REFRESH_INTERVAL_SECONDS * 1000);
+
+            // 2. Inicia Monitoramento
+            startOltMonitoring({
+                id: 'PSV1',     // Aba da planilha
+                type: 'nokia',  // Lógica Nokia
+                boards: 8       // 8 Placas
+            });
         });
     </script>
 </body>
