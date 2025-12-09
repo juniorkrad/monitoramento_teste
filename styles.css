@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap');
 
 :root {
+    /* --- CORES ORIGINAIS MANTIDAS --- */
     --m3-primary: #67079f;
     --m3-primary-hover: #7b2cbf;
     --m3-on-primary: #FFFFFF;
@@ -19,7 +20,7 @@
 
 /* --- SCROLLBAR PERSONALIZADA --- */
 ::-webkit-scrollbar {
-    width: 8px; /* Reduzi um pouco a largura da barra */
+    width: 8px;
     height: 8px;
 }
 ::-webkit-scrollbar-track {
@@ -41,8 +42,8 @@ body {
     color: var(--m3-on-surface);
     font-family: var(--font-family);
     margin: 0;
-    padding: 10px 15px; /* Reduzi levemente o padding da página */
-    font-size: 13.5px; /* --- REDUÇÃO GERAL DE FONTE (Era 14px) --- */
+    padding: 10px 15px; 
+    font-size: 13.5px; /* Fonte compacta */
     box-sizing: border-box;
     animation: fadeInPage 0.4s ease-in-out;
 }
@@ -65,13 +66,13 @@ body.home-page {
 .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid var(--m3-outline); margin-bottom: 10px; }
 .header.home-header { justify-content: space-between; }
 .logo-title-group { display: flex; align-items: center; gap: 12px; }
-.logo-title-group img { width: 120px; height: auto; display: block; } /* Logo um pouco menor */
+.logo-title-group img { width: 120px; height: auto; display: block; }
 .logo-title-group h1 { font-size: 1.5em; font-weight: 500; margin: 0; color: var(--m3-on-surface); }
 .header-nav { display: flex; align-items: center; gap: 15px; }
 
 /* Timestamp Animado */
 .timestamp-badge { 
-    font-size: 1em; /* Fonte menor */
+    font-size: 1em; 
     color: var(--m3-on-surface-variant); 
     transition: color 0.3s ease;
 }
@@ -122,14 +123,14 @@ body.home-page {
 
 .grid-container {
     display: grid;
-    gap: 15px; /* Reduzi o gap para aproveitar melhor o espaço */
+    gap: 15px; 
     padding-bottom: 20px;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     align-content: flex-start;
     width: 100%;
 }
 
-/* --- TABELAS COMPACTAS (Ajuste Solicitado) --- */
+/* --- TABELAS --- */
 table { 
     width: 100%; 
     border-collapse: separate; 
@@ -141,36 +142,42 @@ table {
     display: table;
     margin-bottom: 10px;
 }
+
 caption { 
-    font-size: 1.1em; /* Título menor */
+    font-size: 1.1em; 
     font-weight: 700; 
     padding: 10px 12px; 
     text-align: left; 
     color: var(--m3-on-surface); 
     border-bottom: 1px solid var(--m3-outline); 
+    
+    /* --- CORREÇÃO DA QUINA SUPERIOR (Crucial para o design não quebrar) --- */
+    border-radius: 10px 10px 0 0; 
+    background-color: var(--m3-surface-container); 
 }
 
 th, td { 
-    padding: 8px 10px; /* --- MENOS PADDING (Mais compacto) --- */
+    padding: 8px 10px; /* Padding compacto */
     text-align: left; 
     border-top: 1px solid var(--m3-outline); 
     color: var(--m3-on-surface); 
-    font-size: 0.9em; /* --- FONTE MENOR DENTRO DA TABELA --- */
+    font-size: 0.9em; /* Fonte menor na tabela */
 }
 
-/* --- DESTAQUE CABEÇALHO --- */
+/* --- DESTAQUE DE CABEÇALHO (Pedido realizado) --- */
 th { 
-    font-weight: 700; 
-    text-transform: uppercase; 
+    font-weight: 700; /* Negrito */
+    text-transform: uppercase; /* Caixa Alta */
     letter-spacing: 0.5px; 
     color: var(--m3-on-surface);
-    background-color: var(--m3-surface-container-high); 
+    background-color: var(--m3-surface-container-high); /* Fundo destacado */
     border-top: none;
-    position: sticky;
+    
+    position: sticky; /* Cabeçalho fixo */
     top: 0;
     z-index: 1;
     box-shadow: 0 1px 0 var(--m3-outline);
-    font-size: 0.85em; /* Cabeçalho um pouco menor para evitar quebra de linha */
+    font-size: 0.85em;
 }
 
 /* Efeito Hover nas Linhas */
@@ -180,13 +187,13 @@ tr:hover td {
 
 tr:first-child td { border-top: none; }
 
-/* Status Badges Menores */
+/* Status Badges */
 .status { 
     font-weight: bold; 
-    padding: 2px 8px; /* Badge menor */
+    padding: 2px 8px; 
     border-radius: 12px; 
     display: inline-block; 
-    font-size: 0.8em; /* Fonte do status menor */
+    font-size: 0.8em; 
     text-transform: uppercase; 
 }
 .status-normal { background-color: var(--m3-color-success); color: #fff; }
