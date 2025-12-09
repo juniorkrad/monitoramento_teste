@@ -70,9 +70,9 @@ body.home-page {
 .logo-title-group h1 { font-size: 1.5em; font-weight: 500; margin: 0; color: var(--m3-on-surface); }
 .header-nav { display: flex; align-items: center; gap: 15px; }
 
-/* --- ATUALIZAÇÃO DE COR DO BOTÃO HOME --- */
+/* Estilo do Botão Home/Voltar */
 .nav-button {
-    background-color: #371752; /* Cor mais escura solicitada */
+    background-color: #371752; /* Cor roxa escura solicitada */
     color: var(--m3-on-primary);
     padding: 8px 20px;
     border-radius: 20px;
@@ -85,11 +85,10 @@ body.home-page {
     display: inline-block;
 }
 .nav-button:hover {
-    background-color: var(--m3-primary-hover); /* Ilumina ao passar o mouse */
+    background-color: var(--m3-primary-hover);
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
-/* ---------------------------------------- */
 
 /* Timestamp Animado */
 .timestamp-badge { 
@@ -151,12 +150,29 @@ table {
     margin-bottom: 10px;
 }
 
+/* --- CORREÇÃO GERAL DE CÉLULAS (Alinhamento e Quebra) --- */
+th, td { 
+    padding: 8px 10px; 
+    text-align: left; 
+    /* A borda será controlada linha a linha abaixo */
+    border-top: 1px solid var(--m3-outline); 
+    color: var(--m3-on-surface); 
+    font-size: 0.9em; 
+    
+    /* FIXADORES DE LAYOUT */
+    white-space: nowrap;    /* Impede que "Porta 01" quebre em duas linhas */
+    vertical-align: middle; /* Alinha o texto exatamente no centro vertical */
+}
+
 /* LINHA 1: TÍTULO (PLACA XX) */
 .table-title-row th {
     background-color: var(--m3-surface-container); 
     color: var(--m3-on-surface); 
     font-size: 1.1em;
     padding: 10px 12px;
+    
+    /* Tira borda do topo (evita duplicação com a borda da tabela) */
+    border-top: none; 
     border-bottom: 1px solid var(--m3-outline);
     text-align: left;
     font-weight: 700;
@@ -171,29 +187,24 @@ table {
     letter-spacing: 0.5px;
     font-size: 0.85em;
     padding: 8px 10px;
-    border-top: none;
+    
+    /* Tira borda do topo (para não chocar com o fundo do Título) */
+    border-top: none; 
     border-bottom: 1px solid var(--m3-outline);
     
-    /* Sticky */
+    /* Sticky Header */
     position: sticky;
     top: 0;
     z-index: 1;
 }
 
-/* --- CORREÇÃO GERAL DE CÉLULAS --- */
-th, td { 
-    padding: 8px 10px; 
-    text-align: left; 
-    border-top: 1px solid var(--m3-outline); 
-    color: var(--m3-on-surface); 
-    font-size: 0.9em; 
-    
-    white-space: nowrap;    /* Proíbe quebra de linha */
-    vertical-align: middle; /* Alinha verticalmente */
+/* --- CORREÇÃO CRÍTICA DAS BORDAS DUPLICADAS ---
+   Seleciona a primeira linha de dados (TR) dentro do corpo (TBODY) 
+   que vem logo após o cabeçalho (THEAD) e remove a borda superior.
+*/
+thead + tbody tr:first-child td { 
+    border-top: none; 
 }
-
-/* Ajuste para não duplicar borda entre cabeçalho e primeira linha */
-.table-header-row + tbody tr:first-child td { border-top: none; }
 
 /* Efeito Hover nas Linhas de DADOS apenas */
 tbody tr:hover td {
