@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
-<body class="home-page"> <div id="toast-container"></div>
+<body> <div id="toast-container"></div>
 
     <div class="page-container">
         <div id="header-placeholder"></div>
@@ -52,6 +52,9 @@
         const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
         const REFRESH_INTERVAL_SECONDS = 300;
         
+        // Removemos a declaração de currentProblems e showToast aqui
+        // pois elas já existem no notifications.js
+
         function createCardPlaceholders() {
             const grid = document.getElementById('overview-grid');
             grid.innerHTML = '';
@@ -150,6 +153,7 @@
         async function runOverview() {
             const timestampEl = document.getElementById('update-timestamp');
             if (timestampEl) {
+                // Lógica melhorada para não sobrescrever "Erro de conexão" se já existir
                 if (timestampEl.textContent === "" || timestampEl.textContent === "Aguardando dados...") {
                     timestampEl.textContent = "Buscando dados...";
                 }
@@ -157,35 +161,27 @@
             
             createCardPlaceholders();
             
-            // Dispara todas as requisições em paralelo
             const promises = oltsConfig.map(olt => fetchOltData(olt));
             await Promise.all(promises);
             
-            // Atualiza o timestamp APÓS tudo carregar
             const now = new Date();
             const timestampText = `Atualizado em: ${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR')}`;
             
             if(timestampEl) {
                 timestampEl.textContent = timestampText;
-                
-                // --- INÍCIO DA ANIMAÇÃO DE ATUALIZAÇÃO ---
-                // Adiciona o efeito visual de "piscar" igual ao layout.js
+                // Adiciona o efeito visual de "piscar" (conectado ao novo layout.js/styles.css)
                 timestampEl.classList.remove('updated-anim');
-                void timestampEl.offsetWidth; // Força o reflow para reiniciar a animação
+                void timestampEl.offsetWidth; 
                 timestampEl.classList.add('updated-anim');
-                // --- FIM DA ANIMAÇÃO DE ATUALIZAÇÃO ---
             }
         }
         
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. Carrega o layout
             loadHeader({
                 title: "Painel de Monitoramento"
-                // Sem botão de voltar na Home
             });
             loadFooter();
 
-            // 2. Inicia a busca de dados da página
             runOverview();
             setInterval(runOverview, REFRESH_INTERVAL_SECONDS * 1000);
         });
