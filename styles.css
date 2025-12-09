@@ -17,6 +17,23 @@
     --font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
+/* --- MELHORIA: SCROLLBAR PERSONALIZADA (Mantendo as cores do tema) --- */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+::-webkit-scrollbar-track {
+    background: var(--m3-surface); 
+}
+::-webkit-scrollbar-thumb {
+    background: var(--m3-outline); 
+    border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--m3-primary-hover); /* Destaque ao passar o mouse na barra */
+}
+/* ------------------------------------------------------------------- */
+
 html { 
     height: 100%; 
 }
@@ -28,8 +45,6 @@ body {
     padding: 15px 20px;
     font-size: 14px;
     box-sizing: border-box;
-
-    /* Aplica esta animação a CADA página que for carregada */
     animation: fadeInPage 0.4s ease-in-out;
 }
 
@@ -40,12 +55,11 @@ body.home-page {
     flex: 1; display: flex; flex-direction: column; min-height: 0;
 }
 
-/* --- CORREÇÃO DA BARRA DE ROLAGEM AQUI --- */
+/* Correção da barra de rolagem */
 .home-page .main-content { 
-    overflow-y: auto; /* Permite rolar verticalmente */
-    padding-right: 5px; /* Evita que a barra cole no conteúdo */
+    overflow-y: auto; 
+    padding-right: 5px; 
 }
-/* ----------------------------------------- */
 
 .page-container { max-width: 1880px; margin: 0 auto; width: 100%; }
 
@@ -53,10 +67,10 @@ body.home-page {
 .header.home-header { justify-content: space-between; }
 .logo-title-group { display: flex; align-items: center; gap: 15px; }
 .logo-title-group img { width: 140px; height: auto; display: block; }
-.logo-title-group h1 { font-size: 1.7em; font-weight: 500; margin: 0; color: var(--m3-on-surface); }
+.logo-title-group h1 { font-size: 1.7em; font-weight: 700; margin: 0; color: var(--m3-on-surface); } /* Ajuste: font-weight 700 */
 .header-nav { display: flex; align-items: center; gap: 20px; }
 
-/* --- NOVO ESTILO DO TIMESTAMP (Animado) --- */
+/* Timestamp Animado */
 .timestamp-badge { 
     font-size: 1.1em; 
     color: var(--m3-on-surface-variant); 
@@ -69,13 +83,11 @@ body.home-page {
 .updated-anim {
     animation: textFlash 1s ease-out;
 }
-/* ------------------------------------------ */
 
 .footer { margin-top: 10px; padding: 8px 0; border-top: 1px solid var(--m3-outline); text-align: center; color: var(--m3-on-surface-variant); font-size: 0.9em; }
 
-/* --- SISTEMA DE TOAST NOTIFICATIONS --- */
+/* Toast Notifications */
 #toast-container { position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
-
 .toast { 
     background-color: #333; 
     color: #fff; 
@@ -86,17 +98,11 @@ body.home-page {
     opacity: 0; 
     transform: translateX(100%); 
     transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-    cursor: pointer; /* Indica que é clicável */
+    cursor: pointer;
 }
-
 .toast.show { opacity: 1; transform: translateX(0); }
-
-/* Estilo para Erro (Vermelho) */
 .toast.problem { background-color: var(--m3-color-error); color: #fff; font-weight: 500; }
-
-/* Estilo para Sucesso/Normalizado (Verde) */
 .toast.status-normal { background-color: var(--m3-color-success); color: #fff; font-weight: 500; }
-/* -------------------------------------- */
 
 .main-content { display: flex; position: relative; }
 .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0.4s ease; }
@@ -124,7 +130,7 @@ body.home-page {
     width: 100%;
 }
 
-/* --- ESTILOS DE TABELA (Com Sticky Header) --- */
+/* --- ESTILOS DE TABELA (ATUALIZADO) --- */
 table { 
     width: 100%; 
     border-collapse: separate; 
@@ -133,37 +139,64 @@ table {
     border-radius: 12px; 
     overflow: hidden; 
     border: 1px solid var(--m3-outline); 
-    
-    /* Permite rolagem se a tabela for muito grande dentro do card, se necessário */
     display: table;
 }
-caption { font-size: 1.2em; font-weight: 500; padding: 12px; text-align: left; color: var(--m3-on-surface); }
+caption { font-size: 1.2em; font-weight: 700; padding: 12px; text-align: left; color: var(--m3-on-surface); border-bottom: 1px solid var(--m3-outline); }
+
 th, td { 
-    padding: 8px 10px;
+    padding: 10px 12px; /* Aumentei um pouco o espaçamento */
     text-align: left; 
     border-top: 1px solid var(--m3-outline); 
     color: var(--m3-on-surface); 
 }
+
+/* --- DESTAQUE PARA O CABEÇALHO (Seu Pedido) --- */
 th { 
-    font-weight: 500; 
-    color: var(--m3-on-surface-variant); 
+    /* Destaque Visual */
+    font-weight: 700; /* Negrito */
+    text-transform: uppercase; /* CAIXA ALTA */
+    letter-spacing: 0.5px; /* Espaçamento entre letras */
+    background-color: var(--m3-surface-container-high); /* Fundo destacado (mais claro que a tabela) */
+    color: var(--m3-on-surface); /* Cor do texto mantida */
+    
     border-top: none;
     
-    /* --- EFEITO STICKY (Fixa o cabeçalho) --- */
+    /* Sticky Header (Fixo no topo) */
     position: sticky;
     top: 0;
-    background-color: var(--m3-surface-container); /* Garante que o texto não apareça por trás */
     z-index: 1;
-    box-shadow: 0 1px 0 var(--m3-outline); /* Borda inferior sutil quando rola */
+    box-shadow: 0 1px 0 var(--m3-outline); /* Borda inferior quando rola */
 }
+
+/* --- EFEITO HOVER NAS LINHAS (Melhoria de Leitura) --- */
+tr:hover td {
+    background-color: var(--m3-state-layer-hover); /* Ilumina a linha ao passar o mouse */
+}
+
 tr:first-child td { border-top: none; }
 
-.status { font-weight: bold; padding: 4px 10px; border-radius: 16px; display: inline-block; font-size: 0.9em; }
+.status { font-weight: bold; padding: 4px 10px; border-radius: 16px; display: inline-block; font-size: 0.9em; text-transform: uppercase; }
 .status-normal { background-color: var(--m3-color-success); color: #fff; }
 .status-atencao { background-color: var(--m3-color-warning); color: #000; }
 .status-problema { background-color: var(--m3-color-error); color: #fff; }
 
-.overview-card { background-color: var(--m3-surface-container); border-radius: 12px; border: 1px solid var(--m3-outline); overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+/* --- CARDS (Melhoria de Interatividade) --- */
+.overview-card { 
+    background-color: var(--m3-surface-container); 
+    border-radius: 12px; 
+    border: 1px solid var(--m3-outline); 
+    overflow: hidden; 
+    display: flex; 
+    flex-direction: column; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3); 
+    transition: transform 0.2s ease, border-color 0.2s ease; /* Animação */
+}
+
+.overview-card:hover {
+    transform: translateY(-4px); /* Levanta levemente */
+    border-color: var(--m3-primary); /* Borda brilha na cor primária */
+}
+
 .card-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; transition: background-color 0.5s ease; }
 .card-header h3 { margin: 0; font-size: 1.4em; font-weight: 500; color: var(--m3-on-surface); }
 .card-header.status-normal { background-color: var(--m3-color-success); }
@@ -185,49 +218,49 @@ tr:first-child td { border-top: none; }
 .stat-item.offline span { color: var(--m3-color-error); }
 .donut-chart-container { position: relative; display: flex; justify-content: center; align-items: center; }
 .donut-chart { transform: rotate(-90deg); }
-.donut-chart circle { 
-    fill: none; 
-    stroke-width: 10;
+.donut-chart circle { 
+    fill: none; 
+    stroke-width: 10;
 }
 .donut-chart .donut-bg { stroke: var(--m3-surface-container-high); }
 .donut-chart .donut-fg { stroke: var(--m3-color-success); stroke-linecap: round; transition: stroke-dashoffset 1s ease-out; }
-.chart-text { 
-    position: absolute; 
-    font-size: 1.6em;
-    font-weight: 700; 
-    color: var(--m3-on-surface); 
+.chart-text { 
+    position: absolute; 
+    font-size: 1.6em;
+    font-weight: 700; 
+    color: var(--m3-on-surface); 
 }
 
 /* Define a animação de fade-in */
 @keyframes fadeInPage {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* SEÇÃO DE RESPONSIVIDADE */
 @media (max-width: 768px) {
-    body { height: auto; }
-    
-    .header { 
-        flex-direction: column; 
-        justify-content: center; 
-        gap: 20px; 
-    }
-    .logo-title-group h1 { 
-        font-size: 1.5em; 
-    }
-    .header-nav { 
-        flex-direction: column-reverse; 
-        gap: 15px;
-    }
+    body { height: auto; }
+    
+    .header { 
+        flex-direction: column; 
+        justify-content: center; 
+        gap: 20px; 
+    }
+    .logo-title-group h1 { 
+        font-size: 1.5em; 
+    }
+    .header-nav { 
+        flex-direction: column-reverse; 
+        gap: 15px;
+    }
 
-    #main-menu-block { padding: 30px; min-width: auto; width: 100%; box-sizing: border-box; }
-    .main-menu-button { min-width: auto; }
-    .sub-menu-block { padding: 20px; }
+    #main-menu-block { padding: 30px; min-width: auto; width: 100%; box-sizing: border-box; }
+    .main-menu-button { min-width: auto; }
+    .sub-menu-block { padding: 20px; }
 }
