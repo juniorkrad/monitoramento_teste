@@ -24,8 +24,8 @@
 
 /* --- 1. Reset Moderno e Base --- */
 * {
-    box-sizing: border-box; /* Garante larguras precisas */
-    -webkit-font-smoothing: antialiased; /* Renderização de fonte mais nítida */
+    box-sizing: border-box; 
+    -webkit-font-smoothing: antialiased; 
 }
 
 html { 
@@ -34,20 +34,10 @@ html {
 }
 
 /* --- 2. Scrollbar Personalizada --- */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-::-webkit-scrollbar-track {
-    background: var(--m3-surface); 
-}
-::-webkit-scrollbar-thumb {
-    background: var(--m3-outline); 
-    border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: var(--m3-primary); 
-}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--m3-surface); }
+::-webkit-scrollbar-thumb { background: var(--m3-outline); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--m3-primary); }
 
 body {
     background-color: var(--m3-surface);
@@ -56,9 +46,7 @@ body {
     margin: 0;
     padding: 15px 20px;
     font-size: 14px;
-    line-height: 1.6; /* Melhoria na legibilidade */
-    
-    /* Animação de entrada */
+    line-height: 1.6;
     animation: fadeInPage 0.4s ease-in-out;
 }
 
@@ -100,7 +88,7 @@ body.home-page {
 .footer { margin-top: 10px; padding: 8px 0; border-top: 1px solid var(--m3-outline); text-align: center; color: var(--m3-on-surface-variant); font-size: 0.9em; }
 
 /* ==========================================================================
-   --- Toasts (ATUALIZADO PARA O NOVO SCRIPT) ---
+   --- Toasts (ATUALIZADO PARA CORES VIBRANTES) --- 
    ========================================================================== */
 #toast-container { 
     position: fixed; 
@@ -110,29 +98,30 @@ body.home-page {
     display: flex; 
     flex-direction: column; 
     gap: 10px; 
-    pointer-events: none; /* Permite clicar através do container vazio */
+    pointer-events: none; 
 }
 
 .toast { 
     /* Base comum */
-    background-color: #333; 
+    background-color: var(--m3-surface-container-high); /* Cor padrão caso não tenha tipo */
     color: #fff; 
     padding: 16px 20px; 
     border-radius: 8px; 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4); 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5); 
     font-size: 14px; 
-    font-weight: 500;
+    font-weight: 600; /* Texto um pouco mais grosso para leitura */
     opacity: 0; 
     transform: translateX(100%); 
     transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); 
     
-    /* Configuração de Layout */
+    /* Layout Flex para alinhar ícone e texto */
     display: flex;
     align-items: center;
-    gap: 10px;
-    border-left: 6px solid transparent; /* Tarja lateral */
-    pointer-events: auto; /* Restaura cliques no toast (para fechar) */
+    gap: 12px;
+    
+    pointer-events: auto; 
     cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.1); /* Borda sutil */
 }
 
 .toast.show { 
@@ -140,31 +129,32 @@ body.home-page {
     transform: translateX(0); 
 }
 
-/* Variação: ERRO (Problema detectado) */
+/* ATENÇÃO: Aqui definimos as cores de FUNDO (background-color) 
+   para garantir que o alerta seja visível instantaneamente.
+*/
+
+/* Variação: ERRO (Fundo Vermelho, Texto Branco) */
 .toast-error { 
-    background-color: #fff; /* Fundo branco para alto contraste */
-    color: var(--m3-color-error); 
-    border-left-color: var(--m3-color-error);
-    border: 1px solid #ffebee;
+    background-color: var(--m3-color-error); 
+    color: #fff; 
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-/* Variação: SUCESSO (Problema resolvido/Normalizado) */
+/* Variação: SUCESSO (Fundo Verde, Texto Branco) */
 .toast-success { 
-    background-color: #fff; 
-    color: var(--m3-color-success); 
-    border-left-color: var(--m3-color-success);
-    border: 1px solid #e8f5e9;
+    background-color: var(--m3-color-success); 
+    color: #fff; 
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-/* Variação: INFO (Padrão) */
+/* Variação: INFO (Padrão do tema) */
 .toast-info {
     background-color: var(--m3-surface-container-high);
     color: var(--m3-on-surface);
-    border-left-color: var(--m3-primary);
-    border: 1px solid var(--m3-outline);
+    border-left: 4px solid var(--m3-primary); /* Apenas uma tarja lateral */
 }
-
 /* ========================================================================== */
+
 
 /* --- Layout Principal e Menus --- */
 .main-content { display: flex; position: relative; }
@@ -182,7 +172,6 @@ body.home-page {
     border: 1px solid var(--m3-outline); 
 }
 
-/* 3. Micro-interações: Botões Principais */
 .main-menu-button { 
     background-color: var(--m3-primary); 
     color: var(--m3-on-primary); 
@@ -199,7 +188,7 @@ body.home-page {
 }
 .main-menu-button:hover { 
     background-color: var(--m3-primary-hover); 
-    transform: translateY(-2px); /* Elevação suave */
+    transform: translateY(-2px); 
     box-shadow: 0 6px 12px rgba(0,0,0,0.3);
 }
 
@@ -230,18 +219,13 @@ body.home-page {
     position: relative; 
     overflow: hidden; 
 }
-.back-button:hover { 
-    background-color: var(--m3-primary); 
-    color: var(--m3-on-primary);
-}
+.back-button:hover { background-color: var(--m3-primary); color: var(--m3-on-primary); }
 
 .sub-menu-block h3 { font-size: 1.8em; font-weight: 500; margin: 0 0 25px 0; padding-bottom: 10px; border-bottom: 1px solid var(--m3-outline); color: var(--m3-on-surface); }
 
 .menu-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; }
 
-/* Botões do Menu e Nav com Micro-interações */
-.menu-button, 
-.header-nav .nav-button { 
+.menu-button, .header-nav .nav-button { 
     background-color: var(--m3-surface-container-high); 
     color: var(--m3-on-surface); 
     padding: 12px 30px; 
@@ -254,14 +238,9 @@ body.home-page {
     position: relative; 
     overflow: hidden; 
 }
-.menu-button:hover, 
-.header-nav .nav-button:hover { 
-    background-color: var(--m3-state-layer-hover); 
-    transform: translateY(-2px);
-}
+.menu-button:hover, .header-nav .nav-button:hover { background-color: var(--m3-state-layer-hover); transform: translateY(-2px); }
 .header-nav .nav-button { font-size: 13.5px; padding: 9px 18px; }
 
-/* --- Grid e Cards --- */
 .grid-container {
     display: grid;
     gap: 20px;
@@ -271,7 +250,6 @@ body.home-page {
     width: 100%;
 }
 
-/* Micro-interação: Hover no Card */
 .overview-card { 
     background-color: var(--m3-surface-container); 
     border-radius: 12px; 
@@ -282,11 +260,7 @@ body.home-page {
     box-shadow: 0 2px 8px rgba(0,0,0,0.3); 
     transition: transform 0.3s var(--ease-bounce), box-shadow 0.3s ease, border-color 0.3s ease;
 }
-.overview-card:hover {
-    transform: translateY(-5px); /* Card "flutua" */
-    box-shadow: 0 8px 16px rgba(0,0,0,0.4);
-    border-color: var(--m3-primary); /* Sutil destaque na borda */
-}
+.overview-card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px rgba(0,0,0,0.4); border-color: var(--m3-primary); }
 
 .card-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; transition: background-color 0.5s ease; }
 .card-header h3 { margin: 0; font-size: 1.4em; font-weight: 500; color: var(--m3-on-surface); }
@@ -312,7 +286,6 @@ body.home-page {
 
 .card-body { flex: 1; display: flex; align-items: center; justify-content: space-between; padding: 15px; gap: 15px; }
 
-/* Stats e Gráficos */
 .card-stats { display: flex; flex-direction: column; gap: 8px; }
 .stat-item { display: flex; align-items: baseline; gap: 8px; }
 .stat-item span { font-size: 2em; font-weight: 700; line-height: 1; }
@@ -322,25 +295,11 @@ body.home-page {
 
 .donut-chart-container { position: relative; display: flex; justify-content: center; align-items: center; }
 .donut-chart { transform: rotate(-90deg); }
-.donut-chart circle { 
-    fill: none; 
-    stroke-width: 10;
-}
+.donut-chart circle { fill: none; stroke-width: 10; }
 .donut-chart .donut-bg { stroke: var(--m3-surface-container-high); }
-/* 5. Gráfico com bordas arredondadas (Melhoria Visual Sutil) */
-.donut-chart .donut-fg { 
-    stroke: var(--m3-color-success); 
-    stroke-linecap: round; /* Bordas arredondadas */
-    transition: stroke-dashoffset 1s ease-out; 
-}
-.chart-text { 
-    position: absolute; 
-    font-size: 1.6em; 
-    font-weight: 700; 
-    color: var(--m3-on-surface); 
-}
+.donut-chart .donut-fg { stroke: var(--m3-color-success); stroke-linecap: round; transition: stroke-dashoffset 1s ease-out; }
+.chart-text { position: absolute; font-size: 1.6em; font-weight: 700; color: var(--m3-on-surface); }
 
-/* --- Tabelas (Atualizado) --- */
 table { 
     width: 100%; 
     border-collapse: separate; 
@@ -352,27 +311,24 @@ table {
 }
 caption { font-size: 1.2em; font-weight: 500; padding: 12px; text-align: left; color: var(--m3-on-surface); }
 
-/* Edição 1: "white-space: nowrap" impede que o texto quebre para a linha de baixo */
 th, td { 
     padding: 10px 14px; 
     text-align: left; 
     border-top: 1px solid var(--m3-outline); 
     color: var(--m3-on-surface);
-    white-space: nowrap; /* Força o texto a ficar em uma única linha */
+    white-space: nowrap; 
 }
 
-/* Edição 2: Destaque para o cabeçalho (th) */
 th { 
-    font-weight: 700; /* Negrito */
-    color: var(--m3-on-surface); /* Cor mais clara/viva */
+    font-weight: 700; 
+    color: var(--m3-on-surface); 
     border-top: none;
-    text-transform: uppercase; /* Letras maiúsculas */
-    background-color: rgba(255, 255, 255, 0.05); /* Fundo sutil para destacar do corpo */
+    text-transform: uppercase; 
+    background-color: rgba(255, 255, 255, 0.05); 
     letter-spacing: 0.5px;
 }
 tr:first-child td { border-top: none; }
 
-/* Micro-interação: Hover na linha da tabela */
 tbody tr { transition: background-color 0.2s; }
 tbody tr:hover { background-color: var(--m3-state-layer-hover); }
 
@@ -381,33 +337,16 @@ tbody tr:hover { background-color: var(--m3-state-layer-hover); }
 .status-atencao { background-color: var(--m3-color-warning); color: #000; }
 .status-problema { background-color: var(--m3-color-error); color: #fff; }
 
-/* --- Animações --- */
 @keyframes fadeInPage {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- Responsividade --- */
 @media (max-width: 768px) {
     body { height: auto; }
-    
-    .header { 
-        flex-direction: column; 
-        justify-content: center; 
-        gap: 20px; 
-    }
+    .header { flex-direction: column; justify-content: center; gap: 20px; }
     .logo-title-group h1 { font-size: 1.5em; }
-    .header-nav { 
-        flex-direction: column-reverse; 
-        gap: 15px;
-    }
-
+    .header-nav { flex-direction: column-reverse; gap: 15px; }
     #main-menu-block { padding: 30px; min-width: auto; width: 100%; box-sizing: border-box; }
     .main-menu-button { min-width: auto; }
     .sub-menu-block { padding: 20px; }
