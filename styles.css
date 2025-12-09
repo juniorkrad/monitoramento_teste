@@ -70,9 +70,9 @@ body.home-page {
 .logo-title-group h1 { font-size: 1.5em; font-weight: 500; margin: 0; color: var(--m3-on-surface); }
 .header-nav { display: flex; align-items: center; gap: 15px; }
 
-/* Estilo do Botão Home/Voltar */
+/* --- ATUALIZAÇÃO DE COR DO BOTÃO HOME --- */
 .nav-button {
-    background-color: var(--m3-primary);
+    background-color: #371752; /* Cor mais escura solicitada */
     color: var(--m3-on-primary);
     padding: 8px 20px;
     border-radius: 20px;
@@ -85,10 +85,11 @@ body.home-page {
     display: inline-block;
 }
 .nav-button:hover {
-    background-color: var(--m3-primary-hover);
+    background-color: var(--m3-primary-hover); /* Ilumina ao passar o mouse */
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
+/* ---------------------------------------- */
 
 /* Timestamp Animado */
 .timestamp-badge { 
@@ -179,7 +180,7 @@ table {
     z-index: 1;
 }
 
-/* --- CORREÇÃO GERAL DE CÉLULAS (th e td) --- */
+/* --- CORREÇÃO GERAL DE CÉLULAS --- */
 th, td { 
     padding: 8px 10px; 
     text-align: left; 
@@ -187,9 +188,8 @@ th, td {
     color: var(--m3-on-surface); 
     font-size: 0.9em; 
     
-    /* AQUI ESTÁ A MÁGICA: */
-    white-space: nowrap;    /* 1. Proíbe quebra de linha (Adeus "Porta" em cima de "01") */
-    vertical-align: middle; /* 2. Alinha verticalmente no centro */
+    white-space: nowrap;    /* Proíbe quebra de linha */
+    vertical-align: middle; /* Alinha verticalmente */
 }
 
 /* Ajuste para não duplicar borda entre cabeçalho e primeira linha */
