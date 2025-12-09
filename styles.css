@@ -43,7 +43,7 @@ body {
     font-family: var(--font-family);
     margin: 0;
     padding: 10px 15px; 
-    font-size: 13.5px; /* Fonte compacta */
+    font-size: 13.5px;
     box-sizing: border-box;
     animation: fadeInPage 0.4s ease-in-out;
 }
@@ -151,29 +151,31 @@ caption {
     color: var(--m3-on-surface); 
     border-bottom: 1px solid var(--m3-outline); 
     
-    /* --- CORREÇÃO DA QUINA SUPERIOR (Crucial para o design não quebrar) --- */
-    border-radius: 10px 10px 0 0; 
+    /* MANTÉM O FUNDO ORIGINAL DA TABELA PARA O TÍTULO (PLACA XX) */
     background-color: var(--m3-surface-container); 
+    border-radius: 10px 10px 0 0; 
 }
 
 th, td { 
-    padding: 8px 10px; /* Padding compacto */
+    padding: 8px 10px; 
     text-align: left; 
     border-top: 1px solid var(--m3-outline); 
     color: var(--m3-on-surface); 
-    font-size: 0.9em; /* Fonte menor na tabela */
+    font-size: 0.9em; 
 }
 
-/* --- DESTAQUE DE CABEÇALHO (Pedido realizado) --- */
-th { 
+/* --- DESTAQUE APENAS PARA A LINHA DE COLUNAS (PORTA, UP, DOWN...) --- */
+thead th { 
     font-weight: 700; /* Negrito */
     text-transform: uppercase; /* Caixa Alta */
     letter-spacing: 0.5px; 
     color: var(--m3-on-surface);
-    background-color: var(--m3-surface-container-high); /* Fundo destacado */
-    border-top: none;
     
-    position: sticky; /* Cabeçalho fixo */
+    /* AQUI É A COR DE FUNDO DESTACADA QUE VOCÊ QUERIA */
+    background-color: var(--m3-surface-container-high); 
+    
+    border-top: none;
+    position: sticky;
     top: 0;
     z-index: 1;
     box-shadow: 0 1px 0 var(--m3-outline);
