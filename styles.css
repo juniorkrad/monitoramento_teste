@@ -17,7 +17,7 @@
     --font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
-/* --- MELHORIA: SCROLLBAR PERSONALIZADA (Mantendo as cores do tema) --- */
+/* --- SCROLLBAR PERSONALIZADA --- */
 ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -30,9 +30,8 @@
     border-radius: 5px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--m3-primary-hover); /* Destaque ao passar o mouse na barra */
+    background: var(--m3-primary-hover); 
 }
-/* ------------------------------------------------------------------- */
 
 html { 
     height: 100%; 
@@ -55,7 +54,7 @@ body.home-page {
     flex: 1; display: flex; flex-direction: column; min-height: 0;
 }
 
-/* Correção da barra de rolagem */
+/* Permite a rolagem na Home */
 .home-page .main-content { 
     overflow-y: auto; 
     padding-right: 5px; 
@@ -67,7 +66,7 @@ body.home-page {
 .header.home-header { justify-content: space-between; }
 .logo-title-group { display: flex; align-items: center; gap: 15px; }
 .logo-title-group img { width: 140px; height: auto; display: block; }
-.logo-title-group h1 { font-size: 1.7em; font-weight: 700; margin: 0; color: var(--m3-on-surface); } /* Ajuste: font-weight 700 */
+.logo-title-group h1 { font-size: 1.7em; font-weight: 500; margin: 0; color: var(--m3-on-surface); }
 .header-nav { display: flex; align-items: center; gap: 20px; }
 
 /* Timestamp Animado */
@@ -130,7 +129,7 @@ body.home-page {
     width: 100%;
 }
 
-/* --- ESTILOS DE TABELA (ATUALIZADO) --- */
+/* --- TABELAS ATUALIZADAS --- */
 table { 
     width: 100%; 
     border-collapse: separate; 
@@ -144,43 +143,41 @@ table {
 caption { font-size: 1.2em; font-weight: 700; padding: 12px; text-align: left; color: var(--m3-on-surface); border-bottom: 1px solid var(--m3-outline); }
 
 th, td { 
-    padding: 10px 12px; /* Aumentei um pouco o espaçamento */
+    padding: 10px 12px; 
     text-align: left; 
     border-top: 1px solid var(--m3-outline); 
     color: var(--m3-on-surface); 
 }
 
-/* --- DESTAQUE PARA O CABEÇALHO (Seu Pedido) --- */
+/* --- DESTAQUE CABEÇALHO (Sticky + Negrito + Caixa Alta) --- */
 th { 
-    /* Destaque Visual */
     font-weight: 700; /* Negrito */
-    text-transform: uppercase; /* CAIXA ALTA */
-    letter-spacing: 0.5px; /* Espaçamento entre letras */
-    background-color: var(--m3-surface-container-high); /* Fundo destacado (mais claro que a tabela) */
-    color: var(--m3-on-surface); /* Cor do texto mantida */
-    
+    text-transform: uppercase; /* Caixa Alta */
+    letter-spacing: 0.5px; 
+    color: var(--m3-on-surface);
+    background-color: var(--m3-surface-container-high); /* Fundo destacado */
     border-top: none;
     
-    /* Sticky Header (Fixo no topo) */
+    /* Fixar no topo ao rolar */
     position: sticky;
     top: 0;
     z-index: 1;
-    box-shadow: 0 1px 0 var(--m3-outline); /* Borda inferior quando rola */
+    box-shadow: 0 1px 0 var(--m3-outline);
 }
 
-/* --- EFEITO HOVER NAS LINHAS (Melhoria de Leitura) --- */
+/* --- EFEITO HOVER NAS LINHAS --- */
 tr:hover td {
-    background-color: var(--m3-state-layer-hover); /* Ilumina a linha ao passar o mouse */
+    background-color: var(--m3-state-layer-hover); /* Efeito brilho */
 }
 
 tr:first-child td { border-top: none; }
 
-.status { font-weight: bold; padding: 4px 10px; border-radius: 16px; display: inline-block; font-size: 0.9em; text-transform: uppercase; }
+.status { font-weight: bold; padding: 4px 10px; border-radius: 16px; display: inline-block; font-size: 0.9em; }
 .status-normal { background-color: var(--m3-color-success); color: #fff; }
 .status-atencao { background-color: var(--m3-color-warning); color: #000; }
 .status-problema { background-color: var(--m3-color-error); color: #fff; }
 
-/* --- CARDS (Melhoria de Interatividade) --- */
+/* Cards Dashboard */
 .overview-card { 
     background-color: var(--m3-surface-container); 
     border-radius: 12px; 
@@ -189,12 +186,13 @@ tr:first-child td { border-top: none; }
     display: flex; 
     flex-direction: column; 
     box-shadow: 0 2px 8px rgba(0,0,0,0.3); 
-    transition: transform 0.2s ease, border-color 0.2s ease; /* Animação */
+    transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
+/* Efeito Hover no Card */
 .overview-card:hover {
-    transform: translateY(-4px); /* Levanta levemente */
-    border-color: var(--m3-primary); /* Borda brilha na cor primária */
+    transform: translateY(-4px);
+    border-color: var(--m3-primary);
 }
 
 .card-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; transition: background-color 0.5s ease; }
@@ -216,51 +214,35 @@ tr:first-child td { border-top: none; }
 .stat-item label { font-size: 1.1em; color: var(--m3-on-surface-variant); }
 .stat-item.online span { color: var(--m3-color-success); }
 .stat-item.offline span { color: var(--m3-color-error); }
+
+/* --- GRÁFICO (RESTAURADO PARA ORIGINAL) --- */
 .donut-chart-container { position: relative; display: flex; justify-content: center; align-items: center; }
 .donut-chart { transform: rotate(-90deg); }
-.donut-chart circle { 
-    fill: none; 
-    stroke-width: 10;
+.donut-chart circle { 
+    fill: none; 
+    stroke-width: 10; 
 }
 .donut-chart .donut-bg { stroke: var(--m3-surface-container-high); }
 .donut-chart .donut-fg { stroke: var(--m3-color-success); stroke-linecap: round; transition: stroke-dashoffset 1s ease-out; }
-.chart-text { 
-    position: absolute; 
-    font-size: 1.6em;
-    font-weight: 700; 
-    color: var(--m3-on-surface); 
+.chart-text { 
+    position: absolute; 
+    font-size: 1.6em;
+    font-weight: 700; 
+    color: var(--m3-on-surface); 
 }
+/* ----------------------------------------- */
 
-/* Define a animação de fade-in */
 @keyframes fadeInPage {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* SEÇÃO DE RESPONSIVIDADE */
 @media (max-width: 768px) {
-    body { height: auto; }
-    
-    .header { 
-        flex-direction: column; 
-        justify-content: center; 
-        gap: 20px; 
-    }
-    .logo-title-group h1 { 
-        font-size: 1.5em; 
-    }
-    .header-nav { 
-        flex-direction: column-reverse; 
-        gap: 15px;
-    }
-
-    #main-menu-block { padding: 30px; min-width: auto; width: 100%; box-sizing: border-box; }
-    .main-menu-button { min-width: auto; }
-    .sub-menu-block { padding: 20px; }
+    body { height: auto; }
+    .header { flex-direction: column; justify-content: center; gap: 20px; }
+    .logo-title-group h1 { font-size: 1.5em; }
+    .header-nav { flex-direction: column-reverse; gap: 15px; }
+    #main-menu-block { padding: 30px; min-width: auto; width: 100%; box-sizing: border-box; }
+    .main-menu-button { min-width: auto; }
+    .sub-menu-block { padding: 20px; }
 }
