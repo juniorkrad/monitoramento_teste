@@ -1,123 +1,79 @@
 // ==============================================================================
-// notifications.js - Sistema de Monitoramento e Alertas OLT (Corrigido)
+// notifications.js - Sistema Central de Alertas (Toast Notifications)
 // ==============================================================================
 
-class NotificationSystem {
-    constructor() {
-        this.currentProblems = new Set();
-        this.containerId = 'toast-container';
-        // Não chamamos ensureContainerExists aqui para evitar erro de DOM não carregado
-    }
+// "Memória" global para armazenar os problemas e evitar alertas repetidos.
+let currentProblems = new Set();
 
-    /**
-     * Inicializa o sistema. Deve ser chamado após o DOM estar pronto.
-     */
-    init() {
-        this.ensureContainerExists();
-        console.log("Sistema de Notificações Iniciado.");
-    }
+/**
+ * Cria e exibe um pop-up (toast) na tela.
+ * @param {string} message - A mensagem a ser exibida.
+ * @param {string} type - A classe CSS do tipo (ex: 'toast-error' ou 'toast-success').
+ */
+function showToast(message, type = '') {
+    const container = document.getElementById('toast-container');
+    
+    // Se o container ainda não existir (segurança), cria ele rapidinho para não dar erro
+    if (!container) return; 
 
-    ensureContainerExists() {
-        if (!document.getElementById(this.containerId)) {
-            // Verifica se o body existe antes de tentar anexar
-            if (!document.body) {
-                console.error("Erro: O script de notificação foi carregado antes do <body>.");
-                return;
-            }
-            const container = document.createElement('div');
-            container.id = this.containerId;
-            // O estilo agora é controlado pelo CSS que te passei anteriormente, 
-            // mas mantemos um fallback aqui caso o CSS falhe.
-            container.style.position = 'fixed';
-            container.style.top = '20px';
-            container.style.right = '20px';
-            container.style.zIndex = '9999';
-            document.body.appendChild(container);
-        }
-    }
+    const toast = document.createElement('div');
+    // Aplica a classe base 'toast' e o tipo específico (error ou success)
+    toast.className = `toast ${type}`;
+    
+    // Adiciona um ícone simples baseado no tipo para ficar visualmente claro
+    const icon = type.includes('error') ? '⚠️' : '✅';
+    toast.innerHTML = `<strong>${icon}</strong> ${message}`;
+    
+    container.appendChild(toast);
+    
+    // Animação de entrada
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
 
-    showToast(message, type = 'info') {
-        const container = document.getElementById(this.containerId);
-        if (!container) return; // Segurança extra
-
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        
-        // Ícones
-        const icon = type === 'error' ? '⚠️' : (type === 'success' ? '✅' : 'ℹ️');
-        toast.innerHTML = `<strong>${icon}</strong> <span>${message}</span>`;
-
-        container.appendChild(toast);
-
-        // Animação
-        requestAnimationFrame(() => {
-            toast.classList.add('show');
-        });
-
-        // Remover após 5s
-        setTimeout(() => {
-            this.removeToast(toast);
-        }, 5000);
-
-        toast.onclick = () => this.removeToast(toast);
-    }
-
-    removeToast(toast) {
+    // Remove o toast após 5 segundos
+    setTimeout(() => {
         toast.classList.remove('show');
         toast.addEventListener('transitionend', () => {
             if (toast.parentElement) toast.remove();
         });
-    }
-
-    formatMessage(problemKey) {
-        try {
-            const [placa, porta] = problemKey.split('/');
-            const placaFmt = placa.replace(/\D/g, '').padStart(2, '0'); 
-            const portaFmt = porta.padStart(2, '0');
-            return `PLACA ${placaFmt} / PORTA ${portaFmt}`;
-        } catch (e) {
-            return problemKey; // Retorna o texto original se der erro na formatação
-        }
-    }
-
-    updateStatus(dataInput) {
-        // BLINDAGEM: Converte Array para Set se necessário
-        let newProblems;
-        if (Array.isArray(dataInput)) {
-            newProblems = new Set(dataInput);
-        } else if (dataInput instanceof Set) {
-            newProblems = dataInput;
-        } else {
-            console.error("Formato de dados inválido. Esperado Array ou Set.");
-            return;
-        }
-
-        // 1. Detectar NOVOS problemas
-        for (const problem of newProblems) {
-            if (!this.currentProblems.has(problem)) {
-                this.showToast(`FALHA: ${this.formatMessage(problem)}`, 'error');
-            }
-        }
-
-        // 2. Detectar problemas RESOLVIDOS
-        for (const problem of this.currentProblems) {
-            if (!newProblems.has(problem)) {
-                this.showToast(`NORMALIZADO: ${this.formatMessage(problem)}`, 'success');
-            }
-        }
-
-        this.currentProblems = newProblems;
-    }
+    }, 5000);
 }
 
-// ==============================================================================
-// INICIALIZAÇÃO SEGURA
-// ==============================================================================
+/**
+ * Helper simples para formatar o texto (Evita repetir código)
+ */
+function formatarTextoOLT(problemKey) {
+    const [placa, porta] = problemKey.split('/');
+    // Remove qualquer texto (GPON, EPON) e deixa só numeros, com 2 digitos
+    const placaFmt = placa.replace(/\D/g, '').padStart(2, '0'); 
+    const portaFmt = porta.padStart(2, '0');
+    return `PLACA ${placaFmt} / PORTA ${portaFmt}`;
+}
 
-// Cria a instância globalmente
-window.monitorAlerts = new NotificationSystem();
-
-// Garante que o container só seja criado quando a página terminar de carregar
-document.addEventListener('DOMContentLoaded', () => {
-    window.monitorAlerts.init();
-});
+/**
+ * Compara a nova lista de problemas com a memória.
+ * Dispara alertas para NOVOS problemas e para NORMALIZAÇÕES.
+ * @param {Set} newProblems - Set com os problemas atuais.
+ */
+function checkAndNotifyForNewProblems(newProblems) {
+    
+    // 1. Verifica se entrou um NOVO problema (Vermelho)
+    for (const problemKey of newProblems) {
+        if (!currentProblems.has(problemKey)) {
+            const msg = formatarTextoOLT(problemKey);
+            showToast(`FALHA: ${msg}`, 'toast-error');
+        }
+    }
+    
+    // 2. Verifica se um problema SAIU (Verde/Normalizado) - [ATUALIZAÇÃO QUE VOCÊ PEDIU]
+    for (const problemKey of currentProblems) {
+        if (!newProblems.has(problemKey)) {
+            const msg = formatarTextoOLT(problemKey);
+            showToast(`NORMALIZADO: ${msg}`, 'toast-success');
+        }
+    }
+    
+    // Atualiza a memória
+    currentProblems = newProblems;
+}
