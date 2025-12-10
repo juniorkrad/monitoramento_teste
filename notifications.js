@@ -1,13 +1,11 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 2.0 - Proactive)
+// notifications.js - Sistema Central de Alertas (Versão 3.0 - Global Aware)
 // ==============================================================================
 
 let currentProblems = new Set();
 
-// Som de Alerta (Beep curto em Base64 para não depender de arquivos externos)
-const alertSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"); // Som vazio por padrão, substitua se tiver um arquivo real ou use um link.
-// Dica: Para um beep real, recomendo baixar um arquivo 'beep.mp3' curto e colocar na pasta.
-// Exemplo: const alertSound = new Audio("beep.mp3");
+// Som de Alerta (Beep curto)
+const alertSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"); 
 
 /**
  * Cria e exibe um pop-up (toast) na tela.
@@ -21,11 +19,9 @@ function showToast(message, type = '') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     
-    // Adiciona ícones baseados no tipo
     const icon = type === 'problem' ? '⚠️ ' : type === 'success' ? '✅ ' : 'ℹ️ ';
     toast.innerHTML = `<strong>${icon}</strong> ${message}`;
     
-    // Permite fechar ao clicar
     toast.onclick = () => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 500);
@@ -33,21 +29,16 @@ function showToast(message, type = '') {
 
     container.appendChild(toast);
     
-    // Toca som apenas se for problema crítico
     if (type === 'problem') {
-        // O navegador exige interação do usuário antes de tocar som.
-        // Isso vai funcionar após o primeiro clique do usuário na página.
         try { alertSound.play().catch(e => {}); } catch(e){} 
     }
 
-    // Animação de entrada
     setTimeout(() => {
         toast.classList.add('show');
     }, 10);
 
-    // Remove automaticamente após 7 segundos (aumentei um pouco para dar tempo de ler)
     setTimeout(() => {
-        if (toast.parentElement) { // Verifica se já não foi removido pelo clique
+        if (toast.parentElement) {
             toast.classList.remove('show');
             toast.addEventListener('transitionend', () => toast.remove());
         }
@@ -67,22 +58,38 @@ function checkAndNotifyForNewProblems(newProblems) {
     }
 
     // 2. Detectar Problemas RESOLVIDOS (Voltou)
-    // Se estava na lista antiga (current) mas NÃO está na nova (new), então voltou!
     for (const oldProblem of currentProblems) {
         if (!newProblems.has(oldProblem)) {
             const msg = formatMessage(oldProblem);
-            showToast(`NORMALIZADO: ${msg}`, 'status-normal'); // Usa a cor verde do seu CSS (status-normal ou success)
+            showToast(`NORMALIZADO: ${msg}`, 'status-normal'); 
         }
     }
     
-    // Atualiza a memória
     currentProblems = newProblems;
 }
 
 // Função auxiliar para formatar o texto da porta
+// AGORA PREPARADA PARA RECEBER O NOME DA OLT DA HOME PAGE
 function formatMessage(key) {
-    const [placa, porta] = key.split('/');
+    let prefixoOlt = "";
+    let restoDaChave = key;
+
+    // Verifica se a chave começa com [NOME] (padrão que criamos no index.html)
+    // Ex: "[HEL-1] 1/4"
+    const oltMatch = key.match(/^\[(.*?)\]\s*(.*)$/);
+
+    if (oltMatch) {
+        prefixoOlt = `<strong>${oltMatch[1]}</strong>: `; // Ex: "HEL-1: "
+        restoDaChave = oltMatch[2]; // Ex: "1/4"
+    }
+
+    const [placa, porta] = restoDaChave.split('/');
+    
+    // Tratamento de segurança caso venha dados estranhos
+    if (!placa || !porta) return key; 
+
     const placaFmt = placa.replace('GPON', '').padStart(2, '0');
     const portaFmt = porta.padStart(2, '0');
-    return `PLACA ${placaFmt} / PORTA ${portaFmt}`;
+    
+    return `${prefixoOlt}PLACA ${placaFmt} / PORTA ${portaFmt}`;
 }

@@ -11,7 +11,9 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
-<body> <div id="toast-container"></div>
+<body>
+
+    <div id="toast-container"></div>
 
     <div class="page-container">
         <div id="header-placeholder"></div>
@@ -34,27 +36,24 @@
             { id: 'PQA-1', sheetTab: 'PQA1', type: 'nokia' },
             { id: 'PSV-1', sheetTab: 'PSV1', type: 'nokia' },
             { id: 'MGP',   sheetTab: 'MGP',  type: 'nokia' },
-            { id: 'LTXV-1', sheetTab: 'LTXV1', type: 'furukawa' },
-            { id: 'LTXV-2', sheetTab: 'LTXV2', type: 'furukawa' },
-            { id: 'PQA-2',  sheetTab: 'PQA2',  type: 'furukawa' },
-            { id: 'PQA-3',  sheetTab: 'PQA3',  type: 'furukawa' },
-            { id: 'SB-1',   sheetTab: 'SB1',   type: 'furukawa' },
-            { id: 'SB-2',   sheetTab: 'SB2',   type: 'furukawa' },
-            { id: 'SB-3',   sheetTab: 'SB3',   type: 'furukawa' },
-            { id: 'PSV-7',  sheetTab: 'PSV7',  type: 'furukawa' },
-            { id: 'SBO-1',  sheetTab: 'SBO1',  type: 'furukawa' },
-            { id: 'SBO-2',  sheetTab: 'SBO2',  type: 'furukawa' },
-            { id: 'SBO-3',  sheetTab: 'SBO3',  type: 'furukawa' },
-            { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa' },
+            { id: 'LTXV-1', sheetTab: 'LTXV1', type: 'furukawa-10' }, // Ajustei type para diferenciar lógica
+            { id: 'LTXV-2', sheetTab: 'LTXV2', type: 'furukawa-2' },
+            { id: 'PQA-2',  sheetTab: 'PQA2',  type: 'furukawa-2' },
+            { id: 'PQA-3',  sheetTab: 'PQA3',  type: 'furukawa-2' },
+            { id: 'SB-1',   sheetTab: 'SB1',   type: 'furukawa-2' },
+            { id: 'SB-2',   sheetTab: 'SB2',   type: 'furukawa-2' },
+            { id: 'SB-3',   sheetTab: 'SB3',   type: 'furukawa-2' },
+            { id: 'PSV-7',  sheetTab: 'PSV7',  type: 'furukawa-2' },
+            { id: 'SBO-1',  sheetTab: 'SBO1',  type: 'furukawa-10' },
+            { id: 'SBO-2',  sheetTab: 'SBO2',  type: 'furukawa-2' },
+            { id: 'SBO-3',  sheetTab: 'SBO3',  type: 'furukawa-2' },
+            { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa-2' },
         ];
 
         const API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
         const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
         const REFRESH_INTERVAL_SECONDS = 300;
         
-        // Removemos a declaração de currentProblems e showToast aqui
-        // pois elas já existem no notifications.js
-
         function createCardPlaceholders() {
             const grid = document.getElementById('overview-grid');
             grid.innerHTML = '';
@@ -76,33 +75,91 @@
             });
         }
         
+        // Função que processa cada OLT, conta totais e IDENTIFICA PROBLEMAS
         async function fetchOltData(olt) {
+            // Nokia usa até coluna E, Furukawa até C
             const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:C`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
+            
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`Falha ao buscar dados da aba ${olt.sheetTab}`);
                 const data = await response.json();
                 const rows = (data.values || []).slice(1);
-                let onlineCount = 0;
-                let offlineCount = 0;
                 
+                // Variáveis para o Card (Totais)
+                let totalOnline = 0;
+                let totalOffline = 0;
+
+                // Variáveis para Análise de Problemas (Agrupamento por porta)
+                const portData = {};
+                const localProblems = new Set();
+
                 rows.forEach(columns => {
                     if (columns.length === 0) return;
+                    
+                    let placa, porta, isOnline;
+
+                    // Lógica de parsing (igual ao olt-engine.js)
                     if (olt.type === 'nokia') {
                         const status = columns[4] || '';
-                        if (status.trim().toLowerCase().includes('up')) onlineCount++;
-                        else offlineCount++;
-                    } else {
+                        const pon = columns[0];
+                        isOnline = status.trim().toLowerCase().includes('up');
+                        
+                        if (pon) {
+                            const parts = pon.split('/');
+                            if (parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
+                        }
+
+                    } else { // Furukawa
                         const status = columns[2] || '';
-                        if (status.trim().toLowerCase() === 'active') onlineCount++;
-                        else if (status.trim().toLowerCase() === 'inactive') offlineCount++;
+                        const portStr = columns[0];
+                        isOnline = status.trim().toLowerCase() === 'active';
+
+                        if (portStr) {
+                            if (olt.type === 'furukawa-10') {
+                                const parts = portStr.split('/');
+                                if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
+                            } else { // furukawa-2
+                                const match = portStr.match(/GPON(\d+)\/(\d+)/);
+                                if (match) { placa = match[1]; porta = match[2]; }
+                            }
+                        }
+                    }
+
+                    // Contagem Total
+                    if (isOnline) totalOnline++; else totalOffline++;
+
+                    // Agrupamento para Alerta
+                    if (placa && porta) {
+                        const portKey = `${placa}/${porta}`;
+                        if (!portData[portKey]) portData[portKey] = { off: 0, total: 0 };
+                        portData[portKey].total++;
+                        if (!isOnline) portData[portKey].off++;
                     }
                 });
-                updateCardUI(olt.id, { onlineCount, offlineCount, type: olt.type });
+
+                // Analisa se há problemas nesta OLT
+                for (const key in portData) {
+                    const { off, total } = portData[key];
+                    // Regra de Ouro: > 16 offline OU > 50% offline
+                    if (off > 16 || (total > 0 && (off / total) >= 0.5)) {
+                        // Cria uma chave única: "NOME-OLT [Placa]/[Porta]"
+                        // Usamos colchetes para separar visualmente na notificação
+                        localProblems.add(`[${olt.id}] ${key}`);
+                    }
+                }
+
+                // Atualiza o Card Visual
+                updateCardUI(olt.id, { onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type });
+                
+                // Retorna os problemas encontrados nesta OLT
+                return localProblems;
+
             } catch (error) {
                 console.error(`Erro para OLT ${olt.id}:`, error);
                 updateCardUI(olt.id, { error: true });
+                return new Set(); // Retorna vazio em caso de erro
             }
         }
         
@@ -121,13 +178,9 @@
             const header = card.querySelector('.card-header');
             header.classList.remove('status-normal', 'status-atencao', 'status-problema');
             
-            if (offlinePercent > 10) {
-                 header.classList.add('status-problema');
-            } else if (offlinePercent > 5) {
-                 header.classList.add('status-atencao');
-            } else {
-                 header.classList.add('status-normal');
-            }
+            if (offlinePercent > 10) { header.classList.add('status-problema'); }
+            else if (offlinePercent > 5) { header.classList.add('status-atencao'); }
+            else { header.classList.add('status-normal'); }
             
             const statsHtml = `<div class="stat-item"><span>${total}</span><label>Total</label></div><div class="stat-item online"><span>${onlineCount}</span><label>${type === 'nokia' ? 'Up' : 'Active'}</label></div><div class="stat-item offline"><span>${offlineCount}</span><label>${type === 'nokia' ? 'Down' : 'Inactive'}</label></div>`;
             
@@ -153,23 +206,39 @@
         async function runOverview() {
             const timestampEl = document.getElementById('update-timestamp');
             if (timestampEl) {
-                // Lógica melhorada para não sobrescrever "Erro de conexão" se já existir
                 if (timestampEl.textContent === "" || timestampEl.textContent === "Aguardando dados...") {
                     timestampEl.textContent = "Buscando dados...";
                 }
             }
             
-            createCardPlaceholders();
+            // Se for a primeira vez, cria os cards
+            if(document.getElementById('overview-grid').innerHTML.trim() === "") {
+                createCardPlaceholders();
+            }
             
+            // Dispara todas as requisições em paralelo e AGUARDA OS RESULTADOS
             const promises = oltsConfig.map(olt => fetchOltData(olt));
-            await Promise.all(promises);
+            const results = await Promise.all(promises);
+            
+            // --- LÓGICA DE ALERTAS GLOBAIS ---
+            // Junta todos os problemas encontrados em todas as OLTs em um único Set
+            const allProblems = new Set();
+            results.forEach(oltProblems => {
+                oltProblems.forEach(problem => allProblems.add(problem));
+            });
+
+            // Chama o gerenciador de notificações (notifications.js)
+            // Ele vai comparar com a memória anterior e apitar se houver novidade
+            if (typeof checkAndNotifyForNewProblems === 'function') {
+                checkAndNotifyForNewProblems(allProblems);
+            }
+            // ---------------------------------
             
             const now = new Date();
             const timestampText = `Atualizado em: ${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR')}`;
             
             if(timestampEl) {
                 timestampEl.textContent = timestampText;
-                // Adiciona o efeito visual de "piscar" (conectado ao novo layout.js/styles.css)
                 timestampEl.classList.remove('updated-anim');
                 void timestampEl.offsetWidth; 
                 timestampEl.classList.add('updated-anim');
@@ -177,11 +246,8 @@
         }
         
         document.addEventListener('DOMContentLoaded', () => {
-            loadHeader({
-                title: "Painel de Monitoramento"
-            });
+            loadHeader({ title: "Painel de Monitoramento" });
             loadFooter();
-
             runOverview();
             setInterval(runOverview, REFRESH_INTERVAL_SECONDS * 1000);
         });
