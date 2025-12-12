@@ -155,7 +155,7 @@ table {
     background-color: var(--m3-surface-container); 
     color: var(--m3-on-surface); 
     font-size: 1.1em;
-    padding: 10px 5px; /* Reduzi o padding lateral */
+    padding: 10px 12px;
     border-top: none; 
     border-bottom: 1px solid var(--m3-outline);
     text-align: left;
@@ -170,7 +170,7 @@ table {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-size: 0.85em;
-    padding: 8px 4px; /* --- REDUÇÃO DE ESPAÇO: DE 10px PARA 4px --- */
+    padding: 8px 10px;
     
     border-top: none; 
     border-bottom: 1px solid var(--m3-outline);
@@ -183,7 +183,7 @@ table {
 
 /* --- CORREÇÃO GERAL DE CÉLULAS --- */
 th, td { 
-    padding: 8px 4px; /* --- REDUÇÃO DE ESPAÇO: DE 10px PARA 4px --- */
+    padding: 8px 10px; 
     text-align: left; 
     border-top: 1px solid var(--m3-outline); 
     color: var(--m3-on-surface); 
@@ -204,13 +204,13 @@ tbody tr:hover td {
 /* --- NOVO ESTILO: BADGE PARA A COLUNA CIRCUITO --- */
 .circuit-badge {
     display: inline-block;
-    background-color: var(--m3-outline); 
+    background-color: var(--m3-outline); /* Cor roxa intermediária */
     color: var(--m3-on-primary);
     border-radius: 20px;
-    padding: 3px 8px; /* --- REDUÇÃO NO BADGE TAMBÉM --- */
+    padding: 3px 12px;
     font-weight: 500;
     font-size: 0.9em;
-    min-width: 20px; 
+    min-width: 20px; /* Garante que não suma se vazio */
     text-align: center;
 }
 /* ------------------------------------------------ */
