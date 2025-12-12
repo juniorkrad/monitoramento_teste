@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão Atualizada (Lógica Nokia vs Furukawa Separada)
+// olt-engine.js - Versão Final (Tamanhos de Modal Dinâmicos)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -51,7 +51,7 @@ function startOltMonitoring(config) {
         const modalHTML = `
             ${modalStyles}
             <div id="detail-modal" class="modal-overlay" onclick="closeModal(event)">
-                <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-content">
                     <div class="modal-header">
                         <h3 id="modal-title">Detalhes</h3>
                         <button class="close-modal" onclick="closeModal()">×</button>
@@ -242,7 +242,6 @@ function startOltMonitoring(config) {
 
                 if (statusClass === 'status-problema') newProblems.add(portKey);
 
-                // Passamos o config.type para a função openCircuitClients saber o que desenhar
                 const htmlRow = `
                     <tr>
                         <td>Porta ${porta.padStart(2, '0')}</td>
@@ -288,9 +287,13 @@ function closeModal(event) {
     document.getElementById('detail-modal').style.display = 'none';
 }
 
-// Abre detalhes de Estatísticas
+// Abre detalhes de Estatísticas (MODAL PEQUENO)
 function openPortDetails(placa, porta, online, offline, total) {
     const modal = document.getElementById('detail-modal');
+    
+    // Remove classe de modal grande se existir
+    document.querySelector('.modal-content').classList.remove('modal-large');
+
     document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta} - Status`;
     
     document.getElementById('view-stats').style.display = 'flex';
@@ -302,9 +305,13 @@ function openPortDetails(placa, porta, online, offline, total) {
     modal.style.display = 'flex';
 }
 
-// Abre lista de Clientes (Dinâmica por Tipo)
+// Abre lista de Clientes (MODAL GRANDE)
 function openCircuitClients(placa, porta, circuitoNome, oltType) {
     const modal = document.getElementById('detail-modal');
+    
+    // Adiciona classe para expandir o modal
+    document.querySelector('.modal-content').classList.add('modal-large');
+
     document.getElementById('modal-title').textContent = `Circuito: ${circuitoNome} (Placa ${placa}/Porta ${porta})`;
 
     document.getElementById('view-stats').style.display = 'none';

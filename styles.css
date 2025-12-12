@@ -269,18 +269,30 @@ tbody td:first-child {
     animation: fadeInPage 0.2s ease-out;
 }
 
+/* --- ESTILO PADRÃO (PEQUENO/STATUS) --- */
 .modal-content {
     background-color: var(--m3-surface-container);
     border: 1px solid var(--m3-outline);
     border-radius: 16px;
     width: 90%;
-    max-width: 400px; /* Padrão (estatísticas). JS pode substituir para 800px para tabela */
+    
+    /* Configuração Padrão (Pequeno para Status) */
+    max-width: 400px; 
+    
     padding: 0;
     box-shadow: 0 20px 50px rgba(0,0,0,0.6);
     overflow: hidden;
     transform: scale(0.9);
     animation: popIn 0.2s forwards;
-    transition: max-width 0.3s ease; /* Animação suave se a largura mudar */
+    
+    /* Animação suave ao trocar de tamanho */
+    transition: max-width 0.3s ease-in-out, width 0.3s ease-in-out;
+}
+
+/* --- ESTILO EXPANDIDO (GRANDE/CLIENTES) --- */
+.modal-content.modal-large {
+    max-width: 900px; /* Bem mais largo para caber a tabela */
+    width: 95%; /* Ocupa quase a tela toda em dispositivos menores */
 }
 
 @keyframes popIn {
