@@ -1,28 +1,30 @@
 // ==============================================================================
-// olt-engine.js - Motor com Mapeamento Matricial (Linha x Coluna)
+// olt-engine.js - Motor com Mapeamento Matricial (Corrigido)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
 const ENGINE_SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
 const ENGINE_REFRESH_SECONDS = 300;
 
-const TAB_CIRCUITOS = 'CIRCUITOS'; // Nome da aba de informações
+const TAB_CIRCUITOS = 'CIRCUITOS'; // Nome EXATO da aba na planilha
+const TABLE_HEADER_NAME = 'Circuitos'; // Nome que aparece no site
 
-// --- MAPA DE COLUNAS (Índice Base 0: A=0, B=1, C=2...) ---
+// --- MAPA DE COLUNAS (Baseado na sua lista) ---
+// A=0, B=1, C=2, D=3, ... Z=25, AA=26, AB=27...
 const OLT_COLUMN_MAP = {
     'HEL-1': 1,  // Coluna B
     'HEL-2': 3,  // Coluna D
-    'MGP': 5,    // Coluna F
+    'MGP':   5,  // Coluna F
     'PQA-1': 7,  // Coluna H
     'PSV-1': 9,  // Coluna J
     'PSV-7': 11, // Coluna L
     'SBO-2': 13, // Coluna N
     'SBO-3': 15, // Coluna P
     'SBO-4': 17, // Coluna R
-    'SB-1': 19,  // Coluna T
-    'SB-2': 21,  // Coluna V
-    'SB-3': 23,  // Coluna X
-    'PQA-2': 25, // Coluna Z (Assumido Z, pois X já era SB3)
+    'SB-1':  19, // Coluna T
+    'SB-2':  21, // Coluna V
+    'SB-3':  23, // Coluna X (Confirme se SB3 e PQA2 compartilham X ou se foi erro de digitação)
+    'PQA-2': 25, // Coluna Z (Ajustado para Z seguindo a lógica par)
     'PQA-3': 27, // Coluna AB
     'LTXV-2': 29,// Coluna AD
     'LTXV-1': 31,// Coluna AF
@@ -43,8 +45,8 @@ function startOltMonitoring(config) {
                 ? '<th>Porta</th><th>UP</th><th>DOWN</th><th>Total</th>'
                 : '<th>Porta</th><th>Active</th><th>Inactive</th><th>Total</th>';
             
-            // Adicionamos a coluna "Observações"
-            const colunasFinais = `<th>Observações</th><th>Status</th>`;
+            // Coluna nova com o nome corrigido
+            const colunasFinais = `<th>${TABLE_HEADER_NAME}</th><th>Status</th>`;
 
             container.innerHTML += `
                 <table>
@@ -65,51 +67,61 @@ function startOltMonitoring(config) {
 
     // 2. Busca dados da aba CIRCUITOS
     async function fetchCircuitosData() {
-        // Busca de A até AK (cobre até SBO1 na coluna AH)
+        // Busca até a coluna AK para garantir que pegamos tudo
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${TAB_CIRCUITOS}!A:AK?key=${ENGINE_API_KEY}`;
         try {
             const response = await fetch(url);
-            if (!response.ok) return [];
+            if (!response.ok) {
+                console.error("Erro ao ler aba CIRCUITOS. Verifique o nome da aba.");
+                return [];
+            }
             const data = await response.json();
-            // Retorna todas as linhas (removemos o cabeçalho depois na lógica de índice)
             return data.values || [];
         } catch (e) {
-            console.warn("Erro ao carregar CIRCUITOS", e);
+            console.warn("Erro de rede ao carregar CIRCUITOS", e);
             return [];
         }
     }
 
-    // 3. Função Auxiliar: Calcula qual linha da planilha contém a info da porta
+    // 3. Função Matemática: Calcula a linha exata baseada na porta
     function getCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
+        // Pega o índice da coluna baseado no Mapa
         const colIndex = OLT_COLUMN_MAP[oltId];
+        
+        // Se a OLT não estiver no mapa ou planilha vazia, retorna traço
         if (colIndex === undefined || !rowsCircuitos.length) return "-";
 
         let rowIndex = -1;
         const p = parseInt(porta);
         const sl = parseInt(placa);
 
-        // A planilha começa na linha 2 (index 1 do array rowsCircuitos)
-        // A lógica abaixo calcula o deslocamento baseada na geometria da OLT
+        // LÓGICA DE LINHAS (Baseada na informação: Linha 2 é a primeira porta)
+        // O array 'rowsCircuitos' começa no índice 0 (que é a Linha 1 do Excel)
+        // Então Linha 2 do Excel = Índice 1 do Array.
         
         if (type === 'nokia') {
             // Nokia: 16 portas por placa.
-            // Placa 1: linhas 0-15 (na verdade indices de array relativos ao inicio dos dados)
-            // Índice = (Placa - 1) * 16 + (Porta - 1) + 1 (pula cabeçalho)
+            // Placa 1 (1-16) -> Linhas 2-17 (Indices 1-16)
+            // Placa 2 (1-16) -> Linhas 18-33 (Indices 17-32)
+            // Fórmula: ((Placa - 1) * 16) + (Porta - 1) + 1
             rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
         } 
         else if (type === 'furukawa-2') {
-            // Furukawa 2 Placas: 16 portas por placa (Total 32 linhas)
+            // Furukawa (PQA2, SB1...): 16 portas por placa?
+            // Se for 16 portas:
             rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
         } 
         else if (type === 'furukawa-10') {
-            // Furukawa 10 Placas (LTXV1, SBO1): 4 portas por placa? (Total 40 linhas)
-            // Se a planilha tem linha 2 a 41, são 40 portas. 10 placas x 4 portas = 40.
+            // LTXV1, SBO1: "Linha 2 até 41". Isso são 40 linhas.
+            // Se são 10 placas (como sugere o nome furukawa-10), são 4 portas por placa?
+            // 10 placas * 4 portas = 40.
             rowIndex = ((sl - 1) * 4) + (p - 1) + 1;
         }
 
-        // Segurança para não estourar o array
+        // Segurança para não travar se o cálculo sair fora da planilha
         if (rowIndex > 0 && rowIndex < rowsCircuitos.length) {
             const row = rowsCircuitos[rowIndex];
+            // Retorna o valor da coluna ou traço se estiver vazio
             return row[colIndex] || "-";
         }
         return "-";
@@ -127,6 +139,7 @@ function startOltMonitoring(config) {
         const urlOlt = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${rangeOlt}?key=${ENGINE_API_KEY}`;
 
         try {
+            // Busca PARALELA (OLT + Circuitos)
             const [responseOlt, rowsCircuitos] = await Promise.all([
                 fetch(urlOlt),
                 fetchCircuitosData()
@@ -143,6 +156,7 @@ function startOltMonitoring(config) {
                 if (columns.length === 0) return;
                 let placa, porta, isOnline;
 
+                // Lógica de Parsing (Nokia vs Furukawa)
                 if (config.type === 'nokia') {
                     const pon = columns[0];
                     const status = columns[4];
@@ -168,7 +182,8 @@ function startOltMonitoring(config) {
 
                 const portKey = `${placa}/${porta}`;
                 if (!portData[portKey]) {
-                    // Busca informação na planilha de Circuitos usando a lógica matemática
+                    // --- O MOMENTO DO CRUZAMENTO ---
+                    // Usa a função matemática para pegar a info correta da linha
                     const infoExtra = getCircuitInfo(rowsCircuitos, config.id, placa, porta, config.type);
                     portData[portKey] = { online: 0, offline: 0, info: infoExtra };
                 }
@@ -197,7 +212,7 @@ function startOltMonitoring(config) {
                         <td>${online}</td>
                         <td>${offline}</td>
                         <td>${total}</td>
-                        <td style="font-size: 0.85em; color: var(--m3-on-surface-variant);">${info}</td>
+                        <td style="font-size: 0.85em; color: var(--m3-on-surface-variant); font-style: italic;">${info}</td>
                         <td><span class="status ${statusClass}">${statusText}</span></td>
                     </tr>
                 `;
