@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão Final (Visual Correto + Chaves de Busca Precisas)
+// olt-engine.js - Versão "Linha Completa" (Full Row Detail)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -9,18 +9,38 @@ const ENGINE_REFRESH_SECONDS = 300;
 const TAB_CIRCUITOS = 'CIRCUITO'; 
 const TABLE_HEADER_NAME = 'Circuitos'; 
 
-// Mapa de Colunas (Onde está a info descritiva na planilha)
+// Mapa para o TEXTO CURTO do botão (Resumo)
+// Ex: HEL1 exibe o que estiver na Coluna B (Index 1)
 const OLT_COLUMN_MAP = {
     'HEL1':  1,  'HEL2':  3,  'MGP':   5,  'PQA1':  7,  'PSV1':  9,  'PSV7':  11,
     'SBO2':  13, 'SBO3':  15, 'SBO4':  17, 'SB1':   19, 'SB2':   21, 'SB3':   23,
     'PQA2':  25, 'PQA3':  27, 'LTXV2': 29, 'LTXV1': 31, 'SBO1':  33
 };
 
+// Variável Global para Cache
+window.GLOBAL_CIRCUIT_MAP = new Map();
+
+// --- 1. FUNÇÃO QUE GERA A CHAVE DE BUSCA (Coluna A) ---
+function getSearchKey(type, placa, porta) {
+    const p = parseInt(porta);
+    const sl = parseInt(placa);
+
+    if (type === 'nokia') {
+        return `1/1/${sl}/${p}`; // Ex: 1/1/1/1
+    } 
+    else if (type === 'furukawa-10') {
+        return `${sl}/${p}`;     // Ex: 1/1
+    } 
+    else { 
+        return `GPON${sl}/${p}`; // Ex: GPON1/1
+    }
+}
+
 function startOltMonitoring(config) {
     const container = document.querySelector('.grid-container');
     if (!container) return;
 
-    // --- 1. INJEÇÃO DO MODAL ---
+    // --- 2. INJEÇÃO DO HTML DO MODAL ---
     if (!document.getElementById('detail-modal')) {
         const modalHTML = `
             <div id="detail-modal" class="modal-overlay" onclick="window.closeModal(event)">
@@ -29,15 +49,16 @@ function startOltMonitoring(config) {
                         <h3 id="modal-title">Detalhes</h3>
                         <button class="close-modal" onclick="window.closeModal()">×</button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
+                        
                         <div id="modal-stats-view" class="modal-stats-grid" style="display:none;">
                             <div class="modal-stat-box">
                                 <span id="modal-up" class="modal-stat-value val-online">0</span>
-                                <span class="modal-stat-label">${config.type === 'nokia' ? 'UP' : 'ACTIVE'}</span>
+                                <span class="modal-stat-label">ONLINE</span>
                             </div>
                             <div class="modal-stat-box">
                                 <span id="modal-down" class="modal-stat-value val-offline">0</span>
-                                <span class="modal-stat-label">${config.type === 'nokia' ? 'DOWN' : 'INACTIVE'}</span>
+                                <span class="modal-stat-label">OFFLINE</span>
                             </div>
                             <div class="modal-stat-box">
                                 <span id="modal-total" class="modal-stat-value val-total">0</span>
@@ -45,15 +66,18 @@ function startOltMonitoring(config) {
                             </div>
                         </div>
 
-                        <div id="modal-info-view" style="display:none; text-align: center;">
-                            <p style="font-size: 0.9em; color: var(--m3-on-surface-variant); margin-bottom: 5px;">Descrição do Circuito:</p>
-                            <h3 id="modal-desc-text" style="color: var(--m3-primary); margin: 0 0 20px 0;">-</h3>
-                            
-                            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border: 1px solid var(--m3-outline); text-align: left;">
-                                <p style="font-size: 0.85em; color: var(--m3-on-surface-variant); margin: 0 0 5px 0;">Referência Técnica (Coluna A):</p>
-                                <code id="modal-tech-id" style="font-size: 1.2em; font-weight: bold; color: var(--m3-on-surface);">-</code>
+                        <div id="modal-info-view" style="display:none;">
+                            <div style="text-align: center; margin-bottom: 15px;">
+                                <span style="font-size: 0.85em; color: var(--m3-on-surface-variant);">ID TÉCNICO (CHAVE):</span><br>
+                                <code id="modal-tech-id" style="font-size: 1.4em; color: var(--m3-primary); font-weight: bold;">-</code>
                             </div>
+                            
+                            <p style="font-size: 0.9em; margin-bottom: 8px; border-bottom: 1px solid var(--m3-outline); padding-bottom: 5px;">Dados Completos da Linha:</p>
+                            
+                            <div id="modal-full-list" style="display: flex; flex-direction: column; gap: 8px;">
+                                </div>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -61,85 +85,60 @@ function startOltMonitoring(config) {
         document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
 
-    // 2. Estrutura da Tabela
-    function createTableStructure() {
-        container.innerHTML = ''; 
-        for (let i = 1; i <= config.boards; i++) {
-            const placaId = i.toString().padStart(2, '0');
-            const colunasBase = '<th>Porta</th>'; 
-            const colunasFinais = `<th>${TABLE_HEADER_NAME}</th><th>Status</th>`;
-
-            container.innerHTML += `
-                <table>
-                    <thead>
-                        <tr class="table-title-row"><th colspan="3">PLACA ${placaId}</th></tr>
-                        <tr class="table-header-row">${colunasBase}${colunasFinais}</tr>
-                    </thead>
-                    <tbody id="tbody-placa-${i}"></tbody>
-                </table>
-            `;
-        }
-    }
-
-    async function fetchCircuitosData() {
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${TAB_CIRCUITOS}!A:AK?key=${ENGINE_API_KEY}`;
+    // 3. Função que Busca os Dados na Planilha
+    async function fetchAndMapData() {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${TAB_CIRCUITOS}!A:AZ?key=${ENGINE_API_KEY}`;
         try {
             const response = await fetch(url);
-            if (!response.ok) return [];
+            if (!response.ok) return;
             const data = await response.json();
-            return data.values || [];
-        } catch (e) { return []; }
+            const rows = data.values || [];
+            
+            window.GLOBAL_CIRCUIT_MAP.clear();
+            rows.forEach(row => {
+                if (row[0]) {
+                    // Chave sempre em Maiúsculo e sem espaços
+                    const key = String(row[0]).trim().toUpperCase();
+                    window.GLOBAL_CIRCUIT_MAP.set(key, row);
+                }
+            });
+            console.log(`[ENGINE] Planilha carregada. ${window.GLOBAL_CIRCUIT_MAP.size} circuitos mapeados.`);
+        } catch (e) { console.error(e); }
     }
 
-    // --- GERAÇÃO DA CHAVE DE BUSCA (REGRA DE NEGÓCIO) ---
-    function generateSearchKey(type, placa, porta) {
-        const p = parseInt(porta);
-        const sl = parseInt(placa);
-
-        if (type === 'nokia') {
-            // Regra: 1/1/1/1 (1/1/Placa/Porta)
-            return `1/1/${sl}/${p}`;
-        } 
-        else if (type === 'furukawa-10') {
-            // Regra: 1/1 (Placa/Porta) - Para SBO1 e LTXV1
-            return `${sl}/${p}`;
-        } 
-        else { 
-            // Regra: GPON1/1 (GPONPlaca/Porta) - Para as demais Furukawa
-            return `GPON${sl}/${p}`;
-        }
-    }
-
-    // Limpa strings para evitar quebra do HTML no onclick
-    function escapeHtml(text) {
-        if (!text) return "";
-        return text.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-    }
-
+    // 4. Constrói a Tabela e Cruza os Dados
     async function populateTables() {
+        // Limpa visualmente
         for (let i = 1; i <= config.boards; i++) {
-            const tbody = document.getElementById(`tbody-placa-${i}`);
-            if (tbody) tbody.innerHTML = '';
+            const el = document.getElementById(`tbody-placa-${i}`);
+            if(el) el.innerHTML = '';
         }
 
+        // HTML das Tabelas
+        if (container.innerHTML === "") {
+            for (let i = 1; i <= config.boards; i++) {
+                const pid = i.toString().padStart(2, '0');
+                container.innerHTML += `
+                    <table>
+                        <thead>
+                            <tr class="table-title-row"><th colspan="3">PLACA ${pid}</th></tr>
+                            <tr class="table-header-row"><th>Porta</th><th>${TABLE_HEADER_NAME}</th><th>Status</th></tr>
+                        </thead>
+                        <tbody id="tbody-placa-${i}"></tbody>
+                    </table>`;
+            }
+        }
+
+        // Busca dados (Paralelo)
         const rangeOlt = config.type === 'nokia' ? `${config.id}!A:E` : `${config.id}!A:C`;
         const urlOlt = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${rangeOlt}?key=${ENGINE_API_KEY}`;
 
         try {
-            const [responseOlt, rowsCircuitos] = await Promise.all([fetch(urlOlt), fetchCircuitosData()]);
-            
-            if (!responseOlt.ok) throw new Error('Falha API');
+            await fetchAndMapData(); // Garante que o mapa está carregado
+            const responseOlt = await fetch(urlOlt);
+            if (!responseOlt.ok) throw new Error('Erro API OLT');
             const dataOlt = await responseOlt.json();
             const rowsOlt = (dataOlt.values || []).slice(1);
-            
-            // Mapa de Busca (Chave da Coluna A -> Linha Inteira)
-            const circuitMap = new Map();
-            rowsCircuitos.forEach(row => {
-                if (row[0]) {
-                    const key = row[0].toString().trim().toUpperCase();
-                    circuitMap.set(key, row);
-                }
-            });
 
             const portData = {};
             const newProblems = new Set(); 
@@ -148,17 +147,18 @@ function startOltMonitoring(config) {
                 if (columns.length === 0) return;
                 let placa, porta, isOnline;
 
+                // Parsing OLT
                 if (config.type === 'nokia') {
                     const pon = columns[0];
-                    const status = columns[4];
-                    if (!pon || !status) return;
+                    const status = columns[4] || "";
+                    if (!pon) return;
                     const parts = pon.split('/'); 
                     if (parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
-                    isOnline = status.trim().toLowerCase().includes('up');
+                    isOnline = status.toLowerCase().includes('up');
                 } else { 
                     const portStr = columns[0];
-                    const status = columns[2];
-                    if (!portStr || !status) return;
+                    const status = columns[2] || "";
+                    if (!portStr) return;
                     if (config.type === 'furukawa-10') {
                         const parts = portStr.split('/');
                         if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
@@ -166,27 +166,35 @@ function startOltMonitoring(config) {
                         const match = portStr.match(/GPON(\d+)\/(\d+)/);
                         if (match) { placa = match[1]; porta = match[2]; }
                     }
-                    isOnline = status.trim().toLowerCase() === 'active';
+                    isOnline = status.toLowerCase() === 'active';
                 }
 
-                const portKey = `${placa}/${porta}`;
-                if (!portData[portKey]) {
-                    // 1. Gera a chave técnica (ex: GPON1/1)
-                    const searchKey = generateSearchKey(config.type, placa, porta);
-                    
-                    // 2. Busca na planilha usando essa chave
-                    const row = circuitMap.get(searchKey.toUpperCase());
-                    const colIndex = OLT_COLUMN_MAP[config.id];
-                    
-                    // 3. Pega a descrição visual (ex: "Link Bairro")
-                    let infoExtra = (row && colIndex !== undefined && row[colIndex]) ? row[colIndex] : "-";
-                    if(infoExtra.trim() === "") infoExtra = "-";
+                if (!placa || !porta) return;
 
-                    portData[portKey] = { online: 0, offline: 0, info: infoExtra, techId: searchKey };
+                const portKey = `${parseInt(placa)}/${parseInt(porta)}`;
+                if (!portData[portKey]) {
+                    // --- O GRANDE MOMENTO: BUSCA DA INFORMAÇÃO ---
+                    const searchKey = getSearchKey(config.type, placa, porta);
+                    const row = window.GLOBAL_CIRCUIT_MAP.get(searchKey.toUpperCase());
+                    
+                    // Texto do Botão (Resumo)
+                    const colIndex = OLT_COLUMN_MAP[config.id];
+                    let infoButton = "-";
+                    
+                    if (row && colIndex !== undefined && row[colIndex]) {
+                        infoButton = row[colIndex]; // Ex: "Link Bairro X"
+                    }
+
+                    portData[portKey] = { 
+                        online: 0, offline: 0, 
+                        info: infoButton, 
+                        techId: searchKey // Passamos a chave para o modal buscar a linha completa
+                    };
                 }
                 if (isOnline) portData[portKey].online++; else portData[portKey].offline++;
             });
 
+            // Renderização
             for (const portKey in portData) {
                 const [placa, porta] = portKey.split('/');
                 const { online, offline, info, techId } = portData[portKey];
@@ -200,16 +208,13 @@ function startOltMonitoring(config) {
 
                 if (statusClass === 'status-problema') newProblems.add(portKey);
 
-                const safeInfo = escapeHtml(info);
-                const safeTechId = escapeHtml(techId);
-
+                // IMPORTANTE: Passamos o techId para o clique buscar a linha completa na memória
                 const htmlRow = `
                     <tr>
-                        <td>Porta ${porta.padStart(2, '0')}</td>
+                        <td>Porta ${porta.toString().padStart(2, '0')}</td>
                         <td>
-                            <span class="circuit-badge" style="cursor:pointer;" 
-                                  onclick="window.openTechDetails('${safeInfo}', '${safeTechId}')">
-                                  ${safeInfo}
+                            <span class="circuit-badge" onclick="window.openGlobalTechDetails('${techId}')">
+                                ${info}
                             </span>
                         </td>
                         <td>
@@ -218,29 +223,28 @@ function startOltMonitoring(config) {
                                 ${statusText}
                             </button>
                         </td>
-                    </tr>
-                `;
+                    </tr>`;
 
-                const targetTbody = document.getElementById(`tbody-placa-${placa}`);
-                if (targetTbody) targetTbody.innerHTML += htmlRow;
+                const tbody = document.getElementById(`tbody-placa-${placa}`);
+                if (tbody) tbody.innerHTML += htmlRow;
             }
 
             if (typeof checkAndNotifyForNewProblems === 'function') checkAndNotifyForNewProblems(newProblems);
 
-        } catch (error) { console.error('Erro na engine:', error); }
+        } catch (error) { console.error(error); }
     }
 
     async function updateTime() {
         if (typeof loadTimestamp === 'function') await loadTimestamp(config.id, ENGINE_API_KEY, ENGINE_SHEET_ID);
     }
 
-    createTableStructure();
     const runUpdate = () => { populateTables(); updateTime(); };
     runUpdate(); 
     setInterval(runUpdate, ENGINE_REFRESH_SECONDS * 1000); 
 }
 
-// --- FUNÇÕES GLOBAIS (WINDOW) ---
+// --- FUNÇÕES GLOBAIS DE CLIQUE ---
+
 window.closeModal = function(event) {
     if (event && event.target.id !== 'detail-modal') return;
     const modal = document.getElementById('detail-modal');
@@ -249,7 +253,7 @@ window.closeModal = function(event) {
 
 window.openPortDetails = function(placa, porta, online, offline, total) {
     const modal = document.getElementById('detail-modal');
-    if (!modal) return;
+    if(!modal) return;
     document.getElementById('modal-stats-view').style.display = 'grid';
     document.getElementById('modal-info-view').style.display = 'none';
     
@@ -260,14 +264,43 @@ window.openPortDetails = function(placa, porta, online, offline, total) {
     modal.style.display = 'flex';
 }
 
-window.openTechDetails = function(infoText, techId) {
+// --- AQUI ESTÁ A MÁGICA DA LINHA COMPLETA ---
+window.openGlobalTechDetails = function(techId) {
     const modal = document.getElementById('detail-modal');
-    if (!modal) return;
+    if(!modal) return;
+
     document.getElementById('modal-stats-view').style.display = 'none';
     document.getElementById('modal-info-view').style.display = 'block';
     
-    document.getElementById('modal-title').textContent = `Detalhes do Circuito`;
-    document.getElementById('modal-desc-text').textContent = infoText; // O texto "Link Bairro X"
-    document.getElementById('modal-tech-id').textContent = techId;     // A chave técnica "GPON1/1"
+    document.getElementById('modal-title').textContent = `Dados do Circuito`;
+    document.getElementById('modal-tech-id').textContent = techId;
+
+    // Busca a linha completa na memória
+    const row = window.GLOBAL_CIRCUIT_MAP.get(techId.toUpperCase());
+    const listContainer = document.getElementById('modal-full-list');
+    listContainer.innerHTML = '';
+
+    if (row && row.length > 0) {
+        // Gera um item para cada coluna preenchida
+        row.forEach((cellData, index) => {
+            if (index === 0) return; // Pula a coluna A (Chave)
+            if (cellData && cellData.trim() !== "") {
+                
+                // Tenta dar um nome bonito para a coluna (Baseado em A=0, B=1...)
+                let label = `Coluna ${String.fromCharCode(65 + index)}`;
+                
+                const itemHTML = `
+                    <div style="background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 4px; display: flex; flex-direction: column;">
+                        <span style="font-size: 0.75em; color: var(--m3-primary); font-weight: bold;">${label}</span>
+                        <span style="font-size: 1em; color: var(--m3-on-surface); word-break: break-word;">${cellData}</span>
+                    </div>
+                `;
+                listContainer.innerHTML += itemHTML;
+            }
+        });
+    } else {
+        listContainer.innerHTML = `<p style="color: var(--m3-color-error);">Nenhuma informação encontrada na planilha para a chave <strong>${techId}</strong>.</p>`;
+    }
+    
     modal.style.display = 'flex';
 }
