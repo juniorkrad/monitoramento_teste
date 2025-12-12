@@ -1,35 +1,19 @@
 // ==============================================================================
-// olt-engine.js - Motor Corrigido (Chaves Identicas ao HTML)
+// olt-engine.js - Motor Corrigido (Badge de Circuito)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
 const ENGINE_SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
 const ENGINE_REFRESH_SECONDS = 300;
 
-const TAB_CIRCUITOS = 'CIRCUITO'; // Nome da aba alterado (Singular)
+const TAB_CIRCUITOS = 'CIRCUITO'; 
 const TABLE_HEADER_NAME = 'Circuitos'; 
 
-// --- MAPA DE COLUNAS CORRIGIDO ---
-// As chaves (lado esquerdo) devem ser IGUAIS ao 'id' no seu arquivo .html
-// Ex: Se no HTML esta id: 'HEL1', aqui tem que ser 'HEL1'.
+// --- MAPA DE COLUNAS ---
 const OLT_COLUMN_MAP = {
-    'HEL1':  1,  // Coluna B
-    'HEL2':  3,  // Coluna D
-    'MGP':   5,  // Coluna F
-    'PQA1':  7,  // Coluna H
-    'PSV1':  9,  // Coluna J
-    'PSV7':  11, // Coluna L
-    'SBO2':  13, // Coluna N
-    'SBO3':  15, // Coluna P
-    'SBO4':  17, // Coluna R
-    'SB1':   19, // Coluna T
-    'SB2':   21, // Coluna V
-    'SB3':   23, // Coluna X
-    'PQA2':  25, // Coluna Z
-    'PQA3':  27, // Coluna AB
-    'LTXV2': 29, // Coluna AD
-    'LTXV1': 31, // Coluna AF
-    'SBO1':  33  // Coluna AH
+    'HEL1':  1,  'HEL2':  3,  'MGP':   5,  'PQA1':  7,  'PSV1':  9,  'PSV7':  11,
+    'SBO2':  13, 'SBO3':  15, 'SBO4':  17, 'SB1':   19, 'SB2':   21, 'SB3':   23,
+    'PQA2':  25, 'PQA3':  27, 'LTXV2': 29, 'LTXV1': 31, 'SBO1':  33
 };
 
 function startOltMonitoring(config) {
@@ -67,7 +51,6 @@ function startOltMonitoring(config) {
 
     // 2. Busca dados da aba CIRCUITO
     async function fetchCircuitosData() {
-        // Busca ate a coluna AK para garantir
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${TAB_CIRCUITOS}!A:AK?key=${ENGINE_API_KEY}`;
         try {
             const response = await fetch(url);
@@ -82,33 +65,22 @@ function startOltMonitoring(config) {
 
     // 3. Funcao Matematica de Linhas
     function getCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
-        // Garante que o ID esta sendo buscado corretamente (sem traços extras se não houver)
         const colIndex = OLT_COLUMN_MAP[oltId];
         
-        // Debug silencioso: Se nao achar a coluna, retorna traço
-        if (colIndex === undefined) {
-            // console.warn(`OLT ${oltId} não encontrada no Mapa de Colunas.`);
-            return "-";
-        }
+        if (colIndex === undefined) return "-";
         if (!rowsCircuitos.length) return "-";
 
         let rowIndex = -1;
         const p = parseInt(porta);
         const sl = parseInt(placa);
 
-        // --- CALCULO DA LINHA NA PLANILHA ---
-        // A planilha começa na linha 2 (Indice 1 do array)
-        
         if (type === 'nokia') {
-            // Nokia (16 portas): ((Placa-1)*16) + (Porta-1) + 1
             rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
         } 
         else if (type === 'furukawa-2') {
-            // Furukawa (16 portas): ((Placa-1)*16) + (Porta-1) + 1
             rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
         } 
         else if (type === 'furukawa-10') {
-            // Furukawa Chassis (4 portas por placa = 40 linhas totais):
             rowIndex = ((sl - 1) * 4) + (p - 1) + 1;
         }
 
@@ -154,7 +126,7 @@ function startOltMonitoring(config) {
                     if (parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
                     isOnline = status.trim().toLowerCase().includes('up');
 
-                } else { // Furukawa logic
+                } else { 
                     const portStr = columns[0];
                     const status = columns[2];
                     if (!portStr || !status) return;
@@ -171,7 +143,6 @@ function startOltMonitoring(config) {
 
                 const portKey = `${placa}/${porta}`;
                 if (!portData[portKey]) {
-                    // Passamos o config.id exato (Ex: 'HEL1')
                     const infoExtra = getCircuitInfo(rowsCircuitos, config.id, placa, porta, config.type);
                     portData[portKey] = { online: 0, offline: 0, info: infoExtra };
                 }
@@ -193,13 +164,14 @@ function startOltMonitoring(config) {
 
                 if (statusClass === 'status-problema') newProblems.add(portKey);
 
+                // --- ATUALIZAÇÃO DO BADGE AQUI ---
                 const htmlRow = `
                     <tr>
                         <td>Porta ${porta.padStart(2, '0')}</td>
                         <td>${online}</td>
                         <td>${offline}</td>
                         <td>${total}</td>
-                        <td style="font-size: 0.85em; color: var(--m3-on-surface-variant); font-style: italic;">${info}</td>
+                        <td><span class="circuit-badge">${info}</span></td>
                         <td><span class="status ${statusClass}">${statusText}</span></td>
                     </tr>
                 `;

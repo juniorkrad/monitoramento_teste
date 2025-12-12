@@ -72,7 +72,7 @@ body.home-page {
 
 /* Estilo do Botão Home/Voltar */
 .nav-button {
-    background-color: #371752; /* Cor roxa escura solicitada */
+    background-color: #371752; /* Cor mais escura solicitada */
     color: var(--m3-on-primary);
     padding: 8px 20px;
     border-radius: 20px;
@@ -150,28 +150,12 @@ table {
     margin-bottom: 10px;
 }
 
-/* --- CORREÇÃO GERAL DE CÉLULAS (Alinhamento e Quebra) --- */
-th, td { 
-    padding: 8px 10px; 
-    text-align: left; 
-    /* A borda será controlada linha a linha abaixo */
-    border-top: 1px solid var(--m3-outline); 
-    color: var(--m3-on-surface); 
-    font-size: 0.9em; 
-    
-    /* FIXADORES DE LAYOUT */
-    white-space: nowrap;    /* Impede que "Porta 01" quebre em duas linhas */
-    vertical-align: middle; /* Alinha o texto exatamente no centro vertical */
-}
-
 /* LINHA 1: TÍTULO (PLACA XX) */
 .table-title-row th {
     background-color: var(--m3-surface-container); 
     color: var(--m3-on-surface); 
     font-size: 1.1em;
     padding: 10px 12px;
-    
-    /* Tira borda do topo (evita duplicação com a borda da tabela) */
     border-top: none; 
     border-bottom: 1px solid var(--m3-outline);
     text-align: left;
@@ -188,28 +172,48 @@ th, td {
     font-size: 0.85em;
     padding: 8px 10px;
     
-    /* Tira borda do topo (para não chocar com o fundo do Título) */
     border-top: none; 
     border-bottom: 1px solid var(--m3-outline);
     
-    /* Sticky Header */
+    /* Sticky */
     position: sticky;
     top: 0;
     z-index: 1;
 }
 
-/* --- CORREÇÃO CRÍTICA DAS BORDAS DUPLICADAS ---
-   Seleciona a primeira linha de dados (TR) dentro do corpo (TBODY) 
-   que vem logo após o cabeçalho (THEAD) e remove a borda superior.
-*/
-thead + tbody tr:first-child td { 
-    border-top: none; 
+/* --- CORREÇÃO GERAL DE CÉLULAS --- */
+th, td { 
+    padding: 8px 10px; 
+    text-align: left; 
+    border-top: 1px solid var(--m3-outline); 
+    color: var(--m3-on-surface); 
+    font-size: 0.9em; 
+    
+    white-space: nowrap;    /* Proíbe quebra de linha */
+    vertical-align: middle; /* Alinha verticalmente */
 }
+
+/* Ajuste para não duplicar borda entre cabeçalho e primeira linha */
+.table-header-row + tbody tr:first-child td { border-top: none; }
 
 /* Efeito Hover nas Linhas de DADOS apenas */
 tbody tr:hover td {
     background-color: var(--m3-state-layer-hover); 
 }
+
+/* --- NOVO ESTILO: BADGE PARA A COLUNA CIRCUITO --- */
+.circuit-badge {
+    display: inline-block;
+    background-color: var(--m3-outline); /* Cor roxa intermediária */
+    color: var(--m3-on-primary);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-weight: 500;
+    font-size: 0.9em;
+    min-width: 20px; /* Garante que não suma se vazio */
+    text-align: center;
+}
+/* ------------------------------------------------ */
 
 .status { font-weight: bold; padding: 2px 8px; border-radius: 12px; display: inline-block; font-size: 0.8em; text-transform: uppercase; }
 .status-normal { background-color: var(--m3-color-success); color: #fff; }
