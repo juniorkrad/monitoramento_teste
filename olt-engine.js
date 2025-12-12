@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão Minimalista (Tabela Limpa + Drill-Down)
+// olt-engine.js - Versão Atualizada (Circuito Clicável + Lista de Clientes)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -15,21 +15,44 @@ const OLT_COLUMN_MAP = {
     'PQA2':  25, 'PQA3':  27, 'LTXV2': 29, 'LTXV1': 31, 'SBO1':  33
 };
 
+// Armazena dados dos clientes para o Pop-up
+window.OLT_CLIENTS_DATA = {};
+
 function startOltMonitoring(config) {
     const container = document.querySelector('.grid-container');
     if (!container) return;
 
     // --- 1. INJEÇÃO DO MODAL (POP-UP) NA PÁGINA ---
+    // Adicionamos estilos específicos para a tabela de clientes
     if (!document.getElementById('detail-modal')) {
+        const modalStyles = `
+            <style>
+                .circuit-clickable { cursor: pointer; text-decoration: underline; color: #fff; font-weight: bold; }
+                .circuit-clickable:hover { color: #ffd700; }
+                .client-table-container { max-height: 400px; overflow-y: auto; margin-top: 15px; }
+                .client-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; color: #333; }
+                .client-table th { background-color: #007bff; color: white; padding: 8px; text-align: left; position: sticky; top: 0; }
+                .client-table td { border-bottom: 1px solid #ddd; padding: 6px 8px; }
+                .client-table tr:nth-child(even) { background-color: #f9f9f9; }
+                .client-table tr:hover { background-color: #f1f1f1; }
+                .modal-section-title { font-size: 1.1rem; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+                /* Ocultar/Mostrar seções do modal conforme contexto */
+                .modal-view-stats { display: flex; }
+                .modal-view-clients { display: none; }
+            </style>
+        `;
+
         const modalHTML = `
+            ${modalStyles}
             <div id="detail-modal" class="modal-overlay" onclick="closeModal(event)">
-                <div class="modal-content">
+                <div class="modal-content" style="max-width: 800px;">
                     <div class="modal-header">
                         <h3 id="modal-title">Detalhes</h3>
                         <button class="close-modal" onclick="closeModal()">×</button>
                     </div>
                     <div class="modal-body">
-                        <div class="modal-stats-grid">
+                        
+                        <div id="view-stats" class="modal-stats-grid">
                             <div class="modal-stat-box">
                                 <span id="modal-up" class="modal-stat-value val-online">0</span>
                                 <span class="modal-stat-label">${config.type === 'nokia' ? 'UP' : 'ACTIVE'}</span>
@@ -43,6 +66,26 @@ function startOltMonitoring(config) {
                                 <span class="modal-stat-label">TOTAL</span>
                             </div>
                         </div>
+
+                        <div id="view-clients" style="display:none;">
+                            <div class="modal-section-title">Clientes do Circuito</div>
+                            <div class="client-table-container">
+                                <table class="client-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Col B</th>
+                                            <th>Col C</th>
+                                            <th>Col E</th>
+                                            <th>Col G</th>
+                                            <th>Col H</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="clients-tbody">
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -50,13 +93,11 @@ function startOltMonitoring(config) {
         document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
 
-    // 2. Cria a estrutura HTML (TABELA LIMPA: Porta | Circuito | Status)
+    // 2. Cria a estrutura HTML
     function createTableStructure() {
         container.innerHTML = ''; 
         for (let i = 1; i <= config.boards; i++) {
             const placaId = i.toString().padStart(2, '0');
-            
-            // Apenas Porta e as colunas finais
             const colunasBase = '<th>Porta</th>'; 
             const colunasFinais = `<th>${TABLE_HEADER_NAME}</th><th>Status</th>`;
 
@@ -102,12 +143,16 @@ function startOltMonitoring(config) {
     }
 
     async function populateTables() {
+        // Limpa dados antigos de clientes
+        window.OLT_CLIENTS_DATA = {};
+
         for (let i = 1; i <= config.boards; i++) {
             const tbody = document.getElementById(`tbody-placa-${i}`);
             if (tbody) tbody.innerHTML = '';
         }
 
-        const rangeOlt = config.type === 'nokia' ? `${config.id}!A:E` : `${config.id}!A:C`;
+        // Alterado para buscar até a Coluna H (index 7) para pegar os dados dos clientes
+        const rangeOlt = `${config.id}!A:H`; 
         const urlOlt = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${rangeOlt}?key=${ENGINE_API_KEY}`;
 
         try {
@@ -122,35 +167,62 @@ function startOltMonitoring(config) {
                 if (columns.length === 0) return;
                 let placa, porta, isOnline;
 
+                // Lógica de Identificação da Coluna A
                 if (config.type === 'nokia') {
+                    // Nokia: 1/1/Slot/Port
                     const pon = columns[0];
-                    const status = columns[4];
+                    const status = columns[4]; // Status na Coluna E na Nokia? Verificar se mantem ou se mudou com range A:H. 
+                    // Na Nokia range A:E, status era index 4.
+                    
                     if (!pon || !status) return;
                     const parts = pon.split('/'); 
                     if (parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
                     isOnline = status.trim().toLowerCase().includes('up');
                 } else { 
+                    // Furukawa
                     const portStr = columns[0];
-                    const status = columns[2];
+                    const status = columns[2]; // Furukawa status index 2 (Col C)
                     if (!portStr || !status) return;
+                    
                     if (config.type === 'furukawa-10') {
+                        // Furukawa SBO1/LTXV1: Slot/Port
                         const parts = portStr.split('/');
                         if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
                     } else {
+                        // Furukawa Outras: GPONSlot/Port
                         const match = portStr.match(/GPON(\d+)\/(\d+)/);
                         if (match) { placa = match[1]; porta = match[2]; }
                     }
                     isOnline = status.trim().toLowerCase() === 'active';
                 }
 
+                if (!placa || !porta) return;
+
                 const portKey = `${placa}/${porta}`;
+                
+                // Inicializa objeto da porta
                 if (!portData[portKey]) {
                     const infoExtra = getCircuitInfo(rowsCircuitos, config.id, placa, porta, config.type);
                     portData[portKey] = { online: 0, offline: 0, info: infoExtra };
+                    window.OLT_CLIENTS_DATA[portKey] = []; // Inicializa lista de clientes
                 }
+
+                // Contagem Status
                 if (isOnline) portData[portKey].online++; else portData[portKey].offline++;
+
+                // Coleta Dados do Cliente (Col B, C, E, G, H)
+                // B=1, C=2, E=4, G=6, H=7
+                const clientData = {
+                    colB: columns[1] || '',
+                    colC: columns[2] || '',
+                    colE: columns[4] || '',
+                    colG: columns[6] || '',
+                    colH: columns[7] || ''
+                };
+                window.OLT_CLIENTS_DATA[portKey].push(clientData);
             });
 
+            // Renderização da Tabela
             for (const portKey in portData) {
                 const [placa, porta] = portKey.split('/');
                 const { online, offline, info } = portData[portKey];
@@ -164,11 +236,17 @@ function startOltMonitoring(config) {
 
                 if (statusClass === 'status-problema') newProblems.add(portKey);
 
-                // --- LINHA HTML MINIMALISTA + BOTÃO CLICÁVEL ---
+                // Botão Circuito agora chama openCircuitClients
                 const htmlRow = `
                     <tr>
                         <td>Porta ${porta.padStart(2, '0')}</td>
-                        <td><span class="circuit-badge">${info}</span></td>
+                        <td>
+                            <span class="circuit-badge circuit-clickable" 
+                                  onclick="openCircuitClients('${placa}', '${porta}', '${info}')"
+                                  title="Ver clientes deste circuito">
+                                ${info}
+                            </span>
+                        </td>
                         <td>
                             <button class="status ${statusClass} status-btn" 
                                 onclick="openPortDetails('${placa}', '${porta}', ${online}, ${offline}, ${total})">
@@ -198,16 +276,58 @@ function startOltMonitoring(config) {
 }
 
 // --- FUNÇÕES DO MODAL (POP-UP) ---
+
 function closeModal(event) {
     if (event && event.target.id !== 'detail-modal') return;
     document.getElementById('detail-modal').style.display = 'none';
 }
 
+// Abre detalhes de Estatísticas (Botão Status)
 function openPortDetails(placa, porta, online, offline, total) {
     const modal = document.getElementById('detail-modal');
-    document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta}`;
+    document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta} - Status`;
+    
+    // Mostra Stats, Esconde Clientes
+    document.getElementById('view-stats').style.display = 'flex';
+    document.getElementById('view-clients').style.display = 'none';
+
     document.getElementById('modal-up').textContent = online;
     document.getElementById('modal-down').textContent = offline;
     document.getElementById('modal-total').textContent = total;
+    modal.style.display = 'flex';
+}
+
+// Abre lista de Clientes (Botão Circuito)
+function openCircuitClients(placa, porta, circuitoNome) {
+    const modal = document.getElementById('detail-modal');
+    document.getElementById('modal-title').textContent = `Circuito: ${circuitoNome} (Placa ${placa}/Porta ${porta})`;
+
+    // Esconde Stats, Mostra Clientes
+    document.getElementById('view-stats').style.display = 'none';
+    document.getElementById('view-clients').style.display = 'block';
+
+    const tbody = document.getElementById('clients-tbody');
+    tbody.innerHTML = ''; // Limpa
+
+    const portKey = `${placa}/${porta}`;
+    const clients = window.OLT_CLIENTS_DATA[portKey] || [];
+
+    if (clients.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum cliente encontrado neste circuito.</td></tr>';
+    } else {
+        clients.forEach(c => {
+            const row = `
+                <tr>
+                    <td>${c.colB}</td>
+                    <td>${c.colC}</td>
+                    <td>${c.colE}</td>
+                    <td>${c.colG}</td>
+                    <td>${c.colH}</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
     modal.style.display = 'flex';
 }
