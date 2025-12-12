@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Motor Corrigido (Badge de Circuito)
+// olt-engine.js - VERSÃO TESTE (Colunas Ocultas)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -9,7 +9,6 @@ const ENGINE_REFRESH_SECONDS = 300;
 const TAB_CIRCUITOS = 'CIRCUITO'; 
 const TABLE_HEADER_NAME = 'Circuitos'; 
 
-// --- MAPA DE COLUNAS ---
 const OLT_COLUMN_MAP = {
     'HEL1':  1,  'HEL2':  3,  'MGP':   5,  'PQA1':  7,  'PSV1':  9,  'PSV7':  11,
     'SBO2':  13, 'SBO3':  15, 'SBO4':  17, 'SB1':   19, 'SB2':   21, 'SB3':   23,
@@ -20,15 +19,14 @@ function startOltMonitoring(config) {
     const container = document.querySelector('.grid-container');
     if (!container) return;
 
-    // 1. Cria a estrutura HTML
+    // 1. Cria a estrutura HTML (SEM AS COLUNAS DE CONTAGEM)
     function createTableStructure() {
         container.innerHTML = ''; 
         for (let i = 1; i <= config.boards; i++) {
             const placaId = i.toString().padStart(2, '0');
             
-            const colunasBase = config.type === 'nokia' 
-                ? '<th>Porta</th><th>UP</th><th>DOWN</th><th>Total</th>'
-                : '<th>Porta</th><th>Active</th><th>Inactive</th><th>Total</th>';
+            // --- TESTE: REMOVIDAS AS COLUNAS UP/DOWN/TOTAL ---
+            const colunasBase = '<th>Porta</th>'; 
             
             const colunasFinais = `<th>${TABLE_HEADER_NAME}</th><th>Status</th>`;
 
@@ -36,8 +34,7 @@ function startOltMonitoring(config) {
                 <table>
                     <thead>
                         <tr class="table-title-row">
-                            <th colspan="6">PLACA ${placaId}</th>
-                        </tr>
+                            <th colspan="3">PLACA ${placaId}</th> </tr>
                         <tr class="table-header-row">
                             ${colunasBase}
                             ${colunasFinais}
@@ -49,7 +46,6 @@ function startOltMonitoring(config) {
         }
     }
 
-    // 2. Busca dados da aba CIRCUITO
     async function fetchCircuitosData() {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${TAB_CIRCUITOS}!A:AK?key=${ENGINE_API_KEY}`;
         try {
@@ -58,15 +54,12 @@ function startOltMonitoring(config) {
             const data = await response.json();
             return data.values || [];
         } catch (e) {
-            console.warn("Erro ao carregar CIRCUITO", e);
             return [];
         }
     }
 
-    // 3. Funcao Matematica de Linhas
     function getCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
         const colIndex = OLT_COLUMN_MAP[oltId];
-        
         if (colIndex === undefined) return "-";
         if (!rowsCircuitos.length) return "-";
 
@@ -74,15 +67,9 @@ function startOltMonitoring(config) {
         const p = parseInt(porta);
         const sl = parseInt(placa);
 
-        if (type === 'nokia') {
-            rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
-        } 
-        else if (type === 'furukawa-2') {
-            rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
-        } 
-        else if (type === 'furukawa-10') {
-            rowIndex = ((sl - 1) * 4) + (p - 1) + 1;
-        }
+        if (type === 'nokia') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
+        else if (type === 'furukawa-2') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
+        else if (type === 'furukawa-10') rowIndex = ((sl - 1) * 4) + (p - 1) + 1;
 
         if (rowIndex > 0 && rowIndex < rowsCircuitos.length) {
             const row = rowsCircuitos[rowIndex];
@@ -91,7 +78,6 @@ function startOltMonitoring(config) {
         return "-";
     }
 
-    // 4. Funcao Principal
     async function populateTables() {
         for (let i = 1; i <= config.boards; i++) {
             const tbody = document.getElementById(`tbody-placa-${i}`);
@@ -164,13 +150,10 @@ function startOltMonitoring(config) {
 
                 if (statusClass === 'status-problema') newProblems.add(portKey);
 
-                // --- ATUALIZAÇÃO DO BADGE AQUI ---
+                // --- LINHA HTML SIMPLIFICADA ---
                 const htmlRow = `
                     <tr>
                         <td>Porta ${porta.padStart(2, '0')}</td>
-                        <td>${online}</td>
-                        <td>${offline}</td>
-                        <td>${total}</td>
                         <td><span class="circuit-badge">${info}</span></td>
                         <td><span class="status ${statusClass}">${statusText}</span></td>
                     </tr>
