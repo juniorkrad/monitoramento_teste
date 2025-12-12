@@ -156,7 +156,7 @@ th, td {
     text-align: left; 
     border-top: 1px solid var(--m3-outline); 
     color: var(--m3-on-surface); 
-    font-size: 0.95em; /* Aumentei um pouquinho o padrão */
+    font-size: 0.95em; /* Aumentado um pouco para melhor leitura */
     
     white-space: nowrap;    
     vertical-align: middle; 
@@ -223,14 +223,13 @@ tbody td:first-child {
     text-overflow: ellipsis;
 }
 
-/* --- NOVO: BOTÃO DE STATUS CLICÁVEL --- */
+/* --- BOTÃO DE STATUS CLICÁVEL --- */
 .status-btn {
     cursor: pointer;
     transition: transform 0.1s, box-shadow 0.2s;
     border: none;
     font-family: inherit;
     font-weight: bold;
-    /* Removemos background/padding aqui pois a classe .status já cuida disso */
 }
 .status-btn:hover {
     transform: scale(1.05); /* Efeito de clique */
@@ -241,7 +240,7 @@ tbody td:first-child {
     transform: scale(0.95); /* Efeito de pressionar */
 }
 
-/* --- NOVO: ESTILOS DO MODAL (POP-UP) --- */
+/* --- ESTILOS DO MODAL (POP-UP) --- */
 .modal-overlay {
     display: none; 
     position: fixed;

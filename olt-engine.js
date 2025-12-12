@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão Minimalista (Tabela Limpa + Drill-Down)
+// olt-engine.js - Versão Busca por Chave (Coluna A da Planilha)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -9,6 +9,7 @@ const ENGINE_REFRESH_SECONDS = 300;
 const TAB_CIRCUITOS = 'CIRCUITO'; 
 const TABLE_HEADER_NAME = 'Circuitos'; 
 
+// Mapa de onde ler a informação (Coluna da OLT)
 const OLT_COLUMN_MAP = {
     'HEL1':  1,  'HEL2':  3,  'MGP':   5,  'PQA1':  7,  'PSV1':  9,  'PSV7':  11,
     'SBO2':  13, 'SBO3':  15, 'SBO4':  17, 'SB1':   19, 'SB2':   21, 'SB3':   23,
@@ -19,7 +20,7 @@ function startOltMonitoring(config) {
     const container = document.querySelector('.grid-container');
     if (!container) return;
 
-    // --- 1. INJEÇÃO DO MODAL (POP-UP) NA PÁGINA ---
+    // --- 1. INJEÇÃO DO MODAL (POP-UP) ---
     if (!document.getElementById('detail-modal')) {
         const modalHTML = `
             <div id="detail-modal" class="modal-overlay" onclick="closeModal(event)">
@@ -50,13 +51,11 @@ function startOltMonitoring(config) {
         document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
 
-    // 2. Cria a estrutura HTML (TABELA LIMPA: Porta | Circuito | Status)
+    // 2. Cria a estrutura HTML
     function createTableStructure() {
         container.innerHTML = ''; 
         for (let i = 1; i <= config.boards; i++) {
             const placaId = i.toString().padStart(2, '0');
-            
-            // Apenas Porta e as colunas finais
             const colunasBase = '<th>Porta</th>'; 
             const colunasFinais = `<th>${TABLE_HEADER_NAME}</th><th>Status</th>`;
 
@@ -82,26 +81,28 @@ function startOltMonitoring(config) {
         } catch (e) { return []; }
     }
 
-    function getCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
-        const colIndex = OLT_COLUMN_MAP[oltId];
-        if (colIndex === undefined) return "-";
-        if (!rowsCircuitos.length) return "-";
-
-        let rowIndex = -1;
+    // NOVA FUNÇÃO: Gera a chave de busca baseada na regra da OLT
+    function generateSearchKey(type, placa, porta) {
+        // Remove zeros à esquerda para bater com a planilha (ex: 01 vira 1)
         const p = parseInt(porta);
         const sl = parseInt(placa);
 
-        if (type === 'nokia') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
-        else if (type === 'furukawa-2') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
-        else if (type === 'furukawa-10') rowIndex = ((sl - 1) * 4) + (p - 1) + 1;
-
-        if (rowIndex > 0 && rowIndex < rowsCircuitos.length) {
-            return rowsCircuitos[rowIndex][colIndex] || "-";
+        if (type === 'nokia') {
+            // Regra Nokia: 1/1/PLACA/PORTA
+            return `1/1/${sl}/${p}`;
+        } 
+        else if (type === 'furukawa-10') {
+            // Regra Furukawa SBO1/LTXV1: PLACA/PORTA
+            return `${sl}/${p}`;
+        } 
+        else { 
+            // Regra Furukawa Padrão (PSV7, SB1...): GPONPLACA/PORTA
+            return `GPON${sl}/${p}`;
         }
-        return "-";
     }
 
     async function populateTables() {
+        // Limpa visual
         for (let i = 1; i <= config.boards; i++) {
             const tbody = document.getElementById(`tbody-placa-${i}`);
             if (tbody) tbody.innerHTML = '';
@@ -113,11 +114,23 @@ function startOltMonitoring(config) {
         try {
             const [responseOlt, rowsCircuitos] = await Promise.all([fetch(urlOlt), fetchCircuitosData()]);
             if (!responseOlt.ok) throw new Error('Falha API');
+            
             const dataOlt = await responseOlt.json();
             const rowsOlt = (dataOlt.values || []).slice(1);
+            
+            // --- CRIA MAPA DE BUSCA (Indexação pela Coluna A) ---
+            const circuitMap = new Map();
+            rowsCircuitos.forEach(row => {
+                if (row[0]) {
+                    // Chave = Coluna A (Trim para remover espaços acidentais)
+                    circuitMap.set(row[0].toString().trim(), row);
+                }
+            });
+
             const portData = {};
             const newProblems = new Set(); 
 
+            // Processa dados da OLT (Contagem)
             rowsOlt.forEach(columns => {
                 if (columns.length === 0) return;
                 let placa, porta, isOnline;
@@ -145,12 +158,20 @@ function startOltMonitoring(config) {
 
                 const portKey = `${placa}/${porta}`;
                 if (!portData[portKey]) {
-                    const infoExtra = getCircuitInfo(rowsCircuitos, config.id, placa, porta, config.type);
+                    // --- BUSCA INTELIGENTE POR CHAVE ---
+                    const searchKey = generateSearchKey(config.type, placa, porta);
+                    const row = circuitMap.get(searchKey); // Procura a linha pela chave
+                    const colIndex = OLT_COLUMN_MAP[config.id]; // Pega o índice da coluna
+                    
+                    // Se achou a linha e tem índice, pega o valor. Senão, traço.
+                    const infoExtra = (row && colIndex !== undefined) ? (row[colIndex] || "-") : "-";
+                    
                     portData[portKey] = { online: 0, offline: 0, info: infoExtra };
                 }
                 if (isOnline) portData[portKey].online++; else portData[portKey].offline++;
             });
 
+            // Renderiza Tabela
             for (const portKey in portData) {
                 const [placa, porta] = portKey.split('/');
                 const { online, offline, info } = portData[portKey];
@@ -164,7 +185,6 @@ function startOltMonitoring(config) {
 
                 if (statusClass === 'status-problema') newProblems.add(portKey);
 
-                // --- LINHA HTML MINIMALISTA + BOTÃO CLICÁVEL ---
                 const htmlRow = `
                     <tr>
                         <td>Porta ${porta.padStart(2, '0')}</td>
@@ -197,7 +217,7 @@ function startOltMonitoring(config) {
     setInterval(runUpdate, ENGINE_REFRESH_SECONDS * 1000); 
 }
 
-// --- FUNÇÕES DO MODAL (POP-UP) ---
+// --- FUNÇÕES DO MODAL ---
 function closeModal(event) {
     if (event && event.target.id !== 'detail-modal') return;
     document.getElementById('detail-modal').style.display = 'none';
