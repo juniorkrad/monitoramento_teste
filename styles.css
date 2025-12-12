@@ -323,23 +323,23 @@ tbody td:first-child {
 .modal-stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 15px;
+    gap: 10px; /* Reduzido de 15px */
     text-align: center;
 }
 .modal-stat-box {
     background-color: rgba(0,0,0,0.2);
-    padding: 15px 5px;
+    padding: 10px 5px; /* Padding reduzido para caber melhor */
     border-radius: 12px;
     border: 1px solid var(--m3-outline);
 }
 .modal-stat-value {
     display: block;
-    font-size: 1.8em;
+    font-size: 1.5em; /* Reduzido de 1.8em */
     font-weight: 700;
     margin-bottom: 5px;
 }
 .modal-stat-label {
-    font-size: 0.75em;
+    font-size: 0.7em; /* Reduzido de 0.75em */
     color: var(--m3-on-surface-variant);
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -373,6 +373,11 @@ tbody td:first-child {
     border-collapse: collapse;
     font-size: 0.85rem;
     color: var(--m3-on-surface);
+}
+
+/* Ocultar Cabeçalho da tabela de clientes */
+.client-table thead {
+    display: none;
 }
 
 .client-table th {
