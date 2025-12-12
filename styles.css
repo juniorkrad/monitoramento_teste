@@ -156,7 +156,7 @@ th, td {
     text-align: left; 
     border-top: 1px solid var(--m3-outline); 
     color: var(--m3-on-surface); 
-    font-size: 0.95em; /* Aumentado um pouco para melhor leitura */
+    font-size: 0.95em; 
     
     white-space: nowrap;    
     vertical-align: middle; 
@@ -201,7 +201,7 @@ tbody tr:hover td {
 
 /* --- DESTAQUE PARA A COLUNA "PORTA" (Negrito) --- */
 tbody td:first-child {
-    font-weight: 700; /* Deixa "Porta 01" mais forte */
+    font-weight: 700; 
     color: var(--m3-on-surface);
 }
 
@@ -223,6 +223,21 @@ tbody td:first-child {
     text-overflow: ellipsis;
 }
 
+/* --- NOVO: BADGE DE CIRCUITO CLICÁVEL --- */
+.circuit-clickable {
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 255, 255, 0.4);
+    transition: all 0.2s ease;
+}
+.circuit-clickable:hover {
+    background-color: var(--m3-primary);
+    color: #fff;
+    text-decoration: none;
+    box-shadow: 0 0 8px rgba(103, 7, 159, 0.6);
+    border-color: var(--m3-primary);
+}
+
 /* --- BOTÃO DE STATUS CLICÁVEL --- */
 .status-btn {
     cursor: pointer;
@@ -232,12 +247,12 @@ tbody td:first-child {
     font-weight: bold;
 }
 .status-btn:hover {
-    transform: scale(1.05); /* Efeito de clique */
-    filter: brightness(1.15); /* Fica mais claro */
+    transform: scale(1.05); 
+    filter: brightness(1.15); 
     box-shadow: 0 4px 10px rgba(0,0,0,0.4);
 }
 .status-btn:active {
-    transform: scale(0.95); /* Efeito de pressionar */
+    transform: scale(0.95); 
 }
 
 /* --- ESTILOS DO MODAL (POP-UP) --- */
@@ -246,8 +261,8 @@ tbody td:first-child {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background-color: rgba(0, 0, 0, 0.75); /* Fundo bem escuro */
-    backdrop-filter: blur(5px); /* Efeito de vidro */
+    background-color: rgba(0, 0, 0, 0.75); 
+    backdrop-filter: blur(5px); 
     z-index: 9999;
     justify-content: center;
     align-items: center;
@@ -259,12 +274,13 @@ tbody td:first-child {
     border: 1px solid var(--m3-outline);
     border-radius: 16px;
     width: 90%;
-    max-width: 400px; 
+    max-width: 400px; /* Padrão (estatísticas). JS pode substituir para 800px para tabela */
     padding: 0;
     box-shadow: 0 20px 50px rgba(0,0,0,0.6);
     overflow: hidden;
     transform: scale(0.9);
     animation: popIn 0.2s forwards;
+    transition: max-width 0.3s ease; /* Animação suave se a largura mudar */
 }
 
 @keyframes popIn {
@@ -321,6 +337,58 @@ tbody td:first-child {
 .val-offline { color: var(--m3-color-error); }
 .val-total { color: var(--m3-on-surface); }
 
+/* --- NOVOS ESTILOS PARA LISTA DE CLIENTES (POP-UP) --- */
+.modal-section-title {
+    font-size: 1.1rem;
+    color: var(--m3-on-surface);
+    margin-bottom: 10px;
+    border-bottom: 2px solid var(--m3-outline);
+    padding-bottom: 5px;
+    font-weight: 500;
+}
+
+.client-table-container {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 15px;
+    border: 1px solid var(--m3-outline);
+    border-radius: 8px;
+    background-color: rgba(0,0,0,0.2);
+}
+
+.client-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    color: var(--m3-on-surface);
+}
+
+.client-table th {
+    background-color: var(--m3-surface-container-high);
+    color: var(--m3-on-primary);
+    padding: 10px 12px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.client-table td {
+    border-bottom: 1px solid var(--m3-outline);
+    padding: 8px 12px;
+    color: var(--m3-on-surface-variant);
+}
+
+.client-table tr:nth-child(even) td {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.client-table tr:hover td {
+    background-color: var(--m3-state-layer-hover);
+    color: var(--m3-on-surface);
+}
+
 /* ------------------------------------- */
 
 .status { font-weight: bold; padding: 4px 12px; border-radius: 20px; display: inline-block; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -365,4 +433,6 @@ tbody td:first-child {
     #main-menu-block { padding: 30px; min-width: auto; width: 100%; box-sizing: border-box; }
     .main-menu-button { min-width: auto; }
     .sub-menu-block { padding: 20px; }
+    /* Ajuste do modal para telas pequenas */
+    .modal-content { width: 95% !important; max-width: none !important; }
 }
