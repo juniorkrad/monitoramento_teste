@@ -319,30 +319,42 @@ tbody td:first-child {
 
 .modal-body { padding: 25px; }
 
-/* Grid dos números dentro do modal */
+/* --- GRID DOS NÚMEROS (AJUSTADO PARA PREENCHER ESPAÇO) --- */
 .modal-stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px; /* Reduzido de 15px */
+    gap: 15px;
     text-align: center;
+    width: 100%; /* Garante que usa toda largura */
 }
+
 .modal-stat-box {
-    background-color: rgba(0,0,0,0.2);
-    padding: 10px 5px; /* Padding reduzido para caber melhor */
+    background-color: rgba(0,0,0,0.25); /* Levemente mais escuro */
+    padding: 25px 5px; /* Altura vertical maior para preencher */
     border-radius: 12px;
     border: 1px solid var(--m3-outline);
+    
+    /* Centralizar verticalmente e horizontalmente */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
+
 .modal-stat-value {
     display: block;
-    font-size: 1.5em; /* Reduzido de 1.8em */
+    font-size: 2.5em; /* Fonte bem maior */
     font-weight: 700;
     margin-bottom: 5px;
+    line-height: 1; /* Evita espaçamento extra */
 }
+
 .modal-stat-label {
-    font-size: 0.7em; /* Reduzido de 0.75em */
+    font-size: 0.85em;
     color: var(--m3-on-surface-variant);
     text-transform: uppercase;
     letter-spacing: 1px;
+    font-weight: 500;
 }
 
 .val-online { color: var(--m3-color-success); }
