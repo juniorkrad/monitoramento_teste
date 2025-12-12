@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão Busca por Chave (Coluna A da Planilha)
+// olt-engine.js - Versão Final Corrigida (Busca Robusta + Click Funcional)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -9,7 +9,7 @@ const ENGINE_REFRESH_SECONDS = 300;
 const TAB_CIRCUITOS = 'CIRCUITO'; 
 const TABLE_HEADER_NAME = 'Circuitos'; 
 
-// Mapa de onde ler a informação (Coluna da OLT)
+// Mapa de Colunas (Onde está a info na planilha)
 const OLT_COLUMN_MAP = {
     'HEL1':  1,  'HEL2':  3,  'MGP':   5,  'PQA1':  7,  'PSV1':  9,  'PSV7':  11,
     'SBO2':  13, 'SBO3':  15, 'SBO4':  17, 'SB1':   19, 'SB2':   21, 'SB3':   23,
@@ -30,7 +30,7 @@ function startOltMonitoring(config) {
                         <button class="close-modal" onclick="closeModal()">×</button>
                     </div>
                     <div class="modal-body">
-                        <div class="modal-stats-grid">
+                        <div id="modal-stats-view" class="modal-stats-grid" style="display:none;">
                             <div class="modal-stat-box">
                                 <span id="modal-up" class="modal-stat-value val-online">0</span>
                                 <span class="modal-stat-label">${config.type === 'nokia' ? 'UP' : 'ACTIVE'}</span>
@@ -42,6 +42,16 @@ function startOltMonitoring(config) {
                             <div class="modal-stat-box">
                                 <span id="modal-total" class="modal-stat-value val-total">0</span>
                                 <span class="modal-stat-label">TOTAL</span>
+                            </div>
+                        </div>
+
+                        <div id="modal-info-view" style="display:none; text-align: center;">
+                            <p style="font-size: 0.9em; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-bottom: 10px;">Identificação Técnica (Planilha):</p>
+                            <h2 id="modal-tech-id" style="color: var(--m3-primary); margin: 0 0 20px 0;">-</h2>
+                            
+                            <p style="font-size: 0.9em; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-bottom: 10px;">Informação do Circuito:</p>
+                            <div id="modal-circuit-desc" style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border: 1px solid var(--m3-outline); font-size: 1.1em;">
+                                -
                             </div>
                         </div>
                     </div>
@@ -75,34 +85,29 @@ function startOltMonitoring(config) {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${TAB_CIRCUITOS}!A:AK?key=${ENGINE_API_KEY}`;
         try {
             const response = await fetch(url);
-            if (!response.ok) return [];
+            if (!response.ok) {
+                console.error("Erro HTTP ao baixar Circuitos:", response.status);
+                return [];
+            }
             const data = await response.json();
             return data.values || [];
-        } catch (e) { return []; }
-    }
-
-    // NOVA FUNÇÃO: Gera a chave de busca baseada na regra da OLT
-    function generateSearchKey(type, placa, porta) {
-        // Remove zeros à esquerda para bater com a planilha (ex: 01 vira 1)
-        const p = parseInt(porta);
-        const sl = parseInt(placa);
-
-        if (type === 'nokia') {
-            // Regra Nokia: 1/1/PLACA/PORTA
-            return `1/1/${sl}/${p}`;
-        } 
-        else if (type === 'furukawa-10') {
-            // Regra Furukawa SBO1/LTXV1: PLACA/PORTA
-            return `${sl}/${p}`;
-        } 
-        else { 
-            // Regra Furukawa Padrão (PSV7, SB1...): GPONPLACA/PORTA
-            return `GPON${sl}/${p}`;
+        } catch (e) { 
+            console.error("Erro de rede ao baixar Circuitos:", e);
+            return []; 
         }
     }
 
+    // Gera a chave de busca EXATAMENTE como descrito (Coluna A)
+    function generateSearchKey(type, placa, porta) {
+        const p = parseInt(porta);
+        const sl = parseInt(placa);
+
+        if (type === 'nokia') return `1/1/${sl}/${p}`; // Ex: 1/1/1/1
+        else if (type === 'furukawa-10') return `${sl}/${p}`; // Ex: 1/1
+        else return `GPON${sl}/${p}`; // Ex: GPON1/1
+    }
+
     async function populateTables() {
-        // Limpa visual
         for (let i = 1; i <= config.boards; i++) {
             const tbody = document.getElementById(`tbody-placa-${i}`);
             if (tbody) tbody.innerHTML = '';
@@ -113,24 +118,25 @@ function startOltMonitoring(config) {
 
         try {
             const [responseOlt, rowsCircuitos] = await Promise.all([fetch(urlOlt), fetchCircuitosData()]);
-            if (!responseOlt.ok) throw new Error('Falha API');
             
+            if (!responseOlt.ok) throw new Error('Falha na API OLT');
             const dataOlt = await responseOlt.json();
             const rowsOlt = (dataOlt.values || []).slice(1);
             
-            // --- CRIA MAPA DE BUSCA (Indexação pela Coluna A) ---
+            // --- CRIA MAPA DE BUSCA ---
             const circuitMap = new Map();
             rowsCircuitos.forEach(row => {
                 if (row[0]) {
-                    // Chave = Coluna A (Trim para remover espaços acidentais)
+                    // Normaliza a chave (remove espaços e força string)
                     circuitMap.set(row[0].toString().trim(), row);
                 }
             });
 
+            console.log(`[DEBUG] Mapa de Circuitos carregado com ${circuitMap.size} linhas.`);
+
             const portData = {};
             const newProblems = new Set(); 
 
-            // Processa dados da OLT (Contagem)
             rowsOlt.forEach(columns => {
                 if (columns.length === 0) return;
                 let placa, porta, isOnline;
@@ -158,23 +164,27 @@ function startOltMonitoring(config) {
 
                 const portKey = `${placa}/${porta}`;
                 if (!portData[portKey]) {
-                    // --- BUSCA INTELIGENTE POR CHAVE ---
                     const searchKey = generateSearchKey(config.type, placa, porta);
-                    const row = circuitMap.get(searchKey); // Procura a linha pela chave
-                    const colIndex = OLT_COLUMN_MAP[config.id]; // Pega o índice da coluna
+                    const row = circuitMap.get(searchKey);
+                    const colIndex = OLT_COLUMN_MAP[config.id];
                     
-                    // Se achou a linha e tem índice, pega o valor. Senão, traço.
-                    const infoExtra = (row && colIndex !== undefined) ? (row[colIndex] || "-") : "-";
-                    
-                    portData[portKey] = { online: 0, offline: 0, info: infoExtra };
+                    let infoExtra = "-";
+                    // Validação rigorosa para não dar erro
+                    if (row && colIndex !== undefined && row[colIndex]) {
+                        infoExtra = row[colIndex];
+                    }
+
+                    // Se infoExtra for vazio, coloca um traço para manter o clique funcional
+                    if (infoExtra === "" || infoExtra === " ") infoExtra = "-";
+
+                    portData[portKey] = { online: 0, offline: 0, info: infoExtra, techId: searchKey };
                 }
                 if (isOnline) portData[portKey].online++; else portData[portKey].offline++;
             });
 
-            // Renderiza Tabela
             for (const portKey in portData) {
                 const [placa, porta] = portKey.split('/');
-                const { online, offline, info } = portData[portKey];
+                const { online, offline, info, techId } = portData[portKey];
                 const total = online + offline;
                 let statusClass = 'status-normal';
                 let statusText = 'Normal';
@@ -185,13 +195,19 @@ function startOltMonitoring(config) {
 
                 if (statusClass === 'status-problema') newProblems.add(portKey);
 
+                // --- GERAÇÃO HTML COM FUNÇÕES GLOBAIS ---
                 const htmlRow = `
                     <tr>
                         <td>Porta ${porta.padStart(2, '0')}</td>
-                        <td><span class="circuit-badge">${info}</span></td>
+                        <td>
+                            <span class="circuit-badge" style="cursor:pointer;" 
+                                  onclick="window.openTechDetails('${placa}', '${porta}', '${techId}', '${info.replace(/'/g, "\\'")}')">
+                                  ${info}
+                            </span>
+                        </td>
                         <td>
                             <button class="status ${statusClass} status-btn" 
-                                onclick="openPortDetails('${placa}', '${porta}', ${online}, ${offline}, ${total})">
+                                onclick="window.openPortDetails('${placa}', '${porta}', ${online}, ${offline}, ${total})">
                                 ${statusText}
                             </button>
                         </td>
@@ -217,17 +233,38 @@ function startOltMonitoring(config) {
     setInterval(runUpdate, ENGINE_REFRESH_SECONDS * 1000); 
 }
 
-// --- FUNÇÕES DO MODAL ---
-function closeModal(event) {
+// --- FUNÇÕES GLOBAIS (WINDOW) PARA GARANTIR O CLIQUE ---
+window.closeModal = function(event) {
     if (event && event.target.id !== 'detail-modal') return;
-    document.getElementById('detail-modal').style.display = 'none';
+    const modal = document.getElementById('detail-modal');
+    if(modal) modal.style.display = 'none';
 }
 
-function openPortDetails(placa, porta, online, offline, total) {
+window.openPortDetails = function(placa, porta, online, offline, total) {
     const modal = document.getElementById('detail-modal');
+    if(!modal) return;
+    
+    document.getElementById('modal-stats-view').style.display = 'grid';
+    document.getElementById('modal-info-view').style.display = 'none';
+    
     document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta}`;
     document.getElementById('modal-up').textContent = online;
     document.getElementById('modal-down').textContent = offline;
     document.getElementById('modal-total').textContent = total;
+    
+    modal.style.display = 'flex';
+}
+
+window.openTechDetails = function(placa, porta, techId, infoDesc) {
+    const modal = document.getElementById('detail-modal');
+    if(!modal) return;
+
+    document.getElementById('modal-stats-view').style.display = 'none';
+    document.getElementById('modal-info-view').style.display = 'block';
+    
+    document.getElementById('modal-title').textContent = `Info da Porta`;
+    document.getElementById('modal-tech-id').textContent = techId; // Mostra: 1/1/1/1 ou GPON1/1
+    document.getElementById('modal-circuit-desc').textContent = infoDesc; // Mostra o texto da planilha
+    
     modal.style.display = 'flex';
 }
