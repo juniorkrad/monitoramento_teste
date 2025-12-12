@@ -276,8 +276,8 @@ tbody td:first-child {
     border-radius: 16px;
     width: 90%;
     
-    /* Configuração Padrão (Pequeno para Status) */
-    max-width: 400px; 
+    /* Configuração Padrão (Reduzida para 350px para apertar o layout) */
+    max-width: 350px; 
     
     padding: 0;
     box-shadow: 0 20px 50px rgba(0,0,0,0.6);
@@ -319,22 +319,21 @@ tbody td:first-child {
 
 .modal-body { padding: 25px; }
 
-/* --- GRID DOS NÚMEROS (AJUSTADO PARA PREENCHER ESPAÇO) --- */
+/* --- GRID DOS NÚMEROS (PREENCHIMENTO TOTAL) --- */
 .modal-stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 15px;
+    gap: 10px; 
     text-align: center;
-    width: 100%; /* Garante que usa toda largura */
+    width: 100%; 
 }
 
 .modal-stat-box {
-    background-color: rgba(0,0,0,0.25); /* Levemente mais escuro */
-    padding: 25px 5px; /* Altura vertical maior para preencher */
+    background-color: rgba(0,0,0,0.25); 
+    padding: 35px 5px; /* Aumentado para 35px para esticar a altura */
     border-radius: 12px;
     border: 1px solid var(--m3-outline);
     
-    /* Centralizar verticalmente e horizontalmente */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -343,14 +342,14 @@ tbody td:first-child {
 
 .modal-stat-value {
     display: block;
-    font-size: 2.5em; /* Fonte bem maior */
+    font-size: 3em; /* Fonte AUMENTADA para 3em */
     font-weight: 700;
     margin-bottom: 5px;
-    line-height: 1; /* Evita espaçamento extra */
+    line-height: 1; 
 }
 
 .modal-stat-label {
-    font-size: 0.85em;
+    font-size: 0.8em;
     color: var(--m3-on-surface-variant);
     text-transform: uppercase;
     letter-spacing: 1px;
