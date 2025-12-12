@@ -150,14 +150,13 @@ table {
     margin-bottom: 10px;
 }
 
-/* --- CORREÇÃO DE CÉLULAS (Voltou o espaçamento confortável) --- */
+/* --- CORREÇÃO DE CÉLULAS --- */
 th, td { 
-    padding: 8px 10px; /* <--- VOLTOU AO NORMAL (Espaço bom) */
+    padding: 8px 10px; 
     text-align: left; 
     border-top: 1px solid var(--m3-outline); 
     color: var(--m3-on-surface); 
     font-size: 0.9em; 
-    
     white-space: nowrap;    
     vertical-align: middle; 
 }
@@ -182,8 +181,7 @@ th, td {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-size: 0.85em;
-    padding: 8px 10px; /* <--- VOLTOU AO NORMAL */
-    
+    padding: 8px 10px; 
     border-top: none; 
     border-bottom: 1px solid var(--m3-outline);
     position: sticky;
@@ -199,7 +197,7 @@ tbody tr:hover td {
     background-color: var(--m3-state-layer-hover); 
 }
 
-/* --- NOVO ESTILO: BADGE INTELIGENTE --- */
+/* --- BADGE INTELIGENTE (CIRCUITOS) --- */
 .circuit-badge {
     display: inline-block;
     background-color: var(--m3-outline); 
@@ -211,17 +209,99 @@ tbody tr:hover td {
     min-width: 20px; 
     text-align: center;
     vertical-align: middle;
-
-    /* --- O SEGREDO DO ALINHAMENTO --- */
-    /* Define um tamanho máximo para o botão roxo.
-       Se o texto passar disso, ele coloca "..." no final 
-       e NÃO aumenta a largura da tabela. */
     max-width: 140px; 
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-/* -------------------------------------- */
+
+/* --- NOVO ESTILO: BOTÃO DE STATUS CLICÁVEL --- */
+.status-btn {
+    cursor: pointer;
+    transition: transform 0.2s, filter 0.2s;
+    border: none;
+    font-family: inherit; /* Herda a fonte Montserrat */
+    font-weight: bold;
+    /* Remove padding extra se o navegador colocar */
+}
+.status-btn:hover {
+    transform: scale(1.1); /* Cresce */
+    filter: brightness(1.2); /* Brilha */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* Sombra */
+}
+
+/* --- NOVO ESTILO: MODAL (POP-UP) --- */
+.modal-overlay {
+    display: none; 
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); 
+    backdrop-filter: blur(4px); 
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    animation: fadeInPage 0.2s ease-out;
+}
+
+.modal-content {
+    background-color: var(--m3-surface-container);
+    border: 1px solid var(--m3-outline);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 400px; 
+    padding: 0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    overflow: hidden;
+}
+
+.modal-header {
+    background-color: var(--m3-surface-container-high);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--m3-outline);
+}
+.modal-header h3 { margin: 0; font-size: 1.2em; color: var(--m3-on-surface); }
+
+.close-modal {
+    background: none; border: none;
+    color: var(--m3-on-surface-variant);
+    font-size: 1.8em; cursor: pointer; line-height: 1;
+}
+.close-modal:hover { color: var(--m3-color-error); }
+
+.modal-body { padding: 25px; }
+
+/* Grid dos números dentro do modal */
+.modal-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+    text-align: center;
+}
+.modal-stat-box {
+    background-color: rgba(0,0,0,0.2);
+    padding: 15px 5px;
+    border-radius: 12px;
+    border: 1px solid var(--m3-outline);
+}
+.modal-stat-value {
+    display: block;
+    font-size: 2em;
+    font-weight: 700;
+}
+.modal-stat-label {
+    font-size: 0.9em;
+    color: var(--m3-on-surface-variant);
+    text-transform: uppercase;
+}
+
+.val-online { color: var(--m3-color-success); }
+.val-offline { color: var(--m3-color-error); }
+.val-total { color: var(--m3-on-surface); }
+/* ------------------------------------- */
 
 .status { font-weight: bold; padding: 2px 8px; border-radius: 12px; display: inline-block; font-size: 0.8em; text-transform: uppercase; }
 .status-normal { background-color: var(--m3-color-success); color: #fff; }

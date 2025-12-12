@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - VERSÃO TESTE (Colunas Ocultas)
+// olt-engine.js - Versão Minimalista (Tabela Limpa + Drill-Down)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -19,26 +19,52 @@ function startOltMonitoring(config) {
     const container = document.querySelector('.grid-container');
     if (!container) return;
 
-    // 1. Cria a estrutura HTML (SEM AS COLUNAS DE CONTAGEM)
+    // --- 1. INJEÇÃO DO MODAL (POP-UP) NA PÁGINA ---
+    if (!document.getElementById('detail-modal')) {
+        const modalHTML = `
+            <div id="detail-modal" class="modal-overlay" onclick="closeModal(event)">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="modal-title">Detalhes</h3>
+                        <button class="close-modal" onclick="closeModal()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="modal-stats-grid">
+                            <div class="modal-stat-box">
+                                <span id="modal-up" class="modal-stat-value val-online">0</span>
+                                <span class="modal-stat-label">${config.type === 'nokia' ? 'UP' : 'ACTIVE'}</span>
+                            </div>
+                            <div class="modal-stat-box">
+                                <span id="modal-down" class="modal-stat-value val-offline">0</span>
+                                <span class="modal-stat-label">${config.type === 'nokia' ? 'DOWN' : 'INACTIVE'}</span>
+                            </div>
+                            <div class="modal-stat-box">
+                                <span id="modal-total" class="modal-stat-value val-total">0</span>
+                                <span class="modal-stat-label">TOTAL</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    // 2. Cria a estrutura HTML (TABELA LIMPA: Porta | Circuito | Status)
     function createTableStructure() {
         container.innerHTML = ''; 
         for (let i = 1; i <= config.boards; i++) {
             const placaId = i.toString().padStart(2, '0');
             
-            // --- TESTE: REMOVIDAS AS COLUNAS UP/DOWN/TOTAL ---
+            // Apenas Porta e as colunas finais
             const colunasBase = '<th>Porta</th>'; 
-            
             const colunasFinais = `<th>${TABLE_HEADER_NAME}</th><th>Status</th>`;
 
             container.innerHTML += `
                 <table>
                     <thead>
-                        <tr class="table-title-row">
-                            <th colspan="3">PLACA ${placaId}</th> </tr>
-                        <tr class="table-header-row">
-                            ${colunasBase}
-                            ${colunasFinais}
-                        </tr>
+                        <tr class="table-title-row"><th colspan="3">PLACA ${placaId}</th></tr>
+                        <tr class="table-header-row">${colunasBase}${colunasFinais}</tr>
                     </thead>
                     <tbody id="tbody-placa-${i}"></tbody>
                 </table>
@@ -53,9 +79,7 @@ function startOltMonitoring(config) {
             if (!response.ok) return [];
             const data = await response.json();
             return data.values || [];
-        } catch (e) {
-            return [];
-        }
+        } catch (e) { return []; }
     }
 
     function getCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
@@ -72,8 +96,7 @@ function startOltMonitoring(config) {
         else if (type === 'furukawa-10') rowIndex = ((sl - 1) * 4) + (p - 1) + 1;
 
         if (rowIndex > 0 && rowIndex < rowsCircuitos.length) {
-            const row = rowsCircuitos[rowIndex];
-            return row[colIndex] || "-";
+            return rowsCircuitos[rowIndex][colIndex] || "-";
         }
         return "-";
     }
@@ -88,15 +111,10 @@ function startOltMonitoring(config) {
         const urlOlt = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${rangeOlt}?key=${ENGINE_API_KEY}`;
 
         try {
-            const [responseOlt, rowsCircuitos] = await Promise.all([
-                fetch(urlOlt),
-                fetchCircuitosData()
-            ]);
-
-            if (!responseOlt.ok) throw new Error('Falha na API OLT');
+            const [responseOlt, rowsCircuitos] = await Promise.all([fetch(urlOlt), fetchCircuitosData()]);
+            if (!responseOlt.ok) throw new Error('Falha API');
             const dataOlt = await responseOlt.json();
             const rowsOlt = (dataOlt.values || []).slice(1);
-            
             const portData = {};
             const newProblems = new Set(); 
 
@@ -111,12 +129,10 @@ function startOltMonitoring(config) {
                     const parts = pon.split('/'); 
                     if (parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
                     isOnline = status.trim().toLowerCase().includes('up');
-
                 } else { 
                     const portStr = columns[0];
                     const status = columns[2];
                     if (!portStr || !status) return;
-                    
                     if (config.type === 'furukawa-10') {
                         const parts = portStr.split('/');
                         if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
@@ -132,7 +148,6 @@ function startOltMonitoring(config) {
                     const infoExtra = getCircuitInfo(rowsCircuitos, config.id, placa, porta, config.type);
                     portData[portKey] = { online: 0, offline: 0, info: infoExtra };
                 }
-
                 if (isOnline) portData[portKey].online++; else portData[portKey].offline++;
             });
 
@@ -140,7 +155,6 @@ function startOltMonitoring(config) {
                 const [placa, porta] = portKey.split('/');
                 const { online, offline, info } = portData[portKey];
                 const total = online + offline;
-
                 let statusClass = 'status-normal';
                 let statusText = 'Normal';
 
@@ -150,12 +164,17 @@ function startOltMonitoring(config) {
 
                 if (statusClass === 'status-problema') newProblems.add(portKey);
 
-                // --- LINHA HTML SIMPLIFICADA ---
+                // --- LINHA HTML MINIMALISTA + BOTÃO CLICÁVEL ---
                 const htmlRow = `
                     <tr>
                         <td>Porta ${porta.padStart(2, '0')}</td>
                         <td><span class="circuit-badge">${info}</span></td>
-                        <td><span class="status ${statusClass}">${statusText}</span></td>
+                        <td>
+                            <button class="status ${statusClass} status-btn" 
+                                onclick="openPortDetails('${placa}', '${porta}', ${online}, ${offline}, ${total})">
+                                ${statusText}
+                            </button>
+                        </td>
                     </tr>
                 `;
 
@@ -163,23 +182,32 @@ function startOltMonitoring(config) {
                 if (targetTbody) targetTbody.innerHTML += htmlRow;
             }
 
-            if (typeof checkAndNotifyForNewProblems === 'function') {
-                checkAndNotifyForNewProblems(newProblems);
-            }
+            if (typeof checkAndNotifyForNewProblems === 'function') checkAndNotifyForNewProblems(newProblems);
 
-        } catch (error) {
-            console.error('Erro na engine:', error);
-        }
+        } catch (error) { console.error('Erro na engine:', error); }
     }
 
     async function updateTime() {
-        if (typeof loadTimestamp === 'function') {
-            await loadTimestamp(config.id, ENGINE_API_KEY, ENGINE_SHEET_ID);
-        }
+        if (typeof loadTimestamp === 'function') await loadTimestamp(config.id, ENGINE_API_KEY, ENGINE_SHEET_ID);
     }
 
     createTableStructure();
     const runUpdate = () => { populateTables(); updateTime(); };
     runUpdate(); 
     setInterval(runUpdate, ENGINE_REFRESH_SECONDS * 1000); 
+}
+
+// --- FUNÇÕES DO MODAL (POP-UP) ---
+function closeModal(event) {
+    if (event && event.target.id !== 'detail-modal') return;
+    document.getElementById('detail-modal').style.display = 'none';
+}
+
+function openPortDetails(placa, porta, online, offline, total) {
+    const modal = document.getElementById('detail-modal');
+    document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta}`;
+    document.getElementById('modal-up').textContent = online;
+    document.getElementById('modal-down').textContent = offline;
+    document.getElementById('modal-total').textContent = total;
+    modal.style.display = 'flex';
 }
