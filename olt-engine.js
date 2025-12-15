@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão Final (Tamanhos de Modal Dinâmicos)
+// olt-engine.js - Versão Atualizada (Coluna H na Furukawa)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -217,11 +217,12 @@ function startOltMonitoring(config) {
                         colH: columns[7] || ''
                     };
                 } else {
-                    // Furukawa (Todas): Coleta Col B, C, D
+                    // Furukawa (Todas): Coleta Col B, C, D e H (Descrição)
                     clientData = {
                         colB: columns[1] || '',
                         colC: columns[2] || '',
-                        colD: columns[3] || ''
+                        colD: columns[3] || '',
+                        colH: columns[7] || '' // Adicionado Coluna H
                     };
                 }
                 
@@ -242,6 +243,7 @@ function startOltMonitoring(config) {
 
                 if (statusClass === 'status-problema') newProblems.add(portKey);
 
+                // Passamos o config.type para a função openCircuitClients saber o que desenhar
                 const htmlRow = `
                     <tr>
                         <td>Porta ${porta.padStart(2, '0')}</td>
@@ -357,17 +359,18 @@ function openCircuitClients(placa, porta, circuitoNome, oltType) {
         }
 
     } else {
-        // Cabeçalho Furukawa (Todas)
+        // Cabeçalho Furukawa (Todas) - ATUALIZADO COM COL H
         thead.innerHTML = `
             <tr>
                 <th>Col B</th>
                 <th>Col C</th>
                 <th>Col D</th>
+                <th>Col H</th> 
             </tr>
         `;
 
         if (clients.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Nenhum cliente encontrado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum cliente encontrado.</td></tr>';
         } else {
             clients.forEach(c => {
                 tbody.innerHTML += `
@@ -375,6 +378,7 @@ function openCircuitClients(placa, porta, circuitoNome, oltType) {
                         <td>${c.colB}</td>
                         <td>${c.colC}</td>
                         <td>${c.colD}</td>
+                        <td>${c.colH}</td>
                     </tr>
                 `;
             });
