@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão Atualizada com Filtros (Busca + Status)
+// olt-engine.js - Versão Atualizada (Filtros Separados Nokia vs Furukawa)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -86,10 +86,7 @@ function startOltMonitoring(config) {
                             <div class="filter-bar">
                                 <input type="text" id="search-input" class="filter-input" placeholder="Buscar (Nome, Serial...)" onkeyup="filterClients()">
                                 <select id="status-filter" class="filter-select" onchange="filterClients()">
-                                    <option value="all">Todos Status</option>
-                                    <option value="online">Online (UP/Active)</option>
-                                    <option value="offline">Offline (DOWN/Inactive)</option>
-                                </select>
+                                    </select>
                             </div>
 
                             <div class="client-table-container">
@@ -320,23 +317,39 @@ function openPortDetails(placa, porta, online, offline, total) {
     modal.style.display = 'flex';
 }
 
-// Variável global para saber qual tipo de OLT está aberta no modal (para o filtro funcionar)
+// Variável global para saber qual tipo de OLT está aberta
 window.CURRENT_MODAL_TYPE = '';
 
 function openCircuitClients(placa, porta, circuitoNome, oltType) {
     const modal = document.getElementById('detail-modal');
     document.querySelector('.modal-content').classList.add('modal-large');
     
-    window.CURRENT_MODAL_TYPE = oltType; // Salva o tipo para usar no filtro
+    window.CURRENT_MODAL_TYPE = oltType; 
 
     document.getElementById('circuit-title-text').textContent = `Circuito: ${circuitoNome} (Placa ${placa}/Porta ${porta})`;
 
     document.getElementById('view-stats').style.display = 'none';
     document.getElementById('view-clients').style.display = 'block';
     
-    // Reseta os filtros ao abrir
+    // --- RESET DO CAMPO DE BUSCA ---
     document.getElementById('search-input').value = '';
-    document.getElementById('status-filter').value = 'all';
+
+    // --- CONFIGURAÇÃO DINÂMICA DO DROPDOWN ---
+    const statusSelect = document.getElementById('status-filter');
+    statusSelect.innerHTML = '<option value="all">Todos Status</option>'; // Reset
+
+    if (oltType === 'nokia') {
+        statusSelect.innerHTML += `
+            <option value="online">Online (UP)</option>
+            <option value="offline">Offline (DOWN)</option>
+        `;
+    } else {
+        statusSelect.innerHTML += `
+            <option value="online">Online (Active)</option>
+            <option value="offline">Offline (Inactive)</option>
+        `;
+    }
+    statusSelect.value = 'all'; // Seleciona "Todos" por padrão
 
     const thead = document.getElementById('clients-thead');
     const tbody = document.getElementById('clients-tbody');
@@ -358,13 +371,18 @@ function openCircuitClients(placa, porta, circuitoNome, oltType) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum cliente encontrado.</td></tr>';
     } else {
         clients.forEach(c => {
-            // Define classe para o filtro de status
-            // Se for Nokia, olha colE. Se Furukawa, olha statusRef (que veio de colC)
-            let statusRaw = (oltType === 'nokia' ? c.colE : c.statusRef).toLowerCase();
+            // Lógica de Classificação para Filtro
+            let statusRaw = c.statusRef.toLowerCase();
             let statusClass = 'filter-unknown';
             
-            if (statusRaw.includes('up') || statusRaw.includes('active')) statusClass = 'filter-online';
-            else if (statusRaw.includes('down') || statusRaw.includes('inactive')) statusClass = 'filter-offline';
+            if (oltType === 'nokia') {
+                if (statusRaw.includes('up')) statusClass = 'filter-online';
+                else if (statusRaw.includes('down')) statusClass = 'filter-offline';
+            } else {
+                // Furukawa
+                if (statusRaw.includes('active') && !statusRaw.includes('inactive')) statusClass = 'filter-online';
+                else if (statusRaw.includes('inactive')) statusClass = 'filter-offline';
+            }
 
             let rowHTML = '';
             if (oltType === 'nokia') {
