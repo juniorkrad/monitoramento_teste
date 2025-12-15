@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão Atualizada (Coluna H na Furukawa)
+// olt-engine.js - Versão Atualizada (Nokia: Col B, C, E, H, I)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -36,7 +36,7 @@ function startOltMonitoring(config) {
                 .client-table tr:hover { background-color: #f1f1f1; }
                 .modal-section-title { font-size: 1.1rem; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
                 
-                /* Tema Escuro para Modal (ajuste para combinar com o styles.css geral) */
+                /* Tema Escuro para Modal */
                 .modal-content { background-color: #2f0e51; color: #EADDFF; border: 1px solid #5c4e72; }
                 .client-table th { background-color: #3a1c63; color: #fff; }
                 .client-table td { color: #EADDFF; border-bottom: 1px solid #5c4e72; }
@@ -149,7 +149,8 @@ function startOltMonitoring(config) {
             if (tbody) tbody.innerHTML = '';
         }
 
-        const rangeOlt = `${config.id}!A:H`; 
+        // --- ATUALIZAÇÃO 1: Range expandido para incluir coluna I (A:I) ---
+        const rangeOlt = `${config.id}!A:I`; 
         const urlOlt = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${rangeOlt}?key=${ENGINE_API_KEY}`;
 
         try {
@@ -208,13 +209,13 @@ function startOltMonitoring(config) {
                 let clientData = {};
                 
                 if (config.type === 'nokia') {
-                    // Nokia: Coleta Col B, C, E, G, H
+                    // --- ATUALIZAÇÃO 2: Nokia Coleta B(1), C(2), E(4), H(7), I(8) ---
                     clientData = {
                         colB: columns[1] || '',
                         colC: columns[2] || '',
                         colE: columns[4] || '',
-                        colG: columns[6] || '',
-                        colH: columns[7] || ''
+                        colH: columns[7] || '',
+                        colI: columns[8] || ''
                     };
                 } else {
                     // Furukawa (Todas): Coleta Col B, C, D e H (Descrição)
@@ -222,7 +223,7 @@ function startOltMonitoring(config) {
                         colB: columns[1] || '',
                         colC: columns[2] || '',
                         colD: columns[3] || '',
-                        colH: columns[7] || '' // Adicionado Coluna H
+                        colH: columns[7] || '' 
                     };
                 }
                 
@@ -331,14 +332,14 @@ function openCircuitClients(placa, porta, circuitoNome, oltType) {
     const clients = window.OLT_CLIENTS_DATA[portKey] || [];
 
     if (oltType === 'nokia') {
-        // Cabeçalho Nokia
+        // --- ATUALIZAÇÃO 3: Cabeçalho Nokia Ajustado (B, C, E, H, I) ---
         thead.innerHTML = `
             <tr>
                 <th>Col B</th>
                 <th>Col C</th>
                 <th>Col E</th>
-                <th>Col G</th>
                 <th>Col H</th>
+                <th>Col I</th>
             </tr>
         `;
         
@@ -351,15 +352,15 @@ function openCircuitClients(placa, porta, circuitoNome, oltType) {
                         <td>${c.colB}</td>
                         <td>${c.colC}</td>
                         <td>${c.colE}</td>
-                        <td>${c.colG}</td>
                         <td>${c.colH}</td>
+                        <td>${c.colI}</td>
                     </tr>
                 `;
             });
         }
 
     } else {
-        // Cabeçalho Furukawa (Todas) - ATUALIZADO COM COL H
+        // Cabeçalho Furukawa (Todas)
         thead.innerHTML = `
             <tr>
                 <th>Col B</th>
