@@ -137,7 +137,7 @@ body.home-page {
     width: 100%;
 }
 
-/* --- TABELAS UNIFICADAS --- */
+/* --- TABELAS UNIFICADAS (PRINCIPAL) --- */
 table { 
     width: 100%; 
     border-collapse: separate; 
@@ -150,7 +150,7 @@ table {
     margin-bottom: 10px;
 }
 
-/* --- CÉLULAS DA TABELA --- */
+/* --- CÉLULAS DA TABELA PRINCIPAL --- */
 th, td { 
     padding: 8px 10px; 
     text-align: left; 
@@ -269,7 +269,7 @@ tbody td:first-child {
     animation: fadeInPage 0.2s ease-out;
 }
 
-/* --- ESTILO PADRÃO (PEQUENO/STATUS) - RESTAURADO AO CLÁSSICO --- */
+/* --- ESTILO PADRÃO (PEQUENO/STATUS) --- */
 .modal-content {
     background-color: var(--m3-surface-container);
     border: 1px solid var(--m3-outline);
@@ -317,27 +317,27 @@ tbody td:first-child {
 .close-modal:hover { color: var(--m3-color-error); }
 
 .modal-body { 
-    padding: 25px; /* Restaurado para o padding original */
+    padding: 25px; 
 }
 
-/* --- GRID DOS NÚMEROS - RESTAURADO AO CLÁSSICO --- */
+/* --- GRID DOS NÚMEROS (STATUS) --- */
 .modal-stats-grid {
-    display: grid; /* Voltamos para Grid */
-    grid-template-columns: 1fr 1fr 1fr; /* 3 Colunas iguais */
-    gap: 15px; /* Espaçamento original */
+    display: grid; 
+    grid-template-columns: 1fr 1fr 1fr; 
+    gap: 15px; 
     text-align: center;
 }
 
 .modal-stat-box {
     background-color: rgba(0,0,0,0.2); 
-    padding: 15px 5px; /* Padding original moderado */
+    padding: 15px 5px; 
     border-radius: 12px;
     border: 1px solid var(--m3-outline);
 }
 
 .modal-stat-value {
     display: block;
-    font-size: 1.8em; /* Tamanho original que estava bom */
+    font-size: 1.8em; 
     font-weight: 700;
     margin-bottom: 5px;
 }
@@ -353,7 +353,7 @@ tbody td:first-child {
 .val-offline { color: var(--m3-color-error); }
 .val-total { color: var(--m3-on-surface); }
 
-/* --- NOVOS ESTILOS PARA LISTA DE CLIENTES (POP-UP) --- */
+/* --- AJUSTES DA TABELA DE CLIENTES DO POP-UP --- */
 .modal-section-title {
     font-size: 1.1rem;
     color: var(--m3-on-surface);
@@ -377,6 +377,9 @@ tbody td:first-child {
     border-collapse: collapse;
     font-size: 0.85rem;
     color: var(--m3-on-surface);
+    
+    /* --- MÁGICA DE ALINHAMENTO --- */
+    table-layout: auto; /* Deixa o navegador calcular o melhor ajuste */
 }
 
 /* Ocultar Cabeçalho da tabela de clientes */
@@ -384,20 +387,15 @@ tbody td:first-child {
     display: none;
 }
 
-.client-table th {
-    background-color: var(--m3-surface-container-high);
-    color: var(--m3-on-primary);
-    padding: 10px 12px;
-    text-align: left;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+/* --- Ajuste fino nas células do Pop-up --- */
+.client-table th, .client-table td {
+    padding: 6px 12px; /* Reduzi um pouco o padding vertical */
+    text-align: left; /* Garante que tudo comece da esquerda */
+    white-space: nowrap; /* Evita quebra de linha indesejada */
 }
 
 .client-table td {
     border-bottom: 1px solid var(--m3-outline);
-    padding: 8px 12px;
     color: var(--m3-on-surface-variant);
 }
 
@@ -409,6 +407,11 @@ tbody td:first-child {
     background-color: var(--m3-state-layer-hover);
     color: var(--m3-on-surface);
 }
+
+/* --- ESTILOS DOS FILTROS --- */
+.filter-bar { display: flex; gap: 10px; margin-bottom: 10px; }
+.filter-input { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #5c4e72; background-color: rgba(0,0,0,0.2); color: #fff; }
+.filter-select { padding: 8px; border-radius: 4px; border: 1px solid #5c4e72; background-color: #3a1c63; color: #fff; cursor: pointer; }
 
 /* ------------------------------------- */
 
