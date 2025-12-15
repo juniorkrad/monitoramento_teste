@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão Atualizada (Filtros Separados Nokia vs Furukawa)
+// olt-engine.js - Versão Final com "Etiqueta" para Status (modal-status)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -227,7 +227,7 @@ function startOltMonitoring(config) {
                         colE: columns[4] || '',
                         colH: columns[7] || '',
                         colI: columns[8] || '',
-                        statusRef: columns[4] || '' // Referência para filtro (Nokia usa Col E)
+                        statusRef: columns[4] || '' 
                     };
                 } else {
                     // Furukawa: Col B, C, D, H
@@ -236,7 +236,7 @@ function startOltMonitoring(config) {
                         colC: columns[2] || '',
                         colD: columns[3] || '',
                         colH: columns[7] || '',
-                        statusRef: columns[2] || '' // Referência para filtro (Furukawa usa Col C)
+                        statusRef: columns[2] || '' 
                     };
                 }
                 
@@ -305,7 +305,12 @@ function closeModal(event) {
 
 function openPortDetails(placa, porta, online, offline, total) {
     const modal = document.getElementById('detail-modal');
-    document.querySelector('.modal-content').classList.remove('modal-large');
+    const modalContent = document.querySelector('.modal-content');
+
+    // --- LÓGICA DE CLASSES DO MODAL (STATUS) ---
+    modalContent.classList.remove('modal-large'); // Remove o estilo de tabela grande
+    modalContent.classList.add('modal-status');   // Adiciona a etiqueta exclusiva de Status
+
     document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta} - Status`;
     
     document.getElementById('view-stats').style.display = 'flex';
@@ -322,9 +327,17 @@ window.CURRENT_MODAL_TYPE = '';
 
 function openCircuitClients(placa, porta, circuitoNome, oltType) {
     const modal = document.getElementById('detail-modal');
-    document.querySelector('.modal-content').classList.add('modal-large');
+    const modalContent = document.querySelector('.modal-content');
+
+    // --- LÓGICA DE CLASSES DO MODAL (CIRCUITO) ---
+    modalContent.classList.remove('modal-status'); // Remove a etiqueta de Status
+    modalContent.classList.add('modal-large');     // Adiciona estilo de tabela grande
     
     window.CURRENT_MODAL_TYPE = oltType; 
+
+    // Adiciona Classe de Estilo na Tabela (Nokia vs Furukawa)
+    const tableObj = document.getElementById('table-clients');
+    tableObj.className = 'client-table ' + (oltType === 'nokia' ? 'mode-nokia' : 'mode-furukawa');
 
     document.getElementById('circuit-title-text').textContent = `Circuito: ${circuitoNome} (Placa ${placa}/Porta ${porta})`;
 
