@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão Atualizada (Nokia: Col B, C, E, H, I)
+// olt-engine.js - Versão Atualizada com Filtros (Busca + Status)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -22,13 +22,13 @@ function startOltMonitoring(config) {
     const container = document.querySelector('.grid-container');
     if (!container) return;
 
-    // --- 1. INJEÇÃO DO MODAL (POP-UP) NA PÁGINA ---
+    // --- 1. INJEÇÃO DO MODAL (POP-UP) COM FILTROS ---
     if (!document.getElementById('detail-modal')) {
         const modalStyles = `
             <style>
                 .circuit-clickable { cursor: pointer; text-decoration: underline; color: #fff; font-weight: bold; }
                 .circuit-clickable:hover { color: #ffd700; }
-                .client-table-container { max-height: 400px; overflow-y: auto; margin-top: 15px; }
+                .client-table-container { max-height: 400px; overflow-y: auto; margin-top: 10px; }
                 .client-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; color: #333; }
                 .client-table th { background-color: #007bff; color: white; padding: 8px; text-align: left; position: sticky; top: 0; z-index: 10; }
                 .client-table td { border-bottom: 1px solid #ddd; padding: 6px 8px; color: #333; }
@@ -42,6 +42,11 @@ function startOltMonitoring(config) {
                 .client-table td { color: #EADDFF; border-bottom: 1px solid #5c4e72; }
                 .client-table tr:nth-child(even) { background-color: rgba(0,0,0,0.2); }
                 .client-table tr:hover { background-color: rgba(255,255,255,0.1); }
+                
+                /* Estilos dos Filtros */
+                .filter-bar { display: flex; gap: 10px; margin-bottom: 10px; }
+                .filter-input { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #5c4e72; background-color: rgba(0,0,0,0.2); color: #fff; }
+                .filter-select { padding: 8px; border-radius: 4px; border: 1px solid #5c4e72; background-color: #3a1c63; color: #fff; cursor: pointer; }
                 
                 .modal-view-stats { display: flex; }
                 .modal-view-clients { display: none; }
@@ -74,9 +79,21 @@ function startOltMonitoring(config) {
                         </div>
 
                         <div id="view-clients" style="display:none;">
-                            <div class="modal-section-title">Clientes do Circuito</div>
+                            <div class="modal-section-title">
+                                <span id="circuit-title-text">Clientes do Circuito</span>
+                            </div>
+                            
+                            <div class="filter-bar">
+                                <input type="text" id="search-input" class="filter-input" placeholder="Buscar (Nome, Serial...)" onkeyup="filterClients()">
+                                <select id="status-filter" class="filter-select" onchange="filterClients()">
+                                    <option value="all">Todos Status</option>
+                                    <option value="online">Online (UP/Active)</option>
+                                    <option value="offline">Offline (DOWN/Inactive)</option>
+                                </select>
+                            </div>
+
                             <div class="client-table-container">
-                                <table class="client-table">
+                                <table class="client-table" id="table-clients">
                                     <thead id="clients-thead">
                                         </thead>
                                     <tbody id="clients-tbody">
@@ -149,7 +166,6 @@ function startOltMonitoring(config) {
             if (tbody) tbody.innerHTML = '';
         }
 
-        // --- ATUALIZAÇÃO 1: Range expandido para incluir coluna I (A:I) ---
         const rangeOlt = `${config.id}!A:I`; 
         const urlOlt = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${rangeOlt}?key=${ENGINE_API_KEY}`;
 
@@ -182,11 +198,9 @@ function startOltMonitoring(config) {
                     if (!portStr || !status) return;
                     
                     if (config.type === 'furukawa-10') {
-                        // SBO1 e LTXV1: Slot/Port (ex: 1/1)
                         const parts = portStr.split('/');
                         if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
                     } else {
-                        // Outras Furukawa: GPONSlot/Port (ex: GPON1/1)
                         const match = portStr.match(/GPON(\d+)\/(\d+)/);
                         if (match) { placa = match[1]; porta = match[2]; }
                     }
@@ -209,21 +223,23 @@ function startOltMonitoring(config) {
                 let clientData = {};
                 
                 if (config.type === 'nokia') {
-                    // --- ATUALIZAÇÃO 2: Nokia Coleta B(1), C(2), E(4), H(7), I(8) ---
+                    // Nokia: Col B, C, E, H, I
                     clientData = {
                         colB: columns[1] || '',
                         colC: columns[2] || '',
                         colE: columns[4] || '',
                         colH: columns[7] || '',
-                        colI: columns[8] || ''
+                        colI: columns[8] || '',
+                        statusRef: columns[4] || '' // Referência para filtro (Nokia usa Col E)
                     };
                 } else {
-                    // Furukawa (Todas): Coleta Col B, C, D e H (Descrição)
+                    // Furukawa: Col B, C, D, H
                     clientData = {
                         colB: columns[1] || '',
                         colC: columns[2] || '',
                         colD: columns[3] || '',
-                        colH: columns[7] || '' 
+                        colH: columns[7] || '',
+                        statusRef: columns[2] || '' // Referência para filtro (Furukawa usa Col C)
                     };
                 }
                 
@@ -290,13 +306,9 @@ function closeModal(event) {
     document.getElementById('detail-modal').style.display = 'none';
 }
 
-// Abre detalhes de Estatísticas (MODAL PEQUENO)
 function openPortDetails(placa, porta, online, offline, total) {
     const modal = document.getElementById('detail-modal');
-    
-    // Remove classe de modal grande se existir
     document.querySelector('.modal-content').classList.remove('modal-large');
-
     document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta} - Status`;
     
     document.getElementById('view-stats').style.display = 'flex';
@@ -308,83 +320,88 @@ function openPortDetails(placa, porta, online, offline, total) {
     modal.style.display = 'flex';
 }
 
-// Abre lista de Clientes (MODAL GRANDE)
+// Variável global para saber qual tipo de OLT está aberta no modal (para o filtro funcionar)
+window.CURRENT_MODAL_TYPE = '';
+
 function openCircuitClients(placa, porta, circuitoNome, oltType) {
     const modal = document.getElementById('detail-modal');
-    
-    // Adiciona classe para expandir o modal
     document.querySelector('.modal-content').classList.add('modal-large');
+    
+    window.CURRENT_MODAL_TYPE = oltType; // Salva o tipo para usar no filtro
 
-    document.getElementById('modal-title').textContent = `Circuito: ${circuitoNome} (Placa ${placa}/Porta ${porta})`;
+    document.getElementById('circuit-title-text').textContent = `Circuito: ${circuitoNome} (Placa ${placa}/Porta ${porta})`;
 
     document.getElementById('view-stats').style.display = 'none';
     document.getElementById('view-clients').style.display = 'block';
+    
+    // Reseta os filtros ao abrir
+    document.getElementById('search-input').value = '';
+    document.getElementById('status-filter').value = 'all';
 
     const thead = document.getElementById('clients-thead');
     const tbody = document.getElementById('clients-tbody');
-    
-    // Limpa conteúdo anterior
     thead.innerHTML = '';
     tbody.innerHTML = '';
 
-    // Define Cabeçalho e Renderiza Linhas com base no Tipo
     const portKey = `${placa}/${porta}`;
     const clients = window.OLT_CLIENTS_DATA[portKey] || [];
 
+    // --- DESENHA O CABEÇALHO ---
     if (oltType === 'nokia') {
-        // --- ATUALIZAÇÃO 3: Cabeçalho Nokia Ajustado (B, C, E, H, I) ---
-        thead.innerHTML = `
-            <tr>
-                <th>Col B</th>
-                <th>Col C</th>
-                <th>Col E</th>
-                <th>Col H</th>
-                <th>Col I</th>
-            </tr>
-        `;
-        
-        if (clients.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum cliente encontrado.</td></tr>';
-        } else {
-            clients.forEach(c => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${c.colB}</td>
-                        <td>${c.colC}</td>
-                        <td>${c.colE}</td>
-                        <td>${c.colH}</td>
-                        <td>${c.colI}</td>
-                    </tr>
-                `;
-            });
-        }
-
+        thead.innerHTML = `<tr><th>Col B</th><th>Col C</th><th>Col E</th><th>Col H</th><th>Col I</th></tr>`;
     } else {
-        // Cabeçalho Furukawa (Todas)
-        thead.innerHTML = `
-            <tr>
-                <th>Col B</th>
-                <th>Col C</th>
-                <th>Col D</th>
-                <th>Col H</th> 
-            </tr>
-        `;
+        thead.innerHTML = `<tr><th>Col B</th><th>Col C</th><th>Col D</th><th>Col H</th></tr>`;
+    }
 
-        if (clients.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum cliente encontrado.</td></tr>';
-        } else {
-            clients.forEach(c => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${c.colB}</td>
-                        <td>${c.colC}</td>
-                        <td>${c.colD}</td>
-                        <td>${c.colH}</td>
-                    </tr>
-                `;
-            });
-        }
+    // --- DESENHA AS LINHAS ---
+    if (clients.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum cliente encontrado.</td></tr>';
+    } else {
+        clients.forEach(c => {
+            // Define classe para o filtro de status
+            // Se for Nokia, olha colE. Se Furukawa, olha statusRef (que veio de colC)
+            let statusRaw = (oltType === 'nokia' ? c.colE : c.statusRef).toLowerCase();
+            let statusClass = 'filter-unknown';
+            
+            if (statusRaw.includes('up') || statusRaw.includes('active')) statusClass = 'filter-online';
+            else if (statusRaw.includes('down') || statusRaw.includes('inactive')) statusClass = 'filter-offline';
+
+            let rowHTML = '';
+            if (oltType === 'nokia') {
+                rowHTML = `<tr class="client-row ${statusClass}">
+                    <td>${c.colB}</td><td>${c.colC}</td><td>${c.colE}</td><td>${c.colH}</td><td>${c.colI}</td>
+                </tr>`;
+            } else {
+                rowHTML = `<tr class="client-row ${statusClass}">
+                    <td>${c.colB}</td><td>${c.colC}</td><td>${c.colD}</td><td>${c.colH}</td>
+                </tr>`;
+            }
+            tbody.innerHTML += rowHTML;
+        });
     }
 
     modal.style.display = 'flex';
+}
+
+// --- FUNÇÃO DE FILTRO INTELIGENTE ---
+function filterClients() {
+    const searchText = document.getElementById('search-input').value.toLowerCase();
+    const statusFilter = document.getElementById('status-filter').value; // all, online, offline
+    
+    const rows = document.querySelectorAll('.client-row');
+    
+    rows.forEach(row => {
+        const textContent = row.textContent.toLowerCase();
+        let matchesSearch = textContent.includes(searchText);
+        
+        let matchesStatus = true;
+        if (statusFilter === 'online') matchesStatus = row.classList.contains('filter-online');
+        if (statusFilter === 'offline') matchesStatus = row.classList.contains('filter-offline');
+        
+        if (matchesSearch && matchesStatus) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
 }
