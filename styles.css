@@ -157,7 +157,7 @@ th, td {
     border-top: 1px solid var(--m3-outline); 
     color: var(--m3-on-surface); 
     font-size: 0.95em; 
-    
+     
     white-space: nowrap;    
     vertical-align: middle; 
 }
@@ -183,7 +183,7 @@ th, td {
     letter-spacing: 0.5px;
     font-size: 0.85em;
     padding: 8px 10px; 
-    
+     
     border-top: none; 
     border-bottom: 1px solid var(--m3-outline);
     position: sticky;
@@ -469,4 +469,18 @@ tbody td:first-child {
     .sub-menu-block { padding: 20px; }
     /* Ajuste do modal para telas pequenas */
     .modal-content { width: 95% !important; max-width: none !important; }
+
+    /* --- CORREÇÃO DO FILTRO MOBILE --- */
+    /* Empilha o campo de busca e o select um sobre o outro */
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    
+    /* Garante que ambos ocupem 100% da largura sem estourar */
+    .filter-input, .filter-select {
+        width: 100%;
+        box-sizing: border-box; /* Impede que o padding some na largura total */
+    }
 }
