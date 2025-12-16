@@ -5,11 +5,22 @@
 /**
  * Constrói o cabeçalho da página.
  * Atualiza também o título da aba do navegador.
+ * * @param {Object} config - Configurações do cabeçalho
+ * @param {string} config.title - O título da página
+ * @param {boolean} [config.exactTitle] - Se true, usa o título exato. Se false/vazio, adiciona "| Monitoramento"
+ * @param {string} [config.buttonText] - Texto do botão de navegação
+ * @param {string} [config.buttonLink] - Link do botão de navegação
  */
 function loadHeader(config) {
-    // 1. Atualiza o título da aba do navegador automaticamente
+    // 1. Atualiza o título da aba do navegador
     if (config.title) {
-        document.title = `${config.title} | Monitoramento`;
+        if (config.exactTitle) {
+            // Se pedir o título exato, usa apenas o texto informado (Para a Home)
+            document.title = config.title;
+        } else {
+            // Padrão para as outras páginas: Adiciona o sufixo da empresa/sistema
+            document.title = `${config.title} | Monitoramento`;
+        }
     }
 
     const headerPlaceholder = document.getElementById('header-placeholder');

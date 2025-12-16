@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste</title>
+    <title>Painel de Monitoramento</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,7 +36,7 @@
             { id: 'PQA-1', sheetTab: 'PQA1', type: 'nokia' },
             { id: 'PSV-1', sheetTab: 'PSV1', type: 'nokia' },
             { id: 'MGP',   sheetTab: 'MGP',  type: 'nokia' },
-            { id: 'LTXV-1', sheetTab: 'LTXV1', type: 'furukawa-10' }, // Ajustei type para diferenciar lógica
+            { id: 'LTXV-1', sheetTab: 'LTXV1', type: 'furukawa-10' }, 
             { id: 'LTXV-2', sheetTab: 'LTXV2', type: 'furukawa-2' },
             { id: 'PQA-2',  sheetTab: 'PQA2',  type: 'furukawa-2' },
             { id: 'PQA-3',  sheetTab: 'PQA3',  type: 'furukawa-2' },
@@ -145,7 +145,6 @@
                     // Regra de Ouro: > 16 offline OU > 50% offline
                     if (off > 16 || (total > 0 && (off / total) >= 0.5)) {
                         // Cria uma chave única: "NOME-OLT [Placa]/[Porta]"
-                        // Usamos colchetes para separar visualmente na notificação
                         localProblems.add(`[${olt.id}] ${key}`);
                     }
                 }
@@ -246,7 +245,9 @@
         }
         
         document.addEventListener('DOMContentLoaded', () => {
-            loadHeader({ title: "Painel de Monitoramento" });
+            // AQUI ESTÁ A ATUALIZAÇÃO: Adicionado exactTitle: true
+            loadHeader({ title: "Painel de Monitoramento", exactTitle: true });
+            
             loadFooter();
             runOverview();
             setInterval(runOverview, REFRESH_INTERVAL_SECONDS * 1000);
