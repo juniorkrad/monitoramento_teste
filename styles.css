@@ -47,12 +47,12 @@
     word-wrap: normal;
     white-space: nowrap;
     direction: ltr;
-    vertical-align: middle; /* Alinha perfeitamente com o texto ao lado */
+    vertical-align: middle; 
 
     /* --- CONFIGURAÇÃO DO TRAÇO FINO (Light 300) --- */
     font-variation-settings: 
         'FILL' 0,
-        'wght' 300, /* Peso 300 deixa o ícone mais fino e elegante */
+        'wght' 300, 
         'GRAD' 0,
         'opsz' 24;
 }
@@ -504,7 +504,7 @@ tbody td:first-child {
 }
 
 .overview-card:hover { transform: translateY(-4px); border-color: var(--m3-primary); }
-.card-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; transition: background-color 0.5s ease; }
+.card-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; transition: background-color 0.5s ease; }
 /* Ajuste para alinhar ícone e texto no título do card */
 .card-header h3 { margin: 0; font-size: 1.3em; font-weight: 500; color: var(--m3-on-surface); display: flex; align-items: center; gap: 8px; }
 
@@ -533,50 +533,71 @@ tbody td:first-child {
 .card-header.status-normal .card-header-button, .card-header.status-problema .card-header-button { color: rgba(255,255,255,0.8); }
 .card-header.status-atencao .card-header-button { color: rgba(0,0,0,0.7); }
 
-.card-body { flex: 1; display: flex; align-items: center; justify-content: space-between; padding: 15px; gap: 10px; }
-.card-stats { display: flex; flex-direction: column; gap: 5px; }
+/* --- CARD BODY COMPACTO --- */
+.card-body { 
+    flex: 1; 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    
+    /* Reduzi o padding de 15px para 10px para dar mais espaço ao conteúdo */
+    padding: 10px; 
+    gap: 5px; 
+}
 
-/* --- AQUI ESTÁ A CORREÇÃO DE ALINHAMENTO DA TABELA --- */
+.card-stats { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+
+/* --- ALINHAMENTO DA TABELA --- */
 .stat-item { 
     display: flex; 
     align-items: center; 
     
-    /* MUDANÇA 2: Reduzi o gap de 12px para 4px (3x menos) */
-    gap: 4px;           
-    margin-bottom: 6px; 
+    /* GAP REDUZIDO DE 4px PARA 6px PARA COMPENSAR A FONTE MENOR */
+    gap: 6px;           
+    margin-bottom: 2px; 
 }
 
 .stat-item span { 
-    font-size: 1.8em; 
+    /* FONTE REDUZIDA PARA CABER MELHOR */
+    font-size: 1.5em; 
     font-weight: 700; 
     line-height: 1; 
     
-    /* MUDANÇA 1: Reduzi de 70px para 35px (Metade) */
-    min-width: 35px; 
+    /* MUDANÇA: Reduzi de 35px para 25px */
+    min-width: 25px; 
     
-    /* Alinhamento à direita para ficar "tabular" */
+    /* Alinhamento à direita */
     text-align: right; 
 }
 
 .stat-item label { 
-    font-size: 0.9em; 
+    font-size: 0.85em; /* Fonte levemente menor */
     color: var(--m3-on-surface-variant); 
     display: flex; 
     align-items: center; 
-    gap: 6px; 
-    flex: 1; /* Ocupa o resto da linha */
+    gap: 4px; 
+    white-space: nowrap; /* Impede quebra de linha */
 }
 /* ----------------------------------------------------- */
 
 .stat-item.online span { color: var(--m3-color-success); }
 .stat-item.offline span { color: var(--m3-color-error); }
 
-.donut-chart-container { position: relative; display: flex; justify-content: center; align-items: center; }
+/* --- GRÁFICO TRAVADO (NÃO ENCOLHE) --- */
+.donut-chart-container { 
+    position: relative; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    flex-shrink: 0; /* Impede que o gráfico seja esmagado */
+    margin-left: auto; 
+}
+
 .donut-chart { transform: rotate(-90deg); }
 .donut-chart circle { fill: none; stroke-width: 10; }
 .donut-chart .donut-bg { stroke: var(--m3-surface-container-high); }
 .donut-chart .donut-fg { stroke: var(--m3-color-success); stroke-linecap: round; transition: stroke-dashoffset 1s ease-out; }
-.chart-text { position: absolute; font-size: 1.4em; font-weight: 700; color: var(--m3-on-surface); }
+.chart-text { position: absolute; font-size: 1.2em; font-weight: 700; color: var(--m3-on-surface); }
 
 @keyframes fadeInPage { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
