@@ -576,7 +576,7 @@ tbody td:first-child {
     font-size: 1.8em; 
     font-weight: 700; 
     line-height: 1; 
-    text-align: left; /* Alinhado à esquerda */
+    text-align: right; /* Alinhado à esquerda */
 }
 
 /* Coluna 2: O Texto + Ícone */
