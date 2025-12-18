@@ -144,15 +144,26 @@ body.home-page {
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
-/* Timestamp Animado */
+/* Timestamp Estilo Cápsula */
 .timestamp-badge { 
-    font-size: 1em; 
+    font-size: 0.85em; 
     color: var(--m3-on-surface-variant); 
-    transition: color 0.3s ease;
+    transition: color 0.3s ease, border-color 0.3s ease;
     display: flex;       
     align-items: center;
-    gap: 6px; 
+    gap: 8px; 
+    background-color: rgba(0, 0, 0, 0.2); 
+    border: 1px solid var(--m3-outline); 
+    border-radius: 50px; 
+    padding: 6px 16px; 
+    white-space: nowrap; 
 }
+.timestamp-badge .material-symbols-rounded {
+    font-size: 16px; 
+    color: var(--m3-primary); 
+    margin-right: 2px; 
+}
+
 @keyframes textFlash {
     0% { color: var(--m3-primary); text-shadow: 0 0 10px var(--m3-primary); }
     100% { color: var(--m3-on-surface-variant); text-shadow: none; }
@@ -546,28 +557,29 @@ tbody td:first-child {
     display: flex; 
     flex-direction: column; 
     gap: 5px; 
-    flex: 1; 
+    flex: 1; /* Ocupa o espaço da esquerda */
 }
 
-/* GRID de 2 colunas para os números e textos */
+/* Cada linha da tabela agora é um GRID de 2 colunas */
 .stat-item { 
     display: grid;
     /* Coluna 1 (Número): 40px fixos */
     /* Coluna 2 (Texto): Ocupa o resto (1fr) */
     grid-template-columns: 40px 1fr;
     align-items: center; 
-    gap: 8px;           
+    /* Gap aumentado para 12px (para separar número do texto) */
+    gap: 12px;           
 }
 
-/* Coluna 1: O Número (ALINHADO À ESQUERDA) */
+/* Coluna 1: O Número */
 .stat-item span { 
     font-size: 1.8em; 
     font-weight: 700; 
     line-height: 1; 
-    text-align: left; /* Mudado de right para left */
+    text-align: left; /* Alinhado à esquerda */
 }
 
-/* Coluna 2: O Texto + Ícone (CENTRALIZADO) */
+/* Coluna 2: O Texto + Ícone */
 .stat-item label { 
     font-size: 0.9em; 
     color: var(--m3-on-surface-variant); 
@@ -575,7 +587,8 @@ tbody td:first-child {
     align-items: center; 
     gap: 6px; 
     white-space: nowrap; 
-    justify-content: center; /* Centraliza o conteúdo (ícone + texto) */
+    /* MUDANÇA: Alinhamento à esquerda */
+    justify-content: flex-start; 
 }
 /* ----------------------------------------------------- */
 
