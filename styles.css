@@ -73,7 +73,7 @@ body {
     font-family: var(--font-family);
     margin: 0;
     
-    /* MARGEM DA PÁGINA (ORIGINAL) */
+    /* MARGEM DA PÁGINA (MANTIDA) */
     padding: 10px 15px; 
     
     font-size: 13.5px;
@@ -103,11 +103,12 @@ body.home-page {
 .logo-title-group h1 { font-size: 1.5em; font-weight: 500; margin: 0; color: var(--m3-on-surface); }
 .header-nav { display: flex; align-items: center; gap: 15px; }
 
-/* Estilo do Botão Home/Voltar (COM ÍCONE) */
+/* Estilo do Botão Home/Voltar (COM ÍCONE) - BORDA REMOVIDA */
 .icon-btn {
     background-color: #371752;
     color: var(--m3-on-primary);
-    border: 1px solid var(--m3-outline);
+    /* border: 1px solid var(--m3-outline);  <-- REMOVIDO */
+    border: none; /* Garante que não tenha borda */
     border-radius: 50%; /* Redondo */
     width: 40px;
     height: 40px;
@@ -144,16 +145,16 @@ body.home-page {
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
-/* Timestamp Estilo Cápsula */
+/* Timestamp Estilo Cápsula - BORDA REMOVIDA */
 .timestamp-badge { 
     font-size: 0.85em; 
     color: var(--m3-on-surface-variant); 
-    transition: color 0.3s ease, border-color 0.3s ease;
+    transition: color 0.3s ease; /* Removi transição de borda */
     display: flex;       
     align-items: center;
     gap: 8px; 
     background-color: rgba(0, 0, 0, 0.2); 
-    border: 1px solid var(--m3-outline); 
+    /* border: 1px solid var(--m3-outline); <-- REMOVIDO */
     border-radius: 50px; 
     padding: 6px 16px; 
     white-space: nowrap; 
@@ -563,12 +564,11 @@ tbody td:first-child {
 /* GRID de 2 colunas para os números e textos */
 .stat-item { 
     display: grid;
-    /* Coluna 1 (Número) aumentada para 60px para evitar "transbordamento" e permitir alinhamento */
+    /* Coluna 1 (Número): 60px fixos */
     /* Coluna 2 (Texto): Ocupa o resto (1fr) */
     grid-template-columns: 60px 1fr;
     align-items: center; 
-    
-    /* Gap RESTAURADO para 40px */
+    /* Gap restaurado para 40px */
     gap: 40px;           
 }
 
@@ -577,7 +577,7 @@ tbody td:first-child {
     font-size: 1.8em; 
     font-weight: 700; 
     line-height: 1; 
-    /* MUDANÇA CRÍTICA: width 100% garante que o alinhamento 'right' funcione dentro da célula de 60px */
+    /* Largura total para alinhar à direita dentro dos 60px */
     width: 100%;
     text-align: right; 
 }
