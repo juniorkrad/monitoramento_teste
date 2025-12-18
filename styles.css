@@ -73,9 +73,8 @@ body {
     font-family: var(--font-family);
     margin: 0;
     
-    /* --- MUDANÇA AQUI: MARGEM REDUZIDA --- */
-    /* Antes era padding: 10px 15px; */
-    padding: 10px 7px; /* Reduzido laterais para 7px (metade) */
+    /* MARGEM DA PÁGINA (MANTIDA REDUZIDA) */
+    padding: 10px 7px; 
     
     font-size: 13.5px;
     box-sizing: border-box;
@@ -150,7 +149,6 @@ body.home-page {
     font-size: 1em; 
     color: var(--m3-on-surface-variant); 
     transition: color 0.3s ease;
-    /* FLEXBOX aqui resolve o problema do texto grudado no ícone */
     display: flex;       
     align-items: center;
     gap: 6px; 
@@ -542,8 +540,10 @@ tbody td:first-child {
 .stat-item { 
     display: flex; 
     align-items: center; 
-    gap: 12px;           /* Espaço maior para separar números dos ícones */
-    margin-bottom: 6px;  /* Respiro entre linhas */
+    
+    /* MUDANÇA 2: Reduzi o gap de 12px para 4px (3x menos) */
+    gap: 4px;           
+    margin-bottom: 6px; 
 }
 
 .stat-item span { 
@@ -551,10 +551,10 @@ tbody td:first-child {
     font-weight: 700; 
     line-height: 1; 
     
-    /* 1. Largura fixa para a coluna de números (Cabe até 4 dígitos tranquilo) */
-    min-width: 70px; 
+    /* MUDANÇA 1: Reduzi de 70px para 35px (Metade) */
+    min-width: 35px; 
     
-    /* 2. Alinhamento à direita para ficar "tabular" */
+    /* Alinhamento à direita para ficar "tabular" */
     text-align: right; 
 }
 
