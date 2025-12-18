@@ -397,11 +397,12 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 .status-atencao { background-color: var(--m3-color-warning); color: #000; }
 .status-problema { background-color: var(--m3-color-error); color: #fff; }
 
-/* --- CARD DO DASHBOARD --- */
+/* --- CARD DO DASHBOARD (BORDA REMOVIDA) --- */
 .overview-card { 
     background-color: var(--m3-surface-container); 
     border-radius: 12px; 
-    border: 1px solid var(--m3-outline); 
+    /* border: 1px solid var(--m3-outline);  <-- REMOVIDO */
+    border: none;
     overflow: hidden; 
     display: flex; 
     flex-direction: column; 
@@ -484,7 +485,7 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     color: var(--m3-on-surface-variant); 
     display: flex; 
     align-items: center; 
-    /* --- ALTERAÇÃO AQUI: Gap reduzido de 6px para 3px --- */
+    /* Gap reduzido de 6px para 3px */
     gap: 3px; 
     white-space: nowrap; 
     
