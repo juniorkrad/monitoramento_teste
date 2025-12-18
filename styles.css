@@ -484,7 +484,8 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     color: var(--m3-on-surface-variant); 
     display: flex; 
     align-items: center; 
-    gap: 6px; 
+    /* --- ALTERAÇÃO AQUI: Gap reduzido de 6px para 3px --- */
+    gap: 3px; 
     white-space: nowrap; 
     
     /* Alinhamento à esquerda */
