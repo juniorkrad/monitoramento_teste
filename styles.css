@@ -470,7 +470,10 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     font-size: 1.8em; 
     font-weight: 700; 
     line-height: 1; 
-    text-align: right; 
+    
+    /* --- MUDANÇA AQUI: Alinhamento à ESQUERDA --- */
+    text-align: left; 
+    
     min-width: 50px; /* Garante um mínimo de alinhamento */
 }
 
