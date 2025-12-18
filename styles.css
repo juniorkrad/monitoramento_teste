@@ -73,8 +73,8 @@ body {
     font-family: var(--font-family);
     margin: 0;
     
-    /* MARGEM DA PÁGINA (MANTIDA REDUZIDA) */
-    padding: 10px 7px; 
+    /* MARGEM DA PÁGINA RESTAURADA (VOLTOU AO ORIGINAL) */
+    padding: 10px 15px; /* Voltei para 15px como você pediu */
     
     font-size: 13.5px;
     box-sizing: border-box;
@@ -497,14 +497,14 @@ tbody td:first-child {
     box-shadow: 0 2px 8px rgba(0,0,0,0.3); 
     transition: transform 0.2s ease, border-color 0.2s ease; 
     
-    /* Limita a largura do cartão para tirar o espaço vazio */
+    /* Largura do cartão */
     max-width: 380px;  
     width: 100%;       
     margin: 0 auto;    
 }
 
 .overview-card:hover { transform: translateY(-4px); border-color: var(--m3-primary); }
-.card-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; transition: background-color 0.5s ease; }
+.card-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; transition: background-color 0.5s ease; }
 /* Ajuste para alinhar ícone e texto no título do card */
 .card-header h3 { margin: 0; font-size: 1.3em; font-weight: 500; color: var(--m3-on-surface); display: flex; align-items: center; gap: 8px; }
 
@@ -533,71 +533,71 @@ tbody td:first-child {
 .card-header.status-normal .card-header-button, .card-header.status-problema .card-header-button { color: rgba(255,255,255,0.8); }
 .card-header.status-atencao .card-header-button { color: rgba(0,0,0,0.7); }
 
-/* --- CARD BODY COMPACTO --- */
+/* --- AQUI ESTÁ A IMPLEMENTAÇÃO DAS 3 COLUNAS --- */
 .card-body { 
     flex: 1; 
     display: flex; 
     align-items: center; 
     justify-content: space-between; 
-    
-    /* Reduzi o padding de 15px para 10px para dar mais espaço ao conteúdo */
-    padding: 10px; 
-    gap: 5px; 
+    padding: 15px; 
+    /* Agora o body organiza as 3 colunas */
 }
 
-.card-stats { display: flex; flex-direction: column; gap: 2px; flex: 1; }
-
-/* --- ALINHAMENTO DA TABELA --- */
-.stat-item { 
+/* Container que agrupa números e textos */
+.card-stats { 
     display: flex; 
-    align-items: center; 
-    
-    /* GAP REDUZIDO DE 4px PARA 6px PARA COMPENSAR A FONTE MENOR */
-    gap: 6px;           
-    margin-bottom: 2px; 
+    flex-direction: column; 
+    gap: 5px; 
+    flex: 1; /* Ocupa o espaço da esquerda */
 }
 
+/* Cada linha da tabela agora é um GRID de 2 colunas */
+.stat-item { 
+    display: grid;
+    /* Coluna 1 (Número): 40px fixos */
+    /* Coluna 2 (Texto): Ocupa o resto (1fr) */
+    grid-template-columns: 40px 1fr;
+    align-items: center; 
+    gap: 8px;           
+}
+
+/* Coluna 1: O Número */
 .stat-item span { 
-    /* FONTE REDUZIDA PARA CABER MELHOR */
-    font-size: 1.5em; 
+    font-size: 1.8em; 
     font-weight: 700; 
     line-height: 1; 
-    
-    /* MUDANÇA: Reduzi de 35px para 25px */
-    min-width: 25px; 
-    
-    /* Alinhamento à direita */
-    text-align: right; 
+    text-align: right; /* Alinhado à direita dentro dos 40px */
 }
 
+/* Coluna 2: O Texto + Ícone */
 .stat-item label { 
-    font-size: 0.85em; /* Fonte levemente menor */
+    font-size: 0.9em; 
     color: var(--m3-on-surface-variant); 
     display: flex; 
     align-items: center; 
-    gap: 4px; 
-    white-space: nowrap; /* Impede quebra de linha */
+    gap: 6px; 
+    white-space: nowrap; 
 }
 /* ----------------------------------------------------- */
 
 .stat-item.online span { color: var(--m3-color-success); }
 .stat-item.offline span { color: var(--m3-color-error); }
 
-/* --- GRÁFICO TRAVADO (NÃO ENCOLHE) --- */
+/* Coluna 3: O Gráfico (Fica isolado à direita) */
 .donut-chart-container { 
     position: relative; 
     display: flex; 
     justify-content: center; 
     align-items: center;
-    flex-shrink: 0; /* Impede que o gráfico seja esmagado */
-    margin-left: auto; 
+    flex-shrink: 0; /* Impede que encolha */
+    margin-left: 10px; /* Um espacinho extra do texto */
 }
 
 .donut-chart { transform: rotate(-90deg); }
 .donut-chart circle { fill: none; stroke-width: 10; }
 .donut-chart .donut-bg { stroke: var(--m3-surface-container-high); }
 .donut-chart .donut-fg { stroke: var(--m3-color-success); stroke-linecap: round; transition: stroke-dashoffset 1s ease-out; }
-.chart-text { position: absolute; font-size: 1.2em; font-weight: 700; color: var(--m3-on-surface); }
+.chart-text { position: absolute; font-size: 1.4em; font-weight: 700; color: var(--m3-on-surface); }
 
 @keyframes fadeInPage { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
