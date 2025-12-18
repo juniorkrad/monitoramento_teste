@@ -455,13 +455,14 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     flex: 1; 
 }
 
-/* LINHA DO GRID (PADRONIZADA PARA 5 DÍGITOS) */
+/* LINHA DO GRID (OTIMIZADA PARA ESPAÇO) */
 .stat-item { 
     display: grid;
-    /* --- ALTERAÇÃO AQUI: 80px para caber 5 dígitos folgado --- */
-    grid-template-columns: 80px 1fr;
+    /* Coluna 1: Auto (se ajusta ao número) | Coluna 2: Ocupa o resto */
+    grid-template-columns: auto 1fr;
     align-items: center; 
-    gap: 10px;           
+    /* Gap: 15px */
+    gap: 15px; 
 }
 
 /* Coluna 1: O Número */
@@ -470,9 +471,11 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     font-weight: 700; 
     line-height: 1; 
     
-    /* Largura total + Alinhamento à ESQUERDA */
-    width: 100%;
+    /* Garante que se sobrar espaço, fique à direita (perto do texto) */
     text-align: right; 
+    
+    /* Largura mínima para garantir alinhamento vertical básico */
+    min-width: 60px; 
 }
 
 /* Coluna 2: O Texto + Ícone */
