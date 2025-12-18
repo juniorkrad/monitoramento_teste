@@ -397,14 +397,11 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 .status-atencao { background-color: var(--m3-color-warning); color: #000; }
 .status-problema { background-color: var(--m3-color-error); color: #fff; }
 
-/* --- CARD DO DASHBOARD (BORDA REMOVIDA) --- */
+/* --- CARD DO DASHBOARD (SEM BORDA) --- */
 .overview-card { 
     background-color: var(--m3-surface-container); 
     border-radius: 12px; 
-    
-    /* --- ALTERAÇÃO: REMOVIDA A BORDA QUE VOLTOU NO CÓDIGO --- */
-    border: none;
-    
+    border: none; /* <-- BORDA REMOVIDA AQUI */
     overflow: hidden; 
     display: flex; 
     flex-direction: column; 
@@ -458,14 +455,13 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     flex: 1; 
 }
 
-/* LINHA DO GRID (OTIMIZADA) */
+/* LINHA DO GRID (AUTOMÁTICA) */
 .stat-item { 
     display: grid;
-    /* --- RESTAURADO 'auto' PARA EVITAR ESPAÇO NA ESQUERDA --- */
-    grid-template-columns: auto 1fr;
+    /* --- ALTERAÇÃO AQUI: max-content (auto) para não sobrar espaço --- */
+    grid-template-columns: max-content 1fr; 
     align-items: center; 
-    /* Gap de 15px para separar número do texto */
-    gap: 15px; 
+    gap: 12px; /* Espaço padrão entre número e texto */
 }
 
 /* Coluna 1: O Número */
@@ -473,12 +469,7 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     font-size: 1.8em; 
     font-weight: 700; 
     line-height: 1; 
-    
-    /* Alinhado à direita */
-    text-align: right; 
-    
-    /* Largura mínima para manter alinhamento vertical */
-    min-width: 60px; 
+    /* Removemos width fixo para o "auto" funcionar */
 }
 
 /* Coluna 2: O Texto + Ícone */
@@ -487,17 +478,13 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     color: var(--m3-on-surface-variant); 
     display: flex; 
     align-items: center; 
-    
-    /* --- ALTERAÇÃO AQUI: GAP REDUZIDO PARA 0 PARA COLAR NO ÍCONE --- */
-    gap: 0; 
-    
+    gap: 4px; /* Espaço pequeno e confortável */
     white-space: nowrap; 
     justify-content: flex-start; 
 }
 
 /* --- ESTABILIZAÇÃO DOS ÍCONES --- */
 .stat-item label .material-symbols-rounded {
-    /* --- ALTERAÇÃO AQUI: LARGURA 20PX (IGUAL FONTE) PARA TIRAR ESPAÇO --- */
     width: 20px; 
     text-align: center; 
     font-size: 20px;
