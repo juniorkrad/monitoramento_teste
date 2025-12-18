@@ -2,6 +2,19 @@
 // layout.js - Construtor de Layout (Cabeçalho, Rodapé e Timestamp)
 // ==============================================================================
 
+// --- AUTO-INJEÇÃO DA FONTE DE ÍCONES ---
+// Isso garante que todas as páginas tenham os ícones sem precisar editar o HTML de cada uma.
+(function loadIconFont() {
+    const fontUrl = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200';
+    // Verifica se já existe o link para não duplicar
+    if (!document.querySelector(`link[href="${fontUrl}"]`)) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = fontUrl;
+        document.head.appendChild(link);
+    }
+})();
+
 /**
  * Constrói o cabeçalho da página.
  * Atualiza também o título da aba do navegador.
@@ -15,10 +28,8 @@ function loadHeader(config) {
     // 1. Atualiza o título da aba do navegador
     if (config.title) {
         if (config.exactTitle) {
-            // Se pedir o título exato, usa apenas o texto informado (Para a Home)
             document.title = config.title;
         } else {
-            // Padrão para as outras páginas: Adiciona o sufixo da empresa/sistema
             document.title = `${config.title} | Monitoramento`;
         }
     }
@@ -26,14 +37,12 @@ function loadHeader(config) {
     const headerPlaceholder = document.getElementById('header-placeholder');
     if (!headerPlaceholder) return;
 
-    // 2. Lógica do botão (Home/Voltar) - AGORA COM ÍCONES
+    // 2. Lógica do botão (Home/Voltar) - COM ÍCONES
     let buttonHtml = '';
     if (config.buttonText && config.buttonLink) {
         // Detecta se é botão de voltar ou home para escolher o ícone certo
-        // Se o texto incluir "Voltar" (maiusculo ou minusculo), usa seta. Senão, usa casa.
         const iconName = config.buttonText.toLowerCase().includes('voltar') ? 'arrow_back' : 'home';
         
-        // Usa a classe .icon-btn definida no CSS e title para acessibilidade (tooltip)
         buttonHtml = `
             <a href="${config.buttonLink}" class="icon-btn" title="${config.buttonText}">
                 <span class="material-symbols-rounded">${iconName}</span>
@@ -80,7 +89,6 @@ async function loadTimestamp(sheetTab, apiKey, sheetId) {
     const timestampEl = document.getElementById('update-timestamp');
     if (!timestampEl) return;
 
-    // range: A célula onde o script Python salva a data
     const range = `${sheetTab}!K1`; 
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
 
@@ -93,32 +101,24 @@ async function loadTimestamp(sheetTab, apiKey, sheetId) {
         if (data.values && data.values.length > 0 && data.values[0][0]) {
             const novaData = data.values[0][0];
             
-            // Lógica de comparação: 
-            // Como agora temos um ícone dentro do elemento, o .textContent ou .innerText pode conter a palavra "schedule".
-            // Removemos "schedule" e espaços para comparar apenas a data/hora.
+            // Remove a palavra "schedule" (nome do ícone) para comparar apenas o texto da hora
             const textoAtualLimpo = timestampEl.innerText.replace('schedule', '').trim();
 
-            // Só atualiza o DOM se a data for diferente
             if (textoAtualLimpo !== novaData) {
-                
-                // IMPORTANTE: Usamos innerHTML para reinserir o ícone junto com a nova data
+                // Reescreve o HTML para manter o ícone
                 timestampEl.innerHTML = `<span class="material-symbols-rounded" style="font-size: 18px;">schedule</span> ${novaData}`;
+                timestampEl.style.color = 'var(--m3-on-surface-variant)';
                 
-                timestampEl.style.color = 'var(--m3-on-surface-variant)'; // Cor normal
-                
-                // Efeito visual de "blink"
                 timestampEl.classList.remove('updated-anim');
-                void timestampEl.offsetWidth; // Força reflow
+                void timestampEl.offsetWidth; 
                 timestampEl.classList.add('updated-anim');
             }
         } else {
-            // Mantém o ícone mesmo em caso de data indisponível
             timestampEl.innerHTML = `<span class="material-symbols-rounded" style="font-size: 18px;">schedule</span> Data Indisponível`;
         }
     } catch (error) {
         console.warn('Não foi possível atualizar o horário:', error);
         if (timestampEl.textContent.includes('Aguardando') || timestampEl.textContent.includes('Buscando')) {
-             // Mantém o ícone e avisa erro
              timestampEl.innerHTML = `<span class="material-symbols-rounded" style="font-size: 18px;">error</span> Erro de conexão`;
              timestampEl.style.color = 'var(--m3-color-error)';
         }
