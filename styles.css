@@ -401,7 +401,7 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 .overview-card { 
     background-color: var(--m3-surface-container); 
     border-radius: 12px; 
-    border: none; /* <-- BORDA REMOVIDA AQUI */
+    border: none;
     overflow: hidden; 
     display: flex; 
     flex-direction: column; 
@@ -439,13 +439,14 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 .card-header.status-normal .card-header-button, .card-header.status-problema .card-header-button { color: rgba(255,255,255,0.8); }
 .card-header.status-atencao .card-header-button { color: rgba(0,0,0,0.7); }
 
-/* --- ESTRUTURA DO BODY DO CARD (ALINHAMENTO) --- */
+/* --- ESTRUTURA DO BODY DO CARD (AGORA COM POSITION RELATIVE) --- */
 .card-body { 
     flex: 1; 
     display: flex; 
     align-items: center; 
-    justify-content: space-between; 
+    justify-content: flex-start; /* Alinhado ao início */
     padding: 15px; 
+    position: relative; /* Referência para o gráfico absoluto */
 }
 
 .card-stats { 
@@ -453,15 +454,15 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     flex-direction: column; 
     gap: 5px; 
     flex: 1; 
+    padding-right: 110px; /* --- PROTEÇÃO PARA O TEXTO NÃO ATRAVESSAR O GRÁFICO --- */
 }
 
 /* LINHA DO GRID (AUTOMÁTICA) */
 .stat-item { 
     display: grid;
-    /* --- ALTERAÇÃO AQUI: max-content (auto) para não sobrar espaço --- */
-    grid-template-columns: max-content 1fr; 
+    grid-template-columns: max-content 1fr; /* Auto para número, resto para texto */
     align-items: center; 
-    gap: 12px; /* Espaço padrão entre número e texto */
+    gap: 12px; 
 }
 
 /* Coluna 1: O Número */
@@ -469,7 +470,8 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     font-size: 1.8em; 
     font-weight: 700; 
     line-height: 1; 
-    /* Removemos width fixo para o "auto" funcionar */
+    text-align: right; 
+    min-width: 50px; /* Garante um mínimo de alinhamento */
 }
 
 /* Coluna 2: O Texto + Ícone */
@@ -478,7 +480,7 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     color: var(--m3-on-surface-variant); 
     display: flex; 
     align-items: center; 
-    gap: 4px; /* Espaço pequeno e confortável */
+    gap: 4px; 
     white-space: nowrap; 
     justify-content: flex-start; 
 }
@@ -493,14 +495,19 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 .stat-item.online span { color: var(--m3-color-success); }
 .stat-item.offline span { color: var(--m3-color-error); }
 
-/* Coluna 3 (Fora do Grid): O Gráfico */
+/* --- GRÁFICO FIXO ABSOLUTO À DIREITA --- */
 .donut-chart-container { 
-    position: relative; 
+    position: absolute; /* Sai do fluxo normal */
+    right: 15px;        /* Grudado na direita (margem interna do card) */
+    top: 50%;           /* Centralizado verticalmente */
+    transform: translateY(-50%); /* Ajuste fino do centro */
+    
     display: flex; 
     justify-content: center; 
     align-items: center;
-    flex-shrink: 0; 
-    margin-left: 10px; 
+    /* Tamanho fixo para não distorcer */
+    width: 100px;
+    height: 100px;
 }
 
 .donut-chart { transform: rotate(-90deg); }
