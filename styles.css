@@ -73,7 +73,7 @@ body {
     font-family: var(--font-family);
     margin: 0;
     
-    /* MARGEM DA PÁGINA (MANTIDA EM 10px 15px) */
+    /* MARGEM DA PÁGINA (ORIGINAL) */
     padding: 10px 15px; 
     
     font-size: 13.5px;
@@ -563,12 +563,12 @@ tbody td:first-child {
 /* GRID de 2 colunas para os números e textos */
 .stat-item { 
     display: grid;
-    /* Coluna 1 (Número): 40px fixos */
+    /* Coluna 1 (Número) aumentada para 60px para evitar "transbordamento" e permitir alinhamento */
     /* Coluna 2 (Texto): Ocupa o resto (1fr) */
-    grid-template-columns: 40px 1fr;
+    grid-template-columns: 60px 1fr;
     align-items: center; 
     
-    /* --- GAP RESTAURADO PARA 40px --- */
+    /* Gap RESTAURADO para 40px */
     gap: 40px;           
 }
 
@@ -577,7 +577,8 @@ tbody td:first-child {
     font-size: 1.8em; 
     font-weight: 700; 
     line-height: 1; 
-    /* --- ALINHAMENTO PARA DIREITA --- */
+    /* MUDANÇA CRÍTICA: width 100% garante que o alinhamento 'right' funcione dentro da célula de 60px */
+    width: 100%;
     text-align: right; 
 }
 
