@@ -66,12 +66,17 @@
 html { 
     height: 100%; 
 }
+
 body {
     background-color: var(--m3-surface);
     color: var(--m3-on-surface);
     font-family: var(--font-family);
     margin: 0;
-    padding: 10px 15px; 
+    
+    /* --- MUDANÇA AQUI: MARGEM REDUZIDA --- */
+    /* Antes era padding: 10px 15px; */
+    padding: 10px 7px; /* Reduzido laterais para 7px (metade) */
+    
     font-size: 13.5px;
     box-sizing: border-box;
     animation: fadeInPage 0.4s ease-in-out;
@@ -120,7 +125,7 @@ body.home-page {
     box-shadow: 0 0 10px var(--m3-primary-hover);
 }
 
-/* Estilo Antigo do Botão (Mantido caso use em outro lugar, mas o JS agora usa .icon-btn) */
+/* Estilo Antigo do Botão (Mantido por segurança) */
 .nav-button {
     background-color: #371752; 
     color: var(--m3-on-primary);
