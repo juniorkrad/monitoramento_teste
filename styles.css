@@ -73,7 +73,7 @@ body {
     font-family: var(--font-family);
     margin: 0;
     
-    /* MARGEM DA PÁGINA (ORIGINAL) */
+    /* MARGEM DA PÁGINA (MANTIDA EM 10px 15px) */
     padding: 10px 15px; 
     
     font-size: 13.5px;
@@ -557,17 +557,18 @@ tbody td:first-child {
     display: flex; 
     flex-direction: column; 
     gap: 5px; 
-    flex: 1; /* Ocupa o espaço da esquerda */
+    flex: 1; 
 }
 
-/* Cada linha da tabela agora é um GRID de 2 colunas */
+/* GRID de 2 colunas para os números e textos */
 .stat-item { 
     display: grid;
     /* Coluna 1 (Número): 40px fixos */
     /* Coluna 2 (Texto): Ocupa o resto (1fr) */
     grid-template-columns: 40px 1fr;
     align-items: center; 
-    /* Gap aumentado para 12px (para separar número do texto) */
+    
+    /* --- GAP RESTAURADO PARA 40px --- */
     gap: 40px;           
 }
 
@@ -576,7 +577,8 @@ tbody td:first-child {
     font-size: 1.8em; 
     font-weight: 700; 
     line-height: 1; 
-    text-align: right; /* Alinhado à esquerda */
+    /* --- ALINHAMENTO PARA DIREITA --- */
+    text-align: right; 
 }
 
 /* Coluna 2: O Texto + Ícone */
@@ -587,8 +589,7 @@ tbody td:first-child {
     align-items: center; 
     gap: 6px; 
     white-space: nowrap; 
-    /* MUDANÇA: Alinhamento à esquerda */
-    justify-content: flex-start; 
+    justify-content: flex-start; /* Alinhamento à esquerda */
 }
 /* ----------------------------------------------------- */
 
