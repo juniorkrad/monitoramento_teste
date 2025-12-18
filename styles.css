@@ -34,7 +34,7 @@
     background: var(--m3-primary-hover); 
 }
 
-/* --- ÍCONES MATERIAL SYMBOLS ROUNDED (NOVO) --- */
+/* --- ÍCONES MATERIAL SYMBOLS ROUNDED (CONFIGURAÇÃO) --- */
 .material-symbols-rounded {
     font-family: 'Material Symbols Rounded';
     font-weight: normal;
@@ -57,7 +57,7 @@
         'opsz' 24;
 }
 
-/* Classes auxiliares para cores dos ícones (usado nos Cards) */
+/* Classes auxiliares para cores dos ícones */
 .icon-up { color: var(--m3-color-success); font-size: 20px; }
 .icon-down { color: var(--m3-color-error); font-size: 20px; }
 .icon-total { color: var(--m3-on-surface); font-size: 20px; }
@@ -99,7 +99,28 @@ body.home-page {
 .logo-title-group h1 { font-size: 1.5em; font-weight: 500; margin: 0; color: var(--m3-on-surface); }
 .header-nav { display: flex; align-items: center; gap: 15px; }
 
-/* Estilo do Botão Home/Voltar */
+/* Estilo do Botão Home/Voltar (COM ÍCONE) */
+.icon-btn {
+    background-color: #371752;
+    color: var(--m3-on-primary);
+    border: 1px solid var(--m3-outline);
+    border-radius: 50%; /* Redondo */
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+.icon-btn:hover {
+    background-color: var(--m3-primary-hover);
+    transform: scale(1.1);
+    box-shadow: 0 0 10px var(--m3-primary-hover);
+}
+
+/* Estilo Antigo do Botão (Mantido caso use em outro lugar, mas o JS agora usa .icon-btn) */
 .nav-button {
     background-color: #371752; 
     color: var(--m3-on-primary);
@@ -119,35 +140,15 @@ body.home-page {
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
-/* NOVO: Estilo para botão de ícone (ex: Home redonda) */
-.icon-btn {
-    background-color: #371752;
-    color: var(--m3-on-primary);
-    border: 1px solid var(--m3-outline);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-}
-.icon-btn:hover {
-    background-color: var(--m3-primary-hover);
-    transform: scale(1.1);
-    box-shadow: 0 0 10px var(--m3-primary-hover);
-}
-
 /* Timestamp Animado */
 .timestamp-badge { 
     font-size: 1em; 
     color: var(--m3-on-surface-variant); 
     transition: color 0.3s ease;
-    display: flex;       /* Para alinhar o ícone de relógio */
+    /* FLEXBOX aqui resolve o problema do texto grudado no ícone */
+    display: flex;       
     align-items: center;
-    gap: 6px;
+    gap: 6px; 
 }
 @keyframes textFlash {
     0% { color: var(--m3-primary); text-shadow: 0 0 10px var(--m3-primary); }
@@ -185,7 +186,6 @@ body.home-page {
     display: grid;
     gap: 15px; 
     padding-bottom: 20px;
-    /* Ajuste anterior mantido: 260px */
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     align-content: flex-start;
     width: 100%;
@@ -533,9 +533,36 @@ tbody td:first-child {
 .card-body { flex: 1; display: flex; align-items: center; justify-content: space-between; padding: 15px; gap: 10px; }
 .card-stats { display: flex; flex-direction: column; gap: 5px; }
 
-.stat-item { display: flex; align-items: center; gap: 8px; }
-.stat-item span { font-size: 1.8em; font-weight: 700; line-height: 1; min-width: 30px; text-align: right; }
-.stat-item label { font-size: 0.9em; color: var(--m3-on-surface-variant); display: flex; align-items: center; gap: 5px; }
+/* --- AQUI ESTÁ A CORREÇÃO DE ALINHAMENTO DA TABELA --- */
+.stat-item { 
+    display: flex; 
+    align-items: center; 
+    gap: 12px;           /* Espaço maior para separar números dos ícones */
+    margin-bottom: 6px;  /* Respiro entre linhas */
+}
+
+.stat-item span { 
+    font-size: 1.8em; 
+    font-weight: 700; 
+    line-height: 1; 
+    
+    /* 1. Largura fixa para a coluna de números (Cabe até 4 dígitos tranquilo) */
+    min-width: 70px; 
+    
+    /* 2. Alinhamento à direita para ficar "tabular" */
+    text-align: right; 
+}
+
+.stat-item label { 
+    font-size: 0.9em; 
+    color: var(--m3-on-surface-variant); 
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    flex: 1; /* Ocupa o resto da linha */
+}
+/* ----------------------------------------------------- */
+
 .stat-item.online span { color: var(--m3-color-success); }
 .stat-item.offline span { color: var(--m3-color-error); }
 
