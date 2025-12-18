@@ -401,8 +401,10 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 .overview-card { 
     background-color: var(--m3-surface-container); 
     border-radius: 12px; 
-    /* border: 1px solid var(--m3-outline);  <-- REMOVIDO */
+    
+    /* --- ALTERAÇÃO: REMOVIDA A BORDA QUE VOLTOU NO CÓDIGO --- */
     border: none;
+    
     overflow: hidden; 
     display: flex; 
     flex-direction: column; 
@@ -456,13 +458,13 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     flex: 1; 
 }
 
-/* LINHA DO GRID (OTIMIZADA PARA ESPAÇO) */
+/* LINHA DO GRID (OTIMIZADA) */
 .stat-item { 
     display: grid;
-    /* Coluna 1: Auto (se ajusta ao número) | Coluna 2: Ocupa o resto */
+    /* --- RESTAURADO 'auto' PARA EVITAR ESPAÇO NA ESQUERDA --- */
     grid-template-columns: auto 1fr;
     align-items: center; 
-    /* Gap: 15px */
+    /* Gap de 15px para separar número do texto */
     gap: 15px; 
 }
 
@@ -472,10 +474,10 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     font-weight: 700; 
     line-height: 1; 
     
-    /* Garante que se sobrar espaço, fique à direita (perto do texto) */
+    /* Alinhado à direita */
     text-align: right; 
     
-    /* Largura mínima para garantir alinhamento vertical básico */
+    /* Largura mínima para manter alinhamento vertical */
     min-width: 60px; 
 }
 
@@ -485,18 +487,19 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     color: var(--m3-on-surface-variant); 
     display: flex; 
     align-items: center; 
-    /* Gap reduzido de 6px para 3px */
-    gap: 3px; 
-    white-space: nowrap; 
     
-    /* Alinhamento à esquerda */
+    /* --- ALTERAÇÃO AQUI: GAP REDUZIDO PARA 0 PARA COLAR NO ÍCONE --- */
+    gap: 0; 
+    
+    white-space: nowrap; 
     justify-content: flex-start; 
 }
 
-/* --- ESTABILIZAÇÃO DOS ÍCONES (PARA NÃO QUEBRAR O ALINHAMENTO) --- */
+/* --- ESTABILIZAÇÃO DOS ÍCONES --- */
 .stat-item label .material-symbols-rounded {
-    width: 24px; /* Largura fixa para o ícone */
-    text-align: center; /* Ícone centralizado no espaço dele */
+    /* --- ALTERAÇÃO AQUI: LARGURA 20PX (IGUAL FONTE) PARA TIRAR ESPAÇO --- */
+    width: 20px; 
+    text-align: center; 
     font-size: 20px;
 }
 
