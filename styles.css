@@ -72,10 +72,7 @@ body {
     color: var(--m3-on-surface);
     font-family: var(--font-family);
     margin: 0;
-    
-    /* MARGEM DA PÁGINA */
     padding: 10px 15px; 
-    
     font-size: 13.5px;
     box-sizing: border-box;
     animation: fadeInPage 0.4s ease-in-out;
@@ -88,7 +85,6 @@ body.home-page {
     flex: 1; display: flex; flex-direction: column; min-height: 0;
 }
 
-/* Permite a rolagem na Home */
 .home-page .main-content { 
     overflow-y: auto; 
     padding-right: 5px; 
@@ -103,15 +99,12 @@ body.home-page {
 .logo-title-group h1 { font-size: 1.5em; font-weight: 500; margin: 0; color: var(--m3-on-surface); }
 .header-nav { display: flex; align-items: center; gap: 15px; }
 
-/* Estilo do Botão Home/Voltar (COM ÍCONE) - SEM BORDA */
+/* Botão Home/Voltar (SEM BORDA) */
 .icon-btn {
     background-color: #371752;
     color: var(--m3-on-primary);
-    
-    /* --- ALTERAÇÃO: Borda removida --- */
     border: none; 
-    
-    border-radius: 50%; /* Redondo */
+    border-radius: 50%; 
     width: 40px;
     height: 40px;
     display: flex;
@@ -127,27 +120,7 @@ body.home-page {
     box-shadow: 0 0 10px var(--m3-primary-hover);
 }
 
-/* Estilo Antigo do Botão (Mantido por segurança) */
-.nav-button {
-    background-color: #371752; 
-    color: var(--m3-on-primary);
-    padding: 8px 20px;
-    border-radius: 20px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: all 0.2s ease;
-    border: none;
-    cursor: pointer;
-    font-size: 0.9em;
-    display: inline-block;
-}
-.nav-button:hover {
-    background-color: var(--m3-primary-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-}
-
-/* Timestamp Estilo Cápsula - SEM BORDA */
+/* Timestamp Estilo Cápsula (SEM BORDA) */
 .timestamp-badge { 
     font-size: 0.85em; 
     color: var(--m3-on-surface-variant); 
@@ -156,10 +129,7 @@ body.home-page {
     align-items: center;
     gap: 8px; 
     background-color: rgba(0, 0, 0, 0.2); 
-    
-    /* --- ALTERAÇÃO: Borda removida --- */
     border: none; 
-    
     border-radius: 50px; 
     padding: 6px 16px; 
     white-space: nowrap; 
@@ -231,12 +201,10 @@ th, td {
     border-top: 1px solid var(--m3-outline); 
     color: var(--m3-on-surface); 
     font-size: 0.95em; 
-     
     white-space: nowrap;    
     vertical-align: middle; 
 }
 
-/* LINHA 1: TÍTULO */
 .table-title-row th {
     background-color: var(--m3-surface-container); 
     color: var(--m3-on-surface); 
@@ -248,7 +216,6 @@ th, td {
     font-weight: 700;
 }
 
-/* LINHA 2: CABEÇALHO */
 .table-header-row th {
     background-color: var(--m3-surface-container-high); 
     color: var(--m3-on-surface);
@@ -257,7 +224,6 @@ th, td {
     letter-spacing: 0.5px;
     font-size: 0.85em;
     padding: 8px 10px; 
-     
     border-top: none; 
     border-bottom: 1px solid var(--m3-outline);
     position: sticky;
@@ -265,19 +231,9 @@ th, td {
     z-index: 1;
 }
 
-/* Correção da borda duplicada */
 thead + tbody tr:first-child td { border-top: none; }
-
-/* Efeito Hover nas linhas */
-tbody tr:hover td {
-    background-color: var(--m3-state-layer-hover); 
-}
-
-/* --- DESTAQUE PARA A COLUNA "PORTA" (Negrito) --- */
-tbody td:first-child {
-    font-weight: 700; 
-    color: var(--m3-on-surface);
-}
+tbody tr:hover td { background-color: var(--m3-state-layer-hover); }
+tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 
 /* --- BADGE INTELIGENTE (CIRCUITOS) --- */
 .circuit-badge {
@@ -297,7 +253,6 @@ tbody td:first-child {
     text-overflow: ellipsis;
 }
 
-/* --- NOVO: BADGE DE CIRCUITO CLICÁVEL --- */
 .circuit-clickable {
     cursor: pointer;
     text-decoration: underline;
@@ -312,7 +267,6 @@ tbody td:first-child {
     border-color: var(--m3-primary);
 }
 
-/* --- BOTÃO DE STATUS CLICÁVEL --- */
 .status-btn {
     cursor: pointer;
     transition: transform 0.1s, box-shadow 0.2s;
@@ -320,14 +274,8 @@ tbody td:first-child {
     font-family: inherit;
     font-weight: bold;
 }
-.status-btn:hover {
-    transform: scale(1.05); 
-    filter: brightness(1.15); 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-}
-.status-btn:active {
-    transform: scale(0.95); 
-}
+.status-btn:hover { transform: scale(1.05); filter: brightness(1.15); box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+.status-btn:active { transform: scale(0.95); }
 
 /* --- ESTILOS DO MODAL (POP-UP) --- */
 .modal-overlay {
@@ -343,13 +291,12 @@ tbody td:first-child {
     animation: fadeInPage 0.2s ease-out;
 }
 
-/* --- BASE DO MODAL (Comum a todos) --- */
 .modal-content {
     background-color: var(--m3-surface-container);
     border: 1px solid var(--m3-outline);
     border-radius: 16px;
     width: 90%;
-    max-width: 400px; /* Default: Pequeno (Status) */
+    max-width: 400px; 
     padding: 0;
     box-shadow: 0 20px 50px rgba(0,0,0,0.6);
     overflow: hidden;
@@ -357,21 +304,10 @@ tbody td:first-child {
     animation: popIn 0.2s forwards;
     transition: max-width 0.3s ease-in-out, width 0.3s ease-in-out;
 }
+.modal-content.modal-status { max-width: 450px; }
+.modal-content.modal-large { max-width: 900px; width: 95%; }
 
-/* --- VARIANTE 1: MODAL DE STATUS (ETIQUETA DO JS) --- */
-.modal-content.modal-status {
-    max-width: 450px; /* Um pouco mais largo para os blocos */
-}
-
-/* --- VARIANTE 2: MODAL GRANDE (CLIENTES) --- */
-.modal-content.modal-large {
-    max-width: 900px; 
-    width: 95%; 
-}
-
-@keyframes popIn {
-    to { transform: scale(1); }
-}
+@keyframes popIn { to { transform: scale(1); } }
 
 .modal-header {
     background-color: var(--m3-surface-container-high);
@@ -393,9 +329,8 @@ tbody td:first-child {
 
 .modal-body { padding: 25px; }
 
-/* --- GRID DOS NÚMEROS (STATUS) - OTIMIZADO --- */
 .modal-stats-grid {
-    display: flex; /* Mudança para Flex para distribuição igual */
+    display: flex; 
     justify-content: space-between;
     gap: 15px;
     width: 100%;
@@ -403,10 +338,10 @@ tbody td:first-child {
 
 .modal-stat-box {
     background-color: rgba(0,0,0,0.25); 
-    padding: 20px 10px; /* Padding generoso */
+    padding: 20px 10px; 
     border-radius: 12px;
     border: 1px solid var(--m3-outline);
-    flex: 1; /* Força largura igual para os 3 blocos */
+    flex: 1; 
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -415,7 +350,7 @@ tbody td:first-child {
 
 .modal-stat-value {
     display: block;
-    font-size: 2.2em; /* Tamanho GRANDE */
+    font-size: 2.2em; 
     font-weight: 700;
     margin-bottom: 5px;
     line-height: 1;
@@ -433,7 +368,6 @@ tbody td:first-child {
 .val-offline { color: var(--m3-color-error); }
 .val-total { color: var(--m3-on-surface); }
 
-/* --- AJUSTES DA TABELA DE CLIENTES --- */
 .modal-section-title {
     font-size: 1.1rem;
     color: var(--m3-on-surface);
@@ -452,58 +386,18 @@ tbody td:first-child {
     background-color: rgba(0,0,0,0.2);
 }
 
-.client-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
-    color: var(--m3-on-surface);
-    /* Mantemos auto para o navegador ajustar as colunas conforme conteúdo */
-    table-layout: auto; 
-}
-
-.client-table th {
-    background-color: var(--m3-surface-container-high);
-    color: var(--m3-on-primary);
-    padding: 10px 12px;
-    text-align: left;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-.client-table td {
-    border-bottom: 1px solid var(--m3-outline);
-    padding: 8px 12px;
-    color: var(--m3-on-surface-variant);
-}
-
-.client-table tr:nth-child(even) td {
-    background-color: rgba(255, 255, 255, 0.03);
-}
-
-.client-table tr:hover td {
-    background-color: var(--m3-state-layer-hover);
-    color: var(--m3-on-surface);
-}
-
-/* Ocultar Cabeçalho da tabela de clientes (pois já não estava usando) */
-.client-table thead {
-    display: none;
-}
-
-/* --- ESTILOS DOS FILTROS --- */
+/* FILTROS */
 .filter-bar { display: flex; gap: 10px; margin-bottom: 10px; }
 .filter-input { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #5c4e72; background-color: rgba(0,0,0,0.2); color: #fff; }
 .filter-select { padding: 8px; border-radius: 4px; border: 1px solid #5c4e72; background-color: #3a1c63; color: #fff; cursor: pointer; }
 
-/* ------------------------------------- */
-
+/* STATUS GERAIS */
 .status { font-weight: bold; padding: 4px 12px; border-radius: 20px; display: inline-block; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px; }
 .status-normal { background-color: var(--m3-color-success); color: #fff; }
 .status-atencao { background-color: var(--m3-color-warning); color: #000; }
 .status-problema { background-color: var(--m3-color-error); color: #fff; }
 
+/* --- CARD DO DASHBOARD --- */
 .overview-card { 
     background-color: var(--m3-surface-container); 
     border-radius: 12px; 
@@ -513,8 +407,6 @@ tbody td:first-child {
     flex-direction: column; 
     box-shadow: 0 2px 8px rgba(0,0,0,0.3); 
     transition: transform 0.2s ease, border-color 0.2s ease; 
-    
-    /* Largura do cartão */
     max-width: 380px;  
     width: 100%;       
     margin: 0 auto;    
@@ -522,7 +414,6 @@ tbody td:first-child {
 
 .overview-card:hover { transform: translateY(-4px); border-color: var(--m3-primary); }
 .card-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; transition: background-color 0.5s ease; }
-/* Ajuste para alinhar ícone e texto no título do card */
 .card-header h3 { margin: 0; font-size: 1.3em; font-weight: 500; color: var(--m3-on-surface); display: flex; align-items: center; gap: 8px; }
 
 .card-header.status-normal { background-color: var(--m3-color-success); }
@@ -531,7 +422,6 @@ tbody td:first-child {
 .card-header.status-normal h3, .card-header.status-problema h3 { color: #fff; }
 .card-header.status-atencao h3 { color: #000; }
 
-/* Botão Detalhes (Pode ter ícone agora) */
 .card-header-button { 
     background-color: rgba(0, 0, 0, 0.2); 
     color: var(--m3-on-surface-variant); 
@@ -545,12 +435,11 @@ tbody td:first-child {
     align-items: center;
     gap: 4px;
 }
-
 .card-header-button:hover { background-color: rgba(0, 0, 0, 0.4); color: var(--m3-on-surface); }
 .card-header.status-normal .card-header-button, .card-header.status-problema .card-header-button { color: rgba(255,255,255,0.8); }
 .card-header.status-atencao .card-header-button { color: rgba(0,0,0,0.7); }
 
-/* --- AQUI ESTÁ A IMPLEMENTAÇÃO DAS 3 COLUNAS --- */
+/* --- ESTRUTURA DO BODY DO CARD (ALINHAMENTO) --- */
 .card-body { 
     flex: 1; 
     display: flex; 
@@ -566,15 +455,14 @@ tbody td:first-child {
     flex: 1; 
 }
 
-/* GRID de 2 colunas para os números e textos */
+/* LINHA DO GRID (PADRONIZADA) */
 .stat-item { 
     display: grid;
-    /* Coluna 1 (Número): 60px fixos */
-    /* Coluna 2 (Texto): Ocupa o resto (1fr) */
-    grid-template-columns: 60px 1fr;
+    /* Coluna 1 = 50px (Números) | Coluna 2 = O resto (Texto) */
+    grid-template-columns: 50px 1fr;
     align-items: center; 
-    /* Gap configurado para 12px (padrão) */
-    gap: 12px;           
+    /* Gap de 10px (Padronizado e Seguro) */
+    gap: 10px;           
 }
 
 /* Coluna 1: O Número */
@@ -582,7 +470,7 @@ tbody td:first-child {
     font-size: 1.8em; 
     font-weight: 700; 
     line-height: 1; 
-    /* Largura total para alinhar à direita dentro dos 60px */
+    /* Largura total + Alinhamento à direita */
     width: 100%;
     text-align: right; 
 }
@@ -595,20 +483,28 @@ tbody td:first-child {
     align-items: center; 
     gap: 6px; 
     white-space: nowrap; 
-    justify-content: flex-start; /* Alinhamento à esquerda */
+    
+    /* Alinhamento à esquerda */
+    justify-content: flex-start; 
 }
-/* ----------------------------------------------------- */
+
+/* --- ESTABILIZAÇÃO DOS ÍCONES (PARA NÃO QUEBRAR O ALINHAMENTO) --- */
+.stat-item label .material-symbols-rounded {
+    width: 24px; /* Largura fixa para o ícone */
+    text-align: center; /* Ícone centralizado no espaço dele */
+    font-size: 20px;
+}
 
 .stat-item.online span { color: var(--m3-color-success); }
 .stat-item.offline span { color: var(--m3-color-error); }
 
-/* Coluna 3: O Gráfico (Fica isolado à direita) */
+/* Coluna 3 (Fora do Grid): O Gráfico */
 .donut-chart-container { 
     position: relative; 
     display: flex; 
     justify-content: center; 
     align-items: center;
-    flex-shrink: 0; /* Impede que encolha */
+    flex-shrink: 0; 
     margin-left: 10px; 
 }
 
@@ -628,20 +524,7 @@ tbody td:first-child {
     #main-menu-block { padding: 30px; min-width: auto; width: 100%; box-sizing: border-box; }
     .main-menu-button { min-width: auto; }
     .sub-menu-block { padding: 20px; }
-    /* Ajuste do modal para telas pequenas */
     .modal-content { width: 95% !important; max-width: none !important; }
-
-    /* --- CORREÇÃO DO FILTRO MOBILE --- */
-    /* Empilha o campo de busca e o select um sobre o outro */
-    .filter-bar {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
-    
-    /* Garante que ambos ocupem 100% da largura sem estourar */
-    .filter-input, .filter-select {
-        width: 100%;
-        box-sizing: border-box; /* Impede que o padding some na largura total */
-    }
+    .filter-bar { flex-direction: column; align-items: stretch; gap: 10px; }
+    .filter-input, .filter-select { width: 100%; box-sizing: border-box; }
 }
