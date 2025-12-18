@@ -472,7 +472,7 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     
     /* Largura total + Alinhamento à ESQUERDA */
     width: 100%;
-    text-align: left; 
+    text-align: right; 
 }
 
 /* Coluna 2: O Texto + Ícone */
