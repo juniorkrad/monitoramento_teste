@@ -26,10 +26,18 @@ function loadHeader(config) {
     const headerPlaceholder = document.getElementById('header-placeholder');
     if (!headerPlaceholder) return;
 
-    // 2. Lógica do botão (Home/Voltar)
+    // 2. Lógica do botão (Home/Voltar) - AGORA COM ÍCONES
     let buttonHtml = '';
     if (config.buttonText && config.buttonLink) {
-        buttonHtml = `<a href="${config.buttonLink}" class="nav-button">${config.buttonText}</a>`;
+        // Detecta se é botão de voltar ou home para escolher o ícone certo
+        // Se o texto incluir "Voltar" (maiusculo ou minusculo), usa seta. Senão, usa casa.
+        const iconName = config.buttonText.toLowerCase().includes('voltar') ? 'arrow_back' : 'home';
+        
+        // Usa a classe .icon-btn definida no CSS e title para acessibilidade (tooltip)
+        buttonHtml = `
+            <a href="${config.buttonLink}" class="icon-btn" title="${config.buttonText}">
+                <span class="material-symbols-rounded">${iconName}</span>
+            </a>`;
     }
 
     headerPlaceholder.innerHTML = `
@@ -39,7 +47,10 @@ function loadHeader(config) {
                 <h1>${config.title}</h1>
             </div>
             <nav class="header-nav">
-                <span id="update-timestamp" class="timestamp-badge">Aguardando dados...</span>
+                <span id="update-timestamp" class="timestamp-badge">
+                    <span class="material-symbols-rounded" style="font-size: 18px;">schedule</span> 
+                    Aguardando dados...
+                </span>
                 ${buttonHtml} 
             </nav>
         </header>
@@ -82,24 +93,33 @@ async function loadTimestamp(sheetTab, apiKey, sheetId) {
         if (data.values && data.values.length > 0 && data.values[0][0]) {
             const novaData = data.values[0][0];
             
-            // Só atualiza o DOM se a data for diferente (evita repaint desnecessário)
-            if (timestampEl.textContent !== novaData) {
-                timestampEl.textContent = novaData;
+            // Lógica de comparação: 
+            // Como agora temos um ícone dentro do elemento, o .textContent ou .innerText pode conter a palavra "schedule".
+            // Removemos "schedule" e espaços para comparar apenas a data/hora.
+            const textoAtualLimpo = timestampEl.innerText.replace('schedule', '').trim();
+
+            // Só atualiza o DOM se a data for diferente
+            if (textoAtualLimpo !== novaData) {
+                
+                // IMPORTANTE: Usamos innerHTML para reinserir o ícone junto com a nova data
+                timestampEl.innerHTML = `<span class="material-symbols-rounded" style="font-size: 18px;">schedule</span> ${novaData}`;
+                
                 timestampEl.style.color = 'var(--m3-on-surface-variant)'; // Cor normal
                 
-                // Efeito visual de "blink" para mostrar que atualizou
+                // Efeito visual de "blink"
                 timestampEl.classList.remove('updated-anim');
-                void timestampEl.offsetWidth; // Força reflow para reiniciar animação
+                void timestampEl.offsetWidth; // Força reflow
                 timestampEl.classList.add('updated-anim');
             }
         } else {
-            timestampEl.textContent = 'Data Indisponível';
+            // Mantém o ícone mesmo em caso de data indisponível
+            timestampEl.innerHTML = `<span class="material-symbols-rounded" style="font-size: 18px;">schedule</span> Data Indisponível`;
         }
     } catch (error) {
-        // Em caso de erro, não apaga a data antiga se ela existir, apenas muda a cor ou avisa no console
         console.warn('Não foi possível atualizar o horário:', error);
-        if (timestampEl.textContent === 'Aguardando dados...' || timestampEl.textContent === 'Buscando data...') {
-             timestampEl.textContent = 'Erro de conexão';
+        if (timestampEl.textContent.includes('Aguardando') || timestampEl.textContent.includes('Buscando')) {
+             // Mantém o ícone e avisa erro
+             timestampEl.innerHTML = `<span class="material-symbols-rounded" style="font-size: 18px;">error</span> Erro de conexão`;
              timestampEl.style.color = 'var(--m3-color-error)';
         }
     }
