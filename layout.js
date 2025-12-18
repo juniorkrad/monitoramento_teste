@@ -56,10 +56,9 @@ function loadHeader(config) {
                 <h1>${config.title}</h1>
             </div>
             <nav class="header-nav">
-                <span id="update-timestamp" class="timestamp-badge">
-                    <span class="material-symbols-rounded" style="font-size: 18px;">schedule</span> 
-                    Aguardando dados...
-                </span>
+                <div id="update-timestamp" class="timestamp-badge">
+                    <span class="material-symbols-rounded">hourglass_empty</span> Aguardando...
+                </div>
                 ${buttonHtml} 
             </nav>
         </header>
@@ -83,7 +82,7 @@ function loadFooter() {
 
 /**
  * Busca e exibe o timestamp da coleta de dados.
- * Inclui feedback visual de atualização.
+ * Inclui feedback visual de atualização com ÍCONES DE CALENDÁRIO E RELÓGIO.
  */
 async function loadTimestamp(sheetTab, apiKey, sheetId) {
     const timestampEl = document.getElementById('update-timestamp');
@@ -99,27 +98,51 @@ async function loadTimestamp(sheetTab, apiKey, sheetId) {
         const data = await response.json();
         
         if (data.values && data.values.length > 0 && data.values[0][0]) {
-            const novaData = data.values[0][0];
+            // O dado vem geralmente como: "Atualizado em: 18/12/2025 14:30:00"
+            const rawText = data.values[0][0];
             
-            // Remove a palavra "schedule" (nome do ícone) para comparar apenas o texto da hora
-            const textoAtualLimpo = timestampEl.innerText.replace('schedule', '').trim();
+            // 1. Removemos o texto "Atualizado em:" para limpar
+            const cleanText = rawText.replace('Atualizado em:', '').trim();
+            
+            // 2. Tentamos separar a Data da Hora (geralmente separados por espaço)
+            const parts = cleanText.split(' ');
+            
+            let htmlFormatado = '';
 
-            if (textoAtualLimpo !== novaData) {
-                // Reescreve o HTML para manter o ícone
-                timestampEl.innerHTML = `<span class="material-symbols-rounded" style="font-size: 18px;">schedule</span> ${novaData}`;
+            if (parts.length >= 2) {
+                // Se conseguimos separar, montamos o HTML com os dois ícones
+                const dataPart = parts[0]; // Ex: 18/12/2025
+                const horaPart = parts[1]; // Ex: 14:30:00
+                
+                htmlFormatado = `
+                    <span class="material-symbols-rounded">calendar_today</span> ${dataPart}
+                    <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
+                    <span class="material-symbols-rounded">schedule</span> ${horaPart}
+                `;
+            } else {
+                // Se não der para separar, mostra tudo com o relógio
+                htmlFormatado = `<span class="material-symbols-rounded">schedule</span> ${cleanText}`;
+            }
+            
+            // Verifica se o texto mudou comparando com um atributo salvo (para evitar piscar sem necessidade)
+            if (timestampEl.getAttribute('data-val') !== cleanText) {
+                timestampEl.innerHTML = htmlFormatado;
+                timestampEl.setAttribute('data-val', cleanText); // Salva o valor atual
+                
                 timestampEl.style.color = 'var(--m3-on-surface-variant)';
                 
+                // Animação visual
                 timestampEl.classList.remove('updated-anim');
                 void timestampEl.offsetWidth; 
                 timestampEl.classList.add('updated-anim');
             }
         } else {
-            timestampEl.innerHTML = `<span class="material-symbols-rounded" style="font-size: 18px;">schedule</span> Data Indisponível`;
+            timestampEl.innerHTML = `<span class="material-symbols-rounded">error</span> S/ Dados`;
         }
     } catch (error) {
         console.warn('Não foi possível atualizar o horário:', error);
         if (timestampEl.textContent.includes('Aguardando') || timestampEl.textContent.includes('Buscando')) {
-             timestampEl.innerHTML = `<span class="material-symbols-rounded" style="font-size: 18px;">error</span> Erro de conexão`;
+             timestampEl.innerHTML = `<span class="material-symbols-rounded">wifi_off</span> Erro de conexão`;
              timestampEl.style.color = 'var(--m3-color-error)';
         }
     }
