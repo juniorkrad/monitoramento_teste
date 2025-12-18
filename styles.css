@@ -34,6 +34,35 @@
     background: var(--m3-primary-hover); 
 }
 
+/* --- ÍCONES MATERIAL SYMBOLS ROUNDED (NOVO) --- */
+.material-symbols-rounded {
+    font-family: 'Material Symbols Rounded';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;  /* Tamanho base */
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+    vertical-align: middle; /* Alinha perfeitamente com o texto ao lado */
+
+    /* --- CONFIGURAÇÃO DO TRAÇO FINO (Light 300) --- */
+    font-variation-settings: 
+        'FILL' 0,
+        'wght' 300, /* Peso 300 deixa o ícone mais fino e elegante */
+        'GRAD' 0,
+        'opsz' 24;
+}
+
+/* Classes auxiliares para cores dos ícones (usado nos Cards) */
+.icon-up { color: var(--m3-color-success); font-size: 20px; }
+.icon-down { color: var(--m3-color-error); font-size: 20px; }
+.icon-total { color: var(--m3-on-surface); font-size: 20px; }
+
+
 html { 
     height: 100%; 
 }
@@ -90,11 +119,35 @@ body.home-page {
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
+/* NOVO: Estilo para botão de ícone (ex: Home redonda) */
+.icon-btn {
+    background-color: #371752;
+    color: var(--m3-on-primary);
+    border: 1px solid var(--m3-outline);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+.icon-btn:hover {
+    background-color: var(--m3-primary-hover);
+    transform: scale(1.1);
+    box-shadow: 0 0 10px var(--m3-primary-hover);
+}
+
 /* Timestamp Animado */
 .timestamp-badge { 
     font-size: 1em; 
     color: var(--m3-on-surface-variant); 
     transition: color 0.3s ease;
+    display: flex;       /* Para alinhar o ícone de relógio */
+    align-items: center;
+    gap: 6px;
 }
 @keyframes textFlash {
     0% { color: var(--m3-primary); text-shadow: 0 0 10px var(--m3-primary); }
@@ -132,7 +185,8 @@ body.home-page {
     display: grid;
     gap: 15px; 
     padding-bottom: 20px;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    /* Ajuste anterior mantido: 260px */
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     align-content: flex-start;
     width: 100%;
 }
@@ -430,26 +484,61 @@ tbody td:first-child {
 .status-atencao { background-color: var(--m3-color-warning); color: #000; }
 .status-problema { background-color: var(--m3-color-error); color: #fff; }
 
-.overview-card { background-color: var(--m3-surface-container); border-radius: 12px; border: 1px solid var(--m3-outline); overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: transform 0.2s ease, border-color 0.2s ease; }
+.overview-card { 
+    background-color: var(--m3-surface-container); 
+    border-radius: 12px; 
+    border: 1px solid var(--m3-outline); 
+    overflow: hidden; 
+    display: flex; 
+    flex-direction: column; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3); 
+    transition: transform 0.2s ease, border-color 0.2s ease; 
+    
+    /* Limita a largura do cartão para tirar o espaço vazio */
+    max-width: 380px;  
+    width: 100%;       
+    margin: 0 auto;    
+}
+
 .overview-card:hover { transform: translateY(-4px); border-color: var(--m3-primary); }
 .card-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; transition: background-color 0.5s ease; }
-.card-header h3 { margin: 0; font-size: 1.3em; font-weight: 500; color: var(--m3-on-surface); }
+/* Ajuste para alinhar ícone e texto no título do card */
+.card-header h3 { margin: 0; font-size: 1.3em; font-weight: 500; color: var(--m3-on-surface); display: flex; align-items: center; gap: 8px; }
+
 .card-header.status-normal { background-color: var(--m3-color-success); }
 .card-header.status-atencao { background-color: var(--m3-color-warning); }
 .card-header.status-problema { background-color: var(--m3-color-error); }
 .card-header.status-normal h3, .card-header.status-problema h3 { color: #fff; }
 .card-header.status-atencao h3 { color: #000; }
-.card-header-button { background-color: rgba(0, 0, 0, 0.2); color: var(--m3-on-surface-variant); padding: 4px 10px; border-radius: 16px; text-decoration: none; font-size: 0.85em; font-weight: 500; transition: background-color 0.2s ease, color 0.2s ease; }
+
+/* Botão Detalhes (Pode ter ícone agora) */
+.card-header-button { 
+    background-color: rgba(0, 0, 0, 0.2); 
+    color: var(--m3-on-surface-variant); 
+    padding: 4px 10px; 
+    border-radius: 16px; 
+    text-decoration: none; 
+    font-size: 0.85em; 
+    font-weight: 500; 
+    transition: background-color 0.2s ease, color 0.2s ease; 
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .card-header-button:hover { background-color: rgba(0, 0, 0, 0.4); color: var(--m3-on-surface); }
 .card-header.status-normal .card-header-button, .card-header.status-problema .card-header-button { color: rgba(255,255,255,0.8); }
 .card-header.status-atencao .card-header-button { color: rgba(0,0,0,0.7); }
+
 .card-body { flex: 1; display: flex; align-items: center; justify-content: space-between; padding: 15px; gap: 10px; }
 .card-stats { display: flex; flex-direction: column; gap: 5px; }
-.stat-item { display: flex; align-items: baseline; gap: 8px; }
-.stat-item span { font-size: 1.8em; font-weight: 700; line-height: 1; }
-.stat-item label { font-size: 0.9em; color: var(--m3-on-surface-variant); }
+
+.stat-item { display: flex; align-items: center; gap: 8px; }
+.stat-item span { font-size: 1.8em; font-weight: 700; line-height: 1; min-width: 30px; text-align: right; }
+.stat-item label { font-size: 0.9em; color: var(--m3-on-surface-variant); display: flex; align-items: center; gap: 5px; }
 .stat-item.online span { color: var(--m3-color-success); }
 .stat-item.offline span { color: var(--m3-color-error); }
+
 .donut-chart-container { position: relative; display: flex; justify-content: center; align-items: center; }
 .donut-chart { transform: rotate(-90deg); }
 .donut-chart circle { fill: none; stroke-width: 10; }

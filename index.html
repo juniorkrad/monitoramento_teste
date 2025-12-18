@@ -8,6 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">    
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
@@ -59,11 +62,14 @@
             grid.innerHTML = '';
             oltsConfig.forEach(olt => {
                 const pageUrl = olt.id.toLowerCase().replace('-', '') + '.html';
+                // ATUALIZAÇÃO AQUI: Adicionados ícones no Título e no Botão
                 grid.innerHTML += `
                     <div class="overview-card" id="card-${olt.id}">
                         <div class="card-header">
-                            <h3>${olt.id}</h3>
-                            <a href="${pageUrl}" class="card-header-button">Detalhes →</a>
+                            <h3><span class="material-symbols-rounded">router</span> ${olt.id}</h3>
+                            <a href="${pageUrl}" class="card-header-button">
+                                Detalhes <span class="material-symbols-rounded" style="font-size: 16px;">arrow_forward</span>
+                            </a>
                         </div>
                         <div class="card-body">
                              <div class="card-stats">
@@ -75,9 +81,7 @@
             });
         }
         
-        // Função que processa cada OLT, conta totais e IDENTIFICA PROBLEMAS
         async function fetchOltData(olt) {
-            // Nokia usa até coluna E, Furukawa até C
             const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:C`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
             
@@ -87,11 +91,8 @@
                 const data = await response.json();
                 const rows = (data.values || []).slice(1);
                 
-                // Variáveis para o Card (Totais)
                 let totalOnline = 0;
                 let totalOffline = 0;
-
-                // Variáveis para Análise de Problemas (Agrupamento por porta)
                 const portData = {};
                 const localProblems = new Set();
 
@@ -100,22 +101,18 @@
                     
                     let placa, porta, isOnline;
 
-                    // Lógica de parsing (igual ao olt-engine.js)
                     if (olt.type === 'nokia') {
                         const status = columns[4] || '';
                         const pon = columns[0];
                         isOnline = status.trim().toLowerCase().includes('up');
-                        
                         if (pon) {
                             const parts = pon.split('/');
                             if (parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
                         }
-
                     } else { // Furukawa
                         const status = columns[2] || '';
                         const portStr = columns[0];
                         isOnline = status.trim().toLowerCase() === 'active';
-
                         if (portStr) {
                             if (olt.type === 'furukawa-10') {
                                 const parts = portStr.split('/');
@@ -127,10 +124,8 @@
                         }
                     }
 
-                    // Contagem Total
                     if (isOnline) totalOnline++; else totalOffline++;
 
-                    // Agrupamento para Alerta
                     if (placa && porta) {
                         const portKey = `${placa}/${porta}`;
                         if (!portData[portKey]) portData[portKey] = { off: 0, total: 0 };
@@ -139,26 +134,20 @@
                     }
                 });
 
-                // Analisa se há problemas nesta OLT
                 for (const key in portData) {
                     const { off, total } = portData[key];
-                    // Regra de Ouro: > 16 offline OU > 50% offline
                     if (off > 16 || (total > 0 && (off / total) >= 0.5)) {
-                        // Cria uma chave única: "NOME-OLT [Placa]/[Porta]"
                         localProblems.add(`[${olt.id}] ${key}`);
                     }
                 }
 
-                // Atualiza o Card Visual
                 updateCardUI(olt.id, { onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type });
-                
-                // Retorna os problemas encontrados nesta OLT
                 return localProblems;
 
             } catch (error) {
                 console.error(`Erro para OLT ${olt.id}:`, error);
                 updateCardUI(olt.id, { error: true });
-                return new Set(); // Retorna vazio em caso de erro
+                return new Set();
             }
         }
         
@@ -181,7 +170,21 @@
             else if (offlinePercent > 5) { header.classList.add('status-atencao'); }
             else { header.classList.add('status-normal'); }
             
-            const statsHtml = `<div class="stat-item"><span>${total}</span><label>Total</label></div><div class="stat-item online"><span>${onlineCount}</span><label>${type === 'nokia' ? 'Up' : 'Active'}</label></div><div class="stat-item offline"><span>${offlineCount}</span><label>${type === 'nokia' ? 'Down' : 'Inactive'}</label></div>`;
+            // ATUALIZAÇÃO AQUI: Inserção dos Ícones nas estatísticas
+            const statsHtml = `
+                <div class="stat-item">
+                    <span>${total}</span>
+                    <label><span class="material-symbols-rounded icon-total">dns</span> Total</label>
+                </div>
+                <div class="stat-item online">
+                    <span>${onlineCount}</span>
+                    <label><span class="material-symbols-rounded icon-up">check_circle</span> ${type === 'nokia' ? 'Up' : 'Active'}</label>
+                </div>
+                <div class="stat-item offline">
+                    <span>${offlineCount}</span>
+                    <label><span class="material-symbols-rounded icon-down">error</span> ${type === 'nokia' ? 'Down' : 'Inactive'}</label>
+                </div>
+            `;
             
             const newRadius = 40; 
             const circumference = 2 * Math.PI * newRadius; 
@@ -210,28 +213,21 @@
                 }
             }
             
-            // Se for a primeira vez, cria os cards
             if(document.getElementById('overview-grid').innerHTML.trim() === "") {
                 createCardPlaceholders();
             }
             
-            // Dispara todas as requisições em paralelo e AGUARDA OS RESULTADOS
             const promises = oltsConfig.map(olt => fetchOltData(olt));
             const results = await Promise.all(promises);
             
-            // --- LÓGICA DE ALERTAS GLOBAIS ---
-            // Junta todos os problemas encontrados em todas as OLTs em um único Set
             const allProblems = new Set();
             results.forEach(oltProblems => {
                 oltProblems.forEach(problem => allProblems.add(problem));
             });
 
-            // Chama o gerenciador de notificações (notifications.js)
-            // Ele vai comparar com a memória anterior e apitar se houver novidade
             if (typeof checkAndNotifyForNewProblems === 'function') {
                 checkAndNotifyForNewProblems(allProblems);
             }
-            // ---------------------------------
             
             const now = new Date();
             const timestampText = `Atualizado em: ${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR')}`;
@@ -245,9 +241,7 @@
         }
         
         document.addEventListener('DOMContentLoaded', () => {
-            // AQUI ESTÁ A ATUALIZAÇÃO: Adicionado exactTitle: true
             loadHeader({ title: "Painel de Monitoramento", exactTitle: true });
-            
             loadFooter();
             runOverview();
             setInterval(runOverview, REFRESH_INTERVAL_SECONDS * 1000);
