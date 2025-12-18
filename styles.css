@@ -73,7 +73,7 @@ body {
     font-family: var(--font-family);
     margin: 0;
     
-    /* MARGEM DA PÁGINA RESTAURADA PARA O VALOR ORIGINAL (15px) */
+    /* MARGEM DA PÁGINA (ORIGINAL) */
     padding: 10px 15px; 
     
     font-size: 13.5px;
@@ -546,10 +546,10 @@ tbody td:first-child {
     display: flex; 
     flex-direction: column; 
     gap: 5px; 
-    flex: 1; /* Ocupa o espaço da esquerda */
+    flex: 1; 
 }
 
-/* Cada linha da tabela agora é um GRID de 2 colunas */
+/* GRID de 2 colunas para os números e textos */
 .stat-item { 
     display: grid;
     /* Coluna 1 (Número): 40px fixos */
@@ -559,17 +559,15 @@ tbody td:first-child {
     gap: 8px;           
 }
 
-/* Coluna 1: O Número */
+/* Coluna 1: O Número (ALINHADO À ESQUERDA) */
 .stat-item span { 
     font-size: 1.8em; 
     font-weight: 700; 
     line-height: 1; 
-    
-    /* MUDANÇA: Alinhamento à ESQUERDA */
-    text-align: left; 
+    text-align: left; /* Mudado de right para left */
 }
 
-/* Coluna 2: O Texto + Ícone */
+/* Coluna 2: O Texto + Ícone (CENTRALIZADO) */
 .stat-item label { 
     font-size: 0.9em; 
     color: var(--m3-on-surface-variant); 
@@ -577,6 +575,7 @@ tbody td:first-child {
     align-items: center; 
     gap: 6px; 
     white-space: nowrap; 
+    justify-content: center; /* Centraliza o conteúdo (ícone + texto) */
 }
 /* ----------------------------------------------------- */
 
@@ -590,7 +589,7 @@ tbody td:first-child {
     justify-content: center; 
     align-items: center;
     flex-shrink: 0; /* Impede que encolha */
-    margin-left: 10px; /* Um espacinho extra do texto */
+    margin-left: 10px; 
 }
 
 .donut-chart { transform: rotate(-90deg); }
