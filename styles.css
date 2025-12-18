@@ -455,13 +455,12 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     flex: 1; 
 }
 
-/* LINHA DO GRID (PADRONIZADA) */
+/* LINHA DO GRID (PADRONIZADA PARA 5 DÍGITOS) */
 .stat-item { 
     display: grid;
-    /* Coluna 1 = 50px (Números) | Coluna 2 = O resto (Texto) */
-    grid-template-columns: 50px 1fr;
+    /* --- ALTERAÇÃO AQUI: 80px para caber 5 dígitos folgado --- */
+    grid-template-columns: 80px 1fr;
     align-items: center; 
-    /* Gap de 10px (Padronizado e Seguro) */
     gap: 10px;           
 }
 
@@ -470,9 +469,10 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     font-size: 1.8em; 
     font-weight: 700; 
     line-height: 1; 
-    /* Largura total + Alinhamento à direita */
+    
+    /* Largura total + Alinhamento à ESQUERDA */
     width: 100%;
-    text-align: right; 
+    text-align: left; 
 }
 
 /* Coluna 2: O Texto + Ícone */
