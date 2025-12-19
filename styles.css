@@ -449,20 +449,22 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     position: relative; /* Referência para o gráfico absoluto */
 }
 
+/* Espaço Protegido para o Gráfico (110px na direita) */
 .card-stats { 
     display: flex; 
     flex-direction: column; 
     gap: 5px; 
     flex: 1; 
-    padding-right: 110px; /* --- PROTEÇÃO PARA O TEXTO NÃO ATRAVESSAR O GRÁFICO --- */
+    padding-right: 110px; 
 }
 
-/* LINHA DO GRID (AUTOMÁTICA) */
+/* LINHA DO GRID (VALORES DETERMINADOS E FIXOS) */
 .stat-item { 
     display: grid;
-    grid-template-columns: max-content 1fr; /* Auto para número, resto para texto */
+    /* --- MUDANÇA AQUI: 70px (fixo) + 1fr (resto fixo) --- */
+    grid-template-columns: 70px 1fr; 
     align-items: center; 
-    gap: 12px; 
+    gap: 10px; /* Gap fixo de 10px */
 }
 
 /* Coluna 1: O Número */
@@ -471,10 +473,11 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     font-weight: 700; 
     line-height: 1; 
     
-    /* --- MUDANÇA AQUI: Alinhamento à ESQUERDA --- */
+    /* Alinhado à ESQUERDA */
     text-align: left; 
     
-    min-width: 50px; /* Garante um mínimo de alinhamento */
+    /* Removemos min-width pois a coluna já é fixa em 70px */
+    width: 100%;
 }
 
 /* Coluna 2: O Texto + Ícone */
@@ -501,14 +504,13 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 /* --- GRÁFICO FIXO ABSOLUTO À DIREITA --- */
 .donut-chart-container { 
     position: absolute; /* Sai do fluxo normal */
-    right: 15px;        /* Grudado na direita (margem interna do card) */
+    right: 15px;        /* Grudado na direita */
     top: 50%;           /* Centralizado verticalmente */
-    transform: translateY(-50%); /* Ajuste fino do centro */
+    transform: translateY(-50%); 
     
     display: flex; 
     justify-content: center; 
     align-items: center;
-    /* Tamanho fixo para não distorcer */
     width: 100px;
     height: 100px;
 }
