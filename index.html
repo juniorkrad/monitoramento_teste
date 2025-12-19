@@ -62,12 +62,14 @@
             grid.innerHTML = '';
             oltsConfig.forEach(olt => {
                 const pageUrl = olt.id.toLowerCase().replace('-', '') + '.html';
+                // ATUALIZAÇÃO AQUI: Substituído o texto "Detalhes" pelo ícone "manage_search"
                 grid.innerHTML += `
                     <div class="overview-card" id="card-${olt.id}">
                         <div class="card-header">
                             <h3><span class="material-symbols-rounded">router</span> ${olt.id}</h3>
-                            <a href="${pageUrl}" class="card-header-button">
-                                Detalhes <span class="material-symbols-rounded" style="font-size: 16px;">arrow_forward</span>
+                            <a href="${pageUrl}" class="card-header-button" title="Ver Detalhes">
+                                <span class="material-symbols-rounded" style="font-size: 20px;">manage_search</span>
+                                <span class="material-symbols-rounded" style="font-size: 20px;">arrow_forward</span>
                             </a>
                         </div>
                         <div class="card-body">
@@ -227,13 +229,11 @@
                 checkAndNotifyForNewProblems(allProblems);
             }
             
-            // --- ATUALIZAÇÃO DO TIMESTAMP COM ÍCONES (IGUAL AO LAYOUT.JS) ---
             const now = new Date();
             const dataHoje = now.toLocaleDateString('pt-BR');
             const horaAgora = now.toLocaleTimeString('pt-BR');
             
             if(timestampEl) {
-                // Aqui usamos innerHTML para inserir os ícones e o separador
                 timestampEl.innerHTML = `
                     <span class="material-symbols-rounded">calendar_today</span> ${dataHoje}
                     <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
