@@ -18,7 +18,7 @@
     --font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
-/* --- SCROLLBAR PERSONALIZADA --- */
+/* --- SCROLLBAR PERSONALIZADA (GERAL) --- */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -150,8 +150,29 @@ body.home-page {
 
 .footer { margin-top: 10px; padding: 8px 0; border-top: 1px solid var(--m3-outline); text-align: center; color: var(--m3-on-surface-variant); font-size: 0.85em; }
 
-/* Toast Notifications */
-#toast-container { position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
+/* --- TOAST NOTIFICATIONS (ATUALIZADO COM ROLAGEM) --- */
+#toast-container { 
+    position: fixed; 
+    top: 20px; 
+    right: 20px; 
+    z-index: 1000; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px; 
+    
+    /* Configuração da Rolagem */
+    max-height: 80vh;      /* Limita altura a 80% da tela */
+    overflow-y: auto;      /* Barra de rolagem se necessário */
+    overflow-x: hidden;
+    padding-right: 5px;
+    padding-bottom: 10px;
+}
+
+/* Barra de rolagem específica para os alertas */
+#toast-container::-webkit-scrollbar {
+    width: 6px;
+}
+
 .toast { 
     background-color: #333; 
     color: #fff; 
@@ -163,6 +184,10 @@ body.home-page {
     transform: translateX(100%); 
     transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
     cursor: pointer;
+    
+    /* Garante estabilidade visual */
+    flex-shrink: 0; 
+    width: 300px;
 }
 .toast.show { opacity: 1; transform: translateX(0); }
 .toast.problem { background-color: var(--m3-color-error); color: #fff; font-weight: 500; }
