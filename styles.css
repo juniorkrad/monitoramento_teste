@@ -550,28 +550,28 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 @keyframes fadeInPage { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ==========================================================================
-   MENU LATERAL (SIDEBAR) - VERSÃO DIREITA
+   MENU LATERAL (SIDEBAR) - VERSÃO DIREITA (GRID 2 COLUNAS)
    ========================================================================== */
 
 /* O Menu em si */
 .sidebar {
     position: fixed;
     top: 0;
-    right: -300px; /* AGORA NA DIREITA (Escondido) */
+    right: -300px; /* Escondido à direita */
     width: 300px;
     height: 100%;
     background-color: var(--m3-surface-container); 
-    border-left: 1px solid var(--m3-outline); /* Borda agora é na esquerda */
-    box-shadow: -5px 0 15px rgba(0,0,0,0.5); /* Sombra invertida */
+    border-left: 1px solid var(--m3-outline); 
+    box-shadow: -5px 0 15px rgba(0,0,0,0.5); 
     z-index: 2000; 
-    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transição no RIGHT */
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
     padding-bottom: 20px;
 }
 
 .sidebar.active {
-    right: 0; /* Mostra o menu trazendo para a borda direita */
+    right: 0; /* Mostra o menu */
 }
 
 /* Cabeçalho do Menu */
@@ -586,28 +586,35 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 }
 .sidebar-header h3 { margin: 0; color: var(--m3-on-surface); font-size: 1.1em; }
 
-/* Lista de Links */
+/* Lista de Links (Container Geral) */
 .sidebar-nav {
     flex: 1;
     overflow-y: auto;
-    padding: 15px 20px; /* Reduzi levemente o padding vertical */
+    padding: 15px 20px;
     display: flex;
     flex-direction: column;
-    gap: 4px; /* ESPAÇAMENTO REDUZIDO ENTRE BOTÕES (Era 8px) */
+}
+
+/* GRID para os botões das OLTs */
+.olt-link-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Duas colunas iguais */
+    gap: 8px; /* Espaço entre os botões */
+    margin-top: 5px;
 }
 
 /* Estilo dos Links */
 .sidebar-link {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 15px; /* Altura do botão reduzida */
+    gap: 10px;
+    padding: 8px 10px; /* Compacto */
     text-decoration: none;
     color: var(--m3-on-surface-variant);
     border-radius: 8px;
     transition: background 0.2s, color 0.2s;
-    font-size: 0.95em;
-    border: 1px solid transparent; /* Para evitar pulo ao focar */
+    font-size: 0.9rem; /* Fonte levemente menor para caber */
+    border: 1px solid transparent;
 }
 
 .sidebar-link:hover {
@@ -616,17 +623,17 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     border-color: var(--m3-outline);
 }
 
-/* Botão HOME (Destaque apenas no Tamanho) */
+/* Botão HOME (Destaque e Largura Total) */
 .sidebar-link.home-highlight {
-    /* Cores padrão mantidas para consistência */
+    width: 100%; /* Garante que ocupe a largura total fora do grid */
+    box-sizing: border-box;
     color: var(--m3-on-surface); 
-    
-    /* Destaque via Tamanho e Peso */
     font-weight: 700;
-    font-size: 1.1rem; /* Um pouco maior que os outros */
-    padding: 15px;     /* Área de clique um pouco maior */
-    background-color: rgba(255, 255, 255, 0.03); /* Fundo muito sutil */
+    font-size: 1.1rem; 
+    padding: 15px;     
+    background-color: rgba(255, 255, 255, 0.03);
     margin-bottom: 5px;
+    justify-content: center; /* Centraliza conteúdo do Home */
 }
 
 .sidebar-link.home-highlight:hover {
@@ -647,7 +654,6 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     text-transform: uppercase;
     font-size: 0.75rem;
     color: var(--m3-on-surface-variant);
-    padding-left: 15px;
     margin-bottom: 5px;
     font-weight: bold;
     letter-spacing: 1px;

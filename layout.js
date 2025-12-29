@@ -1,5 +1,5 @@
 // ==============================================================================
-// layout.js - Construtor de Layout e Menu Inteligente (Versão 2.1 - Menu Direito)
+// layout.js - Construtor de Layout e Menu Inteligente (Versão 2.2 - Grid 2 Colunas)
 // ==============================================================================
 
 // --- LISTA MESTRA DE PÁGINAS ---
@@ -102,7 +102,7 @@ function loadSidebar(currentPage) {
     let linksHtml = '';
     
     OLT_MENU_LIST.forEach(olt => {
-        if (olt.file === currentPage) return; // Não mostra a página atual
+        if (olt.file === currentPage) return; 
 
         linksHtml += `
             <a href="${olt.file}" class="sidebar-link">
@@ -132,7 +132,9 @@ function loadSidebar(currentPage) {
                 <div class="sidebar-divider"></div>
                 <div class="menu-label">Outras OLTs</div>
 
-                ${linksHtml}
+                <div class="olt-link-grid">
+                    ${linksHtml}
+                </div>
             </nav>
         </div>
     `;
