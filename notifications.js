@@ -1,5 +1,5 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 4.0 - Semântica OLT)
+// notifications.js - Sistema Central de Alertas (Versão 4.2 - Ícones Material)
 // ==============================================================================
 
 let currentProblems = new Set();
@@ -10,7 +10,7 @@ const alertSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAAB
 /**
  * Cria e exibe um pop-up (toast) na tela.
  * @param {string} message - A mensagem a ser exibida.
- * @param {string} type - 'problem' (vermelho), 'warning' (amarelo) ou 'success' (verde).
+ * @param {string} type - 'problem' (vermelho), 'warning' (amarelo) ou 'status-normal' (verde).
  */
 function showToast(message, type = '') {
     // --- TRAVA DE SEGURANÇA ---
@@ -28,16 +28,25 @@ function showToast(message, type = '') {
     if (!container) return;
 
     const toast = document.createElement('div');
-    // Mapeia o tipo 'warning' para a classe CSS correta se necessário, ou usa direto
+    // Adiciona a classe do tipo para pegar a cor de fundo (definida no CSS)
     toast.className = `toast ${type}`;
     
-    // Ícones baseados no tipo
-    let icon = 'ℹ️';
-    if (type === 'problem') icon = '🚫'; // Proibido/Crítico
-    if (type === 'warning') icon = '⚠️'; // Atenção
-    if (type === 'success') icon = '✅'; // Sucesso
+    // --- SELEÇÃO DE ÍCONES (Material Symbols) ---
+    let iconName = 'info'; // Padrão
+    
+    if (type === 'problem') {
+        iconName = 'error';        // Solicitado: error
+    } else if (type === 'warning') {
+        iconName = 'warning';      // Solicitado: warning
+    } else if (type === 'status-normal' || type === 'success') {
+        iconName = 'check_circle'; // Solicitado: check_circle
+    }
 
-    toast.innerHTML = `<strong>${icon}</strong> ${message}`;
+    // Monta o HTML com o span da fonte do Google
+    toast.innerHTML = `
+        <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 10px;">${iconName}</span>
+        <span>${message}</span>
+    `;
     
     toast.onclick = () => {
         toast.classList.remove('show');
@@ -73,7 +82,7 @@ function checkAndNotifyForNewProblems(newProblems) {
             const oltName = formatMessage(problemKey);
             
             // Detecta a gravidade baseada na TAG que virá do index.html
-            // Exemplo de chave: "[HEL-1] 1/4::WARN" ou "[HEL-1] 1/4::CRIT"
+            // Exemplo de chave: "[HEL-1] STATUS::WARN" ou "[HEL-1] STATUS::CRIT"
             if (problemKey.includes('::WARN')) {
                 showToast(`ATENÇÃO: <strong>${oltName}</strong>`, 'warning');
             } else {
@@ -96,7 +105,7 @@ function checkAndNotifyForNewProblems(newProblems) {
 
 // Função auxiliar para extrair APENAS o nome da OLT
 function formatMessage(key) {
-    // A chave vem completa para garantir unicidade: "[HEL-1] 1/4::WARN"
+    // A chave vem completa para garantir unicidade: "[HEL-1] STATUS::WARN"
     // Nós queremos extrair apenas "HEL-1" para exibir.
     
     const oltMatch = key.match(/^\[(.*?)\]/);
