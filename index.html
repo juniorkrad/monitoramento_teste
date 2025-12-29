@@ -62,7 +62,6 @@
             grid.innerHTML = '';
             oltsConfig.forEach(olt => {
                 const pageUrl = olt.id.toLowerCase().replace('-', '') + '.html';
-                // ATUALIZAÇÃO AQUI: Substituído o texto "Detalhes" pelo ícone "manage_search"
                 grid.innerHTML += `
                     <div class="overview-card" id="card-${olt.id}">
                         <div class="card-header">
@@ -95,13 +94,14 @@
                 let totalOnline = 0;
                 let totalOffline = 0;
                 const portData = {};
-                const localProblems = new Set();
+                const localProblems = new Set(); // Conjunto de problemas desta OLT
 
                 rows.forEach(columns => {
                     if (columns.length === 0) return;
                     
                     let placa, porta, isOnline;
 
+                    // --- LÓGICA DE PARSEAMENTO (Igual ao OLT Engine) ---
                     if (olt.type === 'nokia') {
                         const status = columns[4] || '';
                         const pon = columns[0];
@@ -135,11 +135,28 @@
                     }
                 });
 
+                // --- NOVA LÓGICA DE ALERTAS DA OLT ---
+                let hasCritical = false; // Problema Vermelho (> 16 ou > 50%)
+                let hasWarning = false;  // Problema Amarelo (= 16)
+
                 for (const key in portData) {
                     const { off, total } = portData[key];
+                    
+                    // Regra Crítica: Mais de 16 OFF OU Mais de 50% OFF (e tem gente na porta)
                     if (off > 16 || (total > 0 && (off / total) >= 0.5)) {
-                        localProblems.add(`[${olt.id}] ${key}`);
+                        hasCritical = true;
+                    } 
+                    // Regra Atenção: Exatamente 16 OFF
+                    else if (off === 16) {
+                        hasWarning = true;
                     }
+                }
+
+                // Define o status final da OLT para o Alerta
+                if (hasCritical) {
+                    localProblems.add(`[${olt.id}] STATUS::CRIT`);
+                } else if (hasWarning) {
+                    localProblems.add(`[${olt.id}] STATUS::WARN`);
                 }
 
                 updateCardUI(olt.id, { onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type });
@@ -220,11 +237,13 @@
             const promises = oltsConfig.map(olt => fetchOltData(olt));
             const results = await Promise.all(promises);
             
+            // Unifica todos os problemas de todas as OLTs em um único SET
             const allProblems = new Set();
             results.forEach(oltProblems => {
                 oltProblems.forEach(problem => allProblems.add(problem));
             });
 
+            // Envia para o notificador central
             if (typeof checkAndNotifyForNewProblems === 'function') {
                 checkAndNotifyForNewProblems(allProblems);
             }

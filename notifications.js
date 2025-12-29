@@ -1,5 +1,5 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 3.1 - Filtro de Página)
+// notifications.js - Sistema Central de Alertas (Versão 4.0 - Semântica OLT)
 // ==============================================================================
 
 let currentProblems = new Set();
@@ -10,16 +10,15 @@ const alertSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAAB
 /**
  * Cria e exibe um pop-up (toast) na tela.
  * @param {string} message - A mensagem a ser exibida.
- * @param {string} type - 'problem' (vermelho) ou 'success' (verde).
+ * @param {string} type - 'problem' (vermelho), 'warning' (amarelo) ou 'success' (verde).
  */
 function showToast(message, type = '') {
-    // --- TRAVA DE SEGURANÇA (NOVO) ---
+    // --- TRAVA DE SEGURANÇA ---
     // Verifica em qual página estamos.
     // Se NÃO for a index.html (Dashboard), cancela a exibição do alerta.
     const path = window.location.pathname;
-    const pageName = path.split('/').pop(); // Pega apenas 'hel1.html', 'index.html', etc.
+    const pageName = path.split('/').pop(); 
 
-    // Se existir um nome de arquivo e ele NÃO for index.html, encerra a função aqui.
     if (pageName && pageName !== 'index.html') {
         return; 
     }
@@ -29,9 +28,15 @@ function showToast(message, type = '') {
     if (!container) return;
 
     const toast = document.createElement('div');
+    // Mapeia o tipo 'warning' para a classe CSS correta se necessário, ou usa direto
     toast.className = `toast ${type}`;
     
-    const icon = type === 'problem' ? '⚠️ ' : type === 'success' ? '✅ ' : 'ℹ️ ';
+    // Ícones baseados no tipo
+    let icon = 'ℹ️';
+    if (type === 'problem') icon = '🚫'; // Proibido/Crítico
+    if (type === 'warning') icon = '⚠️'; // Atenção
+    if (type === 'success') icon = '✅'; // Sucesso
+
     toast.innerHTML = `<strong>${icon}</strong> ${message}`;
     
     toast.onclick = () => {
@@ -41,7 +46,8 @@ function showToast(message, type = '') {
 
     container.appendChild(toast);
     
-    if (type === 'problem') {
+    // Toca som para problemas E avisos de atenção
+    if (type === 'problem' || type === 'warning') {
         try { alertSound.play().catch(e => {}); } catch(e){} 
     }
 
@@ -54,54 +60,49 @@ function showToast(message, type = '') {
             toast.classList.remove('show');
             toast.addEventListener('transitionend', () => toast.remove());
         }
-    }, 7000);
+    }, 7000); // 7 segundos de exibição
 }
 
 /**
- * Lógica Inteligente: Detecta Novos Problemas E Problemas Resolvidos
+ * Lógica Inteligente: Detecta Novos Problemas e Define a Cor (Amarelo/Vermelho)
  */
 function checkAndNotifyForNewProblems(newProblems) {
     // 1. Detectar NOVOS problemas (Caiu)
     for (const problemKey of newProblems) {
         if (!currentProblems.has(problemKey)) {
-            const msg = formatMessage(problemKey);
-            showToast(`ALERTA: ${msg}`, 'problem');
+            const oltName = formatMessage(problemKey);
+            
+            // Detecta a gravidade baseada na TAG que virá do index.html
+            // Exemplo de chave: "[HEL-1] 1/4::WARN" ou "[HEL-1] 1/4::CRIT"
+            if (problemKey.includes('::WARN')) {
+                showToast(`ATENÇÃO: <strong>${oltName}</strong>`, 'warning');
+            } else {
+                // Se for CRIT ou sem tag, assume problema grave
+                showToast(`PROBLEMA: <strong>${oltName}</strong>`, 'problem');
+            }
         }
     }
 
     // 2. Detectar Problemas RESOLVIDOS (Voltou)
     for (const oldProblem of currentProblems) {
         if (!newProblems.has(oldProblem)) {
-            const msg = formatMessage(oldProblem);
-            showToast(`NORMALIZADO: ${msg}`, 'status-normal'); 
+            const oltName = formatMessage(oldProblem);
+            showToast(`NORMALIZADO: <strong>${oltName}</strong>`, 'status-normal'); // Usa classe verde do CSS
         }
     }
     
     currentProblems = newProblems;
 }
 
-// Função auxiliar para formatar o texto da porta
-// AGORA PREPARADA PARA RECEBER O NOME DA OLT DA HOME PAGE
+// Função auxiliar para extrair APENAS o nome da OLT
 function formatMessage(key) {
-    let prefixoOlt = "";
-    let restoDaChave = key;
-
-    // Verifica se a chave começa com [NOME] (padrão que criamos no index.html)
-    // Ex: "[HEL-1] 1/4"
-    const oltMatch = key.match(/^\[(.*?)\]\s*(.*)$/);
-
+    // A chave vem completa para garantir unicidade: "[HEL-1] 1/4::WARN"
+    // Nós queremos extrair apenas "HEL-1" para exibir.
+    
+    const oltMatch = key.match(/^\[(.*?)\]/);
     if (oltMatch) {
-        prefixoOlt = `<strong>${oltMatch[1]}</strong>: `; // Ex: "HEL-1: "
-        restoDaChave = oltMatch[2]; // Ex: "1/4"
+        return oltMatch[1]; // Retorna "HEL-1", "SBO-1", etc.
     }
-
-    const [placa, porta] = restoDaChave.split('/');
     
-    // Tratamento de segurança caso venha dados estranhos
-    if (!placa || !porta) return key; 
-
-    const placaFmt = placa.replace('GPON', '').padStart(2, '0');
-    const portaFmt = porta.padStart(2, '0');
-    
-    return `${prefixoOlt}PLACA ${placaFmt} / PORTA ${portaFmt}`;
+    return "OLT DESCONHECIDA";
 }
