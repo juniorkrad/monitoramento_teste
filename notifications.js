@@ -1,5 +1,5 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 3.0 - Global Aware)
+// notifications.js - Sistema Central de Alertas (Versão 3.1 - Filtro de Página)
 // ==============================================================================
 
 let currentProblems = new Set();
@@ -13,6 +13,18 @@ const alertSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAAB
  * @param {string} type - 'problem' (vermelho) ou 'success' (verde).
  */
 function showToast(message, type = '') {
+    // --- TRAVA DE SEGURANÇA (NOVO) ---
+    // Verifica em qual página estamos.
+    // Se NÃO for a index.html (Dashboard), cancela a exibição do alerta.
+    const path = window.location.pathname;
+    const pageName = path.split('/').pop(); // Pega apenas 'hel1.html', 'index.html', etc.
+
+    // Se existir um nome de arquivo e ele NÃO for index.html, encerra a função aqui.
+    if (pageName && pageName !== 'index.html') {
+        return; 
+    }
+    // ----------------------------------
+
     const container = document.getElementById('toast-container');
     if (!container) return;
 
