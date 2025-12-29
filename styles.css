@@ -155,7 +155,7 @@ body.home-page {
     position: fixed; 
     top: 20px; 
     right: 20px; 
-    z-index: 1000; 
+    z-index: 2001; /* Z-index aumentado para ficar acima do menu */
     display: flex; 
     flex-direction: column; 
     gap: 10px; 
@@ -192,6 +192,7 @@ body.home-page {
 .toast.show { opacity: 1; transform: translateX(0); }
 .toast.problem { background-color: var(--m3-color-error); color: #fff; font-weight: 500; }
 .toast.status-normal { background-color: var(--m3-color-success); color: #fff; font-weight: 500; }
+.toast.warning { background-color: var(--m3-color-warning); color: #000; font-weight: 500; }
 
 .main-content { display: flex; position: relative; }
 .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0.4s ease; }
@@ -547,6 +548,122 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 .chart-text { position: absolute; font-size: 1.4em; font-weight: 700; color: var(--m3-on-surface); }
 
 @keyframes fadeInPage { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ==========================================================================
+   MENU LATERAL (SIDEBAR) - ADICIONADO PARA NAVEGAÇÃO
+   ========================================================================== */
+
+/* O Menu em si */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: -300px; /* Escondido à esquerda */
+    width: 300px;
+    height: 100%;
+    background-color: var(--m3-surface-container); /* Roxo fundo */
+    border-right: 1px solid var(--m3-outline);
+    box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+    z-index: 2000; /* Acima de tudo */
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 20px;
+}
+
+.sidebar.active {
+    left: 0; /* Mostra o menu */
+}
+
+/* Cabeçalho do Menu */
+.sidebar-header {
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    background-color: var(--m3-surface-container-high);
+    border-bottom: 1px solid var(--m3-outline);
+}
+.sidebar-header h3 { margin: 0; color: var(--m3-on-surface); font-size: 1.1em; }
+
+/* Lista de Links */
+.sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Estilo dos Links */
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    text-decoration: none;
+    color: var(--m3-on-surface-variant);
+    border-radius: 8px;
+    transition: background 0.2s, color 0.2s;
+    font-size: 0.95em;
+    border: 1px solid transparent;
+}
+
+.sidebar-link:hover {
+    background-color: var(--m3-state-layer-hover);
+    color: var(--m3-on-surface);
+    border-color: var(--m3-outline);
+}
+
+/* Botão HOME (Destaque) */
+.sidebar-link.home-highlight {
+    background-color: rgba(103, 7, 159, 0.2); /* Roxo translúcido */
+    color: var(--m3-primary); /* Roxo neon */
+    font-weight: 700;
+    border: 1px solid var(--m3-primary);
+    margin-bottom: 10px;
+}
+.sidebar-link.home-highlight:hover {
+    background-color: var(--m3-primary);
+    color: #fff;
+}
+
+/* Separador */
+.sidebar-divider {
+    height: 1px;
+    background-color: var(--m3-outline);
+    margin: 5px 0 15px 0;
+    opacity: 0.5;
+}
+
+/* Rótulo de seção */
+.menu-label {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    color: var(--m3-on-surface-variant);
+    padding-left: 15px;
+    margin-bottom: 5px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* Fundo Escuro (Overlay) */
+.sidebar-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.7);
+    z-index: 1500; /* Abaixo do menu, acima do site */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s;
+    backdrop-filter: blur(3px);
+}
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
 
 @media (max-width: 768px) {
     body { height: auto; padding: 10px; }
