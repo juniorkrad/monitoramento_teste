@@ -1,16 +1,15 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 4.0 - Actionable Links)
+// notifications.js - Sistema Central de Alertas (Versão 6.0 - Aggregated OLT Health)
 // ==============================================================================
 
+// Mantemos o histórico detalhado internamente para saber o que mudou
 let currentProblems = new Set();
 
 // Som de Alerta (Beep curto)
 const alertSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"); 
 
 /**
- * Cria e exibe um pop-up (toast) na tela.
- * @param {string} message - A mensagem a ser exibida (aceita HTML).
- * @param {string} type - 'problem' (vermelho) ou 'success' (verde).
+ * Exibe o Toast na tela
  */
 function showToast(message, type = '') {
     const container = document.getElementById('toast-container');
@@ -19,13 +18,12 @@ function showToast(message, type = '') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     
-    // Define o ícone baseado no tipo
+    // Ícones
     const icon = type === 'problem' ? '⚠️ ' : type === 'success' ? '✅ ' : 'ℹ️ ';
     
-    // innerHTML permite que o link <a> funcione
-    toast.innerHTML = `<strong>${icon}</strong> ${message}`;
+    // Mensagem aceita HTML
+    toast.innerHTML = `<span style="font-size: 1.1em;">${icon} ${message}</span>`;
     
-    // Clique no balão fecha o alerta (mas o link tem proteção contra isso)
     toast.onclick = () => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 500);
@@ -33,93 +31,84 @@ function showToast(message, type = '') {
 
     container.appendChild(toast);
     
-    // Toca som apenas se for problema
     if (type === 'problem') {
         try { alertSound.play().catch(e => {}); } catch(e){} 
     }
 
-    // Animação de entrada
-    setTimeout(() => {
-        toast.classList.add('show');
-    }, 10);
+    setTimeout(() => toast.classList.add('show'), 10);
 
-    // Auto-fechamento após 7 segundos (pode aumentar se quiser dar tempo de clicar)
+    // Tempo de exibição (7s)
     setTimeout(() => {
         if (toast.parentElement) {
             toast.classList.remove('show');
             toast.addEventListener('transitionend', () => toast.remove());
         }
-    }, 7000); // 7000ms = 7 segundos
+    }, 7000);
 }
 
 /**
- * Lógica Inteligente: Detecta Novos Problemas E Problemas Resolvidos
+ * Nova Lógica: Agrupa problemas por OLT e notifica mudanças na QUANTIDADE
  */
 function checkAndNotifyForNewProblems(newProblems) {
-    // 1. Detectar NOVOS problemas (Caiu)
-    for (const problemKey of newProblems) {
-        if (!currentProblems.has(problemKey)) {
-            const msg = formatMessage(problemKey, true); // true = gera link
-            // Removido o texto "ALERTA:", mantendo apenas a mensagem formatada
+    
+    // 1. Conta quantos problemas existem POR OLT no cenário NOVO
+    const newCounts = countProblemsByOLT(newProblems);
+    
+    // 2. Conta quantos problemas existiam POR OLT no cenário ANTIGO
+    const oldCounts = countProblemsByOLT(currentProblems);
+    
+    // 3. Identifica todas as OLTs envolvidas
+    const allOlts = new Set([...Object.keys(newCounts), ...Object.keys(oldCounts)]);
+
+    for (const olt of allOlts) {
+        const qtdNova = newCounts[olt] || 0;
+        const qtdVelha = oldCounts[olt] || 0;
+
+        // CASO 1: PIOROU (Quantidade de Offlines Aumentou)
+        if (qtdNova > qtdVelha) {
+            const diferenca = qtdNova - qtdVelha;
+            // Ex: "HEL1: 15 Clientes OFF (+2)"
+            const msg = `<strong>${olt}</strong>: ${qtdNova} Clientes OFF <span style="font-size:0.8em; opacity:0.8;">(🔺 +${diferenca})</span>`;
             showToast(msg, 'problem');
         }
-    }
-
-    // 2. Detectar Problemas RESOLVIDOS (Voltou)
-    for (const oldProblem of currentProblems) {
-        if (!newProblems.has(oldProblem)) {
-            const msg = formatMessage(oldProblem, false); // false = sem link (opcional)
-            // Removido o texto "NORMALIZADO:"
-            showToast(msg, 'status-normal'); 
+        
+        // CASO 2: MELHOROU (Quantidade de Offlines Diminuiu)
+        else if (qtdNova < qtdVelha) {
+            const diferenca = qtdVelha - qtdNova;
+            // Ex: "HEL1: 10 Clientes OFF (-5)"
+            const msg = `<strong>${olt}</strong>: ${qtdNova} Clientes OFF <span style="font-size:0.8em; opacity:0.8;">(🔽 -${diferenca})</span>`;
+            showToast(msg, 'status-normal');
         }
     }
     
+    // Atualiza o histórico
     currentProblems = newProblems;
 }
 
 /**
- * Formata o texto da porta e adiciona o Link de Circuito
- * @param {string} key - A chave do problema (ex: "[HEL1] 1/1")
- * @param {boolean} addLink - Se deve adicionar o link "CIRC" (Geralmente sim para erros)
+ * Função Auxiliar: Transforma o Set de problemas em um Objeto de contagem
+ * Entrada: {'[HEL1] 1/1', '[HEL1] 1/2', '[SBO1] 5/5'}
+ * Saída: { 'HEL1': 2, 'SBO1': 1 }
  */
-function formatMessage(key, addLink = true) {
-    let prefixoOlt = "";
-    let nomeOltLimpo = ""; 
-    let restoDaChave = key;
-
-    // Regex: Captura o nome da OLT entre colchetes
-    // Ex: "[HEL-1] 1/4" -> Grupo 1: "HEL-1", Grupo 2: "1/4"
-    const oltMatch = key.match(/^\[(.*?)\]\s*(.*)$/);
-
-    if (oltMatch) {
-        nomeOltLimpo = oltMatch[1]; 
-        prefixoOlt = `<strong>${nomeOltLimpo}</strong>: `; 
-        restoDaChave = oltMatch[2];
-    }
-
-    const [placa, porta] = restoDaChave.split('/');
+function countProblemsByOLT(problemSet) {
+    const counts = {};
     
-    // Tratamento de segurança
-    if (!placa || !porta) return key; 
-
-    const placaFmt = placa.replace('GPON', '').padStart(2, '0');
-    const portaFmt = porta.padStart(2, '0');
-    
-    let linkHtml = "";
-
-    // --- MONTAGEM DO LINK ---
-    if (addLink) {
-        // ⚠️ CONFIGURAÇÃO: Coloque aqui o começo da URL do seu sistema
-        // Exemplo: http://192.168.1.50/sistema/busca.php
-        const baseUrl = "http://seu-sistema-interno.com/buscar";
+    for (const key of problemSet) {
+        // Extrai o nome da OLT que está entre colchetes
+        // Regex: Pega tudo que está dentro de [ ] no começo da string
+        const match = key.match(/^\[(.*?)\]/);
         
-        // Monta os parâmetros (ajuste conforme seu sistema pede: ?olt=X&slot=Y...)
-        const params = `?olt=${nomeOltLimpo}&placa=${placaFmt}&porta=${portaFmt}`;
-        const finalUrl = baseUrl + params;
-
-        // event.stopPropagation() é CRUCIAL: impede que clicar no link feche o alerta
-        linkHtml = `, <a href="${finalUrl}" target="_blank" class="link-circ" onclick="event.stopPropagation()">CIRC</a>`;
+        if (match) {
+            const oltName = match[1]; // Ex: "HEL1"
+            counts[oltName] = (counts[oltName] || 0) + 1;
+        } else {
+            // Caso não consiga ler o nome, agrupa como "Desconhecido"
+            counts['Geral'] = (counts['Geral'] || 0) + 1;
+        }
     }
-
-    return `${prefixoOlt}PLACA ${placaFmt} / PORTA ${portaFmt}${linkHtml}`;
+    
+    return counts;
 }
+
+// A função formatMessage antiga não é mais necessária para os alertas,
+// mas se for usada em outro lugar, pode manter ou remover.
