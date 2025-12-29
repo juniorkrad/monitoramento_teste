@@ -1,10 +1,8 @@
 // ==============================================================================
-// layout.js - Construtor de Layout e Menu Inteligente (Versão 2.0)
+// layout.js - Construtor de Layout e Menu Inteligente (Versão 2.1 - Menu Direito)
 // ==============================================================================
 
 // --- LISTA MESTRA DE PÁGINAS ---
-// Usada para gerar o menu lateral automaticamente.
-// Adicione novas OLTs aqui conforme necessário.
 const OLT_MENU_LIST = [
     { name: 'HEL-1',  file: 'hel1.html' },
     { name: 'HEL-2',  file: 'hel2.html' },
@@ -38,10 +36,8 @@ const OLT_MENU_LIST = [
 
 /**
  * Constrói o cabeçalho da página.
- * Decide inteligentemente se mostra botão de Home simples ou Menu Lateral.
  */
 function loadHeader(config) {
-    // 1. Atualiza o título da aba
     if (config.title) {
         document.title = config.exactTitle ? config.title : `${config.title} | Monitoramento`;
     }
@@ -49,29 +45,24 @@ function loadHeader(config) {
     const headerPlaceholder = document.getElementById('header-placeholder');
     if (!headerPlaceholder) return;
 
-    // 2. Identifica a página atual
+    // Identifica a página atual
     const path = window.location.pathname;
     const currentPage = path.split('/').pop() || 'index.html';
     const isHome = currentPage === 'index.html';
 
-    // 3. Define qual botão vai na direita
     let navHtml = '';
 
     if (!isHome) {
-        // --- CENÁRIO: PÁGINA INTERNA (OLT) ---
-        // Mostra o botão de MENU que abre a sidebar
+        // --- BOTÃO MENU (Abre a sidebar) ---
         navHtml = `
-            <button class="icon-btn" onclick="toggleSidebar()" title="Abrir Menu de Navegação" style="border-radius: 8px; width: auto; padding: 0 15px; gap: 8px;">
+            <button class="icon-btn" onclick="toggleSidebar()" title="Abrir Menu" style="border-radius: 8px; width: auto; padding: 0 15px; gap: 8px;">
                 <span class="material-symbols-rounded">menu</span>
                 <span style="font-weight: 500; font-size: 0.9rem;">MENU</span>
             </button>
         `;
-        // Carrega o HTML do menu lateral oculto (com filtro da página atual)
         loadSidebar(currentPage);
     } else {
-        // --- CENÁRIO: HOME PAGE ---
-        // Se houver configuração explícita de botão (legado), usa ela. 
-        // Caso contrário, fica vazio (conforme solicitado).
+        // --- BOTÃO HOME (Legado/Opcional) ---
         if (config.buttonText && config.buttonLink) {
             const iconName = config.buttonText.toLowerCase().includes('voltar') ? 'arrow_back' : 'home';
             navHtml = `
@@ -98,11 +89,9 @@ function loadHeader(config) {
 }
 
 /**
- * Gera o HTML do Menu Lateral e o insere na página.
- * Filtra a lista para NÃO mostrar o link da página atual.
+ * Gera o HTML do Menu Lateral (SIDEBAR)
  */
 function loadSidebar(currentPage) {
-    // Cria o container do menu se não existir
     let sidebarContainer = document.getElementById('sidebar-container');
     if (!sidebarContainer) {
         sidebarContainer = document.createElement('div');
@@ -110,12 +99,10 @@ function loadSidebar(currentPage) {
         document.body.prepend(sidebarContainer);
     }
 
-    // Gera a lista de links dinamicamente
     let linksHtml = '';
     
     OLT_MENU_LIST.forEach(olt => {
-        // LÓGICA DE EXCLUSÃO: Se o link for igual à página atual, PULA.
-        if (olt.file === currentPage) return;
+        if (olt.file === currentPage) return; // Não mostra a página atual
 
         linksHtml += `
             <a href="${olt.file}" class="sidebar-link">
@@ -138,8 +125,8 @@ function loadSidebar(currentPage) {
             
             <nav class="sidebar-nav">
                 <a href="index.html" class="sidebar-link home-highlight">
-                    <span class="material-symbols-rounded">home</span>
-                    HOME (INÍCIO)
+                    <span class="material-symbols-rounded" style="font-size: 28px;">home</span>
+                    HOME
                 </a>
                 
                 <div class="sidebar-divider"></div>
@@ -152,7 +139,7 @@ function loadSidebar(currentPage) {
 }
 
 /**
- * Abre ou Fecha o Menu Lateral (Toggle)
+ * Abre/Fecha Sidebar
  */
 function toggleSidebar() {
     const sidebar = document.getElementById('main-sidebar');
@@ -164,7 +151,7 @@ function toggleSidebar() {
 }
 
 /**
- * Constrói o rodapé padrão.
+ * Rodapé
  */
 function loadFooter() {
     const footerPlaceholder = document.getElementById('footer-placeholder');
@@ -179,7 +166,7 @@ function loadFooter() {
 }
 
 /**
- * Busca e exibe o timestamp (Relógio/Calendário)
+ * Timestamp
  */
 async function loadTimestamp(sheetTab, apiKey, sheetId) {
     const timestampEl = document.getElementById('update-timestamp');
@@ -190,7 +177,7 @@ async function loadTimestamp(sheetTab, apiKey, sheetId) {
 
     try {
         const response = await fetch(url);
-        if (!response.ok) throw new Error('Falha na busca do timestamp.');
+        if (!response.ok) throw new Error('Falha timestamp');
         const data = await response.json();
         
         if (data.values && data.values.length > 0 && data.values[0][0]) {
@@ -199,14 +186,11 @@ async function loadTimestamp(sheetTab, apiKey, sheetId) {
             const parts = cleanText.split(' ');
             
             let htmlFormatado = '';
-
             if (parts.length >= 2) {
-                const dataPart = parts[0];
-                const horaPart = parts[1];
                 htmlFormatado = `
-                    <span class="material-symbols-rounded">calendar_today</span> ${dataPart}
+                    <span class="material-symbols-rounded">calendar_today</span> ${parts[0]}
                     <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
-                    <span class="material-symbols-rounded">schedule</span> ${horaPart}
+                    <span class="material-symbols-rounded">schedule</span> ${parts[1]}
                 `;
             } else {
                 htmlFormatado = `<span class="material-symbols-rounded">schedule</span> ${cleanText}`;
@@ -224,9 +208,8 @@ async function loadTimestamp(sheetTab, apiKey, sheetId) {
             timestampEl.innerHTML = `<span class="material-symbols-rounded">error</span> S/ Dados`;
         }
     } catch (error) {
-        console.warn('Não foi possível atualizar o horário:', error);
-        if (timestampEl.textContent.includes('Aguardando') || timestampEl.textContent.includes('Buscando')) {
-             timestampEl.innerHTML = `<span class="material-symbols-rounded">wifi_off</span> Erro de conexão`;
+        if (timestampEl.textContent.includes('Aguardando')) {
+             timestampEl.innerHTML = `<span class="material-symbols-rounded">wifi_off</span> Erro`;
              timestampEl.style.color = 'var(--m3-color-error)';
         }
     }

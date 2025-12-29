@@ -550,28 +550,28 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 @keyframes fadeInPage { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ==========================================================================
-   MENU LATERAL (SIDEBAR) - ADICIONADO PARA NAVEGAÇÃO
+   MENU LATERAL (SIDEBAR) - VERSÃO DIREITA
    ========================================================================== */
 
 /* O Menu em si */
 .sidebar {
     position: fixed;
     top: 0;
-    left: -300px; /* Escondido à esquerda */
+    right: -300px; /* AGORA NA DIREITA (Escondido) */
     width: 300px;
     height: 100%;
-    background-color: var(--m3-surface-container); /* Roxo fundo */
-    border-right: 1px solid var(--m3-outline);
-    box-shadow: 5px 0 15px rgba(0,0,0,0.5);
-    z-index: 2000; /* Acima de tudo */
-    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: var(--m3-surface-container); 
+    border-left: 1px solid var(--m3-outline); /* Borda agora é na esquerda */
+    box-shadow: -5px 0 15px rgba(0,0,0,0.5); /* Sombra invertida */
+    z-index: 2000; 
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transição no RIGHT */
     display: flex;
     flex-direction: column;
     padding-bottom: 20px;
 }
 
 .sidebar.active {
-    left: 0; /* Mostra o menu */
+    right: 0; /* Mostra o menu trazendo para a borda direita */
 }
 
 /* Cabeçalho do Menu */
@@ -590,10 +590,10 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 .sidebar-nav {
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 15px 20px; /* Reduzi levemente o padding vertical */
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px; /* ESPAÇAMENTO REDUZIDO ENTRE BOTÕES (Era 8px) */
 }
 
 /* Estilo dos Links */
@@ -601,13 +601,13 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 15px;
+    padding: 10px 15px; /* Altura do botão reduzida */
     text-decoration: none;
     color: var(--m3-on-surface-variant);
     border-radius: 8px;
     transition: background 0.2s, color 0.2s;
     font-size: 0.95em;
-    border: 1px solid transparent;
+    border: 1px solid transparent; /* Para evitar pulo ao focar */
 }
 
 .sidebar-link:hover {
@@ -616,14 +616,19 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     border-color: var(--m3-outline);
 }
 
-/* Botão HOME (Destaque) */
+/* Botão HOME (Destaque apenas no Tamanho) */
 .sidebar-link.home-highlight {
-    background-color: rgba(103, 7, 159, 0.2); /* Roxo translúcido */
-    color: var(--m3-primary); /* Roxo neon */
+    /* Cores padrão mantidas para consistência */
+    color: var(--m3-on-surface); 
+    
+    /* Destaque via Tamanho e Peso */
     font-weight: 700;
-    border: 1px solid var(--m3-primary);
-    margin-bottom: 10px;
+    font-size: 1.1rem; /* Um pouco maior que os outros */
+    padding: 15px;     /* Área de clique um pouco maior */
+    background-color: rgba(255, 255, 255, 0.03); /* Fundo muito sutil */
+    margin-bottom: 5px;
 }
+
 .sidebar-link.home-highlight:hover {
     background-color: var(--m3-primary);
     color: #fff;
@@ -633,7 +638,7 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 .sidebar-divider {
     height: 1px;
     background-color: var(--m3-outline);
-    margin: 5px 0 15px 0;
+    margin: 5px 0 10px 0;
     opacity: 0.5;
 }
 
@@ -654,7 +659,7 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     top: 0; left: 0;
     width: 100%; height: 100%;
     background-color: rgba(0,0,0,0.7);
-    z-index: 1500; /* Abaixo do menu, acima do site */
+    z-index: 1500; 
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s;
