@@ -193,6 +193,20 @@ body.home-page {
 .toast.problem { background-color: var(--m3-color-error); color: #fff; font-weight: 500; }
 .toast.status-normal { background-color: var(--m3-color-success); color: #fff; font-weight: 500; }
 
+/* --- NOVO: Estilo do Link "CIRC" dentro do alerta --- */
+.link-circ {
+    color: #fff;                 /* Texto Branco */
+    font-weight: 800;            /* Negrito forte */
+    text-decoration: underline;  /* Sublinhado */
+    margin-left: 4px;            /* Espaço da vírgula */
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.link-circ:hover {
+    color: #ffff00;              /* Fica Amarelo ao passar o mouse */
+    text-decoration: none;
+}
+
 .main-content { display: flex; position: relative; }
 .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0.4s ease; }
 .screen.active { opacity: 1; visibility: visible; }
