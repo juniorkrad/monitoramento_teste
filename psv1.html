@@ -3,22 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PSV-1</title>
+    <title>PSV-1 | Monitoramento</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
 <body>
 
+    <div id="sidebar-placeholder"></div>
+
     <div id="toast-container"></div>
 
-    <div class="page-container">
+    <div class="page-container main-content">
+        
         <div id="header-placeholder"></div>
 
-        <div class="grid-container">
-            </div>
-    </div>
+        <div class="grid-container"></div>
 
-    <div id="footer-placeholder"></div>
+        <div id="footer-placeholder"></div>
+    </div>
 
     <script src="layout.js"></script>
     <script src="notifications.js"></script>
@@ -26,15 +28,18 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. Carrega Layout
+            // 1. Carrega Menu Lateral
+            loadSidebar();
+
+            // 2. Carrega Cabeçalho (Sem botão Home)
             loadHeader({
-                title: "PSV-1",
-                buttonText: "Home",
-                buttonLink: "index.html"
+                title: "PSV-1 - Nokia"
             });
+            
+            // 3. Carrega Rodapé
             loadFooter();
 
-            // 2. Inicia Monitoramento
+            // 4. Inicia Monitoramento PSV1
             startOltMonitoring({
                 id: 'PSV1',     // Aba da planilha
                 type: 'nokia',  // Lógica Nokia
