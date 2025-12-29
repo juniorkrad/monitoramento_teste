@@ -3,49 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SB-1 | Monitoramento</title>
+    <title>SB-1</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
 <body>
-
-    <div id="sidebar-placeholder"></div>
-
     <div id="toast-container"></div>
-
-    <div class="page-container main-content">
-        
+    <div class="page-container">
         <div id="header-placeholder"></div>
-
-        <div class="grid-container">
-            </div>
-
-        <div id="footer-placeholder"></div>
+        <div class="grid-container"></div>
     </div>
-
+    <div id="footer-placeholder"></div>
     <script src="layout.js"></script>
     <script src="notifications.js"></script>
     <script src="olt-engine.js"></script>
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. Carrega Menu Lateral
-            loadSidebar();
-
-            // 2. Carrega Cabeçalho (Sem botão Home)
-            loadHeader({
-                title: "SB-1 - Furukawa"
-            });
-            
-            // 3. Carrega Rodapé
+            loadHeader({ title: "SB-1", buttonText: "Home", buttonLink: "index.html" });
             loadFooter();
-
-            // 4. Inicia Monitoramento SB1 (Tipo Furukawa 2 Placas)
-            startOltMonitoring({
-                id: 'SB1',          // Aba da planilha
-                type: 'furukawa-2', // Lógica Furukawa (Regex GPON)
-                boards: 2           // 2 Placas
-            });
+            startOltMonitoring({ id: 'SB1', type: 'furukawa-2', boards: 2 });
         });
     </script>
 </body>

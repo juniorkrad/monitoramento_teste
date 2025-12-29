@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">    
+    
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     
     <link rel="stylesheet" href="styles.css">
@@ -15,26 +16,23 @@
 </head>
 <body>
 
-    <div id="sidebar-placeholder"></div>
-
     <div id="toast-container"></div>
 
-    <div class="page-container main-content">
-        
+    <div class="page-container">
         <div id="header-placeholder"></div>
 
-        <main>
+        <main class="main-content">
             <div id="overview-grid" class="grid-container">
                 </div>
         </main>
-
-        <div id="footer-placeholder"></div>
     </div>
 
-    <script src="js/layout.js"></script> <script src="js/notifications.js"></script>
+    <div id="footer-placeholder"></div>
+
+    <script src="layout.js"></script>
+    <script src="notifications.js"></script>
 
     <script>
-        // --- CONFIGURAÇÃO DAS OLTS ---
         const oltsConfig = [
             { id: 'HEL-1', sheetTab: 'HEL1', type: 'nokia' },
             { id: 'HEL-2', sheetTab: 'HEL2', type: 'nokia' },
@@ -59,12 +57,12 @@
         const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
         const REFRESH_INTERVAL_SECONDS = 300;
         
-        // --- LÓGICA DE CARDS (MANTIDA IGUAL) ---
         function createCardPlaceholders() {
             const grid = document.getElementById('overview-grid');
             grid.innerHTML = '';
             oltsConfig.forEach(olt => {
                 const pageUrl = olt.id.toLowerCase().replace('-', '') + '.html';
+                // ATUALIZAÇÃO AQUI: Substituído o texto "Detalhes" pelo ícone "manage_search"
                 grid.innerHTML += `
                     <div class="overview-card" id="card-${olt.id}">
                         <div class="card-header">
@@ -207,14 +205,10 @@
             card.querySelector('.card-body').innerHTML = `<div class="card-stats">${statsHtml}</div>${chartHtml}`;
         }
 
-        // --- EXECUTOR DO DASHBOARD ---
         async function runOverview() {
-            // Atualiza o texto do relógio no header (criado pelo layout.js)
             const timestampEl = document.getElementById('update-timestamp');
-            
             if (timestampEl) {
-                // Estado inicial
-                if (timestampEl.textContent.trim() === "" || timestampEl.textContent.includes("Aguardando")) {
+                if (timestampEl.textContent === "" || timestampEl.textContent === "Aguardando dados...") {
                     timestampEl.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Buscando dados...';
                 }
             }
@@ -235,40 +229,26 @@
                 checkAndNotifyForNewProblems(allProblems);
             }
             
-            // Atualiza o Relógio do Header com o horário da última varredura
             const now = new Date();
             const dataHoje = now.toLocaleDateString('pt-BR');
             const horaAgora = now.toLocaleTimeString('pt-BR');
             
             if(timestampEl) {
                 timestampEl.innerHTML = `
-                    <span class="material-symbols-rounded">published_with_changes</span> 
-                    <span style="font-size: 0.9em">Atualizado:</span>
-                    <span class="material-symbols-rounded" style="margin-left:5px">schedule</span> ${horaAgora}
+                    <span class="material-symbols-rounded">calendar_today</span> ${dataHoje}
+                    <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
+                    <span class="material-symbols-rounded">schedule</span> ${horaAgora}
                 `;
                 
-                // Animação visual de atualização
                 timestampEl.classList.remove('updated-anim');
                 void timestampEl.offsetWidth; 
                 timestampEl.classList.add('updated-anim');
             }
         }
         
-        // --- INICIALIZAÇÃO COM LAYOUT.JS ---
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. Carrega Sidebar
-            loadSidebar(); 
-
-            // 2. Carrega Header (Sem botão home, pois já estamos na home)
-            loadHeader({ 
-                title: "Painel de Monitoramento", 
-                exactTitle: true 
-            });
-            
-            // 3. Carrega Footer
+            loadHeader({ title: "Painel de Monitoramento", exactTitle: true });
             loadFooter();
-
-            // 4. Inicia Dashboard
             runOverview();
             setInterval(runOverview, REFRESH_INTERVAL_SECONDS * 1000);
         });

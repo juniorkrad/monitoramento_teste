@@ -1,10 +1,12 @@
 // ==============================================================================
-// layout.js - Construtor de Layout (Header, Sidebar, Footer e Utils)
+// layout.js - Construtor de Layout (Cabeçalho, Rodapé e Timestamp)
 // ==============================================================================
 
 // --- AUTO-INJEÇÃO DA FONTE DE ÍCONES ---
+// Isso garante que todas as páginas tenham os ícones sem precisar editar o HTML de cada uma.
 (function loadIconFont() {
     const fontUrl = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200';
+    // Verifica se já existe o link para não duplicar
     if (!document.querySelector(`link[href="${fontUrl}"]`)) {
         const link = document.createElement('link');
         link.rel = 'stylesheet';
@@ -13,28 +15,35 @@
     }
 })();
 
-// ==============================================================================
-// 1. HEADER (CABEÇALHO)
-// ==============================================================================
+/**
+ * Constrói o cabeçalho da página.
+ * Atualiza também o título da aba do navegador.
+ * * @param {Object} config - Configurações do cabeçalho
+ * @param {string} config.title - O título da página
+ * @param {boolean} [config.exactTitle] - Se true, usa o título exato. Se false/vazio, adiciona "| Monitoramento"
+ * @param {string} [config.buttonText] - Texto do botão de navegação
+ * @param {string} [config.buttonLink] - Link do botão de navegação
+ */
 function loadHeader(config) {
-    // Atualiza título da aba
+    // 1. Atualiza o título da aba do navegador
     if (config.title) {
-        document.title = config.exactTitle ? config.title : `${config.title} | Monitoramento`;
+        if (config.exactTitle) {
+            document.title = config.title;
+        } else {
+            document.title = `${config.title} | Monitoramento`;
+        }
     }
 
     const headerPlaceholder = document.getElementById('header-placeholder');
     if (!headerPlaceholder) return;
 
-    // Botão de Toggle do Menu (Novo) + Botão de Voltar/Home (Existente)
-    let navButtons = `
-        <button id="menu-toggle" class="icon-btn" title="Menu Principal">
-            <span class="material-symbols-rounded">menu</span>
-        </button>
-    `;
-
+    // 2. Lógica do botão (Home/Voltar) - COM ÍCONES
+    let buttonHtml = '';
     if (config.buttonText && config.buttonLink) {
+        // Detecta se é botão de voltar ou home para escolher o ícone certo
         const iconName = config.buttonText.toLowerCase().includes('voltar') ? 'arrow_back' : 'home';
-        navButtons += `
+        
+        buttonHtml = `
             <a href="${config.buttonLink}" class="icon-btn" title="${config.buttonText}">
                 <span class="material-symbols-rounded">${iconName}</span>
             </a>`;
@@ -43,119 +52,38 @@ function loadHeader(config) {
     headerPlaceholder.innerHTML = `
         <header class="header">
             <div class="logo-title-group">
-                ${navButtons}
-                <img src="banner2.png" alt="Logo" onerror="this.style.display='none'" style="margin-left: 10px;">
+                <img src="banner2.png" alt="Logo" onerror="this.style.display='none'">
                 <h1>${config.title}</h1>
             </div>
             <nav class="header-nav">
                 <div id="update-timestamp" class="timestamp-badge">
                     <span class="material-symbols-rounded">hourglass_empty</span> Aguardando...
                 </div>
+                ${buttonHtml} 
             </nav>
         </header>
     `;
-
-    // Inicia a escuta do botão do menu (agora que ele existe no DOM)
-    initSidebarLogic();
 }
 
-// ==============================================================================
-// 2. SIDEBAR (MENU LATERAL - NOVO)
-// ==============================================================================
-function loadSidebar() {
-    // Procura um placeholder ou cria se não existir (para facilitar)
-    let sidebarContainer = document.getElementById('sidebar-placeholder');
-    if (!sidebarContainer) {
-        // Se não tiver placeholder, injeta no início do body
-        sidebarContainer = document.createElement('div');
-        sidebarContainer.id = 'sidebar-placeholder';
-        document.body.prepend(sidebarContainer);
-    }
-
-    // Define os links do seu projeto aqui
-    const menuItems = [
-        { name: 'Dashboard Geral', link: 'index.html', icon: 'dashboard' },
-        { type: 'separator', label: 'Nokia' },
-        { name: 'HEL1 (Nokia)', link: 'hel1.html', icon: 'router' },
-        { name: 'HEL2 (Nokia)', link: 'hel2.html', icon: 'router' },
-        { type: 'separator', label: 'Furukawa' },
-        { name: 'MGP (Furukawa)', link: 'mgp.html', icon: 'settings_ethernet' },
-        // Adicione mais links conforme necessário
-    ];
-
-    let menuHtml = '<ul class="sidebar-menu">';
+/**
+ * Constrói o rodapé padrão.
+ */
+function loadFooter() {
+    const footerPlaceholder = document.getElementById('footer-placeholder');
+    if (!footerPlaceholder) return;
     
-    // Identifica página atual para marcar ativo
-    const currentPath = window.location.pathname.split('/').pop() || 'index.html';
-
-    menuItems.forEach(item => {
-        if (item.type === 'separator') {
-            menuHtml += `<li class="menu-label">${item.label}</li>`;
-        } else {
-            const isActive = item.link === currentPath ? 'active-link' : '';
-            menuHtml += `
-                <li>
-                    <a href="${item.link}" class="${isActive}">
-                        <span class="material-symbols-rounded">${item.icon}</span>
-                        ${item.name}
-                    </a>
-                </li>
-            `;
-        }
-    });
-
-    menuHtml += '</ul>';
-    
-    // Adiciona o Relógio Local no final do menu
-    menuHtml += `<div id="live-clock" class="menu-clock">--:--:--</div>`;
-
-    sidebarContainer.innerHTML = `
-        <nav class="sidebar" id="main-sidebar">
-            <div class="sidebar-header">
-                <h3>Navegação</h3>
-                <button id="close-sidebar" class="icon-btn-small">✕</button>
-            </div>
-            ${menuHtml}
-        </nav>
-        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    const currentYear = new Date().getFullYear();
+    footerPlaceholder.innerHTML = `
+        <footer class="footer">
+            <p>© ${currentYear} Painel de Monitoramento | Desenvolvido por 👤@juniorkrad + 🤖Gemini</p>
+        </footer>
     `;
-
-    // Inicia o relógio local
-    startLiveClock();
 }
 
-// Lógica de Abrir/Fechar Menu
-function initSidebarLogic() {
-    const toggleBtn = document.getElementById('menu-toggle');
-    const closeBtn = document.getElementById('close-sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    const sidebar = document.getElementById('main-sidebar');
-
-    function toggleMenu() {
-        if (sidebar) sidebar.classList.toggle('active');
-        if (overlay) overlay.classList.toggle('active');
-    }
-
-    if (toggleBtn) toggleBtn.addEventListener('click', toggleMenu);
-    if (closeBtn) closeBtn.addEventListener('click', toggleMenu);
-    if (overlay) overlay.addEventListener('click', toggleMenu);
-}
-
-// ==============================================================================
-// 3. UTILS (Relógio Local e Timestamp Google Sheets)
-// ==============================================================================
-
-function startLiveClock() {
-    const clockEl = document.getElementById('live-clock');
-    if (!clockEl) return;
-    
-    setInterval(() => {
-        const now = new Date();
-        clockEl.textContent = now.toLocaleTimeString('pt-BR');
-    }, 1000);
-}
-
-// Mantido igual ao seu original, apenas encapsulado no arquivo layout
+/**
+ * Busca e exibe o timestamp da coleta de dados.
+ * Inclui feedback visual de atualização com ÍCONES DE CALENDÁRIO E RELÓGIO.
+ */
 async function loadTimestamp(sheetTab, apiKey, sheetId) {
     const timestampEl = document.getElementById('update-timestamp');
     if (!timestampEl) return;
@@ -165,46 +93,57 @@ async function loadTimestamp(sheetTab, apiKey, sheetId) {
 
     try {
         const response = await fetch(url);
-        if (!response.ok) throw new Error('Falha timestamp');
+        if (!response.ok) throw new Error('Falha na busca do timestamp.');
+        
         const data = await response.json();
         
-        if (data.values && data.values.length > 0) {
+        if (data.values && data.values.length > 0 && data.values[0][0]) {
+            // O dado vem geralmente como: "Atualizado em: 18/12/2025 14:30:00"
             const rawText = data.values[0][0];
+            
+            // 1. Removemos o texto "Atualizado em:" para limpar
             const cleanText = rawText.replace('Atualizado em:', '').trim();
+            
+            // 2. Tentamos separar a Data da Hora (geralmente separados por espaço)
             const parts = cleanText.split(' ');
             
             let htmlFormatado = '';
+
             if (parts.length >= 2) {
+                // Se conseguimos separar, montamos o HTML com os dois ícones
+                const dataPart = parts[0]; // Ex: 18/12/2025
+                const horaPart = parts[1]; // Ex: 14:30:00
+                
                 htmlFormatado = `
-                    <span class="material-symbols-rounded">calendar_today</span> ${parts[0]}
-                    <span style="opacity:0.3; margin:0 5px;">|</span>
-                    <span class="material-symbols-rounded">schedule</span> ${parts[1]}
+                    <span class="material-symbols-rounded">calendar_today</span> ${dataPart}
+                    <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
+                    <span class="material-symbols-rounded">schedule</span> ${horaPart}
                 `;
             } else {
+                // Se não der para separar, mostra tudo com o relógio
                 htmlFormatado = `<span class="material-symbols-rounded">schedule</span> ${cleanText}`;
             }
             
+            // Verifica se o texto mudou comparando com um atributo salvo (para evitar piscar sem necessidade)
             if (timestampEl.getAttribute('data-val') !== cleanText) {
                 timestampEl.innerHTML = htmlFormatado;
-                timestampEl.setAttribute('data-val', cleanText);
+                timestampEl.setAttribute('data-val', cleanText); // Salva o valor atual
+                
+                timestampEl.style.color = 'var(--m3-on-surface-variant)';
+                
+                // Animação visual
                 timestampEl.classList.remove('updated-anim');
                 void timestampEl.offsetWidth; 
                 timestampEl.classList.add('updated-anim');
             }
+        } else {
+            timestampEl.innerHTML = `<span class="material-symbols-rounded">error</span> S/ Dados`;
         }
-    } catch (e) { console.warn('Erro Timestamp', e); }
-}
-
-// ==============================================================================
-// 4. FOOTER
-// ==============================================================================
-function loadFooter() {
-    const footerPlaceholder = document.getElementById('footer-placeholder');
-    if (!footerPlaceholder) return;
-    const currentYear = new Date().getFullYear();
-    footerPlaceholder.innerHTML = `
-        <footer class="footer">
-            <p>© ${currentYear} Painel de Monitoramento | Desenvolvido por 👤@juniorkrad + 🤖Gemini</p>
-        </footer>
-    `;
+    } catch (error) {
+        console.warn('Não foi possível atualizar o horário:', error);
+        if (timestampEl.textContent.includes('Aguardando') || timestampEl.textContent.includes('Buscando')) {
+             timestampEl.innerHTML = `<span class="material-symbols-rounded">wifi_off</span> Erro de conexão`;
+             timestampEl.style.color = 'var(--m3-color-error)';
+        }
+    }
 }
