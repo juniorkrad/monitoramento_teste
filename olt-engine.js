@@ -1,393 +1,438 @@
 // ==============================================================================
-// olt-engine.js - Motor de Renderização e Monitoramento (Versão 5.0 - Com Relatórios)
+// olt-engine.js - Versão Final com "Etiqueta" para Status (modal-status)
 // ==============================================================================
 
-const API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I'; 
-const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
-const REFRESH_INTERVAL = 30000; // 30 segundos
+const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
+const ENGINE_SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
+const ENGINE_REFRESH_SECONDS = 300;
 
-let currentOltConfig = null;
-let currentRawRows = []; // Armazena os dados brutos para gerar o relatório
+const TAB_CIRCUITOS = 'CIRCUITO'; 
+const TABLE_HEADER_NAME = 'Circuitos'; 
 
-/**
- * Inicia o monitoramento de uma OLT específica.
- */
+const OLT_COLUMN_MAP = {
+    'HEL1':  1,  'HEL2':  3,  'MGP':   5,  'PQA1':  7,  'PSV1':  9,  'PSV7':  11,
+    'SBO2':  13, 'SBO3':  15, 'SBO4':  17, 'SB1':   19, 'SB2':   21, 'SB3':   23,
+    'PQA2':  25, 'PQA3':  27, 'LTXV2': 29, 'LTXV1': 31, 'SBO1':  33
+};
+
+// Armazena dados dos clientes para o Pop-up
+window.OLT_CLIENTS_DATA = {};
+
 function startOltMonitoring(config) {
-    currentOltConfig = config;
-    loadDataAndRender();
-    setInterval(loadDataAndRender, REFRESH_INTERVAL);
-}
+    const container = document.querySelector('.grid-container');
+    if (!container) return;
 
-/**
- * Busca dados e gerencia a renderização.
- */
-async function loadDataAndRender() {
-    const config = currentOltConfig;
-    if (!config) return;
-
-    // Mostra loading no header se existir (feedback visual rápido)
-    const existingStats = document.getElementById('header-stats-block');
-    if (existingStats) {
-        // Opção: Mudar opacidade para indicar atualização
-        existingStats.style.opacity = '0.5';
-    }
-
-    // Define o range baseado no tipo (Nokia precisa de mais colunas para status)
-    const range = config.type === 'nokia' ? `${config.id}!A:E` : `${config.id}!A:C`;
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
-
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        const rows = (data.values || []).slice(1); // Ignora cabeçalho
-        
-        // Salva nas variáveis globais para o relatório usar depois
-        currentRawRows = rows;
-
-        processAndRender(rows, config);
-
-    } catch (error) {
-        console.error("Erro no engine:", error);
-        // showToast(`Erro ao conectar com a planilha: ${config.id}`, 'problem'); // Opcional: descomentar se quiser flood de erro
-    }
-}
-
-/**
- * Processa os dados brutos e desenha a tela.
- */
-function processAndRender(rows, config) {
-    const gridContainer = document.querySelector('.grid-container');
-    if(!gridContainer) return;
-    
-    gridContainer.innerHTML = ''; // Limpa tela
-
-    // Estruturas de dados
-    const boards = {}; // Agrupamento por placa
-    let totalOnline = 0;
-    let totalOffline = 0;
-
-    // 1. Processamento (Loop Principal)
-    rows.forEach(row => {
-        if (row.length === 0) return;
-
-        let placa, porta, circuito, status, isOnline;
-        
-        // --- LÓGICA DE PARSEAMENTO ---
-        if (config.type === 'nokia') {
-            // Nokia: Col A (PON), Col C (Desc/Circuito), Col E (Status)
-            const pon = row[0];
-            circuito = row[2] || 'S/ DESC'; // Coluna C geralmente é o circuito/descrição
-            status = row[4] || '';
-            
-            isOnline = status.trim().toLowerCase().includes('up');
-            
-            if (pon) {
-                const parts = pon.split('/'); // Ex: 1/1/1/1
-                if (parts.length >= 4) {
-                    placa = parts[2]; // O terceiro item é a placa
-                    porta = parts[3]; // O quarto item é a porta
-                }
-            }
-
-        } else if (config.type.includes('furukawa')) {
-            // Furukawa: Col A (Porta), Col B (Desc/Circuito), Col C (Status)
-            const portStr = row[0];
-            circuito = row[1] || 'S/ DESC'; // Coluna B
-            status = row[2] || '';
-            
-            isOnline = status.trim().toLowerCase() === 'active';
-
-            if (portStr) {
-                if (config.type === 'furukawa-10') {
-                    // Ex: 1/1
-                    const parts = portStr.split('/');
-                    if (parts.length >= 2) {
-                        placa = parts[0];
-                        porta = parts[1];
-                    }
-                } else {
-                    // Ex: GPON 0/1
-                    const match = portStr.match(/GPON\s*(\d+)\/(\d+)/i);
-                    if (match) {
-                        placa = match[1];
-                        porta = match[2];
-                    }
-                }
-            }
-        }
-
-        // Se conseguiu identificar Placa e Porta
-        if (placa && porta) {
-            // Normaliza números (01, 1 -> 1)
-            const placaKey = parseInt(placa);
-            const portaKey = parseInt(porta);
-
-            if (!boards[placaKey]) boards[placaKey] = {};
-            if (!boards[placaKey][portaKey]) {
-                boards[placaKey][portaKey] = { 
-                    total: 0, 
-                    online: 0, 
-                    offline: 0, 
-                    circuits: [] 
-                };
-            }
-
-            const slot = boards[placaKey][portaKey];
-            slot.total++;
-            if (isOnline) {
-                slot.online++;
-                totalOnline++;
-            } else {
-                slot.offline++;
-                totalOffline++;
-            }
-        }
-    });
-
-    // 2. Renderiza Header com Botão de Relatório
-    // AQUI É A MÁGICA: Injetamos o botão no layout existente
-    renderHeaderStats(config.id, totalOnline, totalOffline);
-
-    // 3. Renderiza Tabelas (Placas)
-    // Ordena as placas (1, 2, 3...)
-    const sortedPlacas = Object.keys(boards).sort((a, b) => a - b);
-    
-    if (sortedPlacas.length === 0) {
-        gridContainer.innerHTML = '<div style="color:white; padding:20px;">Nenhum dado encontrado para esta OLT.</div>';
-        return;
-    }
-
-    sortedPlacas.forEach(placaNum => {
-        const slots = boards[placaNum];
-        const table = document.createElement('table');
-        
-        // Cabeçalho da Tabela (Placa)
-        let headerRow = `
-            <tr class="table-title-row">
-                <th colspan="17">PLACA ${placaNum}</th>
-            </tr>
-            <tr class="table-header-row">
-                <th>PORTA</th>
-        `;
-        
-        // Cria colunas de 1 a 16
-        for (let i = 1; i <= 16; i++) {
-            headerRow += `<th>${i}</th>`;
-        }
-        headerRow += `</tr>`;
-        
-        // Corpo da Tabela
-        let bodyRow = `<tr><td>STATUS</td>`;
-        
-        for (let i = 1; i <= 16; i++) {
-            const data = slots[i];
-            
-            if (!data) {
-                // Porta vazia/inexistente na planilha
-                bodyRow += `<td><span style="opacity:0.3">-</span></td>`;
-            } else {
-                // Lógica de Cores (Atenção vs Problema)
-                let badgeClass = 'status-normal';
+    // --- 1. INJEÇÃO DO MODAL (POP-UP) COM FILTROS ---
+    if (!document.getElementById('detail-modal')) {
+        const modalStyles = `
+            <style>
+                .circuit-clickable { cursor: pointer; text-decoration: underline; color: #fff; font-weight: bold; }
+                .circuit-clickable:hover { color: #ffd700; }
+                .client-table-container { max-height: 400px; overflow-y: auto; margin-top: 10px; }
+                .client-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; color: #333; }
+                .client-table th { background-color: #007bff; color: white; padding: 8px; text-align: left; position: sticky; top: 0; z-index: 10; }
+                .client-table td { border-bottom: 1px solid #ddd; padding: 6px 8px; color: #333; }
+                .client-table tr:nth-child(even) { background-color: #f9f9f9; }
+                .client-table tr:hover { background-color: #f1f1f1; }
+                .modal-section-title { font-size: 1.1rem; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
                 
-                // Regra: >16 OFF ou >50% OFF = Problema
-                // Regra: =16 OFF = Atenção
-                if (data.offline > 16 || (data.total > 0 && (data.offline / data.total) >= 0.5)) {
-                    badgeClass = 'status-problema';
-                } else if (data.offline === 16) {
-                    badgeClass = 'status-atencao';
+                /* Tema Escuro para Modal */
+                .modal-content { background-color: #2f0e51; color: #EADDFF; border: 1px solid #5c4e72; }
+                .client-table th { background-color: #3a1c63; color: #fff; }
+                .client-table td { color: #EADDFF; border-bottom: 1px solid #5c4e72; }
+                .client-table tr:nth-child(even) { background-color: rgba(0,0,0,0.2); }
+                .client-table tr:hover { background-color: rgba(255,255,255,0.1); }
+                
+                /* Estilos dos Filtros */
+                .filter-bar { display: flex; gap: 10px; margin-bottom: 10px; }
+                .filter-input { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #5c4e72; background-color: rgba(0,0,0,0.2); color: #fff; }
+                .filter-select { padding: 8px; border-radius: 4px; border: 1px solid #5c4e72; background-color: #3a1c63; color: #fff; cursor: pointer; }
+                
+                .modal-view-stats { display: flex; }
+                .modal-view-clients { display: none; }
+            </style>
+        `;
+
+        const modalHTML = `
+            ${modalStyles}
+            <div id="detail-modal" class="modal-overlay" onclick="closeModal(event)">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="modal-title">Detalhes</h3>
+                        <button class="close-modal" onclick="closeModal()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        
+                        <div id="view-stats" class="modal-stats-grid">
+                            <div class="modal-stat-box">
+                                <span id="modal-up" class="modal-stat-value val-online">0</span>
+                                <span class="modal-stat-label">${config.type === 'nokia' ? 'UP' : 'ACTIVE'}</span>
+                            </div>
+                            <div class="modal-stat-box">
+                                <span id="modal-down" class="modal-stat-value val-offline">0</span>
+                                <span class="modal-stat-label">${config.type === 'nokia' ? 'DOWN' : 'INACTIVE'}</span>
+                            </div>
+                            <div class="modal-stat-box">
+                                <span id="modal-total" class="modal-stat-value val-total">0</span>
+                                <span class="modal-stat-label">TOTAL</span>
+                            </div>
+                        </div>
+
+                        <div id="view-clients" style="display:none;">
+                            <div class="modal-section-title">
+                                <span id="circuit-title-text">Clientes do Circuito</span>
+                            </div>
+                            
+                            <div class="filter-bar">
+                                <input type="text" id="search-input" class="filter-input" placeholder="Buscar (Nome, Serial...)" onkeyup="filterClients()">
+                                <select id="status-filter" class="filter-select" onchange="filterClients()">
+                                    </select>
+                            </div>
+
+                            <div class="client-table-container">
+                                <table class="client-table" id="table-clients">
+                                    <thead id="clients-thead">
+                                        </thead>
+                                    <tbody id="clients-tbody">
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    // 2. Cria a estrutura HTML
+    function createTableStructure() {
+        container.innerHTML = ''; 
+        for (let i = 1; i <= config.boards; i++) {
+            const placaId = i.toString().padStart(2, '0');
+            const colunasBase = '<th>Porta</th>'; 
+            const colunasFinais = `<th>${TABLE_HEADER_NAME}</th><th>Status</th>`;
+
+            container.innerHTML += `
+                <table>
+                    <thead>
+                        <tr class="table-title-row"><th colspan="3">PLACA ${placaId}</th></tr>
+                        <tr class="table-header-row">${colunasBase}${colunasFinais}</tr>
+                    </thead>
+                    <tbody id="tbody-placa-${i}"></tbody>
+                </table>
+            `;
+        }
+    }
+
+    async function fetchCircuitosData() {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${TAB_CIRCUITOS}!A:AK?key=${ENGINE_API_KEY}`;
+        try {
+            const response = await fetch(url);
+            if (!response.ok) return [];
+            const data = await response.json();
+            return data.values || [];
+        } catch (e) { return []; }
+    }
+
+    function getCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
+        const colIndex = OLT_COLUMN_MAP[oltId];
+        if (colIndex === undefined) return "-";
+        if (!rowsCircuitos.length) return "-";
+
+        let rowIndex = -1;
+        const p = parseInt(porta);
+        const sl = parseInt(placa);
+
+        if (type === 'nokia') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
+        else if (type === 'furukawa-2') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
+        else if (type === 'furukawa-10') rowIndex = ((sl - 1) * 4) + (p - 1) + 1;
+
+        if (rowIndex > 0 && rowIndex < rowsCircuitos.length) {
+            return rowsCircuitos[rowIndex][colIndex] || "-";
+        }
+        return "-";
+    }
+
+    async function populateTables() {
+        window.OLT_CLIENTS_DATA = {}; // Limpa cache
+
+        for (let i = 1; i <= config.boards; i++) {
+            const tbody = document.getElementById(`tbody-placa-${i}`);
+            if (tbody) tbody.innerHTML = '';
+        }
+
+        const rangeOlt = `${config.id}!A:I`; 
+        const urlOlt = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${rangeOlt}?key=${ENGINE_API_KEY}`;
+
+        try {
+            const [responseOlt, rowsCircuitos] = await Promise.all([fetch(urlOlt), fetchCircuitosData()]);
+            if (!responseOlt.ok) throw new Error('Falha API');
+            const dataOlt = await responseOlt.json();
+            const rowsOlt = (dataOlt.values || []).slice(1);
+            const portData = {};
+            const newProblems = new Set(); 
+
+            rowsOlt.forEach(columns => {
+                if (columns.length === 0) return;
+                let placa, porta, isOnline;
+
+                // --- Lógica de Identificação (Coluna A) ---
+                if (config.type === 'nokia') {
+                    // Nokia: 1/1/Slot/Port
+                    const pon = columns[0];
+                    const status = columns[4]; // Status Nokia Col E
+                    
+                    if (!pon || !status) return;
+                    const parts = pon.split('/'); 
+                    if (parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
+                    isOnline = status.trim().toLowerCase().includes('up');
+                } else { 
+                    // Furukawa (Todas)
+                    const portStr = columns[0];
+                    const status = columns[2]; // Status Furukawa Col C
+                    if (!portStr || !status) return;
+                    
+                    if (config.type === 'furukawa-10') {
+                        const parts = portStr.split('/');
+                        if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
+                    } else {
+                        const match = portStr.match(/GPON(\d+)\/(\d+)/);
+                        if (match) { placa = match[1]; porta = match[2]; }
+                    }
+                    isOnline = status.trim().toLowerCase() === 'active';
                 }
 
-                // Cria o botão da célula
-                bodyRow += `
-                    <td>
-                        <button class="status-btn ${badgeClass}" 
-                                onclick="showPortDetails('${config.id}', ${placaNum}, ${i}, ${data.online}, ${data.offline})">
-                            ${data.offline}
-                        </button>
-                    </td>
-                `;
-            }
-        }
-        bodyRow += `</tr>`;
+                if (!placa || !porta) return;
 
-        table.innerHTML = `<thead>${headerRow}</thead><tbody>${bodyRow}</tbody>`;
-        gridContainer.appendChild(table);
-    });
-}
+                const portKey = `${placa}/${porta}`;
+                
+                if (!portData[portKey]) {
+                    const infoExtra = getCircuitInfo(rowsCircuitos, config.id, placa, porta, config.type);
+                    portData[portKey] = { online: 0, offline: 0, info: infoExtra };
+                    window.OLT_CLIENTS_DATA[portKey] = [];
+                }
 
-/**
- * Renderiza as estatísticas no cabeçalho E O BOTÃO DE RELATÓRIO
- */
-function renderHeaderStats(oltName, online, offline) {
-    const total = online + offline;
-    
-    // Procura o placeholder do header (criado pelo layout.js)
-    const nav = document.querySelector('.header-nav');
-    
-    // Remove estatísticas antigas se houver para não duplicar e atualizar
-    const oldStats = document.getElementById('header-stats-block');
-    if (oldStats) oldStats.remove();
+                if (isOnline) portData[portKey].online++; else portData[portKey].offline++;
 
-    const statsDiv = document.createElement('div');
-    statsDiv.id = 'header-stats-block';
-    statsDiv.style.display = 'flex';
-    statsDiv.style.alignItems = 'center';
-    statsDiv.style.gap = '10px';
-    statsDiv.style.marginRight = '15px';
-
-    // Badge Online
-    const badgeUp = `
-        <div class="timestamp-badge" style="background: rgba(0,0,0,0.4); border: 1px solid var(--m3-outline); padding: 4px 12px;">
-            <span class="material-symbols-rounded icon-up" style="font-size:18px">check_circle</span> 
-            <span style="font-weight:700; color:#fff">${online}</span>
-        </div>`;
-
-    // Badge Offline
-    const badgeDown = `
-        <div class="timestamp-badge" style="background: rgba(0,0,0,0.4); border: 1px solid var(--m3-outline); padding: 4px 12px;">
-            <span class="material-symbols-rounded icon-down" style="font-size:18px">error</span> 
-            <span style="font-weight:700; color:#fff">${offline}</span>
-        </div>`;
-        
-    // BOTÃO DE IMPRESSÃO / RELATÓRIO
-    // Note o onclick chamando a função generateAndDownloadReport
-    const btnPrint = `
-        <button class="icon-btn" onclick="generateAndDownloadReport()" title="Baixar Relatório de Falhas (.txt)" 
-                style="background-color: var(--m3-surface-container-high); border: 1px solid var(--m3-outline); width: 36px; height: 36px;">
-            <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">description</span>
-        </button>
-    `;
-
-    statsDiv.innerHTML = badgeUp + badgeDown + btnPrint;
-
-    // Insere no início do NAV (antes do relógio)
-    if (nav) {
-        nav.insertBefore(statsDiv, nav.firstChild);
-    }
-}
-
-/**
- * FUNÇÃO DE RELATÓRIO (TXT)
- * Gera um arquivo texto com as portas que estão com PROBLEMA.
- */
-function generateAndDownloadReport() {
-    if (!currentRawRows || !currentOltConfig) {
-        alert("Aguarde os dados carregarem...");
-        return;
-    }
-
-    const oltName = currentOltConfig.id;
-    const now = new Date();
-    const dataHora = now.toLocaleString('pt-BR');
-    
-    let reportContent = `==================================================\n`;
-    reportContent += `RELATÓRIO DE FALHAS - ${oltName}\n`;
-    reportContent += `GERADO EM: ${dataHora}\n`;
-    reportContent += `==================================================\n\n`;
-    reportContent += `LISTAGEM DE PORTAS COM PROBLEMA (>16 OFF ou >50% OFF):\n\n`;
-
-    let problemFound = false;
-    const portStats = {};
-
-    // Reprocessa os dados brutos especificamente para o relatório
-    currentRawRows.forEach(row => {
-        if (row.length === 0) return;
-        
-        let placa, porta, circuito, status, isOnline;
-        
-        // --- LÓGICA DE PARSEAMENTO (Idêntica ao render) ---
-        if (currentOltConfig.type === 'nokia') {
-            const pon = row[0];
-            circuito = row[2] || 'S/ DESC';
-            status = row[4] || '';
-            isOnline = status.trim().toLowerCase().includes('up');
-            if (pon) {
-                const parts = pon.split('/');
-                if (parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
-            }
-        } else {
-            const portStr = row[0];
-            circuito = row[1] || 'S/ DESC';
-            status = row[2] || '';
-            isOnline = status.trim().toLowerCase() === 'active';
-            if (portStr) {
-                 if (currentOltConfig.type === 'furukawa-10') {
-                    const parts = portStr.split('/');
-                    if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
+                // --- Lógica de Coleta de Dados para o POP-UP ---
+                let clientData = {};
+                
+                if (config.type === 'nokia') {
+                    // Nokia: Col B, C, E, H, I
+                    clientData = {
+                        colB: columns[1] || '',
+                        colC: columns[2] || '',
+                        colE: columns[4] || '',
+                        colH: columns[7] || '',
+                        colI: columns[8] || '',
+                        statusRef: columns[4] || '' 
+                    };
                 } else {
-                    const match = portStr.match(/GPON\s*(\d+)\/(\d+)/i);
-                    if (match) { placa = match[1]; porta = match[2]; }
+                    // Furukawa: Col B, C, D, H
+                    clientData = {
+                        colB: columns[1] || '',
+                        colC: columns[2] || '',
+                        colD: columns[3] || '',
+                        colH: columns[7] || '',
+                        statusRef: columns[2] || '' 
+                    };
                 }
-            }
-        }
-
-        if (placa && porta) {
-            const key = `${placa}-${porta}`;
-            if (!portStats[key]) {
-                portStats[key] = { 
-                    placa: parseInt(placa), 
-                    porta: parseInt(porta), 
-                    total: 0, 
-                    offline: 0, 
-                    details: [] 
-                };
-            }
-            portStats[key].total++;
-            if (!isOnline) {
-                portStats[key].offline++;
-                portStats[key].details.push(circuito);
-            }
-        }
-    });
-
-    // Ordenação numérica para o relatório
-    const sortedKeys = Object.keys(portStats).sort((a, b) => {
-        const p1 = portStats[a].placa;
-        const p2 = portStats[b].placa;
-        if (p1 !== p2) return p1 - p2;
-        return portStats[a].porta - portStats[b].porta;
-    });
-
-    sortedKeys.forEach(key => {
-        const data = portStats[key];
-        
-        // Aplica a mesma regra de "Problema" da visualização
-        const isProblem = data.offline > 16 || (data.total > 0 && (data.offline / data.total) >= 0.5);
-        
-        if (isProblem) {
-            problemFound = true;
-            reportContent += `--------------------------------------------------\n`;
-            reportContent += `[PLACA ${String(data.placa).padStart(2, '0')} / PORTA ${String(data.porta).padStart(2, '0')}] - STATUS: CRÍTICO\n`;
-            reportContent += `Resumo: ${data.offline} clientes Offline de ${data.total} Total\n`;
-            reportContent += `Circuitos Afetados:\n`;
-            
-            data.details.forEach(circ => {
-                reportContent += `   - CIRCUITO: ${circ} - STATUS: Down\n`;
+                
+                window.OLT_CLIENTS_DATA[portKey].push(clientData);
             });
-            reportContent += `\n`;
-        }
-    });
 
-    if (!problemFound) {
-        reportContent += `NENHUMA PORTA COM STATUS CRÍTICO ENCONTRADA.\n`;
+            // Renderização da Tabela
+            for (const portKey in portData) {
+                const [placa, porta] = portKey.split('/');
+                const { online, offline, info } = portData[portKey];
+                const total = online + offline;
+                let statusClass = 'status-normal';
+                let statusText = 'Normal';
+
+                if (offline > 16) { statusClass = 'status-problema'; statusText = 'Problema'; }
+                else if (offline === 16) { statusClass = 'status-atencao'; statusText = 'Atenção'; }
+                else if (total > 0 && (offline / total) >= 0.5) { statusClass = 'status-problema'; statusText = 'Problema'; }
+
+                if (statusClass === 'status-problema') newProblems.add(portKey);
+
+                // Passamos o config.type para a função openCircuitClients saber o que desenhar
+                const htmlRow = `
+                    <tr>
+                        <td>Porta ${porta.padStart(2, '0')}</td>
+                        <td>
+                            <span class="circuit-badge circuit-clickable" 
+                                  onclick="openCircuitClients('${placa}', '${porta}', '${info}', '${config.type}')"
+                                  title="Ver clientes deste circuito">
+                                ${info}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="status ${statusClass} status-btn" 
+                                onclick="openPortDetails('${placa}', '${porta}', ${online}, ${offline}, ${total})">
+                                ${statusText}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+
+                const targetTbody = document.getElementById(`tbody-placa-${placa}`);
+                if (targetTbody) targetTbody.innerHTML += htmlRow;
+            }
+
+            if (typeof checkAndNotifyForNewProblems === 'function') checkAndNotifyForNewProblems(newProblems);
+
+        } catch (error) { console.error('Erro na engine:', error); }
     }
 
-    reportContent += `\n==================================================\n`;
-    reportContent += `Fim do Relatório\n`;
+    async function updateTime() {
+        if (typeof loadTimestamp === 'function') await loadTimestamp(config.id, ENGINE_API_KEY, ENGINE_SHEET_ID);
+    }
 
-    // Download do arquivo
-    const blob = new Blob([reportContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `RELATORIO_FALHAS_${oltName}_${now.getTime()}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    createTableStructure();
+    const runUpdate = () => { populateTables(); updateTime(); };
+    runUpdate(); 
+    setInterval(runUpdate, ENGINE_REFRESH_SECONDS * 1000); 
 }
 
-// Modal simplificado (mantido para compatibilidade)
-function showPortDetails(oltId, placa, porta, online, offline) {
-    alert(`${oltId}\nPlaca ${placa} / Porta ${porta}\n\nOnline: ${online}\nOffline: ${offline}`);
+// --- FUNÇÕES DO MODAL (POP-UP) ---
+
+function closeModal(event) {
+    if (event && event.target.id !== 'detail-modal') return;
+    document.getElementById('detail-modal').style.display = 'none';
+}
+
+function openPortDetails(placa, porta, online, offline, total) {
+    const modal = document.getElementById('detail-modal');
+    const modalContent = document.querySelector('.modal-content');
+
+    // --- LÓGICA DE CLASSES DO MODAL (STATUS) ---
+    modalContent.classList.remove('modal-large'); // Remove o estilo de tabela grande
+    modalContent.classList.add('modal-status');   // Adiciona a etiqueta exclusiva de Status
+
+    document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta} - Status`;
+    
+    document.getElementById('view-stats').style.display = 'flex';
+    document.getElementById('view-clients').style.display = 'none';
+
+    document.getElementById('modal-up').textContent = online;
+    document.getElementById('modal-down').textContent = offline;
+    document.getElementById('modal-total').textContent = total;
+    modal.style.display = 'flex';
+}
+
+// Variável global para saber qual tipo de OLT está aberta
+window.CURRENT_MODAL_TYPE = '';
+
+function openCircuitClients(placa, porta, circuitoNome, oltType) {
+    const modal = document.getElementById('detail-modal');
+    const modalContent = document.querySelector('.modal-content');
+
+    // --- LÓGICA DE CLASSES DO MODAL (CIRCUITO) ---
+    modalContent.classList.remove('modal-status'); // Remove a etiqueta de Status
+    modalContent.classList.add('modal-large');     // Adiciona estilo de tabela grande
+    
+    window.CURRENT_MODAL_TYPE = oltType; 
+
+    // Adiciona Classe de Estilo na Tabela (Nokia vs Furukawa)
+    const tableObj = document.getElementById('table-clients');
+    tableObj.className = 'client-table ' + (oltType === 'nokia' ? 'mode-nokia' : 'mode-furukawa');
+
+    document.getElementById('circuit-title-text').textContent = `Circuito: ${circuitoNome} (Placa ${placa}/Porta ${porta})`;
+
+    document.getElementById('view-stats').style.display = 'none';
+    document.getElementById('view-clients').style.display = 'block';
+    
+    // --- RESET DO CAMPO DE BUSCA ---
+    document.getElementById('search-input').value = '';
+
+    // --- CONFIGURAÇÃO DINÂMICA DO DROPDOWN ---
+    const statusSelect = document.getElementById('status-filter');
+    statusSelect.innerHTML = '<option value="all">Todos Status</option>'; // Reset
+
+    if (oltType === 'nokia') {
+        statusSelect.innerHTML += `
+            <option value="online">Online (UP)</option>
+            <option value="offline">Offline (DOWN)</option>
+        `;
+    } else {
+        statusSelect.innerHTML += `
+            <option value="online">Online (Active)</option>
+            <option value="offline">Offline (Inactive)</option>
+        `;
+    }
+    statusSelect.value = 'all'; // Seleciona "Todos" por padrão
+
+    const thead = document.getElementById('clients-thead');
+    const tbody = document.getElementById('clients-tbody');
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
+
+    const portKey = `${placa}/${porta}`;
+    const clients = window.OLT_CLIENTS_DATA[portKey] || [];
+
+    // --- DESENHA O CABEÇALHO ---
+    if (oltType === 'nokia') {
+        thead.innerHTML = `<tr><th>Col B</th><th>Col C</th><th>Col E</th><th>Col H</th><th>Col I</th></tr>`;
+    } else {
+        thead.innerHTML = `<tr><th>Col B</th><th>Col C</th><th>Col D</th><th>Col H</th></tr>`;
+    }
+
+    // --- DESENHA AS LINHAS ---
+    if (clients.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum cliente encontrado.</td></tr>';
+    } else {
+        clients.forEach(c => {
+            // Lógica de Classificação para Filtro
+            let statusRaw = c.statusRef.toLowerCase();
+            let statusClass = 'filter-unknown';
+            
+            if (oltType === 'nokia') {
+                if (statusRaw.includes('up')) statusClass = 'filter-online';
+                else if (statusRaw.includes('down')) statusClass = 'filter-offline';
+            } else {
+                // Furukawa
+                if (statusRaw.includes('active') && !statusRaw.includes('inactive')) statusClass = 'filter-online';
+                else if (statusRaw.includes('inactive')) statusClass = 'filter-offline';
+            }
+
+            let rowHTML = '';
+            if (oltType === 'nokia') {
+                rowHTML = `<tr class="client-row ${statusClass}">
+                    <td>${c.colB}</td><td>${c.colC}</td><td>${c.colE}</td><td>${c.colH}</td><td>${c.colI}</td>
+                </tr>`;
+            } else {
+                rowHTML = `<tr class="client-row ${statusClass}">
+                    <td>${c.colB}</td><td>${c.colC}</td><td>${c.colD}</td><td>${c.colH}</td>
+                </tr>`;
+            }
+            tbody.innerHTML += rowHTML;
+        });
+    }
+
+    modal.style.display = 'flex';
+}
+
+// --- FUNÇÃO DE FILTRO INTELIGENTE ---
+function filterClients() {
+    const searchText = document.getElementById('search-input').value.toLowerCase();
+    const statusFilter = document.getElementById('status-filter').value; // all, online, offline
+    
+    const rows = document.querySelectorAll('.client-row');
+    
+    rows.forEach(row => {
+        const textContent = row.textContent.toLowerCase();
+        let matchesSearch = textContent.includes(searchText);
+        
+        let matchesStatus = true;
+        if (statusFilter === 'online') matchesStatus = row.classList.contains('filter-online');
+        if (statusFilter === 'offline') matchesStatus = row.classList.contains('filter-offline');
+        
+        if (matchesSearch && matchesStatus) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
 }
