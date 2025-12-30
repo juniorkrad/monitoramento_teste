@@ -1,56 +1,51 @@
 // ==============================================================================
-// olt-engine.js - Monitoramento e Relatório (Versão Blindada)
+// olt-engine.js - Monitoramento e Relatório (Versão Debug)
 // ==============================================================================
 
 const API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I'; 
 const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
 const REFRESH_INTERVAL = 30000; 
 
-// Mapeamento EXATO das Colunas na aba CIRCUITO (Baseado na sua lista)
-// Índice: 0=A, 1=B, 2=C... (Ex: B=1, D=3, F=5...)
+// Mapeamento das colunas na aba "CIRCUITO" (0=A, 1=B, 2=C...)
 const CIRCUIT_TAB_NAME = 'CIRCUITO';
 const CIRCUIT_COLUMNS = {
-    'HEL-1': 1,   // Coluna B
-    'HEL-2': 3,   // Coluna D
-    'MGP':   5,   // Coluna F
-    'PQA-1': 7,   // Coluna H
-    'PSV-1': 9,   // Coluna J
-    'PSV-7': 11,  // Coluna L
-    'SBO-2': 13,  // Coluna N
-    'SBO-3': 15,  // Coluna P
-    'SBO-4': 17,  // Coluna R
-    'SB-1':  19,  // Coluna T
-    'SB-2':  21,  // Coluna V
-    'SB-3':  23,  // Coluna X
-    'PQA-2': 25,  // Coluna Z
-    'PQA-3': 27,  // Coluna AB
-    'LTXV-2': 29, // Coluna AD
-    'LTXV-1': 31, // Coluna AF
-    'SBO-1': 33   // Coluna AH
+    'HEL-1': 1,   // B
+    'HEL-2': 3,   // D
+    'MGP':   5,   // F
+    'PQA-1': 7,   // H
+    'PSV-1': 9,   // J
+    'PSV-7': 11,  // L
+    'SBO-2': 13,  // N
+    'SBO-3': 15,  // P
+    'SBO-4': 17,  // R
+    'SB-1':  19,  // T
+    'SB-2':  21,  // V
+    'SB-3':  23,  // X
+    'PQA-2': 25,  // Z
+    'PQA-3': 27,  // AB
+    'LTXV-2': 29, // AD
+    'LTXV-1': 31, // AF
+    'SBO-1': 33   // AH
 };
 
 let currentOltConfig = null;
 let globalStatusRows = []; 
 
-/**
- * Inicializa o monitoramento
- */
 function startOltMonitoring(config) {
+    console.log("Iniciando monitoramento para:", config.id);
     currentOltConfig = config;
     loadDataAndRender();
     setInterval(loadDataAndRender, REFRESH_INTERVAL);
 }
 
-/**
- * Busca dados da OLT e desenha
- */
 async function loadDataAndRender() {
     if (!currentOltConfig) return;
 
-    // Feedback visual seguro
+    // Feedback no botão se ele já existir
     const btn = document.getElementById('btn-report');
     if(btn) btn.style.opacity = '0.5';
 
+    // Range busca dados da OLT
     const range = currentOltConfig.type === 'nokia' ? `${currentOltConfig.id}!A:E` : `${currentOltConfig.id}!A:C`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
 
@@ -59,22 +54,23 @@ async function loadDataAndRender() {
         const data = await response.json();
         const rows = (data.values || []).slice(1);
         
+        console.log("Dados recebidos. Linhas:", rows.length);
         globalStatusRows = rows;
         processAndRender(rows);
 
     } catch (error) {
-        console.error("Erro ao buscar dados:", error);
+        console.error("Erro fatal ao buscar dados:", error);
     } finally {
         if(btn) btn.style.opacity = '1';
     }
 }
 
-/**
- * Processa e Renderiza (Tabelas e Botão)
- */
 function processAndRender(rows) {
     const gridContainer = document.querySelector('.grid-container');
-    if (!gridContainer) return; // Se não tem grid, não faz nada (segurança)
+    if (!gridContainer) {
+        console.error("Container .grid-container não encontrado no HTML!");
+        return; 
+    }
 
     gridContainer.innerHTML = ''; 
 
@@ -131,18 +127,20 @@ function processAndRender(rows) {
         }
     });
 
-    // Tenta injetar o botão de forma SEGURA
+    // --- TENTATIVA SEGURA DE INJETAR O BOTÃO ---
+    // Fazemos isso ANTES de desenhar a tabela, mas dentro de um try/catch
+    // para que se falhar, não quebre a tabela.
     try {
         injectPrinterButton(totalOnline, totalOffline);
     } catch (e) {
-        console.warn("Header ainda não pronto para receber botão.");
+        console.warn("Não foi possível criar o botão de impressora agora:", e);
     }
 
-    // Desenha as tabelas
+    // --- DESENHO DAS TABELAS ---
     const sortedPlacas = Object.keys(boards).sort((a, b) => a - b);
     
     if (sortedPlacas.length === 0) {
-        gridContainer.innerHTML = '<div style="color:white; padding:20px;">Sem dados.</div>';
+        gridContainer.innerHTML = '<div style="color:white; padding:20px;">Nenhum dado encontrado.</div>';
         return;
     }
 
@@ -167,7 +165,8 @@ function processAndRender(rows) {
                 } else if (data.offline === 16) {
                     badgeClass = 'status-atencao';
                 }
-                bodyRow += `<td><button class="status-btn ${badgeClass}" onclick="showSimpleDetails(${placaNum}, ${i}, ${data.offline})">${data.offline}</button></td>`;
+                // Adicionei um clique simples para teste
+                bodyRow += `<td><button class="status-btn ${badgeClass}" title="${data.offline} off">${data.offline}</button></td>`;
             }
         }
         bodyRow += `</tr>`;
@@ -176,13 +175,14 @@ function processAndRender(rows) {
     });
 }
 
-/**
- * Cria o botão de Impressora no Header
- */
 function injectPrinterButton(online, offline) {
     const nav = document.querySelector('.header-nav');
-    if (!nav) return; // Se não achou o nav, sai sem quebrar nada
+    if (!nav) {
+        console.log("Header nav não encontrado ainda.");
+        return;
+    }
 
+    // Limpa controles antigos
     const old = document.getElementById('engine-controls');
     if (old) old.remove();
 
@@ -194,8 +194,8 @@ function injectPrinterButton(online, offline) {
     container.style.marginRight = '10px';
 
     const btnHtml = `
-        <button id="btn-report" class="icon-btn" onclick="generateTxtReport()" title="Relatório de Problemas" 
-            style="background-color: var(--m3-surface-container-high); border: 1px solid var(--m3-outline); width: 40px; height: 40px;">
+        <button id="btn-report" class="icon-btn" onclick="generateTxtReport()" title="Gerar Relatório TXT" 
+            style="background-color: var(--m3-surface-container-high); border: 1px solid var(--m3-outline); width: 40px; height: 40px; cursor: pointer;">
             <span class="material-symbols-rounded" style="color: var(--m3-on-surface);">print</span>
         </button>
     `;
@@ -206,27 +206,25 @@ function injectPrinterButton(online, offline) {
     `;
 
     container.innerHTML = badgesHtml + btnHtml;
+    // Insere no começo do nav
     nav.insertBefore(container, nav.firstChild);
+    console.log("Botão injetado com sucesso.");
 }
 
-/**
- * GERA O ARQUIVO TXT
- */
 async function generateTxtReport() {
-    if (!globalStatusRows.length) return alert("Aguarde o carregamento...");
+    if (!globalStatusRows.length) return alert("Aguarde o carregamento dos dados...");
 
     const oltName = currentOltConfig.id;
     const colIndex = CIRCUIT_COLUMNS[oltName];
 
     if (colIndex === undefined) {
-        alert(`Coluna não configurada para ${oltName}`);
+        alert(`Não há configuração de coluna de circuito para ${oltName}`);
         return;
     }
 
     const btn = document.getElementById('btn-report');
     if(btn) {
         btn.innerHTML = '<span class="material-symbols-rounded">downloading</span>';
-        btn.style.opacity = '0.7';
     }
 
     try {
@@ -236,14 +234,14 @@ async function generateTxtReport() {
         const dataCircuit = await response.json();
         const circuitRows = dataCircuit.values || [];
 
-        // 2. Calcula quais portas têm PROBLEMA
+        // 2. Calcula Status Local
         const portStatusMap = {};
 
         globalStatusRows.forEach(row => {
             if (row.length === 0) return;
             let placa, porta, isOnline;
             
-            // Parseamento (Simplificado)
+            // Reutiliza parseamento
             if (currentOltConfig.type === 'nokia') {
                 const pon = row[0];
                 const status = row[4] || '';
@@ -275,7 +273,7 @@ async function generateTxtReport() {
             }
         });
 
-        // 3. Cruza dados e Gera Texto
+        // 3. Monta Relatório
         let txtContent = `${oltName}\n\n`;
         let hasProblem = false;
 
@@ -293,13 +291,12 @@ async function generateTxtReport() {
             if (isProblem) {
                 hasProblem = true;
                 
-                // --- LÓGICA DE LOCALIZAÇÃO NA PLANILHA ---
-                // Linha 2 do Excel = Índice 1 do Array
-                // Placa 1, Porta 1 => Índice 1
-                // Fórmula: ((Placa - 1) * 16) + (Porta - 1) + 1
+                // Cálculo da Linha na Planilha (Assumindo sequencia perfeita)
+                // (Placa-1)*16 + (Porta-1) + 1 (Header)
                 const rowIndex = ((p.placa - 1) * 16) + (p.porta - 1) + 1;
                 
                 let circuitName = "N/A";
+                // Verifica se a linha existe e se a coluna existe
                 if (circuitRows[rowIndex] && circuitRows[rowIndex][colIndex]) {
                     circuitName = circuitRows[rowIndex][colIndex];
                 }
@@ -328,15 +325,10 @@ async function generateTxtReport() {
 
     } catch (e) {
         console.error("Erro no relatório:", e);
-        alert("Erro ao gerar relatório.");
+        alert("Erro ao processar relatório. Veja console.");
     } finally {
         if(btn) {
             btn.innerHTML = '<span class="material-symbols-rounded">print</span>';
-            btn.style.opacity = '1';
         }
     }
-}
-
-function showSimpleDetails(placa, porta, off) {
-    console.log(`P${placa}/P${porta}: ${off}`);
 }
