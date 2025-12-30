@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Monitoramento e Relatório (Versão Debug)
+// olt-engine.js - Versão Assíncrona (Corrige erro de carregamento do botão)
 // ==============================================================================
 
 const API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I'; 
@@ -30,9 +30,10 @@ const CIRCUIT_COLUMNS = {
 
 let currentOltConfig = null;
 let globalStatusRows = []; 
+let currentOnline = 0;
+let currentOffline = 0;
 
 function startOltMonitoring(config) {
-    console.log("Iniciando monitoramento para:", config.id);
     currentOltConfig = config;
     loadDataAndRender();
     setInterval(loadDataAndRender, REFRESH_INTERVAL);
@@ -41,11 +42,10 @@ function startOltMonitoring(config) {
 async function loadDataAndRender() {
     if (!currentOltConfig) return;
 
-    // Feedback no botão se ele já existir
+    // Feedback no botão se já existir
     const btn = document.getElementById('btn-report');
     if(btn) btn.style.opacity = '0.5';
 
-    // Range busca dados da OLT
     const range = currentOltConfig.type === 'nokia' ? `${currentOltConfig.id}!A:E` : `${currentOltConfig.id}!A:C`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
 
@@ -54,12 +54,11 @@ async function loadDataAndRender() {
         const data = await response.json();
         const rows = (data.values || []).slice(1);
         
-        console.log("Dados recebidos. Linhas:", rows.length);
         globalStatusRows = rows;
         processAndRender(rows);
 
     } catch (error) {
-        console.error("Erro fatal ao buscar dados:", error);
+        console.error("Erro busca dados:", error);
     } finally {
         if(btn) btn.style.opacity = '1';
     }
@@ -67,16 +66,13 @@ async function loadDataAndRender() {
 
 function processAndRender(rows) {
     const gridContainer = document.querySelector('.grid-container');
-    if (!gridContainer) {
-        console.error("Container .grid-container não encontrado no HTML!");
-        return; 
-    }
+    if (!gridContainer) return;
 
     gridContainer.innerHTML = ''; 
 
     const boards = {}; 
-    let totalOnline = 0;
-    let totalOffline = 0;
+    currentOnline = 0;
+    currentOffline = 0;
 
     rows.forEach(row => {
         if (row.length === 0) return;
@@ -119,28 +115,23 @@ function processAndRender(rows) {
             boards[pKey][ptKey].total++;
             if (isOnline) {
                 boards[pKey][ptKey].online++;
-                totalOnline++;
+                currentOnline++;
             } else {
                 boards[pKey][ptKey].offline++;
-                totalOffline++;
+                currentOffline++;
             }
         }
     });
 
-    // --- TENTATIVA SEGURA DE INJETAR O BOTÃO ---
-    // Fazemos isso ANTES de desenhar a tabela, mas dentro de um try/catch
-    // para que se falhar, não quebre a tabela.
-    try {
-        injectPrinterButton(totalOnline, totalOffline);
-    } catch (e) {
-        console.warn("Não foi possível criar o botão de impressora agora:", e);
-    }
+    // --- NOVA ESTRATÉGIA: VIGIA DO HEADER ---
+    // Chama a função que aguarda o header existir antes de tentar desenhar o botão
+    waitForHeaderAndInject();
 
-    // --- DESENHO DAS TABELAS ---
+    // Desenha Tabelas
     const sortedPlacas = Object.keys(boards).sort((a, b) => a - b);
     
     if (sortedPlacas.length === 0) {
-        gridContainer.innerHTML = '<div style="color:white; padding:20px;">Nenhum dado encontrado.</div>';
+        gridContainer.innerHTML = '<div style="color:white; padding:20px;">Sem dados.</div>';
         return;
     }
 
@@ -165,8 +156,7 @@ function processAndRender(rows) {
                 } else if (data.offline === 16) {
                     badgeClass = 'status-atencao';
                 }
-                // Adicionei um clique simples para teste
-                bodyRow += `<td><button class="status-btn ${badgeClass}" title="${data.offline} off">${data.offline}</button></td>`;
+                bodyRow += `<td><button class="status-btn ${badgeClass}" style="cursor:default">${data.offline}</button></td>`;
             }
         }
         bodyRow += `</tr>`;
@@ -175,14 +165,24 @@ function processAndRender(rows) {
     });
 }
 
-function injectPrinterButton(online, offline) {
+/**
+ * Função Vigia: Tenta encontrar o header. Se não achar, tenta de novo em 500ms.
+ * Isso impede que o script quebre se o layout demorar para carregar.
+ */
+function waitForHeaderAndInject() {
     const nav = document.querySelector('.header-nav');
-    if (!nav) {
-        console.log("Header nav não encontrado ainda.");
-        return;
+    
+    if (nav) {
+        // Achou! Injeta o botão.
+        injectPrinterButton(nav);
+    } else {
+        // Não achou. Espera e tenta de novo.
+        setTimeout(waitForHeaderAndInject, 500);
     }
+}
 
-    // Limpa controles antigos
+function injectPrinterButton(nav) {
+    // Remove anterior
     const old = document.getElementById('engine-controls');
     if (old) old.remove();
 
@@ -194,41 +194,43 @@ function injectPrinterButton(online, offline) {
     container.style.marginRight = '10px';
 
     const btnHtml = `
-        <button id="btn-report" class="icon-btn" onclick="generateTxtReport()" title="Gerar Relatório TXT" 
-            style="background-color: var(--m3-surface-container-high); border: 1px solid var(--m3-outline); width: 40px; height: 40px; cursor: pointer;">
+        <button id="btn-report" class="icon-btn" onclick="generateTxtReport()" title="Baixar Relatório (.txt)" 
+            style="background-color: var(--m3-surface-container-high); border: 1px solid var(--m3-outline); width: 40px; height: 40px;">
             <span class="material-symbols-rounded" style="color: var(--m3-on-surface);">print</span>
         </button>
     `;
 
     const badgesHtml = `
-        <div class="timestamp-badge"><span class="material-symbols-rounded icon-up" style="font-size:18px">check_circle</span> ${online}</div>
-        <div class="timestamp-badge"><span class="material-symbols-rounded icon-down" style="font-size:18px">error</span> ${offline}</div>
+        <div class="timestamp-badge"><span class="material-symbols-rounded icon-up" style="font-size:18px">check_circle</span> ${currentOnline}</div>
+        <div class="timestamp-badge"><span class="material-symbols-rounded icon-down" style="font-size:18px">error</span> ${currentOffline}</div>
     `;
 
     container.innerHTML = badgesHtml + btnHtml;
-    // Insere no começo do nav
     nav.insertBefore(container, nav.firstChild);
-    console.log("Botão injetado com sucesso.");
 }
 
+/**
+ * GERA O ARQUIVO TXT
+ */
 async function generateTxtReport() {
-    if (!globalStatusRows.length) return alert("Aguarde o carregamento dos dados...");
+    if (!globalStatusRows.length) return alert("Aguardando dados...");
 
     const oltName = currentOltConfig.id;
     const colIndex = CIRCUIT_COLUMNS[oltName];
 
     if (colIndex === undefined) {
-        alert(`Não há configuração de coluna de circuito para ${oltName}`);
+        alert(`Coluna não mapeada para ${oltName}. Verifique olt-engine.js.`);
         return;
     }
 
     const btn = document.getElementById('btn-report');
     if(btn) {
         btn.innerHTML = '<span class="material-symbols-rounded">downloading</span>';
+        btn.style.opacity = '0.7';
     }
 
     try {
-        // 1. Baixa a aba CIRCUITO
+        // 1. Baixa planilha CIRCUITO
         const urlCircuit = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${CIRCUIT_TAB_NAME}!A:AH?key=${API_KEY}`;
         const response = await fetch(urlCircuit);
         const dataCircuit = await response.json();
@@ -241,7 +243,7 @@ async function generateTxtReport() {
             if (row.length === 0) return;
             let placa, porta, isOnline;
             
-            // Reutiliza parseamento
+            // Lógica de Parseamento
             if (currentOltConfig.type === 'nokia') {
                 const pon = row[0];
                 const status = row[4] || '';
@@ -273,7 +275,7 @@ async function generateTxtReport() {
             }
         });
 
-        // 3. Monta Relatório
+        // 3. Monta Conteúdo TXT
         let txtContent = `${oltName}\n\n`;
         let hasProblem = false;
 
@@ -291,12 +293,10 @@ async function generateTxtReport() {
             if (isProblem) {
                 hasProblem = true;
                 
-                // Cálculo da Linha na Planilha (Assumindo sequencia perfeita)
-                // (Placa-1)*16 + (Porta-1) + 1 (Header)
+                // Cálculo da Linha (Placa-1)*16 + (Porta-1) + 1
                 const rowIndex = ((p.placa - 1) * 16) + (p.porta - 1) + 1;
                 
-                let circuitName = "N/A";
-                // Verifica se a linha existe e se a coluna existe
+                let circuitName = "CIRCUITO_NAO_ENCONTRADO";
                 if (circuitRows[rowIndex] && circuitRows[rowIndex][colIndex]) {
                     circuitName = circuitRows[rowIndex][colIndex];
                 }
@@ -324,11 +324,12 @@ async function generateTxtReport() {
         document.body.removeChild(a);
 
     } catch (e) {
-        console.error("Erro no relatório:", e);
-        alert("Erro ao processar relatório. Veja console.");
+        console.error("Erro Relatório:", e);
+        alert("Erro ao gerar relatório. Verifique o console.");
     } finally {
         if(btn) {
             btn.innerHTML = '<span class="material-symbols-rounded">print</span>';
+            btn.style.opacity = '1';
         }
     }
 }
