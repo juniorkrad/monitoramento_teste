@@ -206,7 +206,11 @@ body.home-page {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     animation: pulseCritical 1.2s infinite ease-in-out; /* Pulsar */
-    width: 320px; /* Um pouco maior */
+    
+    /* --- CORREÇÕES SOLICITADAS --- */
+    width: 340px;        /* Aumentado para caber fonte maior */
+    font-size: 1.1em;    /* Fonte aumentada */
+    margin-right: 15px;  /* Margem de segurança para não cortar ao pulsar */
 }
 
 /* Ícone Gigante no Super Priority */
@@ -219,7 +223,8 @@ body.home-page {
 /* Animações de Alerta */
 @keyframes pulseCritical {
     0% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 0, 0, 0.5); }
-    50% { transform: scale(1.02); box-shadow: 0 0 25px rgba(255, 0, 0, 0.9); border-color: #FF5252; }
+    /* Ajustado scale para 1.03 para não extrapolar, compensado com shadow maior */
+    50% { transform: scale(1.03); box-shadow: 0 0 30px rgba(255, 0, 0, 1); border-color: #FF5252; }
     100% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 0, 0, 0.5); }
 }
 
