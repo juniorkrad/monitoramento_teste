@@ -150,15 +150,15 @@ body.home-page {
 
 .footer { margin-top: 10px; padding: 8px 0; border-top: 1px solid var(--m3-outline); text-align: center; color: var(--m3-on-surface-variant); font-size: 0.85em; }
 
-/* --- TOAST NOTIFICATIONS (ATUALIZADO PARA EVITAR CORTES) --- */
+/* --- TOAST NOTIFICATIONS (ALINHADO À ESQUERDA) --- */
 #toast-container { 
     position: fixed; 
     top: 20px; 
-    right: 20px; 
+    left: 20px; /* Mudança: Agora na ESQUERDA */
     z-index: 2001;
     display: flex; 
     flex-direction: column; 
-    align-items: flex-end; /* Garante alinhamento à direita */
+    align-items: flex-start; /* Alinha itens à esquerda */
     gap: 10px; 
     
     /* Configuração da Rolagem e ÁREA DE SEGURANÇA */
@@ -166,9 +166,8 @@ body.home-page {
     overflow-y: auto;      
     overflow-x: hidden;
     
-    /* AUMENTADO DE 5px PARA 20px EM TODOS OS LADOS */
-    /* Isso cria espaço para a animação de pulsar acontecer sem cortar */
-    padding: 20px; 
+    /* Padding generoso para a sombra da "Luz de Emergência" não cortar */
+    padding: 30px; 
 }
 
 /* Barra de rolagem específica para os alertas */
@@ -184,7 +183,8 @@ body.home-page {
     box-shadow: 0 4px 12px rgba(0,0,0,0.4); 
     font-size: 13px; 
     opacity: 0; 
-    transform: translateX(100%); 
+    /* Mudança na animação: Vem da esquerda (-100%) */
+    transform: translateX(-100%); 
     transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
     cursor: pointer;
     
@@ -199,20 +199,20 @@ body.home-page {
 .toast.status-normal { background-color: var(--m3-color-success); color: #fff; font-weight: 500; }
 .toast.warning { background-color: var(--m3-color-warning); color: #000; font-weight: 500; }
 
-/* --- NOVO ESTILO: SUPER PRIORIDADE (100% DOWN) --- */
+/* --- NOVO ESTILO: SUPER PRIORIDADE (LUZ DE EMERGÊNCIA) --- */
 .toast.super-priority {
     background-color: #000000 !important; /* Fundo Preto */
     color: #FF1744 !important;            /* Texto Vermelho Neon */
-    border: 2px solid #D50000;            /* Borda vermelha forte */
-    box-shadow: 0 0 20px rgba(255, 23, 68, 0.6); /* Brilho neon */
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    animation: pulseCritical 1.2s infinite ease-in-out; /* Pulsar */
     
-    width: 350px;        /* Largura aumentada */
-    font-size: 1.2em;    /* Fonte aumentada */
-    /* Margem removida pois o padding do container já resolve */
+    /* EFEITO LUZ DE EMERGÊNCIA (SHADOW PULSE) */
+    animation: pulseCritical 1.5s infinite ease-in-out; 
+    
+    border: 2px solid #8b0000;            /* Borda inicial mais escura */
+    width: 350px;                         /* Largura aumentada */
+    font-size: 1.2em;                     /* Fonte aumentada */
 }
 
 /* Ícone Gigante no Super Priority */
@@ -222,12 +222,12 @@ body.home-page {
     animation: shakeIcon 0.5s infinite; /* Ícone tremendo */
 }
 
-/* Animações de Alerta */
+/* Animações de Alerta - LUZ DE EMERGÊNCIA */
 @keyframes pulseCritical {
-    0% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 0, 0, 0.5); }
-    /* Reduzido um pouco o scale físico, compensado com mais sombra */
-    50% { transform: scale(1.03); box-shadow: 0 0 30px rgba(255, 0, 0, 1); border-color: #FF5252; }
-    100% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 0, 0, 0.5); }
+    /* O elemento NÃO muda de tamanho (scale), apenas a sombra explode */
+    0% { box-shadow: 0 0 0 rgba(255, 23, 68, 0); border-color: #8b0000; }
+    50% { box-shadow: 0 0 50px rgba(255, 23, 68, 0.8); border-color: #FF1744; } /* Bloom forte */
+    100% { box-shadow: 0 0 0 rgba(255, 23, 68, 0); border-color: #8b0000; }
 }
 
 @keyframes shakeIcon {
