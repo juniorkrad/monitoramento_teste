@@ -94,14 +94,14 @@
                 let totalOnline = 0;
                 let totalOffline = 0;
                 const portData = {};
-                const localProblems = new Set(); // Conjunto de problemas desta OLT
+                const localProblems = new Set(); 
 
                 rows.forEach(columns => {
                     if (columns.length === 0) return;
                     
                     let placa, porta, isOnline;
 
-                    // --- LÓGICA DE PARSEAMENTO (Igual ao OLT Engine) ---
+                    // --- LÓGICA DE PARSEAMENTO ---
                     if (olt.type === 'nokia') {
                         const status = columns[4] || '';
                         const pon = columns[0];
@@ -118,7 +118,7 @@
                             if (olt.type === 'furukawa-10') {
                                 const parts = portStr.split('/');
                                 if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
-                            } else { // furukawa-2
+                            } else { 
                                 const match = portStr.match(/GPON(\d+)\/(\d+)/);
                                 if (match) { placa = match[1]; porta = match[2]; }
                             }
@@ -135,25 +135,43 @@
                     }
                 });
 
-                // --- NOVA LÓGICA DE ALERTAS DA OLT ---
-                let hasCritical = false; // Problema Vermelho (> 16 ou > 50%)
-                let hasWarning = false;  // Problema Amarelo (= 16)
+                // --- NOVA LÓGICA DE ALERTAS DA OLT (Hierarquia) ---
+                let hasSuperPriority = false; // 100% OFF (Porta ou OLT)
+                let hasCritical = false;      // Problema Vermelho (> 16 ou > 50%)
+                let hasWarning = false;       // Problema Amarelo (= 16)
 
-                for (const key in portData) {
-                    const { off, total } = portData[key];
-                    
-                    // Regra Crítica: Mais de 16 OFF OU Mais de 50% OFF (e tem gente na porta)
-                    if (off > 16 || (total > 0 && (off / total) >= 0.5)) {
-                        hasCritical = true;
-                    } 
-                    // Regra Atenção: Exatamente 16 OFF
-                    else if (off === 16) {
-                        hasWarning = true;
+                // 1. Verifica Blackout Geral da OLT (Se > 40% da OLT está off, é Super Prioridade)
+                const totalClients = totalOnline + totalOffline;
+                if (totalClients > 0 && (totalOffline / totalClients) > 0.40) {
+                    hasSuperPriority = true;
+                }
+
+                // 2. Verifica Porta a Porta
+                if (!hasSuperPriority) {
+                    for (const key in portData) {
+                        const { off, total } = portData[key];
+                        
+                        // Regra Super Prioridade: Porta com gente e 100% OFFLINE
+                        if (total > 0 && off === total) {
+                            hasSuperPriority = true;
+                            break; // Se achou um Super, já basta
+                        }
+                        
+                        // Regra Crítica: Mais de 16 OFF OU Mais de 50% OFF
+                        if (off > 16 || (total > 0 && (off / total) >= 0.5)) {
+                            hasCritical = true;
+                        } 
+                        // Regra Atenção: Exatamente 16 OFF
+                        else if (off === 16) {
+                            hasWarning = true;
+                        }
                     }
                 }
 
                 // Define o status final da OLT para o Alerta
-                if (hasCritical) {
+                if (hasSuperPriority) {
+                    localProblems.add(`[${olt.id}] STATUS::SUPER`);
+                } else if (hasCritical) {
                     localProblems.add(`[${olt.id}] STATUS::CRIT`);
                 } else if (hasWarning) {
                     localProblems.add(`[${olt.id}] STATUS::WARN`);
@@ -237,13 +255,11 @@
             const promises = oltsConfig.map(olt => fetchOltData(olt));
             const results = await Promise.all(promises);
             
-            // Unifica todos os problemas de todas as OLTs em um único SET
             const allProblems = new Set();
             results.forEach(oltProblems => {
                 oltProblems.forEach(problem => allProblems.add(problem));
             });
 
-            // Envia para o notificador central
             if (typeof checkAndNotifyForNewProblems === 'function') {
                 checkAndNotifyForNewProblems(allProblems);
             }
