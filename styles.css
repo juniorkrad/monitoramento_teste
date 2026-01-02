@@ -150,22 +150,25 @@ body.home-page {
 
 .footer { margin-top: 10px; padding: 8px 0; border-top: 1px solid var(--m3-outline); text-align: center; color: var(--m3-on-surface-variant); font-size: 0.85em; }
 
-/* --- TOAST NOTIFICATIONS (ATUALIZADO COM ROLAGEM) --- */
+/* --- TOAST NOTIFICATIONS (ATUALIZADO PARA EVITAR CORTES) --- */
 #toast-container { 
     position: fixed; 
     top: 20px; 
     right: 20px; 
-    z-index: 2001; /* Z-index aumentado para ficar acima do menu */
+    z-index: 2001;
     display: flex; 
     flex-direction: column; 
+    align-items: flex-end; /* Garante alinhamento à direita */
     gap: 10px; 
     
-    /* Configuração da Rolagem */
-    max-height: 80vh;      /* Limita altura a 80% da tela */
-    overflow-y: auto;      /* Barra de rolagem se necessário */
+    /* Configuração da Rolagem e ÁREA DE SEGURANÇA */
+    max-height: 80vh;      
+    overflow-y: auto;      
     overflow-x: hidden;
-    padding-right: 5px;
-    padding-bottom: 10px;
+    
+    /* AUMENTADO DE 5px PARA 20px EM TODOS OS LADOS */
+    /* Isso cria espaço para a animação de pulsar acontecer sem cortar */
+    padding: 20px; 
 }
 
 /* Barra de rolagem específica para os alertas */
@@ -207,15 +210,14 @@ body.home-page {
     letter-spacing: 0.5px;
     animation: pulseCritical 1.2s infinite ease-in-out; /* Pulsar */
     
-    /* --- CORREÇÕES SOLICITADAS --- */
-    width: 340px;        /* Aumentado para caber fonte maior */
-    font-size: 1.1em;    /* Fonte aumentada */
-    margin-right: 15px;  /* Margem de segurança para não cortar ao pulsar */
+    width: 350px;        /* Largura aumentada */
+    font-size: 1.2em;    /* Fonte aumentada */
+    /* Margem removida pois o padding do container já resolve */
 }
 
 /* Ícone Gigante no Super Priority */
 .toast.super-priority .toast-icon {
-    font-size: 32px !important;
+    font-size: 36px !important; /* Ícone ainda maior */
     color: #FF1744;
     animation: shakeIcon 0.5s infinite; /* Ícone tremendo */
 }
@@ -223,7 +225,7 @@ body.home-page {
 /* Animações de Alerta */
 @keyframes pulseCritical {
     0% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 0, 0, 0.5); }
-    /* Ajustado scale para 1.03 para não extrapolar, compensado com shadow maior */
+    /* Reduzido um pouco o scale físico, compensado com mais sombra */
     50% { transform: scale(1.03); box-shadow: 0 0 30px rgba(255, 0, 0, 1); border-color: #FF5252; }
     100% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 0, 0, 0.5); }
 }
