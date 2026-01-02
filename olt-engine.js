@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão Final com "Etiqueta" para Status (modal-status)
+// olt-engine.js - Versão 5.0 (Com Lógica SUPER PRIORIDADE)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -171,7 +171,10 @@ function startOltMonitoring(config) {
             if (!responseOlt.ok) throw new Error('Falha API');
             const dataOlt = await responseOlt.json();
             const rowsOlt = (dataOlt.values || []).slice(1);
+            
             const portData = {};
+            // Estatísticas para monitorar FALHA DE PLACA
+            const boardStats = {}; 
             const newProblems = new Set(); 
 
             rowsOlt.forEach(columns => {
@@ -208,19 +211,33 @@ function startOltMonitoring(config) {
 
                 const portKey = `${placa}/${porta}`;
                 
+                // Inicializa dados da Porta
                 if (!portData[portKey]) {
                     const infoExtra = getCircuitInfo(rowsCircuitos, config.id, placa, porta, config.type);
                     portData[portKey] = { online: 0, offline: 0, info: infoExtra };
                     window.OLT_CLIENTS_DATA[portKey] = [];
                 }
 
-                if (isOnline) portData[portKey].online++; else portData[portKey].offline++;
+                // Inicializa dados da Placa (Agregação para Super Prioridade)
+                if (!boardStats[placa]) {
+                    boardStats[placa] = { total: 0, offline: 0 };
+                }
+
+                // Contabiliza Porta
+                if (isOnline) {
+                    portData[portKey].online++;
+                } else {
+                    portData[portKey].offline++;
+                }
+                
+                // Contabiliza Placa
+                boardStats[placa].total++;
+                if (!isOnline) boardStats[placa].offline++;
 
                 // --- Lógica de Coleta de Dados para o POP-UP ---
                 let clientData = {};
                 
                 if (config.type === 'nokia') {
-                    // Nokia: Col B, C, E, H, I
                     clientData = {
                         colB: columns[1] || '',
                         colC: columns[2] || '',
@@ -230,7 +247,6 @@ function startOltMonitoring(config) {
                         statusRef: columns[4] || '' 
                     };
                 } else {
-                    // Furukawa: Col B, C, D, H
                     clientData = {
                         colB: columns[1] || '',
                         colC: columns[2] || '',
@@ -243,19 +259,52 @@ function startOltMonitoring(config) {
                 window.OLT_CLIENTS_DATA[portKey].push(clientData);
             });
 
-            // Renderização da Tabela
+            // --- 1. DETECÇÃO DE PROBLEMAS NA PLACA (Super Prioridade) ---
+            for (const placa in boardStats) {
+                const bStat = boardStats[placa];
+                // Se a placa tem clientes E todos estão offline
+                if (bStat.total > 0 && bStat.offline === bStat.total) {
+                    // Adiciona Alerta de Placa com a tag ::SUPER
+                    newProblems.add(`[${config.id} PLACA ${placa}] FALHA::SUPER`);
+                }
+            }
+
+            // --- 2. RENDERIZAÇÃO E PROBLEMAS DE PORTA ---
             for (const portKey in portData) {
                 const [placa, porta] = portKey.split('/');
                 const { online, offline, info } = portData[portKey];
                 const total = online + offline;
+                
                 let statusClass = 'status-normal';
                 let statusText = 'Normal';
+                let alertTag = '::NORMAL';
 
-                if (offline > 16) { statusClass = 'status-problema'; statusText = 'Problema'; }
-                else if (offline === 16) { statusClass = 'status-atencao'; statusText = 'Atenção'; }
-                else if (total > 0 && (offline / total) >= 0.5) { statusClass = 'status-problema'; statusText = 'Problema'; }
+                // --- HIERARQUIA DE ALARMES ---
+                
+                // 1. Super Prioridade (Porta 100% Down)
+                if (total > 0 && offline === total) {
+                    statusClass = 'status-problema'; // Mantém visual vermelho na tabela
+                    statusText = 'CRÍTICO';
+                    alertTag = '::SUPER';
+                }
+                // 2. Problema Comum (>16 ou >50%)
+                else if (offline > 16 || (total > 0 && (offline / total) >= 0.5)) {
+                    statusClass = 'status-problema';
+                    statusText = 'Problema';
+                    alertTag = '::CRIT';
+                }
+                // 3. Atenção (Exatamente 16)
+                else if (offline === 16) {
+                    statusClass = 'status-atencao';
+                    statusText = 'Atenção';
+                    alertTag = '::WARN';
+                }
 
-                if (statusClass === 'status-problema') newProblems.add(portKey);
+                // Se houver algum alarme, adiciona à lista para o notifications.js
+                if (alertTag !== '::NORMAL') {
+                    // Formato: [HEL-1 PORTA 01] ::SUPER
+                    newProblems.add(`[${config.id} PORTA ${porta}] ${alertTag}`);
+                }
 
                 // Passamos o config.type para a função openCircuitClients saber o que desenhar
                 const htmlRow = `
@@ -281,6 +330,7 @@ function startOltMonitoring(config) {
                 if (targetTbody) targetTbody.innerHTML += htmlRow;
             }
 
+            // Envia lista completa de problemas para o sistema de notificação
             if (typeof checkAndNotifyForNewProblems === 'function') checkAndNotifyForNewProblems(newProblems);
 
         } catch (error) { console.error('Erro na engine:', error); }
@@ -308,8 +358,8 @@ function openPortDetails(placa, porta, online, offline, total) {
     const modalContent = document.querySelector('.modal-content');
 
     // --- LÓGICA DE CLASSES DO MODAL (STATUS) ---
-    modalContent.classList.remove('modal-large'); // Remove o estilo de tabela grande
-    modalContent.classList.add('modal-status');   // Adiciona a etiqueta exclusiva de Status
+    modalContent.classList.remove('modal-large'); 
+    modalContent.classList.add('modal-status');   
 
     document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta} - Status`;
     
@@ -330,8 +380,8 @@ function openCircuitClients(placa, porta, circuitoNome, oltType) {
     const modalContent = document.querySelector('.modal-content');
 
     // --- LÓGICA DE CLASSES DO MODAL (CIRCUITO) ---
-    modalContent.classList.remove('modal-status'); // Remove a etiqueta de Status
-    modalContent.classList.add('modal-large');     // Adiciona estilo de tabela grande
+    modalContent.classList.remove('modal-status'); 
+    modalContent.classList.add('modal-large');     
     
     window.CURRENT_MODAL_TYPE = oltType; 
 

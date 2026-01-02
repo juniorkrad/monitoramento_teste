@@ -188,11 +188,49 @@ body.home-page {
     /* Garante estabilidade visual */
     flex-shrink: 0; 
     width: 300px;
+    display: flex;
+    align-items: center;
 }
 .toast.show { opacity: 1; transform: translateX(0); }
 .toast.problem { background-color: var(--m3-color-error); color: #fff; font-weight: 500; }
 .toast.status-normal { background-color: var(--m3-color-success); color: #fff; font-weight: 500; }
 .toast.warning { background-color: var(--m3-color-warning); color: #000; font-weight: 500; }
+
+/* --- NOVO ESTILO: SUPER PRIORIDADE (100% DOWN) --- */
+.toast.super-priority {
+    background-color: #000000 !important; /* Fundo Preto */
+    color: #FF1744 !important;            /* Texto Vermelho Neon */
+    border: 2px solid #D50000;            /* Borda vermelha forte */
+    box-shadow: 0 0 20px rgba(255, 23, 68, 0.6); /* Brilho neon */
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: pulseCritical 1.2s infinite ease-in-out; /* Pulsar */
+    width: 320px; /* Um pouco maior */
+}
+
+/* Ícone Gigante no Super Priority */
+.toast.super-priority .toast-icon {
+    font-size: 32px !important;
+    color: #FF1744;
+    animation: shakeIcon 0.5s infinite; /* Ícone tremendo */
+}
+
+/* Animações de Alerta */
+@keyframes pulseCritical {
+    0% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 0, 0, 0.5); }
+    50% { transform: scale(1.02); box-shadow: 0 0 25px rgba(255, 0, 0, 0.9); border-color: #FF5252; }
+    100% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 0, 0, 0.5); }
+}
+
+@keyframes shakeIcon {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(5deg); }
+    75% { transform: rotate(-5deg); }
+    100% { transform: rotate(0deg); }
+}
+
+/* ------------------------------------------------ */
 
 .main-content { display: flex; position: relative; }
 .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0.4s ease; }
@@ -630,7 +668,7 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     color: var(--m3-on-surface); 
     font-weight: 700;
     font-size: 1.1rem; 
-    padding: 15px;     
+    padding: 15px;      
     background-color: rgba(255, 255, 255, 0.03);
     margin-bottom: 5px;
     justify-content: center; /* Centraliza conteúdo do Home */
