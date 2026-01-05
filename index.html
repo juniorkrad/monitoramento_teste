@@ -135,14 +135,14 @@
                     }
                 });
 
-                // --- NOVA LÓGICA DE ALERTAS DA OLT (Hierarquia) ---
-                let hasSuperPriority = false; // 100% OFF (Porta ou OLT)
-                let hasCritical = false;      // Problema Vermelho (> 16 ou > 50%)
-                let hasWarning = false;       // Problema Amarelo (= 16)
+                // --- NOVA LÓGICA DE ALERTAS DA OLT (Hierarquia > 50%) ---
+                let hasSuperPriority = false; // Maioria Offline (> 50%)
+                let hasCritical = false;      // Problema (> 16 ou = 50%)
+                let hasWarning = false;       // Atenção (= 16)
 
-                // 1. Verifica Blackout Geral da OLT (Se > 40% da OLT está off, é Super Prioridade)
+                // 1. Verifica Blackout Geral da OLT (Se > 50% da OLT está off)
                 const totalClients = totalOnline + totalOffline;
-                if (totalClients > 0 && (totalOffline / totalClients) > 0.40) {
+                if (totalClients > 0 && (totalOffline / totalClients) > 0.5) {
                     hasSuperPriority = true;
                 }
 
@@ -151,14 +151,14 @@
                     for (const key in portData) {
                         const { off, total } = portData[key];
                         
-                        // Regra Super Prioridade: Porta com gente e 100% OFFLINE
-                        if (total > 0 && off === total) {
+                        // Regra Super Prioridade: Maioria Absoluta Offline (> 50%)
+                        if (total > 0 && (off / total) > 0.5) {
                             hasSuperPriority = true;
                             break; // Se achou um Super, já basta
                         }
                         
-                        // Regra Crítica: Mais de 16 OFF OU Mais de 50% OFF
-                        if (off > 16 || (total > 0 && (off / total) >= 0.5)) {
+                        // Regra Crítica: Mais de 16 OFF OU Exatamente 50% OFF
+                        if (off > 16 || (total > 0 && (off / total) === 0.5)) {
                             hasCritical = true;
                         } 
                         // Regra Atenção: Exatamente 16 OFF

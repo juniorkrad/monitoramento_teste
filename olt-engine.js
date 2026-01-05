@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão 5.0 (Com Lógica SUPER PRIORIDADE)
+// olt-engine.js - Versão 5.1 (Nova Lógica de Alarmes >50%)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -173,7 +173,6 @@ function startOltMonitoring(config) {
             const rowsOlt = (dataOlt.values || []).slice(1);
             
             const portData = {};
-            // Estatísticas para monitorar FALHA DE PLACA
             const boardStats = {}; 
             const newProblems = new Set(); 
 
@@ -218,7 +217,7 @@ function startOltMonitoring(config) {
                     window.OLT_CLIENTS_DATA[portKey] = [];
                 }
 
-                // Inicializa dados da Placa (Agregação para Super Prioridade)
+                // Inicializa dados da Placa
                 if (!boardStats[placa]) {
                     boardStats[placa] = { total: 0, offline: 0 };
                 }
@@ -259,12 +258,11 @@ function startOltMonitoring(config) {
                 window.OLT_CLIENTS_DATA[portKey].push(clientData);
             });
 
-            // --- 1. DETECÇÃO DE PROBLEMAS NA PLACA (Super Prioridade) ---
+            // --- 1. DETECÇÃO DE PROBLEMAS NA PLACA (Super Prioridade de Hardware) ---
             for (const placa in boardStats) {
                 const bStat = boardStats[placa];
                 // Se a placa tem clientes E todos estão offline
                 if (bStat.total > 0 && bStat.offline === bStat.total) {
-                    // Adiciona Alerta de Placa com a tag ::SUPER
                     newProblems.add(`[${config.id} PLACA ${placa}] FALHA::SUPER`);
                 }
             }
@@ -279,21 +277,21 @@ function startOltMonitoring(config) {
                 let statusText = 'Normal';
                 let alertTag = '::NORMAL';
 
-                // --- HIERARQUIA DE ALARMES ---
+                // --- NOVA HIERARQUIA DE ALARMES ---
                 
-                // 1. Super Prioridade (Porta 100% Down)
-                if (total > 0 && offline === total) {
-                    statusClass = 'status-problema'; // Mantém visual vermelho na tabela
+                // 1. SUPER (Maioria Absoluta: > 50% Offline)
+                if (total > 0 && (offline / total) > 0.5) {
+                    statusClass = 'status-problema'; // Vermelho na tabela
                     statusText = 'CRÍTICO';
                     alertTag = '::SUPER';
                 }
-                // 2. Problema Comum (>16 ou >50%)
-                else if (offline > 16 || (total > 0 && (offline / total) >= 0.5)) {
+                // 2. PROBLEMA (>16 ou ==50%)
+                else if (offline > 16 || (total > 0 && (offline / total) === 0.5)) {
                     statusClass = 'status-problema';
                     statusText = 'Problema';
                     alertTag = '::CRIT';
                 }
-                // 3. Atenção (Exatamente 16)
+                // 3. ATENÇÃO (==16)
                 else if (offline === 16) {
                     statusClass = 'status-atencao';
                     statusText = 'Atenção';
@@ -302,11 +300,9 @@ function startOltMonitoring(config) {
 
                 // Se houver algum alarme, adiciona à lista para o notifications.js
                 if (alertTag !== '::NORMAL') {
-                    // Formato: [HEL-1 PORTA 01] ::SUPER
                     newProblems.add(`[${config.id} PORTA ${porta}] ${alertTag}`);
                 }
 
-                // Passamos o config.type para a função openCircuitClients saber o que desenhar
                 const htmlRow = `
                     <tr>
                         <td>Porta ${porta.padStart(2, '0')}</td>
@@ -330,7 +326,6 @@ function startOltMonitoring(config) {
                 if (targetTbody) targetTbody.innerHTML += htmlRow;
             }
 
-            // Envia lista completa de problemas para o sistema de notificação
             if (typeof checkAndNotifyForNewProblems === 'function') checkAndNotifyForNewProblems(newProblems);
 
         } catch (error) { console.error('Erro na engine:', error); }
