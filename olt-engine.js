@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão 5.1 (Nova Lógica de Alarmes >50%)
+// olt-engine.js - Versão 5.2 (Sem cabeçalhos técnicos no Modal)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -411,18 +411,13 @@ function openCircuitClients(placa, porta, circuitoNome, oltType) {
 
     const thead = document.getElementById('clients-thead');
     const tbody = document.getElementById('clients-tbody');
+    
+    // --- MUDANÇA AQUI: LIMPA O HEADER E NÃO ADICIONA NADA ---
     thead.innerHTML = '';
     tbody.innerHTML = '';
 
     const portKey = `${placa}/${porta}`;
     const clients = window.OLT_CLIENTS_DATA[portKey] || [];
-
-    // --- DESENHA O CABEÇALHO ---
-    if (oltType === 'nokia') {
-        thead.innerHTML = `<tr><th>Col B</th><th>Col C</th><th>Col E</th><th>Col H</th><th>Col I</th></tr>`;
-    } else {
-        thead.innerHTML = `<tr><th>Col B</th><th>Col C</th><th>Col D</th><th>Col H</th></tr>`;
-    }
 
     // --- DESENHA AS LINHAS ---
     if (clients.length === 0) {
