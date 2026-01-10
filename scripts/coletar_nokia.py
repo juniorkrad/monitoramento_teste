@@ -1,6 +1,6 @@
 # ==============================================================================
-# SCRIPT DEDICADO: OLTs NOKIA - MODO LOCAL (JSON)
-# Atualizado: Salva em dados.json na raiz do projeto (sem Google Sheets)
+# SCRIPT DEDICADO: OLTs NOKIA - MODO LOCAL (JSON DINÂMICO + METADADOS)
+# Atualizado: Gera arquivos por OLT (ex: dados_mgp.json) com Data/Hora
 # ==============================================================================
 
 import pandas as pd
@@ -12,7 +12,7 @@ import sys
 import time
 import os
 import json
-from tqdm import tqdm  # Nova biblioteca para a barra de progresso
+from tqdm import tqdm  # Biblioteca para a barra de progresso
 
 def coletar_e_atualizar_nokia(config_file):
     script_start_time = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
@@ -109,20 +109,37 @@ def coletar_e_atualizar_nokia(config_file):
         print("⚠️ AVISO: Nenhuma linha de dados válida foi extraída.")
         return
 
-    # --- SALVAR ARQUIVO JSON LOCAL ---
+    # --- SALVAR ARQUIVO JSON ESPECÍFICO (COM METADADOS) ---
     print(f"✅ {len(dados)} registros processados.")
     
     try:
-        # Define o caminho: volta uma pasta (..) e salva como dados.json
-        caminho_json = os.path.join(os.path.dirname(__file__), '../dados.json')
+        # 1. Extrai o ID da OLT do nome do arquivo (ex: config-mgp.ini -> mgp)
+        nome_arquivo_ini = os.path.basename(config_file)
+        nome_olt = nome_arquivo_ini.replace('config-', '').replace('.ini', '').lower()
         
-        df = pd.DataFrame(dados)
+        # 2. Define o nome do arquivo JSON específico (ex: dados_mgp.json)
+        # O arquivo será salvo um nível acima (pasta raiz do site)
+        nome_json = f'dados_{nome_olt}.json'
+        caminho_json = os.path.join(os.path.dirname(__file__), f'../{nome_json}')
         
-        # Salva em JSON sobrescrevendo o arquivo anterior (ou criando se não existir)
-        df.to_json(caminho_json, orient='values', force_ascii=False)
+        # 3. Cria a estrutura com Metadados + Dados
+        pacote_final = {
+            "meta": {
+                "atualizado_em": script_start_time,
+                "total_registros": len(dados),
+                "tipo_olt": "nokia",
+                "id_olt": nome_olt
+            },
+            "dados": dados
+        }
         
-        print(f"💾 Arquivo salvo com sucesso em: {os.path.abspath(caminho_json)}")
-        print(f"🎉 SUCESSO! Dados atualizados localmente.")
+        # 4. Salva usando json.dump
+        with open(caminho_json, 'w', encoding='utf-8') as f:
+            json.dump(pacote_final, f, ensure_ascii=False, indent=2)
+        
+        print(f"💾 Arquivo salvo com sucesso: {nome_json}")
+        print(f"📂 Caminho completo: {os.path.abspath(caminho_json)}")
+        print(f"🎉 SUCESSO! Dados de {nome_olt} atualizados.")
         
     except Exception as e:
         print(f"❌ ERRO ao salvar arquivo JSON: {e}")
@@ -130,5 +147,6 @@ def coletar_e_atualizar_nokia(config_file):
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("ERRO: É necessário fornecer o nome do arquivo de configuração como argumento.")
+        print("Exemplo: python3 coletar_nokia.py config-mgp.ini")
     else:
         coletar_e_atualizar_nokia(sys.argv[1])

@@ -1,6 +1,6 @@
 # ==============================================================================
-# SCRIPT DEDICADO: OLTs FURUKAWA - MODO LOCAL (JSON)
-# Atualizado: Salva em dados.json na raiz do projeto (sem Google Sheets)
+# SCRIPT DEDICADO: OLTs FURUKAWA - MODO LOCAL (JSON DINÂMICO + METADADOS)
+# Atualizado: Gera arquivos por OLT (ex: dados_sbo1.json) com Data/Hora
 # ==============================================================================
 
 import pandas as pd
@@ -165,27 +165,42 @@ def coletar_furukawa_manual(config_file):
         print("⚠️ AVISO: Nenhuma linha válida encontrada.")
         return
 
-    # --- SALVAR ARQUIVO JSON LOCAL ---
+    # --- SALVAR ARQUIVO JSON LOCAL (COM METADADOS) ---
     print(f"✅ {len(dados_finais)} registros processados.")
     
     try:
-        # Define o caminho: volta uma pasta (..) e salva como dados.json
-        caminho_json = os.path.join(os.path.dirname(__file__), '../dados.json')
+        # 1. Extrai o ID da OLT do nome do arquivo (ex: config-sbo1.ini -> sbo1)
+        nome_arquivo_ini = os.path.basename(config_file)
+        nome_olt = nome_arquivo_ini.replace('config-', '').replace('.ini', '').lower()
         
-        # Converte para DataFrame e salva em JSON
-        df = pd.DataFrame(dados_finais)
+        # 2. Define o nome do arquivo JSON específico (ex: dados_sbo1.json)
+        nome_json = f'dados_{nome_olt}.json'
+        caminho_json = os.path.join(os.path.dirname(__file__), f'../{nome_json}')
         
-        # Orient 'values' cria uma lista de listas, similar à estrutura da planilha
-        df.to_json(caminho_json, orient='values', force_ascii=False)
+        # 3. Cria a estrutura com Metadados + Dados
+        pacote_final = {
+            "meta": {
+                "atualizado_em": script_start_time,
+                "total_registros": len(dados_finais),
+                "tipo_olt": "furukawa",
+                "id_olt": nome_olt
+            },
+            "dados": dados_finais
+        }
         
-        print(f"💾 Arquivo salvo com sucesso em: {os.path.abspath(caminho_json)}")
-        print(f"🎉 SUCESSO! Dados atualizados localmente.")
+        # 4. Salva usando json.dump
+        with open(caminho_json, 'w', encoding='utf-8') as f:
+            json.dump(pacote_final, f, ensure_ascii=False, indent=2)
+        
+        print(f"💾 Arquivo salvo com sucesso: {nome_json}")
+        print(f"📂 Caminho completo: {os.path.abspath(caminho_json)}")
+        print(f"🎉 SUCESSO! Dados de {nome_olt} atualizados.")
 
     except Exception as e:
         print(f"❌ ERRO ao salvar arquivo JSON: {e}")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("ERRO: Forneça o arquivo .ini")
+        print("ERRO: Forneça o arquivo .ini. Exemplo: python3 coletar_furukawa.py config-sbo1.ini")
     else:
         coletar_furukawa_manual(sys.argv[1])
