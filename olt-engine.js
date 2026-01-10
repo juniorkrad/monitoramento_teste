@@ -76,7 +76,8 @@ function startOltMonitoring(config) {
             if (tbody) tbody.innerHTML = '';
         }
 
-        const url = `dados.json?t=${new Date().getTime()}`;
+        // Pega o ID da OLT que está no config da página (ex: 'mgp') e monta o nome do arquivo
+        const url = `dados_${config.id}.json?t=${new Date().getTime()}`;
 
         try {
             // Carrega o CSV atualizado e depois o JSON

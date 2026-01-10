@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HEL-1</title>
+    <title>HEL-1 | Monitoramento</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">    
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
@@ -14,19 +16,51 @@
     <div class="page-container">
         <div id="header-placeholder"></div>
 
-        <div class="grid-container">
+        <main class="main-content">
+            
+            <div class="stats-row">
+                <div class="stat-card">
+                    <h3>Total</h3>
+                    <p id="stat-total" class="stat-number">-</p>
+                </div>
+                <div class="stat-card success">
+                    <h3>Online</h3>
+                    <p id="stat-online" class="stat-number">-</p>
+                </div>
+                <div class="stat-card error">
+                    <h3>Offline</h3>
+                    <p id="stat-offline" class="stat-number">-</p>
+                </div>
             </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Interface</th>
+                            <th>Status</th>
+                            <th>Serial</th>
+                            <th>Descrição</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <tr><td colspan="4" class="loading-cell">Carregando dados locais...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </main>
     </div>
 
     <div id="footer-placeholder"></div>
-    
-    <script src="layout.js"></script>       
-    <script src="notifications.js"></script> 
-    <script src="olt-engine.js"></script>    
-    
+
+    <script src="layout.js"></script>
+    <script src="notifications.js"></script>
+    <script src="olt-engine.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. Carrega o Cabeçalho e Rodapé
+            // 1. Carrega Layout
             loadHeader({
                 title: "HEL-1",
                 buttonText: "Home",
@@ -34,12 +68,17 @@
             });
             loadFooter();
 
-            // 2. Inicia o Monitoramento usando a Engine Centralizada
-            startOltMonitoring({
-                id: 'HEL1',     // Nome da aba na planilha
-                type: 'nokia',  // Tipo de lógica (Nokia conta UP/DOWN)
-                boards: 8       // Quantidade de placas (cria 8 tabelas)
-            });
+            // 2. Configura a OLT
+            const config = {
+                id: 'HEL-1',    // O script vai transformar em: dados_hel1.json
+                type: 'nokia'   // Tipo de OLT
+            };
+
+            // 3. Inicia o Motor Local
+            startOltEngine(config);
+            
+            // Atualiza a cada 5 minutos
+            setInterval(() => startOltEngine(config), 300000);
         });
     </script>
 </body>

@@ -1,5 +1,5 @@
 // ==============================================================================
-// layout.js - Construtor de Layout e Menu Inteligente (Versão 2.2 - Grid 2 Colunas)
+// layout.js - Construtor de Layout Local (Versão 3.0 - JSON Edition)
 // ==============================================================================
 
 // --- LISTA MESTRA DE PÁGINAS ---
@@ -72,6 +72,7 @@ function loadHeader(config) {
         }
     }
 
+    // Cria o header com o placeholder de timestamp
     headerPlaceholder.innerHTML = `
         <header class="header">
             <div class="logo-title-group">
@@ -102,10 +103,13 @@ function loadSidebar(currentPage) {
     let linksHtml = '';
     
     OLT_MENU_LIST.forEach(olt => {
-        if (olt.file === currentPage) return; 
+        // Marca o link ativo
+        const isActive = olt.file === currentPage ? 'active-link' : '';
+        // Se quiser ocultar a própria página, descomente a linha abaixo:
+        // if (olt.file === currentPage) return; 
 
         linksHtml += `
-            <a href="${olt.file}" class="sidebar-link">
+            <a href="${olt.file}" class="sidebar-link ${isActive}">
                 <span class="material-symbols-rounded">router</span>
                 ${olt.name}
             </a>
@@ -162,56 +166,70 @@ function loadFooter() {
     const currentYear = new Date().getFullYear();
     footerPlaceholder.innerHTML = `
         <footer class="footer">
-            <p>© ${currentYear} Painel de Monitoramento | Desenvolvido por 👤@juniorkrad + 🤖Gemini</p>
+            <p>© ${currentYear} Painel de Monitoramento | Infraestrutura Local</p>
         </footer>
     `;
 }
 
 /**
- * Timestamp
+ * Timestamp LOCAL (Lê do arquivo JSON)
+ * @param {string} jsonFileName - Nome do arquivo JSON (ex: 'dados_mgp.json')
  */
-async function loadTimestamp(sheetTab, apiKey, sheetId) {
+async function loadTimestamp(jsonFileName) {
     const timestampEl = document.getElementById('update-timestamp');
     if (!timestampEl) return;
 
-    const range = `${sheetTab}!K1`; 
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+    // Adiciona timestamp para evitar cache do navegador
+    const url = `${jsonFileName}?t=${new Date().getTime()}`;
 
     try {
         const response = await fetch(url);
-        if (!response.ok) throw new Error('Falha timestamp');
+        
+        if (!response.ok) {
+            throw new Error(`Arquivo ${jsonFileName} não encontrado`);
+        }
+        
         const data = await response.json();
         
-        if (data.values && data.values.length > 0 && data.values[0][0]) {
-            const rawText = data.values[0][0];
-            const cleanText = rawText.replace('Atualizado em:', '').trim();
-            const parts = cleanText.split(' ');
+        // Verifica se existe o metadado de atualização
+        if (data.meta && data.meta.atualizado_em) {
+            const rawText = data.meta.atualizado_em; // Ex: "10/01/2026 14:30:00"
+            const parts = rawText.split(' '); // Divide data e hora
             
             let htmlFormatado = '';
+            
             if (parts.length >= 2) {
+                // Formato completo: Data + Hora
                 htmlFormatado = `
                     <span class="material-symbols-rounded">calendar_today</span> ${parts[0]}
                     <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
                     <span class="material-symbols-rounded">schedule</span> ${parts[1]}
                 `;
             } else {
-                htmlFormatado = `<span class="material-symbols-rounded">schedule</span> ${cleanText}`;
+                // Apenas texto
+                htmlFormatado = `<span class="material-symbols-rounded">schedule</span> ${rawText}`;
             }
             
-            if (timestampEl.getAttribute('data-val') !== cleanText) {
+            // Só atualiza o DOM se o texto mudou (evita piscar)
+            if (timestampEl.getAttribute('data-val') !== rawText) {
                 timestampEl.innerHTML = htmlFormatado;
-                timestampEl.setAttribute('data-val', cleanText);
+                timestampEl.setAttribute('data-val', rawText);
                 timestampEl.style.color = 'var(--m3-on-surface-variant)';
+                
+                // Reinicia a animação CSS
                 timestampEl.classList.remove('updated-anim');
                 void timestampEl.offsetWidth; 
                 timestampEl.classList.add('updated-anim');
             }
         } else {
-            timestampEl.innerHTML = `<span class="material-symbols-rounded">error</span> S/ Dados`;
+            timestampEl.innerHTML = `<span class="material-symbols-rounded">warning</span> Formato Inválido`;
         }
+        
     } catch (error) {
+        console.warn('Erro ao carregar timestamp:', error);
+        // Só mostra erro se ainda estiver no estado inicial de "Aguardando"
         if (timestampEl.textContent.includes('Aguardando')) {
-             timestampEl.innerHTML = `<span class="material-symbols-rounded">wifi_off</span> Erro`;
+             timestampEl.innerHTML = `<span class="material-symbols-rounded">cloud_off</span> Offline`;
              timestampEl.style.color = 'var(--m3-color-error)';
         }
     }
