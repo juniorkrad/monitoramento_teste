@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.ini
+*.log
+dados.json
+circuitos.csv
