@@ -135,7 +135,7 @@
                     }
                 });
 
-                // --- NOVA LÓGICA DE ALERTAS DA OLT (Hierarquia > 50%) ---
+                // --- NOVA LÓGICA DE ALERTAS DA OLT ---
                 let hasSuperPriority = false; // Maioria Offline (> 50%)
                 let hasCritical = false;      // Problema (> 16 ou = 50%)
                 let hasWarning = false;       // Atenção (= 16)
@@ -151,6 +151,12 @@
                     for (const key in portData) {
                         const { off, total } = portData[key];
                         
+                        // === NOVA REGRA DE FILTRO (ANTI-ALARME FALSO) ===
+                        // Se a porta tiver menos de 5 clientes NO TOTAL, ignoramos as regras de porcentagem.
+                        if (total < 5) {
+                            continue; 
+                        }
+
                         // Regra Super Prioridade: Maioria Absoluta Offline (> 50%)
                         if (total > 0 && (off / total) > 0.5) {
                             hasSuperPriority = true;
