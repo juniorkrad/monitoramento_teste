@@ -33,36 +33,35 @@
     <script src="notifications.js"></script>
 
     <script>
-        // --- CONFIGURAÇÃO DAS OLTS ---
         const oltsConfig = [
-            { id: 'HEL-1',  type: 'nokia' },
-            { id: 'HEL-2',  type: 'nokia' },
-            { id: 'PQA-1',  type: 'nokia' },
-            { id: 'PSV-1',  type: 'nokia' },
-            { id: 'MGP',    type: 'nokia' },
-            { id: 'LTXV-1', type: 'furukawa-10' }, 
-            { id: 'LTXV-2', type: 'furukawa-2' },
-            { id: 'PQA-2',  type: 'furukawa-2' },
-            { id: 'PQA-3',  type: 'furukawa-2' },
-            { id: 'SB-1',   type: 'furukawa-2' },
-            { id: 'SB-2',   type: 'furukawa-2' },
-            { id: 'SB-3',   type: 'furukawa-2' },
-            { id: 'PSV-7',  type: 'furukawa-2' },
-            { id: 'SBO-1',  type: 'furukawa-10' },
-            { id: 'SBO-2',  type: 'furukawa-2' },
-            { id: 'SBO-3',  type: 'furukawa-2' },
-            { id: 'SBO-4',  type: 'furukawa-2' },
+            { id: 'HEL-1', sheetTab: 'HEL1', type: 'nokia' },
+            { id: 'HEL-2', sheetTab: 'HEL2', type: 'nokia' },
+            { id: 'PQA-1', sheetTab: 'PQA1', type: 'nokia' },
+            { id: 'PSV-1', sheetTab: 'PSV1', type: 'nokia' },
+            { id: 'MGP',   sheetTab: 'MGP',  type: 'nokia' },
+            { id: 'LTXV-1', sheetTab: 'LTXV1', type: 'furukawa-10' }, 
+            { id: 'LTXV-2', sheetTab: 'LTXV2', type: 'furukawa-2' },
+            { id: 'PQA-2',  sheetTab: 'PQA2',  type: 'furukawa-2' },
+            { id: 'PQA-3',  sheetTab: 'PQA3',  type: 'furukawa-2' },
+            { id: 'SB-1',   sheetTab: 'SB1',   type: 'furukawa-2' },
+            { id: 'SB-2',   sheetTab: 'SB2',   type: 'furukawa-2' },
+            { id: 'SB-3',   sheetTab: 'SB3',   type: 'furukawa-2' },
+            { id: 'PSV-7',  sheetTab: 'PSV7',  type: 'furukawa-2' },
+            { id: 'SBO-1',  sheetTab: 'SBO1',  type: 'furukawa-10' },
+            { id: 'SBO-2',  sheetTab: 'SBO2',  type: 'furukawa-2' },
+            { id: 'SBO-3',  sheetTab: 'SBO3',  type: 'furukawa-2' },
+            { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa-2' },
         ];
 
-        const REFRESH_INTERVAL_SECONDS = 300; // 5 minutos
+        const API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
+        const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
+        const REFRESH_INTERVAL_SECONDS = 300;
         
-        // Cria o esqueleto dos Cards na tela
         function createCardPlaceholders() {
             const grid = document.getElementById('overview-grid');
             grid.innerHTML = '';
             oltsConfig.forEach(olt => {
                 const pageUrl = olt.id.toLowerCase().replace('-', '') + '.html';
-                
                 grid.innerHTML += `
                     <div class="overview-card" id="card-${olt.id}">
                         <div class="card-header">
@@ -74,7 +73,7 @@
                         </div>
                         <div class="card-body">
                              <div class="card-stats">
-                                <p>Aguardando dados...</p>
+                                <p>Carregando...</p>
                             </div>
                         </div>
                     </div>
@@ -82,23 +81,15 @@
             });
         }
         
-        // Busca dados do JSON LOCAL
         async function fetchOltData(olt) {
-            // Gera o nome do arquivo: HEL-1 -> hel1 -> dados_hel1.json
-            const fileId = olt.id.toLowerCase().replace('-', '');
-            const jsonFileName = `dados_${fileId}.json`;
-            
-            // Adiciona timestamp para evitar cache do navegador
-            const url = `${jsonFileName}?t=${new Date().getTime()}`;
+            const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:C`;
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
             
             try {
                 const response = await fetch(url);
-                if (!response.ok) throw new Error(`Arquivo ${jsonFileName} não encontrado`);
-                
-                const jsonData = await response.json();
-                
-                // O Python salva em { meta: {...}, dados: [...] }
-                const rows = jsonData.dados || [];
+                if (!response.ok) throw new Error(`Falha ao buscar dados da aba ${olt.sheetTab}`);
+                const data = await response.json();
+                const rows = (data.values || []).slice(1);
                 
                 let totalOnline = 0;
                 let totalOffline = 0;
@@ -106,27 +97,23 @@
                 const localProblems = new Set(); 
 
                 rows.forEach(columns => {
-                    if (!columns || columns.length === 0) return;
+                    if (columns.length === 0) return;
                     
                     let placa, porta, isOnline;
 
-                    // --- LÓGICA DE PARSEAMENTO (Local JSON) ---
+                    // --- LÓGICA DE PARSEAMENTO ---
                     if (olt.type === 'nokia') {
-                        // Nokia: Status na coluna index 4 (E), Porta index 0 (A)
                         const status = columns[4] || '';
                         const pon = columns[0];
                         isOnline = status.trim().toLowerCase().includes('up');
-                        
                         if (pon) {
                             const parts = pon.split('/');
                             if (parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
                         }
-                    } else { 
-                        // Furukawa: Status na coluna index 2 (C), Porta index 0 (A)
+                    } else { // Furukawa
                         const status = columns[2] || '';
                         const portStr = columns[0];
                         isOnline = status.trim().toLowerCase() === 'active';
-                        
                         if (portStr) {
                             if (olt.type === 'furukawa-10') {
                                 const parts = portStr.split('/');
@@ -148,10 +135,10 @@
                     }
                 });
 
-                // --- LÓGICA DE ALERTAS DA OLT ---
-                let hasSuperPriority = false;
-                let hasCritical = false;
-                let hasWarning = false;
+                // --- NOVA LÓGICA DE ALERTAS DA OLT (Hierarquia > 50%) ---
+                let hasSuperPriority = false; // Maioria Offline (> 50%)
+                let hasCritical = false;      // Problema (> 16 ou = 50%)
+                let hasWarning = false;       // Atenção (= 16)
 
                 // 1. Verifica Blackout Geral da OLT (Se > 50% da OLT está off)
                 const totalClients = totalOnline + totalOffline;
@@ -164,16 +151,10 @@
                     for (const key in portData) {
                         const { off, total } = portData[key];
                         
-                        // === NOVA REGRA: QUÓRUM MÍNIMO ===
-                        // Se a porta tem menos de 5 clientes, ignora alarmes de porcentagem
-                        if (total < 5) {
-                            continue; 
-                        }
-
                         // Regra Super Prioridade: Maioria Absoluta Offline (> 50%)
                         if (total > 0 && (off / total) > 0.5) {
                             hasSuperPriority = true;
-                            break;
+                            break; // Se achou um Super, já basta
                         }
                         
                         // Regra Crítica: Mais de 16 OFF OU Exatamente 50% OFF
@@ -187,15 +168,20 @@
                     }
                 }
 
-                if (hasSuperPriority) localProblems.add(`[${olt.id}] STATUS::SUPER`);
-                else if (hasCritical) localProblems.add(`[${olt.id}] STATUS::CRIT`);
-                else if (hasWarning) localProblems.add(`[${olt.id}] STATUS::WARN`);
+                // Define o status final da OLT para o Alerta
+                if (hasSuperPriority) {
+                    localProblems.add(`[${olt.id}] STATUS::SUPER`);
+                } else if (hasCritical) {
+                    localProblems.add(`[${olt.id}] STATUS::CRIT`);
+                } else if (hasWarning) {
+                    localProblems.add(`[${olt.id}] STATUS::WARN`);
+                }
 
                 updateCardUI(olt.id, { onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type });
                 return localProblems;
 
             } catch (error) {
-                console.warn(`Erro ao carregar OLT ${olt.id}:`, error);
+                console.error(`Erro para OLT ${olt.id}:`, error);
                 updateCardUI(olt.id, { error: true });
                 return new Set();
             }
@@ -204,15 +190,10 @@
         function updateCardUI(oltId, data) {
             const card = document.getElementById(`card-${oltId}`);
             if (!card) return;
-            
             if (data.error) {
-                const statsDiv = card.querySelector('.card-stats');
-                if(!statsDiv.innerHTML.includes('Total')) {
-                    statsDiv.innerHTML = `<p style="color:var(--m3-color-error)"><span class="material-symbols-rounded" style="vertical-align:middle">cloud_off</span> Offline</p>`;
-                }
+                card.querySelector('.card-stats').innerHTML = `<p>Erro ao carregar.</p>`;
                 return;
             }
-            
             const { onlineCount, offlineCount, type } = data;
             const total = onlineCount + offlineCount;
             const onlinePercent = total > 0 ? (onlineCount / total) * 100 : 0;
@@ -261,6 +242,11 @@
 
         async function runOverview() {
             const timestampEl = document.getElementById('update-timestamp');
+            if (timestampEl) {
+                if (timestampEl.textContent === "" || timestampEl.textContent === "Aguardando dados...") {
+                    timestampEl.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Buscando dados...';
+                }
+            }
             
             if(document.getElementById('overview-grid').innerHTML.trim() === "") {
                 createCardPlaceholders();
@@ -278,11 +264,11 @@
                 checkAndNotifyForNewProblems(allProblems);
             }
             
+            const now = new Date();
+            const dataHoje = now.toLocaleDateString('pt-BR');
+            const horaAgora = now.toLocaleTimeString('pt-BR');
+            
             if(timestampEl) {
-                const now = new Date();
-                const dataHoje = now.toLocaleDateString('pt-BR');
-                const horaAgora = now.toLocaleTimeString('pt-BR');
-                
                 timestampEl.innerHTML = `
                     <span class="material-symbols-rounded">calendar_today</span> ${dataHoje}
                     <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
