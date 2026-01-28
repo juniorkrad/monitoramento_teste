@@ -153,7 +153,7 @@ function toggleSidebar() {
 }
 
 /**
- * Rodapé
+ * Rodapé (ATUALIZADO)
  */
 function loadFooter() {
     const footerPlaceholder = document.getElementById('footer-placeholder');
@@ -163,6 +163,9 @@ function loadFooter() {
     footerPlaceholder.innerHTML = `
         <footer class="footer">
             <p>© ${currentYear} Painel de Monitoramento | Desenvolvido por 👤@juniorkrad + 🤖Gemini</p>
+            <p style="font-size: 0.75rem; margin-top: 6px; opacity: 0.7; font-weight: 400;">
+                Todos os direitos reservados. Projeto registrado. Proibida a reprodução não autorizada.
+            </p>
         </footer>
     `;
 }
