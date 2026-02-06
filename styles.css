@@ -16,6 +16,8 @@
     --m3-color-warning: #e6a23c;
     --m3-color-error: #f56c6c;
     --font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    /* NOVA VARIÁVEL DE FONTE PARA NÚMEROS */
+    --font-family-mono: 'Roboto Mono', monospace; 
 }
 
 /* --- SCROLLBAR PERSONALIZADA (GERAL) --- */
@@ -537,17 +539,21 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     gap: 10px; /* Gap fixo de 10px */
 }
 
-/* Coluna 1: O Número */
-.stat-item span { 
+/* --- CLASSE NOVA PARA NÚMEROS (ROBOTO MONO) --- */
+.stat-number {
+    font-family: var(--font-family-mono); /* Aplica a nova fonte */
     font-size: 1.8em; 
-    font-weight: 700; 
+    font-weight: 500; /* Peso 500 fica melhor em Mono */
     line-height: 1; 
-    
-    /* Alinhado à ESQUERDA */
     text-align: left; 
-    
-    /* Removemos min-width pois a coluna já é fixa em 70px */
     width: 100%;
+    letter-spacing: -0.5px; /* Mono tende a ser largo, leve aperto */
+}
+
+/* Ajuste específico para o número da porcentagem no gráfico */
+.chart-text .stat-number {
+    font-size: 1.2em; /* Um pouco menor para caber no donut */
+    text-align: center;
 }
 
 /* Coluna 2: O Texto + Ícone */
@@ -568,8 +574,8 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     font-size: 20px;
 }
 
-.stat-item.online span { color: var(--m3-color-success); }
-.stat-item.offline span { color: var(--m3-color-error); }
+.stat-item.online .stat-number { color: var(--m3-color-success); }
+.stat-item.offline .stat-number { color: var(--m3-color-error); }
 
 /* --- GRÁFICO FIXO ABSOLUTO À DIREITA --- */
 .donut-chart-container { 
