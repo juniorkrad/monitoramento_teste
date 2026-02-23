@@ -118,7 +118,7 @@ function loadSidebar(currentPage) {
         <div class="sidebar" id="main-sidebar">
             <div class="sidebar-header">
                 <h3>NAVEGAÇÃO</h3>
-                <button class="close-btn" onclick="toggleSidebar()">
+                <button class="close-btn" onclick="toggleSidebar()" style="background: none; border: none; color: var(--m3-on-surface-variant); cursor: pointer; padding: 0;">
                     <span class="material-symbols-rounded" style="font-size: 28px;">close</span>
                 </button>
             </div>
@@ -127,6 +127,11 @@ function loadSidebar(currentPage) {
                 <a href="index.html" class="sidebar-link home-highlight">
                     <span class="material-symbols-rounded" style="font-size: 28px;">home</span>
                     HOME
+                </a>
+                
+                <a href="equipamentos.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px;">
+                    <span class="material-symbols-rounded" style="font-size: 24px;">dns</span>
+                    EQUIPAMENTOS
                 </a>
                 
                 <div class="sidebar-divider"></div>
