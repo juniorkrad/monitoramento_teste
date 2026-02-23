@@ -627,8 +627,8 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 
 /* Ajusta o grid interno dos números principais */
 .global-card .stat-item {
-    grid-template-columns: 110px 1fr; 
-    gap: 15px;
+    grid-template-columns: 150px 1fr; /* Aumentado de 110px para 150px para caber a fonte 3.4em */
+    gap: 20px; /* Aumentado de 15px para dar mais respiro entre o número e o texto */
     margin-bottom: 12px;
 }
 
