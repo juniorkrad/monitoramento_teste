@@ -784,7 +784,7 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     .global-card .card-body > div {
         flex-direction: column !important; /* Força as colunas a empilharem verticalmente */
         align-items: stretch !important;
-        gap: 30px !important;
+        gap: 0 !important; /* Retiramos o gap geral para controlar os espaçamentos pelas bordas */
     }
     .global-card .card-body > div > div {
         width: 100% !important;
@@ -792,6 +792,23 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
         border-left: none !important; /* Remove a linha vertical separadora */
         padding-left: 0 !important;
         justify-content: flex-start !important;
+        padding-top: 25px !important;
+        padding-bottom: 25px !important;
+    }
+    
+    /* Aplica a linha horizontal separadora a partir do segundo bloco */
+    .global-card .card-body > div > div:not(:first-child) {
+        border-top: 1px solid var(--m3-outline) !important;
+    }
+
+    /* Remove o espaço extra no topo do primeiro bloco */
+    .global-card .card-body > div > div:first-child {
+        padding-top: 0 !important;
+    }
+
+    /* Remove o espaço extra no fundo do último bloco */
+    .global-card .card-body > div > div:last-child {
+        padding-bottom: 0 !important;
     }
 }
 
