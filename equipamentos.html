@@ -141,6 +141,11 @@
         }
 
         async function renderFabricantesDashboard() {
+            const timestampEl = document.getElementById('update-timestamp');
+            if (timestampEl) {
+                timestampEl.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Buscando dados...';
+            }
+
             const grid = document.getElementById('fabricantes-grid');
             
             // 1. Busca os dados reais de todas as OLTs em paralelo
@@ -201,91 +206,107 @@
             
             if (listaOrdenada.length === 0) {
                 grid.innerHTML = '<p style="padding: 20px;">Nenhum equipamento com serial foi encontrado na rede.</p>';
-                return;
-            }
+            } else {
+                listaOrdenada.forEach(fab => {
+                    const total = fab.online + fab.offline;
+                    const pctOnline = total > 0 ? (fab.online / total) * 100 : 0;
+                    const pctOffline = 100 - pctOnline;
+                    
+                    let headerClass = 'status-normal';
+                    if (pctOffline > 10) headerClass = 'status-problema';
+                    else if (pctOffline > 5) headerClass = 'status-atencao';
 
-            listaOrdenada.forEach(fab => {
-                const total = fab.online + fab.offline;
-                const pctOnline = total > 0 ? (fab.online / total) * 100 : 0;
-                const pctOffline = 100 - pctOnline;
-                
-                let headerClass = 'status-normal';
-                if (pctOffline > 10) headerClass = 'status-problema';
-                else if (pctOffline > 5) headerClass = 'status-atencao';
+                    const newRadius = 35; 
+                    const circumference = 2 * Math.PI * newRadius; 
+                    const offset = circumference - (pctOnline / 100) * circumference;
 
-                const newRadius = 35; 
-                const circumference = 2 * Math.PI * newRadius; 
-                const offset = circumference - (pctOnline / 100) * circumference;
+                    // Tabela de distribuição por OLT (dentro do card)
+                    let oltsHtml = '';
+                    const oltsOrdenadas = Object.entries(fab.olts).sort((a,b) => (b[1].online + b[1].offline) - (a[1].online + a[1].offline));
+                    
+                    oltsOrdenadas.forEach(([oltId, stats]) => {
+                        const totalOlt = stats.online + stats.offline;
+                        oltsHtml += `
+                            <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85rem;">
+                                <span style="color: var(--m3-on-surface); font-weight: 500;">${oltId}</span>
+                                <span>
+                                    <span style="color: var(--m3-on-surface-variant);">${totalOlt}</span> 
+                                    <span style="font-size: 0.75rem; color: var(--m3-color-error); margin-left: 5px;">(${stats.offline} off)</span>
+                                </span>
+                            </div>
+                        `;
+                    });
 
-                // Tabela de distribuição por OLT (dentro do card)
-                let oltsHtml = '';
-                const oltsOrdenadas = Object.entries(fab.olts).sort((a,b) => (b[1].online + b[1].offline) - (a[1].online + a[1].offline));
-                
-                oltsOrdenadas.forEach(([oltId, stats]) => {
-                    const totalOlt = stats.online + stats.offline;
-                    oltsHtml += `
-                        <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85rem;">
-                            <span style="color: var(--m3-on-surface); font-weight: 500;">${oltId}</span>
-                            <span>
-                                <span style="color: var(--m3-on-surface-variant);">${totalOlt}</span> 
-                                <span style="font-size: 0.75rem; color: var(--m3-color-error); margin-left: 5px;">(${stats.offline} off)</span>
-                            </span>
+                    // Destaque visual caso seja a aba "OUTROS"
+                    const alertIcon = fab.nome === 'OUTROS / DESCONHECIDO' ? '<span class="material-symbols-rounded" style="color: var(--m3-color-warning); font-size: 16px; margin-left: 5px;">warning</span>' : '';
+
+                    grid.innerHTML += `
+                        <div class="overview-card" style="display: flex; flex-direction: column;">
+                            <div class="card-header ${headerClass}" style="flex-direction: column; align-items: flex-start; padding: 12px 15px;">
+                                <h3 style="font-size: 1.2rem; margin-bottom: 2px; display: flex; align-items: center;"><span class="material-symbols-rounded" style="margin-right: 5px;">dns</span> ${fab.nome} ${alertIcon}</h3>
+                                <span style="font-size: 0.75rem; opacity: 0.8; font-family: var(--font-family-mono);">Prefixos: ${fab.prefixos}</span>
+                            </div>
+                            
+                            <div class="card-body" style="flex-direction: column; align-items: stretch; padding: 15px;">
+                                
+                                <div style="display: flex; position: relative; padding-bottom: 15px; border-bottom: 1px solid var(--m3-outline);">
+                                    <div class="card-stats" style="padding-right: 90px;">
+                                        <div class="stat-item" style="grid-template-columns: 50px 1fr; gap: 8px;">
+                                            <span class="stat-number" style="font-size: 1.5rem;">${total}</span>
+                                            <label style="font-size: 0.8rem;"><span class="material-symbols-rounded" style="font-size: 16px; width: 16px;">dns</span> Total</label>
+                                        </div>
+                                        <div class="stat-item online" style="grid-template-columns: 50px 1fr; gap: 8px;">
+                                            <span class="stat-number" style="font-size: 1.5rem;">${fab.online}</span>
+                                            <label style="font-size: 0.8rem;"><span class="material-symbols-rounded" style="font-size: 16px; width: 16px;">check_circle</span> Online</label>
+                                        </div>
+                                        <div class="stat-item offline" style="grid-template-columns: 50px 1fr; gap: 8px;">
+                                            <span class="stat-number" style="font-size: 1.5rem;">${fab.offline}</span>
+                                            <label style="font-size: 0.8rem;"><span class="material-symbols-rounded" style="font-size: 16px; width: 16px;">error</span> Offline</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="donut-chart-container" style="width: 80px; height: 80px; right: 0;">
+                                        <svg class="donut-chart" width="80" height="80" viewBox="0 0 100 100">
+                                            <circle class="donut-bg" cx="50" cy="50" r="${newRadius}" stroke-width="12"></circle>
+                                            <circle class="donut-fg" cx="50" cy="50" r="${newRadius}" stroke-width="12"
+                                                stroke-dasharray="${circumference}" stroke-dashoffset="${offset}">
+                                            </circle>
+                                        </svg>
+                                        <div class="chart-text"><span class="stat-number" style="font-size: 1rem;">${Math.round(pctOnline)}%</span></div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 10px;">
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--m3-on-surface-variant); font-weight: bold; margin-bottom: 5px; letter-spacing: 0.5px;">
+                                        Distribuição na Rede
+                                    </div>
+                                    <div style="max-height: 100px; overflow-y: auto; padding-right: 5px;" class="custom-scroll">
+                                        ${oltsHtml}
+                                    </div>
+                                </div>
+
+                            </div>
                         </div>
                     `;
                 });
+            }
 
-                // Destaque visual caso seja a aba "OUTROS"
-                const alertIcon = fab.nome === 'OUTROS / DESCONHECIDO' ? '<span class="material-symbols-rounded" style="color: var(--m3-color-warning); font-size: 16px; margin-left: 5px;">warning</span>' : '';
-
-                grid.innerHTML += `
-                    <div class="overview-card" style="display: flex; flex-direction: column;">
-                        <div class="card-header ${headerClass}" style="flex-direction: column; align-items: flex-start; padding: 12px 15px;">
-                            <h3 style="font-size: 1.2rem; margin-bottom: 2px; display: flex; align-items: center;"><span class="material-symbols-rounded" style="margin-right: 5px;">dns</span> ${fab.nome} ${alertIcon}</h3>
-                            <span style="font-size: 0.75rem; opacity: 0.8; font-family: var(--font-family-mono);">Prefixos: ${fab.prefixos}</span>
-                        </div>
-                        
-                        <div class="card-body" style="flex-direction: column; align-items: stretch; padding: 15px;">
-                            
-                            <div style="display: flex; position: relative; padding-bottom: 15px; border-bottom: 1px solid var(--m3-outline);">
-                                <div class="card-stats" style="padding-right: 90px;">
-                                    <div class="stat-item" style="grid-template-columns: 50px 1fr; gap: 8px;">
-                                        <span class="stat-number" style="font-size: 1.5rem;">${total}</span>
-                                        <label style="font-size: 0.8rem;"><span class="material-symbols-rounded" style="font-size: 16px; width: 16px;">dns</span> Total</label>
-                                    </div>
-                                    <div class="stat-item online" style="grid-template-columns: 50px 1fr; gap: 8px;">
-                                        <span class="stat-number" style="font-size: 1.5rem;">${fab.online}</span>
-                                        <label style="font-size: 0.8rem;"><span class="material-symbols-rounded" style="font-size: 16px; width: 16px;">check_circle</span> Online</label>
-                                    </div>
-                                    <div class="stat-item offline" style="grid-template-columns: 50px 1fr; gap: 8px;">
-                                        <span class="stat-number" style="font-size: 1.5rem;">${fab.offline}</span>
-                                        <label style="font-size: 0.8rem;"><span class="material-symbols-rounded" style="font-size: 16px; width: 16px;">error</span> Offline</label>
-                                    </div>
-                                </div>
-                                
-                                <div class="donut-chart-container" style="width: 80px; height: 80px; right: 0;">
-                                    <svg class="donut-chart" width="80" height="80" viewBox="0 0 100 100">
-                                        <circle class="donut-bg" cx="50" cy="50" r="${newRadius}" stroke-width="12"></circle>
-                                        <circle class="donut-fg" cx="50" cy="50" r="${newRadius}" stroke-width="12"
-                                            stroke-dasharray="${circumference}" stroke-dashoffset="${offset}">
-                                        </circle>
-                                    </svg>
-                                    <div class="chart-text"><span class="stat-number" style="font-size: 1rem;">${Math.round(pctOnline)}%</span></div>
-                                </div>
-                            </div>
-
-                            <div style="margin-top: 10px;">
-                                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--m3-on-surface-variant); font-weight: bold; margin-bottom: 5px; letter-spacing: 0.5px;">
-                                    Distribuição na Rede
-                                </div>
-                                <div style="max-height: 100px; overflow-y: auto; padding-right: 5px;" class="custom-scroll">
-                                    ${oltsHtml}
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
+            // --- ATUALIZAÇÃO DO TIMESTAMP ---
+            const now = new Date();
+            const dataHoje = now.toLocaleDateString('pt-BR');
+            const horaAgora = now.toLocaleTimeString('pt-BR');
+            
+            if (timestampEl) {
+                timestampEl.innerHTML = `
+                    <span class="material-symbols-rounded">calendar_today</span> ${dataHoje}
+                    <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
+                    <span class="material-symbols-rounded">schedule</span> ${horaAgora}
                 `;
-            });
+                
+                timestampEl.classList.remove('updated-anim');
+                void timestampEl.offsetWidth; 
+                timestampEl.classList.add('updated-anim');
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
