@@ -183,13 +183,13 @@
 
                 updateCardUI(olt.id, { onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type });
                 
-                // Retorna também o tipo para podermos separar fabricantes no Global
-                return { problems: localProblems, onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type };
+                // MUDANÇA: Agora retornamos também o 'id' para construir o Ranking Global
+                return { id: olt.id, problems: localProblems, onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type };
 
             } catch (error) {
                 console.error(`Erro para OLT ${olt.id}:`, error);
                 updateCardUI(olt.id, { error: true });
-                return { problems: new Set(), onlineCount: 0, offlineCount: 0, type: olt.type };
+                return { id: olt.id, problems: new Set(), onlineCount: 0, offlineCount: 0, type: olt.type };
             }
         }
         
@@ -246,18 +246,14 @@
             card.querySelector('.card-body').innerHTML = `<div class="card-stats">${statsHtml}</div>${chartHtml}`;
         }
 
-        // --- NOVA FUNÇÃO: Atualiza o Card Gigante com Colunas (Teste 1) ---
-        function updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal) {
+        // --- NOVA FUNÇÃO: Atualiza o Card Gigante com Colunas (Teste 2: Ranking) ---
+        function updateGlobalCardUI(globalOnline, globalOffline, top3Olts) {
             const card = document.getElementById('card-global');
             if (!card) return;
             
             const total = globalOnline + globalOffline;
             const onlinePercent = total > 0 ? (globalOnline / total) * 100 : 0;
             const offlinePercent = 100 - onlinePercent;
-            
-            // Porcentagens dos Fabricantes
-            const nokiaPct = nokiaTotal > 0 ? (nokiaOnline / nokiaTotal) * 100 : 0;
-            const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
             
             const header = card.querySelector('.card-header');
             header.classList.remove('status-normal', 'status-atencao', 'status-problema');
@@ -282,34 +278,45 @@
                 </div>
             `;
 
-            // Coluna 2: Fabricantes (Centro) - Inline CSS provisório para o teste
-            const vendorHtml = `
-                <div style="display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 300px;">
-                    <div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <strong style="color: var(--m3-on-surface); font-size: 1rem;">NOKIA</strong>
-                            <span class="stat-number" style="font-size: 1rem; width: auto;">${Math.round(nokiaPct)}%</span>
-                        </div>
-                        <div style="height: 10px; background: var(--m3-surface-container-high); border-radius: 5px; overflow: hidden;">
-                            <div style="height: 100%; width: ${nokiaPct}%; background: var(--m3-color-success); border-radius: 5px;"></div>
-                        </div>
-                        <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant); margin-top: 5px; text-align: right;">
-                            <span class="stat-number" style="font-size: 0.8rem; width: auto;">${nokiaOnline}</span> / <span class="stat-number" style="font-size: 0.8rem; width: auto;">${nokiaTotal}</span> Online
-                        </div>
-                    </div>
+            // Coluna 2: Ranking Top 3 (Centro) - Inline CSS provisório para o teste
+            let rankingHtmlContent = '';
+            
+            // Verifica se tem alguém offline para colocar no rank
+            const temOffline = top3Olts.some(olt => olt.offline > 0);
+            
+            if (temOffline) {
+                top3Olts.forEach((olt, index) => {
+                    if (olt.offline === 0) return; // Se a OLT estiver 100% não entra no rank de queda
                     
-                    <div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <strong style="color: var(--m3-on-surface); font-size: 1rem;">FURUKAWA</strong>
-                            <span class="stat-number" style="font-size: 1rem; width: auto;">${Math.round(furukawaPct)}%</span>
+                    const offlinePct = olt.total > 0 ? (olt.offline / olt.total) * 100 : 0;
+                    
+                    rankingHtmlContent += `
+                        <div style="margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline;">
+                                <strong style="color: var(--m3-on-surface); font-size: 1rem;">${index + 1}º ${olt.id}</strong>
+                                <span class="stat-number" style="font-size: 1rem; color: var(--m3-color-error); width: auto;">${olt.offline} OFF</span>
+                            </div>
+                            <div style="height: 8px; background: var(--m3-surface-container-high); border-radius: 4px; overflow: hidden;">
+                                <div style="height: 100%; width: ${offlinePct}%; background: var(--m3-color-error); border-radius: 4px;"></div>
+                            </div>
                         </div>
-                        <div style="height: 10px; background: var(--m3-surface-container-high); border-radius: 5px; overflow: hidden;">
-                            <div style="height: 100%; width: ${furukawaPct}%; background: var(--m3-color-success); border-radius: 5px;"></div>
-                        </div>
-                        <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant); margin-top: 5px; text-align: right;">
-                            <span class="stat-number" style="font-size: 0.8rem; width: auto;">${furukawaOnline}</span> / <span class="stat-number" style="font-size: 0.8rem; width: auto;">${furukawaTotal}</span> Online
-                        </div>
+                    `;
+                });
+            } else {
+                rankingHtmlContent = `
+                    <div style="text-align: center; color: var(--m3-color-success); font-weight: 700; font-size: 1.2rem; margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                        <span class="material-symbols-rounded" style="font-size: 40px;">sentiment_very_satisfied</span>
+                        Toda a Rede 100% Online!
                     </div>
+                `;
+            }
+
+            const rankingHtml = `
+                <div style="display: flex; flex-direction: column; width: 100%; max-width: 300px;">
+                    <div style="font-size: 0.85rem; text-transform: uppercase; color: var(--m3-on-surface-variant); margin-bottom: 15px; font-weight: bold; letter-spacing: 1px; display: flex; align-items: center; gap: 6px;">
+                        <span class="material-symbols-rounded" style="font-size: 18px; color: var(--m3-color-warning);">warning</span> Top 3 Quedas na Rede
+                    </div>
+                    ${rankingHtmlContent}
                 </div>
             `;
             
@@ -334,7 +341,7 @@
             card.querySelector('.card-body').innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 20px;">
                     <div class="card-stats" style="padding-right: 0; min-width: 250px;">${statsHtml}</div>
-                    <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; justify-content: center; min-width: 250px;">${vendorHtml}</div>
+                    <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; justify-content: center; min-width: 250px;">${rankingHtml}</div>
                     <div style="min-width: 150px; display: flex; justify-content: flex-end; position: relative;">${chartHtml}</div>
                 </div>
             `;
@@ -359,9 +366,8 @@
             let globalOnline = 0;
             let globalOffline = 0;
             
-            // Variáveis para Fabricantes
-            let nokiaOnline = 0, nokiaTotal = 0;
-            let furukawaOnline = 0, furukawaTotal = 0;
+            // MUDANÇA: Array para guardar as estatísticas e montar o Ranking
+            let oltStatsList = [];
 
             results.forEach(result => {
                 result.problems.forEach(problem => allProblems.add(problem));
@@ -369,17 +375,23 @@
                 globalOffline += result.offlineCount;
                 
                 let oltTotal = result.onlineCount + result.offlineCount;
-                if (result.type === 'nokia') {
-                    nokiaOnline += result.onlineCount;
-                    nokiaTotal += oltTotal;
-                } else {
-                    furukawaOnline += result.onlineCount;
-                    furukawaTotal += oltTotal;
-                }
+                
+                // Salva o status dessa OLT na lista
+                oltStatsList.push({
+                    id: result.id,
+                    offline: result.offlineCount,
+                    total: oltTotal
+                });
             });
 
-            // Envia todos os dados para a função de renderização
-            updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal);
+            // MUDANÇA: Ordena a lista de OLTs da que tem MAIS quedas para a que tem MENOS
+            oltStatsList.sort((a, b) => b.offline - a.offline);
+            
+            // Pega apenas as 3 primeiras (Top 3)
+            const top3Olts = oltStatsList.slice(0, 3);
+
+            // Envia os dados para a função de renderização
+            updateGlobalCardUI(globalOnline, globalOffline, top3Olts);
 
             if (typeof checkAndNotifyForNewProblems === 'function') {
                 checkAndNotifyForNewProblems(allProblems);
