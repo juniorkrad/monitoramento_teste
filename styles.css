@@ -533,10 +533,10 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 /* LINHA DO GRID (VALORES DETERMINADOS E FIXOS) */
 .stat-item { 
     display: grid;
-    /* --- MUDANÇA AQUI: 70px (fixo) + 1fr (resto fixo) --- */
-    grid-template-columns: 70px 1fr; 
+    /* Aumentado para 85px e com !important para sobrescrever estilos inline de outros ecrãs */
+    grid-template-columns: 85px 1fr !important; 
     align-items: center; 
-    gap: 10px; /* Gap fixo de 10px */
+    gap: 10px !important; 
 }
 
 /* --- CLASSE NOVA PARA NÚMEROS (ROBOTO MONO) --- */
@@ -627,8 +627,8 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 
 /* Ajusta o grid interno dos números principais */
 .global-card .stat-item {
-    grid-template-columns: 150px 1fr; /* Aumentado de 110px para 150px para caber a fonte 3.4em */
-    gap: 20px; /* Aumentado de 15px para dar mais respiro entre o número e o texto */
+    grid-template-columns: 150px 1fr !important; /* !important para garantir a largura no global */
+    gap: 20px !important; 
     margin-bottom: 12px;
 }
 
