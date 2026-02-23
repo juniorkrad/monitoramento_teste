@@ -634,17 +634,17 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 
 /* Números Gigantes no Global */
 .global-card .stat-number {
-    font-size: 2.8em; 
+    font-size: 3.4em; /* Aumentado de 2.8em para 3.4em */
 }
 
 /* Textos e ícones proporcionais à fonte gigante */
 .global-card label {
-    font-size: 1.1em;
+    font-size: 1.3em; /* Aumentado de 1.1em para 1.3em */
 }
 
 .global-card label .material-symbols-rounded {
-    font-size: 24px;
-    width: 24px;
+    font-size: 28px; /* Aumentado de 24px para 28px */
+    width: 28px;
 }
 
 @keyframes fadeInPage { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }

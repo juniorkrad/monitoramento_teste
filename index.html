@@ -277,41 +277,41 @@
                 </div>
             `;
 
-            // Coluna 2: Fabricantes (Centro com Imagens - Título Removido)
+            // Coluna 2: Fabricantes (Centro com Imagens - Título Removido, Fontes Aumentadas)
             const nokiaPct = nokiaTotal > 0 ? (nokiaOnline / nokiaTotal) * 100 : 0;
             const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
             
             const vendorHtml = `
-                <div style="display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 300px;">
+                <div style="display: flex; flex-direction: column; gap: 25px; width: 100%; max-width: 300px;">
                     <div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                            <img src="imagens/nokia.png" alt="Nokia" style="max-height: 22px; width: auto; object-fit: contain;">
-                            <span class="stat-number" style="font-size: 1rem; width: auto;">${Math.round(nokiaPct)}%</span>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <img src="imagens/nokia.png" alt="Nokia" style="max-height: 28px; width: auto; object-fit: contain;">
+                            <span class="stat-number" style="font-size: 1.4rem; width: auto;">${Math.round(nokiaPct)}%</span>
                         </div>
-                        <div style="height: 10px; background: var(--m3-surface-container-high); border-radius: 5px; overflow: hidden;">
-                            <div style="height: 100%; width: ${nokiaPct}%; background: var(--m3-color-success); border-radius: 5px;"></div>
+                        <div style="height: 14px; background: var(--m3-surface-container-high); border-radius: 7px; overflow: hidden;">
+                            <div style="height: 100%; width: ${nokiaPct}%; background: var(--m3-color-success); border-radius: 7px;"></div>
                         </div>
-                        <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant); margin-top: 5px; text-align: right;">
-                            <span class="stat-number" style="font-size: 0.8rem; width: auto;">${nokiaOnline}</span> / <span class="stat-number" style="font-size: 0.8rem; width: auto;">${nokiaTotal}</span> Online
+                        <div style="font-size: 1rem; color: var(--m3-on-surface-variant); margin-top: 8px; text-align: right;">
+                            <span class="stat-number" style="font-size: 1.1rem; width: auto;">${nokiaOnline}</span> / <span class="stat-number" style="font-size: 1.1rem; width: auto;">${nokiaTotal}</span> Online
                         </div>
                     </div>
                     
                     <div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                            <img src="imagens/furukawa.png" alt="Furukawa" style="max-height: 22px; width: auto; object-fit: contain;">
-                            <span class="stat-number" style="font-size: 1rem; width: auto;">${Math.round(furukawaPct)}%</span>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <img src="imagens/furukawa.png" alt="Furukawa" style="max-height: 28px; width: auto; object-fit: contain;">
+                            <span class="stat-number" style="font-size: 1.4rem; width: auto;">${Math.round(furukawaPct)}%</span>
                         </div>
-                        <div style="height: 10px; background: var(--m3-surface-container-high); border-radius: 5px; overflow: hidden;">
-                            <div style="height: 100%; width: ${furukawaPct}%; background: var(--m3-color-success); border-radius: 5px;"></div>
+                        <div style="height: 14px; background: var(--m3-surface-container-high); border-radius: 7px; overflow: hidden;">
+                            <div style="height: 100%; width: ${furukawaPct}%; background: var(--m3-color-success); border-radius: 7px;"></div>
                         </div>
-                        <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant); margin-top: 5px; text-align: right;">
-                            <span class="stat-number" style="font-size: 0.8rem; width: auto;">${furukawaOnline}</span> / <span class="stat-number" style="font-size: 0.8rem; width: auto;">${furukawaTotal}</span> Online
+                        <div style="font-size: 1rem; color: var(--m3-on-surface-variant); margin-top: 8px; text-align: right;">
+                            <span class="stat-number" style="font-size: 1.1rem; width: auto;">${furukawaOnline}</span> / <span class="stat-number" style="font-size: 1.1rem; width: auto;">${furukawaTotal}</span> Online
                         </div>
                     </div>
                 </div>
             `;
 
-            // Coluna 3: Ranking Top 3 (Direita - Título Removido)
+            // Coluna 3: Ranking Top 3 (Direita - Título Removido, Fontes Aumentadas)
             let rankingHtmlContent = '';
             const temOffline = top3Olts.some(olt => olt.offline > 0);
             
@@ -322,21 +322,21 @@
                     const offlinePct = olt.total > 0 ? (olt.offline / olt.total) * 100 : 0;
                     
                     rankingHtmlContent += `
-                        <div style="margin-bottom: 12px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline;">
-                                <strong style="color: var(--m3-on-surface); font-size: 1rem;">${index + 1}º ${olt.id}</strong>
-                                <span class="stat-number" style="font-size: 1rem; color: var(--m3-color-error); width: auto;">${olt.offline} OFF</span>
+                        <div style="margin-bottom: 18px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items: baseline;">
+                                <strong style="color: var(--m3-on-surface); font-size: 1.2rem;">${index + 1}º ${olt.id}</strong>
+                                <span class="stat-number" style="font-size: 1.3rem; color: var(--m3-color-error); width: auto;">${olt.offline} OFF</span>
                             </div>
-                            <div style="height: 8px; background: var(--m3-surface-container-high); border-radius: 4px; overflow: hidden;">
-                                <div style="height: 100%; width: ${offlinePct}%; background: var(--m3-color-error); border-radius: 4px;"></div>
+                            <div style="height: 12px; background: var(--m3-surface-container-high); border-radius: 6px; overflow: hidden;">
+                                <div style="height: 100%; width: ${offlinePct}%; background: var(--m3-color-error); border-radius: 6px;"></div>
                             </div>
                         </div>
                     `;
                 });
             } else {
                 rankingHtmlContent = `
-                    <div style="text-align: center; color: var(--m3-color-success); font-weight: 700; font-size: 1.2rem; margin-top: 15px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
-                        <span class="material-symbols-rounded" style="font-size: 40px;">sentiment_very_satisfied</span>
+                    <div style="text-align: center; color: var(--m3-color-success); font-weight: 700; font-size: 1.4rem; margin-top: 15px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                        <span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span>
                         Toda a Rede 100% Online!
                     </div>
                 `;
@@ -348,10 +348,10 @@
                 </div>
             `;
             
-            // Montagem Flexbox 3 Colunas (Sem o Gráfico de Rosca)
+            // Montagem Flexbox 3 Colunas (Alinhamento alterado de flex-start para center)
             card.querySelector('.card-body').innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; flex-wrap: wrap; gap: 20px;">
-                    <div class="card-stats" style="padding-right: 0; min-width: 200px; padding-top: 10px;">${statsHtml}</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 20px;">
+                    <div class="card-stats" style="padding-right: 0; min-width: 200px;">${statsHtml}</div>
                     <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; justify-content: center; min-width: 250px;">${vendorHtml}</div>
                     <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; justify-content: center; min-width: 250px;">${rankingHtml}</div>
                 </div>
