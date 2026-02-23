@@ -245,7 +245,7 @@
             card.querySelector('.card-body').innerHTML = `<div class="card-stats">${statsHtml}</div>${chartHtml}`;
         }
 
-        // --- NOVA FUNÇÃO: Atualiza o Card Gigante (Versão Definitiva com Imagens) ---
+        // --- NOVA FUNÇÃO: Atualiza o Card Gigante (Versão Definitiva com Imagens e sem títulos) ---
         function updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, top3Olts) {
             const card = document.getElementById('card-global');
             if (!card) return;
@@ -277,15 +277,12 @@
                 </div>
             `;
 
-            // Coluna 2: Fabricantes (Centro com Imagens)
+            // Coluna 2: Fabricantes (Centro com Imagens - Título Removido)
             const nokiaPct = nokiaTotal > 0 ? (nokiaOnline / nokiaTotal) * 100 : 0;
             const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
             
             const vendorHtml = `
                 <div style="display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 300px;">
-                    <div style="font-size: 0.85rem; text-transform: uppercase; color: var(--m3-on-surface-variant); margin-bottom: 5px; font-weight: bold; letter-spacing: 1px; display: flex; align-items: center; gap: 6px;">
-                        <span class="material-symbols-rounded" style="font-size: 18px; color: var(--m3-on-surface);">corporate_fare</span> Infraestrutura
-                    </div>
                     <div>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                             <img src="imagens/nokia.png" alt="Nokia" style="max-height: 22px; width: auto; object-fit: contain;">
@@ -314,7 +311,7 @@
                 </div>
             `;
 
-            // Coluna 3: Ranking Top 3 (Direita)
+            // Coluna 3: Ranking Top 3 (Direita - Título Removido)
             let rankingHtmlContent = '';
             const temOffline = top3Olts.some(olt => olt.offline > 0);
             
@@ -347,9 +344,6 @@
 
             const rankingHtml = `
                 <div style="display: flex; flex-direction: column; width: 100%; max-width: 300px;">
-                    <div style="font-size: 0.85rem; text-transform: uppercase; color: var(--m3-on-surface-variant); margin-bottom: 15px; font-weight: bold; letter-spacing: 1px; display: flex; align-items: center; gap: 6px;">
-                        <span class="material-symbols-rounded" style="font-size: 18px; color: var(--m3-color-warning);">warning</span> Top 3 Quedas na Rede
-                    </div>
                     ${rankingHtmlContent}
                 </div>
             `;
