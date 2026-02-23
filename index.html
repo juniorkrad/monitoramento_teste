@@ -60,10 +60,10 @@
         const REFRESH_INTERVAL_SECONDS = 300;
         
         function createCardPlaceholders() {
-            // Cria o Placeholder Global
+            // Cria o Placeholder Global (Forçando largura 100% no teste)
             const globalContainer = document.getElementById('global-overview-container');
             globalContainer.innerHTML = `
-                <div class="overview-card global-card" id="card-global">
+                <div class="overview-card global-card" id="card-global" style="max-width: 100%;">
                     <div class="card-header">
                         <h3><span class="material-symbols-rounded" style="font-size: 28px;">public</span> VISÃO GERAL DA REDE</h3>
                     </div>
@@ -75,7 +75,6 @@
                 </div>
             `;
 
-            // Cria os Placeholders Individuais
             const grid = document.getElementById('overview-grid');
             grid.innerHTML = '';
             oltsConfig.forEach(olt => {
@@ -119,7 +118,6 @@
                     
                     let placa, porta, isOnline;
 
-                    // --- LÓGICA DE PARSEAMENTO ---
                     if (olt.type === 'nokia') {
                         const status = columns[4] || '';
                         const pon = columns[0];
@@ -128,7 +126,7 @@
                             const parts = pon.split('/');
                             if (parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
                         }
-                    } else { // Furukawa
+                    } else { 
                         const status = columns[2] || '';
                         const portStr = columns[0];
                         isOnline = status.trim().toLowerCase() === 'active';
@@ -153,22 +151,18 @@
                     }
                 });
 
-                // --- NOVA LÓGICA DE ALERTAS DA OLT ---
                 let hasSuperPriority = false;
                 let hasCritical = false;     
                 let hasWarning = false;       
 
-                // 1. Verifica Blackout Geral da OLT
                 const totalClients = totalOnline + totalOffline;
                 if (totalClients > 0 && (totalOffline / totalClients) > 0.5) {
                     hasSuperPriority = true;
                 }
 
-                // 2. Verifica Porta a Porta
                 if (!hasSuperPriority) {
                     for (const key in portData) {
                         const { off, total } = portData[key];
-                        
                         if (total < 5) continue; 
 
                         if (total > 0 && (off / total) > 0.5) {
@@ -189,13 +183,13 @@
 
                 updateCardUI(olt.id, { onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type });
                 
-                // ATUALIZAÇÃO: Retorna os dados numéricos para alimentar a contagem Global
-                return { problems: localProblems, onlineCount: totalOnline, offlineCount: totalOffline };
+                // Retorna também o tipo para podermos separar fabricantes no Global
+                return { problems: localProblems, onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type };
 
             } catch (error) {
                 console.error(`Erro para OLT ${olt.id}:`, error);
                 updateCardUI(olt.id, { error: true });
-                return { problems: new Set(), onlineCount: 0, offlineCount: 0 };
+                return { problems: new Set(), onlineCount: 0, offlineCount: 0, type: olt.type };
             }
         }
         
@@ -252,8 +246,8 @@
             card.querySelector('.card-body').innerHTML = `<div class="card-stats">${statsHtml}</div>${chartHtml}`;
         }
 
-        // --- NOVA FUNÇÃO: Atualiza o Card Gigante Global ---
-        function updateGlobalCardUI(globalOnline, globalOffline) {
+        // --- NOVA FUNÇÃO: Atualiza o Card Gigante com Colunas (Teste 1) ---
+        function updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal) {
             const card = document.getElementById('card-global');
             if (!card) return;
             
@@ -261,14 +255,18 @@
             const onlinePercent = total > 0 ? (globalOnline / total) * 100 : 0;
             const offlinePercent = 100 - onlinePercent;
             
+            // Porcentagens dos Fabricantes
+            const nokiaPct = nokiaTotal > 0 ? (nokiaOnline / nokiaTotal) * 100 : 0;
+            const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
+            
             const header = card.querySelector('.card-header');
             header.classList.remove('status-normal', 'status-atencao', 'status-problema');
             
-            // A regra do global pode ser mais branda ou igual, vamos manter a mesma do individual por enquanto
             if (offlinePercent > 10) { header.classList.add('status-problema'); }
             else if (offlinePercent > 5) { header.classList.add('status-atencao'); }
             else { header.classList.add('status-normal'); }
             
+            // Coluna 1: Totais (Esquerda)
             const statsHtml = `
                 <div class="stat-item global-stat">
                     <span class="stat-number">${total}</span>
@@ -283,13 +281,44 @@
                     <label><span class="material-symbols-rounded icon-down">error</span> Equipamentos Offline</label>
                 </div>
             `;
+
+            // Coluna 2: Fabricantes (Centro) - Inline CSS provisório para o teste
+            const vendorHtml = `
+                <div style="display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 300px;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <strong style="color: var(--m3-on-surface); font-size: 1rem;">NOKIA</strong>
+                            <span class="stat-number" style="font-size: 1rem; width: auto;">${Math.round(nokiaPct)}%</span>
+                        </div>
+                        <div style="height: 10px; background: var(--m3-surface-container-high); border-radius: 5px; overflow: hidden;">
+                            <div style="height: 100%; width: ${nokiaPct}%; background: var(--m3-color-success); border-radius: 5px;"></div>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant); margin-top: 5px; text-align: right;">
+                            <span class="stat-number" style="font-size: 0.8rem; width: auto;">${nokiaOnline}</span> / <span class="stat-number" style="font-size: 0.8rem; width: auto;">${nokiaTotal}</span> Online
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <strong style="color: var(--m3-on-surface); font-size: 1rem;">FURUKAWA</strong>
+                            <span class="stat-number" style="font-size: 1rem; width: auto;">${Math.round(furukawaPct)}%</span>
+                        </div>
+                        <div style="height: 10px; background: var(--m3-surface-container-high); border-radius: 5px; overflow: hidden;">
+                            <div style="height: 100%; width: ${furukawaPct}%; background: var(--m3-color-success); border-radius: 5px;"></div>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant); margin-top: 5px; text-align: right;">
+                            <span class="stat-number" style="font-size: 0.8rem; width: auto;">${furukawaOnline}</span> / <span class="stat-number" style="font-size: 0.8rem; width: auto;">${furukawaTotal}</span> Online
+                        </div>
+                    </div>
+                </div>
+            `;
             
-            // Gráfico maior para o Global (Raio de 60px)
+            // Coluna 3: Gráfico (Direita)
             const newRadius = 60; 
             const circumference = 2 * Math.PI * newRadius; 
             const offset = circumference - (onlinePercent / 100) * circumference;
             const chartHtml = `
-                <div class="donut-chart-container global-donut">
+                <div class="donut-chart-container global-donut" style="position: static; transform: none; display: flex;">
                     <svg class="donut-chart" width="140" height="140" viewBox="0 0 140 140">
                         <circle class="donut-bg" cx="70" cy="70" r="${newRadius}"></circle>
                         <circle class="donut-fg" cx="70" cy="70" r="${newRadius}"
@@ -297,11 +326,18 @@
                             stroke-dashoffset="${offset}">
                         </circle>
                     </svg>
-                    <div class="chart-text"><span class="stat-number global-percent">${Math.round(onlinePercent)}%</span></div>
+                    <div class="chart-text" style="position: absolute; width: 140px; text-align: center; line-height: 140px;"><span class="stat-number global-percent">${Math.round(onlinePercent)}%</span></div>
                 </div>
             `;
 
-            card.querySelector('.card-body').innerHTML = `<div class="card-stats">${statsHtml}</div>${chartHtml}`;
+            // Montagem Flexbox 3 Colunas
+            card.querySelector('.card-body').innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 20px;">
+                    <div class="card-stats" style="padding-right: 0; min-width: 250px;">${statsHtml}</div>
+                    <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; justify-content: center; min-width: 250px;">${vendorHtml}</div>
+                    <div style="min-width: 150px; display: flex; justify-content: flex-end; position: relative;">${chartHtml}</div>
+                </div>
+            `;
         }
 
         async function runOverview() {
@@ -322,16 +358,28 @@
             const allProblems = new Set();
             let globalOnline = 0;
             let globalOffline = 0;
+            
+            // Variáveis para Fabricantes
+            let nokiaOnline = 0, nokiaTotal = 0;
+            let furukawaOnline = 0, furukawaTotal = 0;
 
-            // ATUALIZADO: Processa os resultados para somar o Global
             results.forEach(result => {
                 result.problems.forEach(problem => allProblems.add(problem));
                 globalOnline += result.onlineCount;
                 globalOffline += result.offlineCount;
+                
+                let oltTotal = result.onlineCount + result.offlineCount;
+                if (result.type === 'nokia') {
+                    nokiaOnline += result.onlineCount;
+                    nokiaTotal += oltTotal;
+                } else {
+                    furukawaOnline += result.onlineCount;
+                    furukawaTotal += oltTotal;
+                }
             });
 
-            // Chama a atualização visual do Global
-            updateGlobalCardUI(globalOnline, globalOffline);
+            // Envia todos os dados para a função de renderização
+            updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal);
 
             if (typeof checkAndNotifyForNewProblems === 'function') {
                 checkAndNotifyForNewProblems(allProblems);
