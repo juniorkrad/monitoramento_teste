@@ -245,7 +245,7 @@
             card.querySelector('.card-body').innerHTML = `<div class="card-stats">${statsHtml}</div>${chartHtml}`;
         }
 
-        // --- NOVA FUNÇÃO: Atualiza o Card Gigante (Versão Definitiva: Fabricantes + Ranking) ---
+        // --- NOVA FUNÇÃO: Atualiza o Card Gigante (Versão Definitiva com Imagens) ---
         function updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, top3Olts) {
             const card = document.getElementById('card-global');
             if (!card) return;
@@ -277,7 +277,7 @@
                 </div>
             `;
 
-            // Coluna 2: Fabricantes (Centro)
+            // Coluna 2: Fabricantes (Centro com Imagens)
             const nokiaPct = nokiaTotal > 0 ? (nokiaOnline / nokiaTotal) * 100 : 0;
             const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
             
@@ -287,8 +287,8 @@
                         <span class="material-symbols-rounded" style="font-size: 18px; color: var(--m3-on-surface);">corporate_fare</span> Infraestrutura
                     </div>
                     <div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <strong style="color: var(--m3-on-surface); font-size: 1rem;">NOKIA</strong>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <img src="imagens/nokia.png" alt="Nokia" style="max-height: 22px; width: auto; object-fit: contain;">
                             <span class="stat-number" style="font-size: 1rem; width: auto;">${Math.round(nokiaPct)}%</span>
                         </div>
                         <div style="height: 10px; background: var(--m3-surface-container-high); border-radius: 5px; overflow: hidden;">
@@ -300,8 +300,8 @@
                     </div>
                     
                     <div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <strong style="color: var(--m3-on-surface); font-size: 1rem;">FURUKAWA</strong>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <img src="imagens/furukawa.png" alt="Furukawa" style="max-height: 22px; width: auto; object-fit: contain;">
                             <span class="stat-number" style="font-size: 1rem; width: auto;">${Math.round(furukawaPct)}%</span>
                         </div>
                         <div style="height: 10px; background: var(--m3-surface-container-high); border-radius: 5px; overflow: hidden;">
@@ -314,7 +314,7 @@
                 </div>
             `;
 
-            // Coluna 3: Ranking Top 3 (Direita - Substitui o Gráfico)
+            // Coluna 3: Ranking Top 3 (Direita)
             let rankingHtmlContent = '';
             const temOffline = top3Olts.some(olt => olt.offline > 0);
             
