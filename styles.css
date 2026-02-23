@@ -790,7 +790,7 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
    MÍDIAS RESPONSIVAS (MÓVEL & TABLETS PEQUENOS)
    ========================================================================== */
 @media (max-width: 900px) {
-    /* Ajustes específicos para o layout de 3 colunas no Mobile (Versões 1 e 2 do Card Global) */
+    /* Ajustes específicos para o layout de 3 colunas no Mobile (Versões 1, 2 e 3 do Card Global) */
     .global-card .card-body > div {
         flex-direction: column !important; /* Força as colunas a empilharem verticalmente */
         align-items: stretch !important;
