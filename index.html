@@ -21,7 +21,9 @@
     <div class="page-container">
         <div id="header-placeholder"></div>
 
-        <main class="main-content">
+        <main class="main-content" style="flex-direction: column;">
+            <div id="global-overview-container" style="margin-bottom: 20px; width: 100%;"></div>
+            
             <div id="overview-grid" class="grid-container">
                 </div>
         </main>
@@ -58,6 +60,22 @@
         const REFRESH_INTERVAL_SECONDS = 300;
         
         function createCardPlaceholders() {
+            // Cria o Placeholder Global
+            const globalContainer = document.getElementById('global-overview-container');
+            globalContainer.innerHTML = `
+                <div class="overview-card global-card" id="card-global">
+                    <div class="card-header">
+                        <h3><span class="material-symbols-rounded" style="font-size: 28px;">public</span> VISÃO GERAL DA REDE</h3>
+                    </div>
+                    <div class="card-body">
+                         <div class="card-stats">
+                            <p>Calculando totais da rede...</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Cria os Placeholders Individuais
             const grid = document.getElementById('overview-grid');
             grid.innerHTML = '';
             oltsConfig.forEach(olt => {
@@ -136,11 +154,11 @@
                 });
 
                 // --- NOVA LÓGICA DE ALERTAS DA OLT ---
-                let hasSuperPriority = false; // Maioria Offline (> 50%)
-                let hasCritical = false;      // Problema (> 16 ou = 50%)
-                let hasWarning = false;       // Atenção (= 16)
+                let hasSuperPriority = false;
+                let hasCritical = false;     
+                let hasWarning = false;       
 
-                // 1. Verifica Blackout Geral da OLT (Se > 50% da OLT está off)
+                // 1. Verifica Blackout Geral da OLT
                 const totalClients = totalOnline + totalOffline;
                 if (totalClients > 0 && (totalOffline / totalClients) > 0.5) {
                     hasSuperPriority = true;
@@ -151,45 +169,33 @@
                     for (const key in portData) {
                         const { off, total } = portData[key];
                         
-                        // === NOVA REGRA DE FILTRO (ANTI-ALARME FALSO) ===
-                        // Se a porta tiver menos de 5 clientes NO TOTAL, ignoramos as regras de porcentagem.
-                        if (total < 5) {
-                            continue; 
-                        }
+                        if (total < 5) continue; 
 
-                        // Regra Super Prioridade: Maioria Absoluta Offline (> 50%)
                         if (total > 0 && (off / total) > 0.5) {
                             hasSuperPriority = true;
-                            break; // Se achou um Super, já basta
+                            break; 
                         }
-                        
-                        // Regra Crítica: Mais de 16 OFF OU Exatamente 50% OFF
                         if (off > 16 || (total > 0 && (off / total) === 0.5)) {
                             hasCritical = true;
-                        } 
-                        // Regra Atenção: Exatamente 16 OFF
-                        else if (off === 16) {
+                        } else if (off === 16) {
                             hasWarning = true;
                         }
                     }
                 }
 
-                // Define o status final da OLT para o Alerta
-                if (hasSuperPriority) {
-                    localProblems.add(`[${olt.id}] STATUS::SUPER`);
-                } else if (hasCritical) {
-                    localProblems.add(`[${olt.id}] STATUS::CRIT`);
-                } else if (hasWarning) {
-                    localProblems.add(`[${olt.id}] STATUS::WARN`);
-                }
+                if (hasSuperPriority) localProblems.add(`[${olt.id}] STATUS::SUPER`);
+                else if (hasCritical) localProblems.add(`[${olt.id}] STATUS::CRIT`);
+                else if (hasWarning) localProblems.add(`[${olt.id}] STATUS::WARN`);
 
                 updateCardUI(olt.id, { onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type });
-                return localProblems;
+                
+                // ATUALIZAÇÃO: Retorna os dados numéricos para alimentar a contagem Global
+                return { problems: localProblems, onlineCount: totalOnline, offlineCount: totalOffline };
 
             } catch (error) {
                 console.error(`Erro para OLT ${olt.id}:`, error);
                 updateCardUI(olt.id, { error: true });
-                return new Set();
+                return { problems: new Set(), onlineCount: 0, offlineCount: 0 };
             }
         }
         
@@ -212,7 +218,6 @@
             else if (offlinePercent > 5) { header.classList.add('status-atencao'); }
             else { header.classList.add('status-normal'); }
             
-            // ATUALIZADO: Adicionada classe 'stat-number' para estilização com Roboto Mono
             const statsHtml = `
                 <div class="stat-item">
                     <span class="stat-number">${total}</span>
@@ -231,7 +236,6 @@
             const newRadius = 40; 
             const circumference = 2 * Math.PI * newRadius; 
             const offset = circumference - (onlinePercent / 100) * circumference;
-            // ATUALIZADO: Adicionada classe 'stat-number' na porcentagem também
             const chartHtml = `
                 <div class="donut-chart-container">
                     <svg class="donut-chart" width="100" height="100" viewBox="0 0 100 100">
@@ -242,6 +246,58 @@
                         </circle>
                     </svg>
                     <div class="chart-text"><span class="stat-number">${Math.round(onlinePercent)}%</span></div>
+                </div>
+            `;
+
+            card.querySelector('.card-body').innerHTML = `<div class="card-stats">${statsHtml}</div>${chartHtml}`;
+        }
+
+        // --- NOVA FUNÇÃO: Atualiza o Card Gigante Global ---
+        function updateGlobalCardUI(globalOnline, globalOffline) {
+            const card = document.getElementById('card-global');
+            if (!card) return;
+            
+            const total = globalOnline + globalOffline;
+            const onlinePercent = total > 0 ? (globalOnline / total) * 100 : 0;
+            const offlinePercent = 100 - onlinePercent;
+            
+            const header = card.querySelector('.card-header');
+            header.classList.remove('status-normal', 'status-atencao', 'status-problema');
+            
+            // A regra do global pode ser mais branda ou igual, vamos manter a mesma do individual por enquanto
+            if (offlinePercent > 10) { header.classList.add('status-problema'); }
+            else if (offlinePercent > 5) { header.classList.add('status-atencao'); }
+            else { header.classList.add('status-normal'); }
+            
+            const statsHtml = `
+                <div class="stat-item global-stat">
+                    <span class="stat-number">${total}</span>
+                    <label><span class="material-symbols-rounded icon-total">dns</span> Total Geral</label>
+                </div>
+                <div class="stat-item online global-stat">
+                    <span class="stat-number">${globalOnline}</span>
+                    <label><span class="material-symbols-rounded icon-up">check_circle</span> Equipamentos Online</label>
+                </div>
+                <div class="stat-item offline global-stat">
+                    <span class="stat-number">${globalOffline}</span>
+                    <label><span class="material-symbols-rounded icon-down">error</span> Equipamentos Offline</label>
+                </div>
+            `;
+            
+            // Gráfico maior para o Global (Raio de 60px)
+            const newRadius = 60; 
+            const circumference = 2 * Math.PI * newRadius; 
+            const offset = circumference - (onlinePercent / 100) * circumference;
+            const chartHtml = `
+                <div class="donut-chart-container global-donut">
+                    <svg class="donut-chart" width="140" height="140" viewBox="0 0 140 140">
+                        <circle class="donut-bg" cx="70" cy="70" r="${newRadius}"></circle>
+                        <circle class="donut-fg" cx="70" cy="70" r="${newRadius}"
+                            stroke-dasharray="${circumference}"
+                            stroke-dashoffset="${offset}">
+                        </circle>
+                    </svg>
+                    <div class="chart-text"><span class="stat-number global-percent">${Math.round(onlinePercent)}%</span></div>
                 </div>
             `;
 
@@ -264,9 +320,18 @@
             const results = await Promise.all(promises);
             
             const allProblems = new Set();
-            results.forEach(oltProblems => {
-                oltProblems.forEach(problem => allProblems.add(problem));
+            let globalOnline = 0;
+            let globalOffline = 0;
+
+            // ATUALIZADO: Processa os resultados para somar o Global
+            results.forEach(result => {
+                result.problems.forEach(problem => allProblems.add(problem));
+                globalOnline += result.onlineCount;
+                globalOffline += result.offlineCount;
             });
+
+            // Chama a atualização visual do Global
+            updateGlobalCardUI(globalOnline, globalOffline);
 
             if (typeof checkAndNotifyForNewProblems === 'function') {
                 checkAndNotifyForNewProblems(allProblems);

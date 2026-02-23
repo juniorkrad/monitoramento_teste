@@ -597,6 +597,69 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 .donut-chart .donut-fg { stroke: var(--m3-color-success); stroke-linecap: round; transition: stroke-dashoffset 1s ease-out; }
 .chart-text { position: absolute; font-size: 1.4em; font-weight: 700; color: var(--m3-on-surface); }
 
+
+/* ==========================================================================
+   CARD GLOBAL DE DESTAQUE (VISÃO GERAL DA REDE)
+   ========================================================================== */
+.global-card {
+    max-width: 800px; /* Mais largo que os outros para chamar atenção */
+    margin: 0 auto;
+    background: linear-gradient(145deg, var(--m3-surface-container), var(--m3-surface-container-high));
+    border: 1px solid var(--m3-outline);
+}
+
+.global-card .card-header {
+    padding: 12px 20px;
+}
+
+.global-card .card-header h3 {
+    font-size: 1.6em; /* Título maior */
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.global-card .card-body {
+    padding: 25px 20px;
+}
+
+.global-card .card-stats {
+    padding-right: 180px; /* Garante que os textos não batam no gráfico gigante */
+}
+
+/* Ajusta o grid interno para os números maiores caberem confortavelmente */
+.global-card .stat-item {
+    grid-template-columns: 110px 1fr; 
+    gap: 15px;
+    margin-bottom: 8px;
+}
+
+/* Números Gigantes */
+.global-card .stat-number {
+    font-size: 2.8em; 
+}
+
+/* Textos e ícones também crescem proporcionalmente */
+.global-card label {
+    font-size: 1.1em;
+}
+
+.global-card label .material-symbols-rounded {
+    font-size: 24px;
+    width: 24px;
+}
+
+/* Configuração de tamanho e posição do gráfico Global */
+.global-donut {
+    width: 140px;
+    height: 140px;
+    right: 30px; /* Dá um leve distanciamento da borda */
+}
+
+.global-donut .global-percent {
+    font-size: 1.6em !important; 
+}
+
 @keyframes fadeInPage { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ==========================================================================
@@ -749,4 +812,8 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     .toast, .toast.super-priority {
         max-width: 90vw; /* Garante que nunca passe da tela do celular */
     }
+    
+    /* Ajuste Mobile para o Card Global */
+    .global-card .card-stats { padding-right: 0; }
+    .global-donut { position: static; transform: none; margin: 20px auto 0; }
 }
