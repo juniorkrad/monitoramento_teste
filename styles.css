@@ -599,7 +599,7 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 
 
 /* ==========================================================================
-   CARD GLOBAL DE DESTAQUE (VISÃO GERAL DA REDE) - TELA CHEIA
+   CARD GLOBAL DE DESTAQUE (VISÃO GERAL DA REDE) - TELA CHEIA (VERSÃO HÍBRIDA)
    ========================================================================== */
 .global-card {
     max-width: 100%; /* Agora ocupa 100% da largura do ecrã */
@@ -645,16 +645,6 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 .global-card label .material-symbols-rounded {
     font-size: 24px;
     width: 24px;
-}
-
-/* Gráfico Global à direita */
-.global-donut {
-    width: 140px;
-    height: 140px;
-}
-
-.global-donut .global-percent {
-    font-size: 1.6em !important; 
 }
 
 @keyframes fadeInPage { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -790,7 +780,7 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
    MÍDIAS RESPONSIVAS (MÓVEL & TABLETS PEQUENOS)
    ========================================================================== */
 @media (max-width: 900px) {
-    /* Ajustes específicos para o layout de 3 colunas no Mobile (Versões 1, 2 e 3 do Card Global) */
+    /* Ajustes específicos para o layout em colunas no Mobile */
     .global-card .card-body > div {
         flex-direction: column !important; /* Força as colunas a empilharem verticalmente */
         align-items: stretch !important;
@@ -802,11 +792,6 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
         border-left: none !important; /* Remove a linha vertical separadora */
         padding-left: 0 !important;
         justify-content: flex-start !important;
-    }
-    /* O gráfico de rosca centralizado na versão móvel */
-    .global-card .card-body > div > div:last-child {
-        justify-content: center !important;
-        margin-top: 10px;
     }
 }
 

@@ -245,8 +245,8 @@
             card.querySelector('.card-body').innerHTML = `<div class="card-stats">${statsHtml}</div>${chartHtml}`;
         }
 
-        // --- NOVA FUNÇÃO: Atualiza o Card Gigante (Teste 3: Termômetro de Alarmes) ---
-        function updateGlobalCardUI(globalOnline, globalOffline, superCount, critCount, warnCount) {
+        // --- NOVA FUNÇÃO: Atualiza o Card Gigante (Versão Definitiva: Fabricantes + Ranking) ---
+        function updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, top3Olts) {
             const card = document.getElementById('card-global');
             if (!card) return;
             
@@ -277,70 +277,89 @@
                 </div>
             `;
 
-            // Coluna 2: Termômetro de Alarmes (Centro)
-            let alarmsHtmlContent = '';
+            // Coluna 2: Fabricantes (Centro)
+            const nokiaPct = nokiaTotal > 0 ? (nokiaOnline / nokiaTotal) * 100 : 0;
+            const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
             
-            if (superCount === 0 && critCount === 0 && warnCount === 0) {
-                // Se tudo estiver zerado, exibe um painel verde de sucesso
-                alarmsHtmlContent = `
-                    <div style="text-align: center; color: var(--m3-color-success); padding: 15px; border: 1px dashed var(--m3-color-success); border-radius: 8px; background: rgba(103, 194, 58, 0.05); margin-top: 5px;">
-                        <span class="material-symbols-rounded" style="font-size: 36px; margin-bottom: 5px;">verified_user</span><br>
-                        <strong style="font-size: 1.1rem;">Rede Estável</strong><br>
-                        <span style="font-size: 0.85rem; color: var(--m3-on-surface-variant);">0 OLTs com alertas ativos</span>
+            const vendorHtml = `
+                <div style="display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 300px;">
+                    <div style="font-size: 0.85rem; text-transform: uppercase; color: var(--m3-on-surface-variant); margin-bottom: 5px; font-weight: bold; letter-spacing: 1px; display: flex; align-items: center; gap: 6px;">
+                        <span class="material-symbols-rounded" style="font-size: 18px; color: var(--m3-on-surface);">corporate_fare</span> Infraestrutura
                     </div>
-                `;
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <strong style="color: var(--m3-on-surface); font-size: 1rem;">NOKIA</strong>
+                            <span class="stat-number" style="font-size: 1rem; width: auto;">${Math.round(nokiaPct)}%</span>
+                        </div>
+                        <div style="height: 10px; background: var(--m3-surface-container-high); border-radius: 5px; overflow: hidden;">
+                            <div style="height: 100%; width: ${nokiaPct}%; background: var(--m3-color-success); border-radius: 5px;"></div>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant); margin-top: 5px; text-align: right;">
+                            <span class="stat-number" style="font-size: 0.8rem; width: auto;">${nokiaOnline}</span> / <span class="stat-number" style="font-size: 0.8rem; width: auto;">${nokiaTotal}</span> Online
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <strong style="color: var(--m3-on-surface); font-size: 1rem;">FURUKAWA</strong>
+                            <span class="stat-number" style="font-size: 1rem; width: auto;">${Math.round(furukawaPct)}%</span>
+                        </div>
+                        <div style="height: 10px; background: var(--m3-surface-container-high); border-radius: 5px; overflow: hidden;">
+                            <div style="height: 100%; width: ${furukawaPct}%; background: var(--m3-color-success); border-radius: 5px;"></div>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant); margin-top: 5px; text-align: right;">
+                            <span class="stat-number" style="font-size: 0.8rem; width: auto;">${furukawaOnline}</span> / <span class="stat-number" style="font-size: 0.8rem; width: auto;">${furukawaTotal}</span> Online
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Coluna 3: Ranking Top 3 (Direita - Substitui o Gráfico)
+            let rankingHtmlContent = '';
+            const temOffline = top3Olts.some(olt => olt.offline > 0);
+            
+            if (temOffline) {
+                top3Olts.forEach((olt, index) => {
+                    if (olt.offline === 0) return;
+                    
+                    const offlinePct = olt.total > 0 ? (olt.offline / olt.total) * 100 : 0;
+                    
+                    rankingHtmlContent += `
+                        <div style="margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline;">
+                                <strong style="color: var(--m3-on-surface); font-size: 1rem;">${index + 1}º ${olt.id}</strong>
+                                <span class="stat-number" style="font-size: 1rem; color: var(--m3-color-error); width: auto;">${olt.offline} OFF</span>
+                            </div>
+                            <div style="height: 8px; background: var(--m3-surface-container-high); border-radius: 4px; overflow: hidden;">
+                                <div style="height: 100%; width: ${offlinePct}%; background: var(--m3-color-error); border-radius: 4px;"></div>
+                            </div>
+                        </div>
+                    `;
+                });
             } else {
-                // Se houver algum alarme, exibe os "Pills" do termômetro (apagando os que estiverem zerados)
-                alarmsHtmlContent = `
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255, 23, 68, 0.1); border: 1px solid #FF1744; padding: 6px 12px; border-radius: 8px; opacity: ${superCount > 0 ? '1' : '0.4'};">
-                            <strong style="color: #FF1744; font-size: 0.9rem; display: flex; align-items: center; gap: 5px;"><span class="material-symbols-rounded" style="font-size: 18px;">warning</span> SUPER CRÍTICO</strong>
-                            <span class="stat-number" style="font-size: 1.2rem; color: #FF1744;">${superCount}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(245, 108, 108, 0.1); border: 1px solid var(--m3-color-error); padding: 6px 12px; border-radius: 8px; opacity: ${critCount > 0 ? '1' : '0.4'};">
-                            <strong style="color: var(--m3-color-error); font-size: 0.9rem; display: flex; align-items: center; gap: 5px;"><span class="material-symbols-rounded" style="font-size: 18px;">error</span> CRÍTICO</strong>
-                            <span class="stat-number" style="font-size: 1.2rem; color: var(--m3-color-error);">${critCount}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(230, 162, 60, 0.1); border: 1px solid var(--m3-color-warning); padding: 6px 12px; border-radius: 8px; opacity: ${warnCount > 0 ? '1' : '0.4'};">
-                            <strong style="color: var(--m3-color-warning); font-size: 0.9rem; display: flex; align-items: center; gap: 5px;"><span class="material-symbols-rounded" style="font-size: 18px;">report_problem</span> ATENÇÃO</strong>
-                            <span class="stat-number" style="font-size: 1.2rem; color: var(--m3-color-warning);">${warnCount}</span>
-                        </div>
+                rankingHtmlContent = `
+                    <div style="text-align: center; color: var(--m3-color-success); font-weight: 700; font-size: 1.2rem; margin-top: 15px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                        <span class="material-symbols-rounded" style="font-size: 40px;">sentiment_very_satisfied</span>
+                        Toda a Rede 100% Online!
                     </div>
                 `;
             }
 
-            const termometroHtml = `
+            const rankingHtml = `
                 <div style="display: flex; flex-direction: column; width: 100%; max-width: 300px;">
-                    <div style="font-size: 0.85rem; text-transform: uppercase; color: var(--m3-on-surface-variant); margin-bottom: 10px; font-weight: bold; letter-spacing: 1px; display: flex; align-items: center; gap: 6px;">
-                        <span class="material-symbols-rounded" style="font-size: 18px; color: var(--m3-on-surface);">notifications_active</span> Termômetro de Alarmes
+                    <div style="font-size: 0.85rem; text-transform: uppercase; color: var(--m3-on-surface-variant); margin-bottom: 15px; font-weight: bold; letter-spacing: 1px; display: flex; align-items: center; gap: 6px;">
+                        <span class="material-symbols-rounded" style="font-size: 18px; color: var(--m3-color-warning);">warning</span> Top 3 Quedas na Rede
                     </div>
-                    ${alarmsHtmlContent}
+                    ${rankingHtmlContent}
                 </div>
             `;
             
-            // Coluna 3: Gráfico (Direita)
-            const newRadius = 60; 
-            const circumference = 2 * Math.PI * newRadius; 
-            const offset = circumference - (onlinePercent / 100) * circumference;
-            const chartHtml = `
-                <div class="donut-chart-container global-donut" style="position: static; transform: none; display: flex;">
-                    <svg class="donut-chart" width="140" height="140" viewBox="0 0 140 140">
-                        <circle class="donut-bg" cx="70" cy="70" r="${newRadius}"></circle>
-                        <circle class="donut-fg" cx="70" cy="70" r="${newRadius}"
-                            stroke-dasharray="${circumference}"
-                            stroke-dashoffset="${offset}">
-                        </circle>
-                    </svg>
-                    <div class="chart-text" style="position: absolute; width: 140px; text-align: center; line-height: 140px;"><span class="stat-number global-percent">${Math.round(onlinePercent)}%</span></div>
-                </div>
-            `;
-
-            // Montagem Flexbox 3 Colunas
+            // Montagem Flexbox 3 Colunas (Sem o Gráfico de Rosca)
             card.querySelector('.card-body').innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 20px;">
-                    <div class="card-stats" style="padding-right: 0; min-width: 250px;">${statsHtml}</div>
-                    <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; justify-content: center; min-width: 250px;">${termometroHtml}</div>
-                    <div style="min-width: 150px; display: flex; justify-content: flex-end; position: relative;">${chartHtml}</div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; flex-wrap: wrap; gap: 20px;">
+                    <div class="card-stats" style="padding-right: 0; min-width: 200px; padding-top: 10px;">${statsHtml}</div>
+                    <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; justify-content: center; min-width: 250px;">${vendorHtml}</div>
+                    <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; justify-content: center; min-width: 250px;">${rankingHtml}</div>
                 </div>
             `;
         }
@@ -364,26 +383,43 @@
             let globalOnline = 0;
             let globalOffline = 0;
             
-            // Variáveis de contagem de alarmes para o Termômetro
-            let superCount = 0;
-            let critCount = 0;
-            let warnCount = 0;
+            // Variáveis para Fabricantes
+            let nokiaOnline = 0, nokiaTotal = 0;
+            let furukawaOnline = 0, furukawaTotal = 0;
+            
+            // Lista para o Ranking
+            let oltStatsList = [];
 
             results.forEach(result => {
-                // Varre os problemas encontrados para montar a contagem geral
-                result.problems.forEach(problem => {
-                    allProblems.add(problem);
-                    if (problem.includes('::SUPER')) superCount++;
-                    else if (problem.includes('::CRIT')) critCount++;
-                    else if (problem.includes('::WARN')) warnCount++;
-                });
-                
+                result.problems.forEach(problem => allProblems.add(problem));
                 globalOnline += result.onlineCount;
                 globalOffline += result.offlineCount;
+                
+                let oltTotal = result.onlineCount + result.offlineCount;
+                
+                // Contabilidade por fabricante
+                if (result.type === 'nokia') {
+                    nokiaOnline += result.onlineCount;
+                    nokiaTotal += oltTotal;
+                } else {
+                    furukawaOnline += result.onlineCount;
+                    furukawaTotal += oltTotal;
+                }
+
+                // Lista de Status para o ranking
+                oltStatsList.push({
+                    id: result.id,
+                    offline: result.offlineCount,
+                    total: oltTotal
+                });
             });
 
-            // Envia os dados para a função de renderização
-            updateGlobalCardUI(globalOnline, globalOffline, superCount, critCount, warnCount);
+            // Prepara o Top 3
+            oltStatsList.sort((a, b) => b.offline - a.offline);
+            const top3Olts = oltStatsList.slice(0, 3);
+
+            // Envia todos os dados para a função de renderização
+            updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, top3Olts);
 
             if (typeof checkAndNotifyForNewProblems === 'function') {
                 checkAndNotifyForNewProblems(allProblems);
