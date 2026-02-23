@@ -23,18 +23,17 @@
 
         <main class="main-content" style="flex-direction: column;">
             
-            <div style="margin-bottom: 20px; padding: 10px 20px; background: rgba(0,0,0,0.2); border-radius: 8px; border-left: 4px solid var(--m3-primary);">
+            <div style="margin-bottom: 20px; padding: 10px 20px; background: rgba(0,0,0,0.2); border-radius: 8px; border-left: 4px solid var(--m3-color-success);">
                 <h2 style="margin: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 10px;">
                     <span class="material-symbols-rounded">category</span> Distribuição de Equipamentos por Fabricante
                 </h2>
                 <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: var(--m3-on-surface-variant);">
-                    Este painel agrupa todos os clientes da rede baseado no prefixo do Serial/MAC (ex: ALCL, FRKW, HWTC). 
-                    <em style="color: var(--m3-color-warning);">(Modo de Simulação Ativo)</em>
+                    Este painel agrupa todos os clientes da rede baseado no prefixo (4 primeiros dígitos) do Serial/MAC encontrado nas planilhas.
                 </p>
             </div>
 
             <div id="fabricantes-grid" class="grid-container" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
-                <p style="padding: 20px;">Carregando dados da rede e processando fabricantes...</p>
+                <p style="padding: 20px;">Carregando dados reais da rede e agrupando seriais...</p>
             </div>
             
         </main>
@@ -69,7 +68,7 @@
         const API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
         const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
         
-        // Mapeamento fornecido
+        // Mapeamento de Fabricantes
         const marcasList = [
             { nome: 'NOKIA', prefixos: 'ALCL, NBEL' },
             { nome: 'FURUKAWA', prefixos: 'FRKW' },
@@ -83,116 +82,128 @@
             { nome: 'SHORELINE', prefixos: 'SHLN' }
         ];
 
-        async function fetchOltTotals(olt) {
-            const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:C`;
+        // Cria um dicionário rápido para buscar a marca a partir do prefixo
+        const prefixToMarca = {};
+        marcasList.forEach(marca => {
+            marca.prefixos.split(',').forEach(p => {
+                prefixToMarca[p.trim().toUpperCase()] = marca.nome;
+            });
+        });
+
+        async function fetchOltDataAndSerials(olt) {
+            // Nokia precisa de Col C (index 2) para Serial e Col E (index 4) para Status (A:E)
+            // Furukawa precisa de Col C (index 2) para Status e Col D (index 3) para Serial (A:D)
+            const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:D`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
             
             try {
                 const response = await fetch(url);
-                if (!response.ok) return { id: olt.id, online: 0, offline: 0, type: olt.type };
+                if (!response.ok) return { id: olt.id, prefixCounts: {} };
                 const data = await response.json();
                 const rows = (data.values || []).slice(1);
                 
-                let online = 0, offline = 0;
+                const prefixCounts = {};
+
                 rows.forEach(columns => {
                     if (columns.length === 0) return;
+                    
                     let isOnline = false;
+                    let serialRaw = '';
+
                     if (olt.type === 'nokia') {
                         isOnline = (columns[4] || '').trim().toLowerCase().includes('up');
+                        serialRaw = (columns[2] || '').trim(); // Coluna C
                     } else { 
                         isOnline = (columns[2] || '').trim().toLowerCase() === 'active';
+                        serialRaw = (columns[3] || '').trim(); // Coluna D
                     }
-                    if (isOnline) online++; else offline++;
+
+                    // Ignorar se não tiver serial
+                    if (!serialRaw) return;
+
+                    // Pega os 4 primeiros caracteres
+                    const prefix = serialRaw.substring(0, 4).toUpperCase();
+                    if (!prefix) return;
+
+                    if (!prefixCounts[prefix]) {
+                        prefixCounts[prefix] = { online: 0, offline: 0 };
+                    }
+                    
+                    if (isOnline) prefixCounts[prefix].online++;
+                    else prefixCounts[prefix].offline++;
                 });
-                return { id: olt.id, online, offline, type: olt.type };
+
+                return { id: olt.id, prefixCounts };
             } catch (error) {
-                return { id: olt.id, online: 0, offline: 0, type: olt.type };
+                console.error(`Erro buscando seriais de ${olt.id}`, error);
+                return { id: olt.id, prefixCounts: {} };
             }
         }
 
         async function renderFabricantesDashboard() {
             const grid = document.getElementById('fabricantes-grid');
             
-            // 1. Busca os totais reais das OLTs
-            const promises = oltsConfig.map(olt => fetchOltTotals(olt));
+            // 1. Busca os dados reais de todas as OLTs em paralelo
+            const promises = oltsConfig.map(olt => fetchOltDataAndSerials(olt));
             const oltsData = await Promise.all(promises);
 
-            // 2. Cria o objeto para armazenar os totais por fabricante
+            // 2. Cria o objeto para armazenar os totais
             const statsPorFabricante = {};
+            
+            // Inicia todas as marcas conhecidas com 0
             marcasList.forEach(marca => {
                 statsPorFabricante[marca.nome] = {
                     nome: marca.nome,
                     prefixos: marca.prefixos,
                     online: 0,
                     offline: 0,
-                    olts: {} // Para guardar a quantidade por OLT
+                    olts: {} 
                 };
             });
 
-            // 3. SIMULAÇÃO: Distribui os equipamentos lidos das OLTs pelos fabricantes
-            oltsData.forEach(olt => {
-                if(olt.online === 0 && olt.offline === 0) return;
+            // Cria a categoria OUTROS para seriais não reconhecidos
+            statsPorFabricante['OUTROS / DESCONHECIDO'] = {
+                nome: 'OUTROS / DESCONHECIDO',
+                prefixos: 'Vários',
+                online: 0,
+                offline: 0,
+                olts: {}
+            };
 
-                // Lógica de distribuição baseada no tipo da OLT
-                let distribuicao = [];
-                if (olt.type === 'nokia') {
-                    // OLT Nokia tem maioria Nokia, mas tem outros misturados
-                    distribuicao = [
-                        { marca: 'NOKIA', pct: 0.80 },
-                        { marca: 'ASKEY', pct: 0.08 },
-                        { marca: 'HUAWEI', pct: 0.05 },
-                        { marca: 'EURONET', pct: 0.04 },
-                        { marca: 'TENDA', pct: 0.03 }
-                    ];
-                } else {
-                    // OLT Furukawa tem maioria Furukawa, mas tem V-SOL e Parks
-                    distribuicao = [
-                        { marca: 'FURUKAWA', pct: 0.70 },
-                        { marca: 'MAXPRINT / V-SOL', pct: 0.15 },
-                        { marca: 'PARKS', pct: 0.05 },
-                        { marca: 'MITRASTAR', pct: 0.05 },
-                        { marca: 'SHORELINE', pct: 0.05 }
-                    ];
-                }
+            // 3. Processa os dados retornados de cada OLT
+            oltsData.forEach(oltData => {
+                if (!oltData.prefixCounts) return;
 
-                // Aplica as percentagens
-                let onlineRestante = olt.online;
-                let offlineRestante = olt.offline;
-
-                distribuicao.forEach((dist, index) => {
-                    let on = Math.floor(olt.online * dist.pct);
-                    let off = Math.floor(olt.offline * dist.pct);
+                Object.entries(oltData.prefixCounts).forEach(([prefix, counts]) => {
+                    // Verifica de quem é esse prefixo, ou manda para OUTROS
+                    const marcaNome = prefixToMarca[prefix] || 'OUTROS / DESCONHECIDO';
                     
-                    // Garante que a última marca pega o resto para bater o total exato
-                    if (index === distribuicao.length - 1) {
-                        on = onlineRestante;
-                        off = offlineRestante;
-                    } else {
-                        onlineRestante -= on;
-                        offlineRestante -= off;
-                    }
+                    // Atualiza totais gerais do fabricante
+                    statsPorFabricante[marcaNome].online += counts.online;
+                    statsPorFabricante[marcaNome].offline += counts.offline;
 
-                    if (on > 0 || off > 0) {
-                        statsPorFabricante[dist.marca].online += on;
-                        statsPorFabricante[dist.marca].offline += off;
-                        
-                        if (!statsPorFabricante[dist.marca].olts[olt.id]) {
-                            statsPorFabricante[dist.marca].olts[olt.id] = { online: 0, offline: 0 };
-                        }
-                        statsPorFabricante[dist.marca].olts[olt.id].online += on;
-                        statsPorFabricante[dist.marca].olts[olt.id].offline += off;
+                    // Atualiza a distribuição por OLT
+                    if (!statsPorFabricante[marcaNome].olts[oltData.id]) {
+                        statsPorFabricante[marcaNome].olts[oltData.id] = { online: 0, offline: 0 };
                     }
+                    statsPorFabricante[marcaNome].olts[oltData.id].online += counts.online;
+                    statsPorFabricante[marcaNome].olts[oltData.id].offline += counts.offline;
                 });
             });
 
-            // 4. Converte em array e ordena por quem tem mais equipamentos
+            // 4. Converte em array e ordena (Quem tem mais equipamentos aparece primeiro)
             const listaOrdenada = Object.values(statsPorFabricante)
-                .filter(f => (f.online + f.offline) > 0) // Esconde quem tem 0
+                .filter(f => (f.online + f.offline) > 0) // Esconde fabricantes com 0 equipamentos
                 .sort((a, b) => (b.online + b.offline) - (a.online + a.offline));
 
             // 5. Renderiza os Cards
             grid.innerHTML = '';
             
+            if (listaOrdenada.length === 0) {
+                grid.innerHTML = '<p style="padding: 20px;">Nenhum equipamento com serial foi encontrado na rede.</p>';
+                return;
+            }
+
             listaOrdenada.forEach(fab => {
                 const total = fab.online + fab.offline;
                 const pctOnline = total > 0 ? (fab.online / total) * 100 : 0;
@@ -223,10 +234,13 @@
                     `;
                 });
 
+                // Destaque visual caso seja a aba "OUTROS"
+                const alertIcon = fab.nome === 'OUTROS / DESCONHECIDO' ? '<span class="material-symbols-rounded" style="color: var(--m3-color-warning); font-size: 16px; margin-left: 5px;">warning</span>' : '';
+
                 grid.innerHTML += `
                     <div class="overview-card" style="display: flex; flex-direction: column;">
                         <div class="card-header ${headerClass}" style="flex-direction: column; align-items: flex-start; padding: 12px 15px;">
-                            <h3 style="font-size: 1.2rem; margin-bottom: 2px;"><span class="material-symbols-rounded">dns</span> ${fab.nome}</h3>
+                            <h3 style="font-size: 1.2rem; margin-bottom: 2px; display: flex; align-items: center;"><span class="material-symbols-rounded" style="margin-right: 5px;">dns</span> ${fab.nome} ${alertIcon}</h3>
                             <span style="font-size: 0.75rem; opacity: 0.8; font-family: var(--font-family-mono);">Prefixos: ${fab.prefixos}</span>
                         </div>
                         
