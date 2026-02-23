@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão 5.3 (Título do modal de status inclui nome do circuito)
+// olt-engine.js - Versão 5.4 (Título do modal inclui "Circuito: Nome")
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -348,7 +348,7 @@ function closeModal(event) {
     document.getElementById('detail-modal').style.display = 'none';
 }
 
-// MUDANÇA AQUI: Adicionado parâmetro 'circuito' e ajustado o título
+// MUDANÇA AQUI: Adicionado "Circuito:" no texto formatado
 function openPortDetails(placa, porta, circuito, online, offline, total) {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.querySelector('.modal-content');
@@ -357,9 +357,9 @@ function openPortDetails(placa, porta, circuito, online, offline, total) {
     modalContent.classList.remove('modal-large'); 
     modalContent.classList.add('modal-status');   
 
-    // Formata o título: "Placa X / Porta Y - NomeDoCircuito"
+    // Formata o título: "Placa X / Porta Y - Circuito: NomeDoCircuito"
     // Se não houver circuito, mostra apenas a placa/porta
-    const textoCircuito = (circuito && circuito !== "-") ? ` - ${circuito}` : "";
+    const textoCircuito = (circuito && circuito !== "-") ? ` - Circuito: ${circuito}` : "";
     document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta}${textoCircuito}`;
     
     document.getElementById('view-stats').style.display = 'flex';
