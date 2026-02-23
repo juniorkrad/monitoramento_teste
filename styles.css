@@ -574,8 +574,30 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     font-size: 20px;
 }
 
-.stat-item.online .stat-number { color: var(--m3-color-success); }
-.stat-item.offline .stat-number { color: var(--m3-color-error); }
+/* --- CORES DOS INDICADORES (NÚMEROS, TEXTOS E ÍCONES) --- */
+/* Total (Sem classe específica) */
+.stat-item:not(.online):not(.offline) .stat-number,
+.stat-item:not(.online):not(.offline) label, 
+.stat-item:not(.online):not(.offline) label .material-symbols-rounded { 
+    color: var(--m3-on-surface); 
+    font-weight: 500;
+}
+
+/* Online */
+.stat-item.online .stat-number,
+.stat-item.online label,
+.stat-item.online label .material-symbols-rounded { 
+    color: var(--m3-color-success); 
+    font-weight: 500;
+}
+
+/* Offline */
+.stat-item.offline .stat-number,
+.stat-item.offline label,
+.stat-item.offline label .material-symbols-rounded { 
+    color: var(--m3-color-error); 
+    font-weight: 500;
+}
 
 /* --- GRÁFICO FIXO ABSOLUTO À DIREITA --- */
 .donut-chart-container { 
