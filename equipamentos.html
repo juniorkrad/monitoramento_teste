@@ -71,7 +71,7 @@
         // Mapeamento de Fabricantes
         const marcasList = [
             { nome: 'NOKIA', prefixos: 'ALCL, NBEL' },
-            { nome: 'FURUKAWA', prefixos: 'FRKW' },
+            { nome: 'FURUKAWA', prefixos: 'FRKW, FIOG' },
             { nome: 'ASKEY', prefixos: 'ASKY, INVP, TLCM' },
             { nome: 'EURONET', prefixos: 'CIOT, YHTC' },
             { nome: 'HUAWEI', prefixos: 'HWTC' },
@@ -225,13 +225,13 @@
                     const oltsOrdenadas = Object.entries(fab.olts).sort((a,b) => (b[1].online + b[1].offline) - (a[1].online + a[1].offline));
                     
                     oltsOrdenadas.forEach(([oltId, stats]) => {
-                        const totalOlt = stats.online + stats.offline;
                         oltsHtml += `
                             <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85rem;">
                                 <span style="color: var(--m3-on-surface); font-weight: 500;">${oltId}</span>
                                 <span>
-                                    <span style="color: var(--m3-on-surface-variant);">${totalOlt}</span> 
-                                    <span style="font-size: 0.75rem; color: var(--m3-color-error); margin-left: 5px;">(${stats.offline} off)</span>
+                                    <span style="color: var(--m3-color-success); font-weight: bold;">${stats.online} ON</span> 
+                                    <span style="color: var(--m3-outline); margin: 0 4px;">|</span> 
+                                    <span style="color: var(--m3-color-error); font-weight: bold;">${stats.offline} OFF</span>
                                 </span>
                             </div>
                         `;
