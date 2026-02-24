@@ -295,60 +295,34 @@
                 </div>
             `;
 
-            // Coluna 2: Fabricantes (Opção B - Mini Gráficos de Rosca)
-            const nokiaPct = nokiaTotal > 0 ? (nokiaOnline / nokiaTotal) * 100 : 0;
-            const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
+            // Coluna 2: Fabricantes (Opção C - Minimalista em Lista)
+            const nokiaOffline = nokiaTotal - nokiaOnline;
+            const furukawaOffline = furukawaTotal - furukawaOnline;
             
-            // Cálculos para o SVG dos mini gráficos
-            const miniRadius = 32;
-            const miniCircumference = 2 * Math.PI * miniRadius;
-            const nokiaOffset = miniCircumference - (nokiaPct / 100) * miniCircumference;
-            const furukawaOffset = miniCircumference - (furukawaPct / 100) * miniCircumference;
-
             const vendorHtml = `
-                <div style="display: flex; gap: 15px; justify-content: center; width: 100%; flex-wrap: wrap;">
+                <div style="display: flex; flex-direction: column; width: 100%; max-width: 250px; justify-content: center; gap: 15px;">
                     
-                    <div style="background: rgba(0,0,0,0.1); padding: 15px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; min-width: 130px; flex: 1;">
-                        <img src="imagens/nokia.png" alt="Nokia" style="max-height: 20px; margin-bottom: 15px; object-fit: contain;">
-                        
-                        <div class="donut-chart-container" style="width: 70px; height: 70px; margin-bottom: 12px; position: relative;">
-                            <svg class="donut-chart" width="70" height="70" viewBox="0 0 100 100">
-                                <circle class="donut-bg" cx="50" cy="50" r="${miniRadius}" stroke-width="10"></circle>
-                                <circle class="donut-fg" cx="50" cy="50" r="${miniRadius}" stroke-width="10"
-                                    stroke-dasharray="${miniCircumference}"
-                                    stroke-dashoffset="${nokiaOffset}">
-                                </circle>
-                            </svg>
-                            <div class="chart-text"><span class="stat-number" style="font-size: 0.95rem;">${Math.round(nokiaPct)}%</span></div>
-                        </div>
-                        
-                        <div style="text-align: center; font-size: 0.85rem; line-height: 1.5; color: var(--m3-on-surface-variant);">
-                            <strong style="color: var(--m3-on-surface); font-size: 1.1rem; font-family: var(--font-family-mono);">${nokiaTotal}</strong> Total<br>
-                            <span style="color: var(--m3-color-success); font-weight: 500;">${nokiaOnline} ON</span> 
-                            <span style="color: var(--m3-outline); margin: 0 4px;">|</span> 
-                            <span style="color: var(--m3-color-error); font-weight: 500;">${nokiaTotal - nokiaOnline} OFF</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
+                        <img src="imagens/nokia.png" alt="Nokia" style="height: 22px; object-fit: contain;">
+                        <div style="text-align: right;">
+                            <div style="font-size: 1.4rem; font-weight: 700; color: var(--m3-on-surface); font-family: var(--font-family-mono); line-height: 1;">${nokiaTotal}</div>
+                            <div style="font-size: 0.8rem; font-weight: 600; margin-top: 4px;">
+                                <span style="color: var(--m3-color-success);">${nokiaOnline} ON</span>
+                                <span style="color: var(--m3-outline); margin: 0 2px;">|</span>
+                                <span style="color: var(--m3-color-error);">${nokiaOffline} OFF</span>
+                            </div>
                         </div>
                     </div>
-
-                    <div style="background: rgba(0,0,0,0.1); padding: 15px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; min-width: 130px; flex: 1;">
-                        <img src="imagens/furukawa.png" alt="Furukawa" style="max-height: 20px; margin-bottom: 15px; object-fit: contain;">
-                        
-                        <div class="donut-chart-container" style="width: 70px; height: 70px; margin-bottom: 12px; position: relative;">
-                            <svg class="donut-chart" width="70" height="70" viewBox="0 0 100 100">
-                                <circle class="donut-bg" cx="50" cy="50" r="${miniRadius}" stroke-width="10"></circle>
-                                <circle class="donut-fg" cx="50" cy="50" r="${miniRadius}" stroke-width="10"
-                                    stroke-dasharray="${miniCircumference}"
-                                    stroke-dashoffset="${furukawaOffset}">
-                                </circle>
-                            </svg>
-                            <div class="chart-text"><span class="stat-number" style="font-size: 0.95rem;">${Math.round(furukawaPct)}%</span></div>
-                        </div>
-                        
-                        <div style="text-align: center; font-size: 0.85rem; line-height: 1.5; color: var(--m3-on-surface-variant);">
-                            <strong style="color: var(--m3-on-surface); font-size: 1.1rem; font-family: var(--font-family-mono);">${furukawaTotal}</strong> Total<br>
-                            <span style="color: var(--m3-color-success); font-weight: 500;">${furukawaOnline} ON</span> 
-                            <span style="color: var(--m3-outline); margin: 0 4px;">|</span> 
-                            <span style="color: var(--m3-color-error); font-weight: 500;">${furukawaTotal - furukawaOnline} OFF</span>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <img src="imagens/furukawa.png" alt="Furukawa" style="height: 22px; object-fit: contain;">
+                        <div style="text-align: right;">
+                            <div style="font-size: 1.4rem; font-weight: 700; color: var(--m3-on-surface); font-family: var(--font-family-mono); line-height: 1;">${furukawaTotal}</div>
+                            <div style="font-size: 0.8rem; font-weight: 600; margin-top: 4px;">
+                                <span style="color: var(--m3-color-success);">${furukawaOnline} ON</span>
+                                <span style="color: var(--m3-outline); margin: 0 2px;">|</span>
+                                <span style="color: var(--m3-color-error);">${furukawaOffline} OFF</span>
+                            </div>
                         </div>
                     </div>
                     
