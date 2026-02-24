@@ -39,6 +39,34 @@
         </main>
     </div>
 
+    <div id="modal-desconhecidos" class="modal-overlay">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3><span class="material-symbols-rounded">troubleshoot</span> Equipamentos Desconhecidos</h3>
+                <button class="close-modal" onclick="closeUnknownModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-top: 0; color: var(--m3-on-surface-variant); font-size: 0.9rem;">
+                    Lista de equipamentos cujos seriais não correspondem aos fabricantes homologados. Identifique a OLT e a Porta para localizá-los nas planilhas.
+                </p>
+                <div class="client-table-container">
+                    <table id="tabela-desconhecidos">
+                        <thead>
+                            <tr class="table-header-row">
+                                <th>OLT</th>
+                                <th>Placa/Porta</th>
+                                <th>Serial Completo</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="footer-placeholder"></div>
 
     <script src="layout.js"></script>
@@ -90,6 +118,9 @@
             });
         });
 
+        // Variável global para armazenar a lista de equipamentos desconhecidos
+        window.listaDesconhecidos = [];
+
         async function fetchOltDataAndSerials(olt) {
             // Nokia precisa de Col C (index 2) para Serial e Col E (index 4) para Status (A:E)
             // Furukawa precisa de Col C (index 2) para Status e Col D (index 3) para Serial (A:D)
@@ -109,6 +140,7 @@
                     
                     let isOnline = false;
                     let serialRaw = '';
+                    let ponRaw = (columns[0] || '').trim(); // Captura a Coluna A (Porta/PON)
 
                     if (olt.type === 'nokia') {
                         isOnline = (columns[4] || '').trim().toLowerCase().includes('up');
@@ -126,9 +158,12 @@
                     if (!prefix) return;
 
                     if (!prefixCounts[prefix]) {
-                        prefixCounts[prefix] = { online: 0, offline: 0 };
+                        prefixCounts[prefix] = { online: 0, offline: 0, devices: [] };
                     }
                     
+                    // Guarda o detalhe do equipamento para o modal
+                    prefixCounts[prefix].devices.push({ pon: ponRaw, serial: serialRaw, isOnline: isOnline });
+
                     if (isOnline) prefixCounts[prefix].online++;
                     else prefixCounts[prefix].offline++;
                 });
@@ -147,6 +182,7 @@
             }
 
             const grid = document.getElementById('fabricantes-grid');
+            window.listaDesconhecidos = []; // Reseta a lista a cada atualização
             
             // 1. Busca os dados reais de todas as OLTs em paralelo
             const promises = oltsConfig.map(olt => fetchOltDataAndSerials(olt));
@@ -193,6 +229,18 @@
                     }
                     statsPorFabricante[marcaNome].olts[oltData.id].online += counts.online;
                     statsPorFabricante[marcaNome].olts[oltData.id].offline += counts.offline;
+
+                    // Se for desconhecido, alimenta a lista global com os detalhes
+                    if (marcaNome === 'OUTROS / DESCONHECIDO') {
+                        counts.devices.forEach(dev => {
+                            window.listaDesconhecidos.push({
+                                olt: oltData.id,
+                                pon: dev.pon,
+                                serial: dev.serial,
+                                isOnline: dev.isOnline
+                            });
+                        });
+                    }
                 });
             });
 
@@ -237,13 +285,25 @@
                         `;
                     });
 
-                    // Destaque visual caso seja a aba "OUTROS"
-                    const alertIcon = fab.nome === 'OUTROS / DESCONHECIDO' ? '<span class="material-symbols-rounded" style="color: var(--m3-color-warning); font-size: 16px; margin-left: 5px;">warning</span>' : '';
+                    // Modificação: Adiciona o botão de detalhes apenas se for a aba OUTROS
+                    let alertIcon = '';
+                    let btnDetalhes = '';
+                    if (fab.nome === 'OUTROS / DESCONHECIDO') {
+                        alertIcon = '<span class="material-symbols-rounded" style="color: var(--m3-color-warning); font-size: 16px; margin-left: 5px;">warning</span>';
+                        btnDetalhes = `
+                            <button onclick="openUnknownModal()" class="card-header-button" style="border: 1px solid rgba(255,255,255,0.3); cursor: pointer; background: rgba(0,0,0,0.3);">
+                                <span class="material-symbols-rounded" style="font-size: 18px;">search</span> Ver Detalhes
+                            </button>
+                        `;
+                    }
 
                     grid.innerHTML += `
                         <div class="overview-card" style="display: flex; flex-direction: column;">
                             <div class="card-header ${headerClass}" style="flex-direction: column; align-items: flex-start; padding: 12px 15px;">
-                                <h3 style="font-size: 1.2rem; margin-bottom: 2px; display: flex; align-items: center;"><span class="material-symbols-rounded" style="margin-right: 5px;">router</span> ${fab.nome} ${alertIcon}</h3>
+                                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                    <h3 style="font-size: 1.2rem; margin-bottom: 2px; display: flex; align-items: center;"><span class="material-symbols-rounded" style="margin-right: 5px;">router</span> ${fab.nome} ${alertIcon}</h3>
+                                    ${btnDetalhes}
+                                </div>
                                 <span style="font-size: 0.75rem; opacity: 0.8; font-family: var(--font-family-mono);">Prefixos: ${fab.prefixos}</span>
                             </div>
                             
@@ -307,6 +367,33 @@
                 void timestampEl.offsetWidth; 
                 timestampEl.classList.add('updated-anim');
             }
+        }
+
+        // --- FUNÇÕES DO MODAL ---
+        function openUnknownModal() {
+            const tbody = document.querySelector('#tabela-desconhecidos tbody');
+            tbody.innerHTML = ''; // Limpa a tabela
+
+            window.listaDesconhecidos.forEach(item => {
+                const statusHtml = item.isOnline 
+                    ? '<span class="status status-normal">Online</span>' 
+                    : '<span class="status status-problema">Offline</span>';
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${item.olt}</strong></td>
+                        <td>${item.pon || '-'}</td>
+                        <td style="font-family: var(--font-family-mono);">${item.serial}</td>
+                        <td>${statusHtml}</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('modal-desconhecidos').style.display = 'flex';
+        }
+
+        function closeUnknownModal() {
+            document.getElementById('modal-desconhecidos').style.display = 'none';
         }
 
         document.addEventListener('DOMContentLoaded', () => {
