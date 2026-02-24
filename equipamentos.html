@@ -242,10 +242,6 @@
                     const total = fab.online + fab.offline;
                     const pctOnline = total > 0 ? (fab.online / total) * 100 : 0;
                     const pctOffline = 100 - pctOnline;
-                    
-                    let headerClass = 'status-normal';
-                    if (pctOffline > 10) headerClass = 'status-problema';
-                    else if (pctOffline > 5) headerClass = 'status-atencao';
 
                     const newRadius = 35; 
                     const circumference = 2 * Math.PI * newRadius; 
@@ -316,7 +312,7 @@
 
                     grid.innerHTML += `
                         <div class="overview-card" style="display: flex; flex-direction: column;">
-                            <div class="card-header ${headerClass}" style="flex-direction: column; align-items: flex-start; padding: 12px 15px;">
+                            <div class="card-header" style="flex-direction: column; align-items: flex-start; padding: 12px 15px; background: rgba(103, 7, 159, 0.15); border-bottom: 1px solid rgba(103, 7, 159, 0.25);">
                                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                                     <h3 style="font-size: 1.2rem; margin-bottom: 2px; display: flex; align-items: center; gap: 5px;">${marcaVisual} ${alertIcon}</h3>
                                     ${btnDetalhes}
