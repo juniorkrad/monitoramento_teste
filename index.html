@@ -67,7 +67,7 @@
                     <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
                         <h3><span class="material-symbols-rounded" style="font-size: 28px;">public</span> VISÃO GERAL DA REDE</h3>
                         <a href="equipamentos.html" class="card-header-button" title="Ver Distribuição por Fabricante" style="padding: 6px 16px; font-size: 0.95rem; gap: 8px; border: 1px solid rgba(255,255,255,0.2);">
-                            <span class="material-symbols-rounded" style="font-size: 22px;">dns</span> Ver Equipamentos
+                            <span class="material-symbols-rounded" style="font-size: 22px;">router</span> Ver Equipamentos
                         </a>
                     </div>
                     <div class="card-body">
@@ -87,7 +87,7 @@
                 grid.innerHTML += `
                     <div class="overview-card" id="card-${olt.id}">
                         <div class="card-header">
-                            <h3><span class="material-symbols-rounded">router</span> ${olt.id}</h3>
+                            <h3><span class="material-symbols-rounded">dns</span> ${olt.id}</h3>
                             <a href="${pageUrl}" class="card-header-button" title="Ver Detalhes">
                                 <span class="material-symbols-rounded" style="font-size: 20px;">manage_search</span>
                                 <span class="material-symbols-rounded" style="font-size: 20px;">arrow_forward</span>
@@ -109,7 +109,7 @@
                         <h3 style="color: var(--m3-on-surface); font-size: 1em; letter-spacing: 1px;"><span class="material-symbols-rounded" style="color: var(--m3-primary); font-size: 20px;">apps</span> MÓDULO GERENCIAL</h3>
                     </div>
                     <div class="card-body" style="flex-direction: column; justify-content: center; align-items: center; padding: 25px 15px;">
-                        <span class="material-symbols-rounded" style="font-size: 50px; color: var(--m3-primary); margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(103,7,159,0.5));">dns</span>
+                        <span class="material-symbols-rounded" style="font-size: 50px; color: var(--m3-primary); margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(103,7,159,0.5));">router</span>
                         <strong style="font-size: 1.2rem; color: var(--m3-on-surface); text-align: center; margin-bottom: 5px;">Parque de Equipamentos</strong>
                         <span style="font-size: 0.85rem; color: var(--m3-on-surface-variant); text-align: center;">Ver Distribuição de Fabricantes</span>
                     </div>
@@ -233,7 +233,7 @@
             const statsHtml = `
                 <div class="stat-item">
                     <span class="stat-number">${total}</span>
-                    <label><span class="material-symbols-rounded icon-total">dns</span> Total</label>
+                    <label><span class="material-symbols-rounded icon-total">router</span> Total</label>
                 </div>
                 <div class="stat-item online">
                     <span class="stat-number">${onlineCount}</span>
@@ -284,7 +284,7 @@
             const statsHtml = `
                 <div class="stat-item global-stat">
                     <span class="stat-number">${total}</span>
-                    <label><span class="material-symbols-rounded icon-total">dns</span> Total Geral</label>
+                    <label><span class="material-symbols-rounded icon-total">router</span> Total Geral</label>
                 </div>
                 <div class="stat-item online global-stat">
                     <span class="stat-number">${globalOnline}</span>

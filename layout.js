@@ -106,7 +106,7 @@ function loadSidebar(currentPage) {
 
         linksHtml += `
             <a href="${olt.file}" class="sidebar-link">
-                <span class="material-symbols-rounded">router</span>
+                <span class="material-symbols-rounded">dns</span>
                 ${olt.name}
             </a>
         `;
@@ -130,7 +130,7 @@ function loadSidebar(currentPage) {
                 </a>
                 
                 <a href="equipamentos.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px;">
-                    <span class="material-symbols-rounded" style="font-size: 24px;">dns</span>
+                    <span class="material-symbols-rounded" style="font-size: 24px;">router</span>
                     EQUIPAMENTOS
                 </a>
                 
