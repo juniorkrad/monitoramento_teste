@@ -203,8 +203,8 @@
             });
 
             // Cria a categoria OUTROS para seriais não reconhecidos
-            statsPorFabricante['OUTROS / DESCONHECIDO'] = {
-                nome: 'OUTROS / DESCONHECIDO',
+            statsPorFabricante['OUTROS'] = {
+                nome: 'OUTROS',
                 prefixos: 'Vários',
                 online: 0,
                 offline: 0,
@@ -217,7 +217,7 @@
 
                 Object.entries(oltData.prefixCounts).forEach(([prefix, counts]) => {
                     // Verifica de quem é esse prefixo, ou manda para OUTROS
-                    const marcaNome = prefixToMarca[prefix] || 'OUTROS / DESCONHECIDO';
+                    const marcaNome = prefixToMarca[prefix] || 'OUTROS';
                     
                     // Atualiza totais gerais do fabricante
                     statsPorFabricante[marcaNome].online += counts.online;
@@ -231,7 +231,7 @@
                     statsPorFabricante[marcaNome].olts[oltData.id].offline += counts.offline;
 
                     // Se for desconhecido, alimenta a lista global com os detalhes
-                    if (marcaNome === 'OUTROS / DESCONHECIDO') {
+                    if (marcaNome === 'OUTROS') {
                         counts.devices.forEach(dev => {
                             window.listaDesconhecidos.push({
                                 olt: oltData.id,
@@ -285,14 +285,13 @@
                         `;
                     });
 
-                    // Modificação: Adiciona o botão de detalhes apenas se for a aba OUTROS
+                    // Modificação: Adiciona o botão de detalhes (apenas com o ícone) se for a aba OUTROS
                     let alertIcon = '';
                     let btnDetalhes = '';
-                    if (fab.nome === 'OUTROS / DESCONHECIDO') {
-                        alertIcon = '<span class="material-symbols-rounded" style="color: var(--m3-color-warning); font-size: 16px; margin-left: 5px;">warning</span>';
+                    if (fab.nome === 'OUTROS') {
                         btnDetalhes = `
-                            <button onclick="openUnknownModal()" class="card-header-button" style="border: 1px solid rgba(255,255,255,0.3); cursor: pointer; background: rgba(0,0,0,0.3);">
-                                <span class="material-symbols-rounded" style="font-size: 18px;">search</span> Ver Detalhes
+                            <button onclick="openUnknownModal()" class="card-header-button" title="Ver Detalhes" style="border: 1px solid rgba(255,255,255,0.3); cursor: pointer; background: rgba(0,0,0,0.3); padding: 6px 8px;">
+                                <span class="material-symbols-rounded" style="font-size: 20px;">search</span>
                             </button>
                         `;
                     }
