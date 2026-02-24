@@ -284,10 +284,34 @@
                     // --- LÓGICA DE EXIBIÇÃO DO TÍTULO (LOGÓTIPO OU TEXTO) ---
                     let marcaVisual = `<span class="material-symbols-rounded" style="margin-right: 5px;">router</span> ${fab.nome}`;
                     
-                    // Se o fabricante for a Nokia, exibe a imagem.
-                    // Para adicionar outras marcas depois, basta duplicar o bloco IF abaixo
                     if (fab.nome === 'NOKIA') {
                         marcaVisual = `<img src="imagens/logos/nokia.png" alt="Nokia" style="height: 24px; object-fit: contain;">`;
+                    } else if (fab.nome === 'FURUKAWA') {
+                        marcaVisual = `<img src="imagens/logos/furukawa.png" alt="Furukawa" style="height: 24px; object-fit: contain;">`;
+                    } else if (fab.nome === 'CHINA MOBILE') {
+                        marcaVisual = `<img src="imagens/logos/china-mobile.png" alt="China Mobile" style="height: 24px; object-fit: contain;">`;
+                    } else if (fab.nome === 'ASKEY') {
+                        marcaVisual = `<img src="imagens/logos/askey.png" alt="Askey" style="height: 24px; object-fit: contain;">`;
+                    } else if (fab.nome === 'EURONET') {
+                        marcaVisual = `<img src="imagens/logos/euronet.png" alt="Euronet" style="height: 24px; object-fit: contain;">`;
+                    } else if (fab.nome === 'HUAWEI') {
+                        marcaVisual = `<img src="imagens/logos/huawei.png" alt="Huawei" style="height: 24px; object-fit: contain;">`;
+                    } else if (fab.nome === 'MITRASTAR') {
+                        marcaVisual = `<img src="imagens/logos/mitrastar.png" alt="Mitrastar" style="height: 24px; object-fit: contain;">`;
+                    } else if (fab.nome === 'PARKS') {
+                        marcaVisual = `<img src="imagens/logos/parks.png" alt="Parks" style="height: 24px; object-fit: contain;">`;
+                    } else if (fab.nome === 'TENDA') {
+                        marcaVisual = `<img src="imagens/logos/tenda.png" alt="Tenda" style="height: 24px; object-fit: contain;">`;
+                    } else if (fab.nome === 'SHORELINE') {
+                        marcaVisual = `<img src="imagens/logos/shoreline.png" alt="Shoreline" style="height: 24px; object-fit: contain;">`;
+                    } else if (fab.nome === 'MAXPRINT / V-SOL') {
+                        marcaVisual = `
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <img src="imagens/logos/maxprint.png" alt="Maxprint" style="height: 24px; object-fit: contain;">
+                                <span style="color: var(--m3-outline); font-size: 16px;">+</span>
+                                <img src="imagens/logos/v-sol.png" alt="V-SOL" style="height: 24px; object-fit: contain;">
+                            </div>
+                        `;
                     }
 
                     grid.innerHTML += `
