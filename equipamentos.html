@@ -111,7 +111,6 @@
             { nome: 'SHORELINE', prefixos: 'SHLN' }
         ];
 
-        // Cria um dicionário rápido para buscar a marca a partir do prefixo
         const prefixToMarca = {};
         marcasList.forEach(marca => {
             marca.prefixos.split(',').forEach(p => {
@@ -119,12 +118,9 @@
             });
         });
 
-        // Variável global para armazenar a lista de equipamentos desconhecidos
         window.listaDesconhecidos = [];
 
         async function fetchOltDataAndSerials(olt) {
-            // Nokia precisa de Col C (index 2) para Serial e Col E (index 4) para Status (A:E)
-            // Furukawa precisa de Col C (index 2) para Status e Col D (index 3) para Serial (A:D)
             const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:D`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
             
@@ -141,20 +137,18 @@
                     
                     let isOnline = false;
                     let serialRaw = '';
-                    let ponRaw = (columns[0] || '').trim(); // Captura a Coluna A (Porta/PON)
+                    let ponRaw = (columns[0] || '').trim(); 
 
                     if (olt.type === 'nokia') {
                         isOnline = (columns[4] || '').trim().toLowerCase().includes('up');
-                        serialRaw = (columns[2] || '').trim(); // Coluna C
+                        serialRaw = (columns[2] || '').trim(); 
                     } else { 
                         isOnline = (columns[2] || '').trim().toLowerCase() === 'active';
-                        serialRaw = (columns[3] || '').trim(); // Coluna D
+                        serialRaw = (columns[3] || '').trim(); 
                     }
 
-                    // Ignorar se não tiver serial
                     if (!serialRaw) return;
 
-                    // Pega os 4 primeiros caracteres
                     const prefix = serialRaw.substring(0, 4).toUpperCase();
                     if (!prefix) return;
 
@@ -162,7 +156,6 @@
                         prefixCounts[prefix] = { online: 0, offline: 0, devices: [] };
                     }
                     
-                    // Guarda o detalhe do equipamento para o modal
                     prefixCounts[prefix].devices.push({ pon: ponRaw, serial: serialRaw, isOnline: isOnline });
 
                     if (isOnline) prefixCounts[prefix].online++;
@@ -183,16 +176,13 @@
             }
 
             const grid = document.getElementById('fabricantes-grid');
-            window.listaDesconhecidos = []; // Reseta a lista a cada atualização
+            window.listaDesconhecidos = []; 
             
-            // 1. Busca os dados reais de todas as OLTs em paralelo
             const promises = oltsConfig.map(olt => fetchOltDataAndSerials(olt));
             const oltsData = await Promise.all(promises);
 
-            // 2. Cria o objeto para armazenar os totais
             const statsPorFabricante = {};
             
-            // Inicia todas as marcas conhecidas com 0
             marcasList.forEach(marca => {
                 statsPorFabricante[marca.nome] = {
                     nome: marca.nome,
@@ -203,7 +193,6 @@
                 };
             });
 
-            // Cria a categoria OUTROS para seriais não reconhecidos
             statsPorFabricante['OUTROS'] = {
                 nome: 'OUTROS',
                 prefixos: 'Vários',
@@ -212,26 +201,21 @@
                 olts: {}
             };
 
-            // 3. Processa os dados retornados de cada OLT
             oltsData.forEach(oltData => {
                 if (!oltData.prefixCounts) return;
 
                 Object.entries(oltData.prefixCounts).forEach(([prefix, counts]) => {
-                    // Verifica de quem é esse prefixo, ou manda para OUTROS
                     const marcaNome = prefixToMarca[prefix] || 'OUTROS';
                     
-                    // Atualiza totais gerais do fabricante
                     statsPorFabricante[marcaNome].online += counts.online;
                     statsPorFabricante[marcaNome].offline += counts.offline;
 
-                    // Atualiza a distribuição por OLT
                     if (!statsPorFabricante[marcaNome].olts[oltData.id]) {
                         statsPorFabricante[marcaNome].olts[oltData.id] = { online: 0, offline: 0 };
                     }
                     statsPorFabricante[marcaNome].olts[oltData.id].online += counts.online;
                     statsPorFabricante[marcaNome].olts[oltData.id].offline += counts.offline;
 
-                    // Se for desconhecido, alimenta a lista global com os detalhes
                     if (marcaNome === 'OUTROS') {
                         counts.devices.forEach(dev => {
                             window.listaDesconhecidos.push({
@@ -245,12 +229,10 @@
                 });
             });
 
-            // 4. Converte em array e ordena (Quem tem mais equipamentos aparece primeiro)
             const listaOrdenada = Object.values(statsPorFabricante)
-                .filter(f => (f.online + f.offline) > 0) // Esconde fabricantes com 0 equipamentos
+                .filter(f => (f.online + f.offline) > 0) 
                 .sort((a, b) => (b.online + b.offline) - (a.online + a.offline));
 
-            // 5. Renderiza os Cards
             grid.innerHTML = '';
             
             if (listaOrdenada.length === 0) {
@@ -269,7 +251,6 @@
                     const circumference = 2 * Math.PI * newRadius; 
                     const offset = circumference - (pctOnline / 100) * circumference;
 
-                    // Tabela de distribuição por OLT (dentro do card) com alinhamento fixo
                     let oltsHtml = '';
                     const oltsOrdenadas = Object.entries(fab.olts).sort((a,b) => (b[1].online + b[1].offline) - (a[1].online + a[1].offline));
                     
@@ -290,7 +271,6 @@
                         `;
                     });
 
-                    // Modificação: Adiciona o botão de detalhes (apenas com o ícone) se for a aba OUTROS
                     let alertIcon = '';
                     let btnDetalhes = '';
                     if (fab.nome === 'OUTROS') {
@@ -301,11 +281,20 @@
                         `;
                     }
 
+                    // --- LÓGICA DE EXIBIÇÃO DO TÍTULO (LOGÓTIPO OU TEXTO) ---
+                    let marcaVisual = `<span class="material-symbols-rounded" style="margin-right: 5px;">router</span> ${fab.nome}`;
+                    
+                    // Se o fabricante for a Nokia, exibe a imagem.
+                    // Para adicionar outras marcas depois, basta duplicar o bloco IF abaixo
+                    if (fab.nome === 'NOKIA') {
+                        marcaVisual = `<img src="imagens/logos/nokia.png" alt="Nokia" style="height: 24px; object-fit: contain;">`;
+                    }
+
                     grid.innerHTML += `
                         <div class="overview-card" style="display: flex; flex-direction: column;">
                             <div class="card-header ${headerClass}" style="flex-direction: column; align-items: flex-start; padding: 12px 15px;">
                                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                    <h3 style="font-size: 1.2rem; margin-bottom: 2px; display: flex; align-items: center;"><span class="material-symbols-rounded" style="margin-right: 5px;">router</span> ${fab.nome} ${alertIcon}</h3>
+                                    <h3 style="font-size: 1.2rem; margin-bottom: 2px; display: flex; align-items: center; gap: 5px;">${marcaVisual} ${alertIcon}</h3>
                                     ${btnDetalhes}
                                 </div>
                                 <span style="font-size: 0.75rem; opacity: 0.8; font-family: var(--font-family-mono);">Prefixos: ${fab.prefixos}</span>
@@ -355,7 +344,6 @@
                 });
             }
 
-            // --- ATUALIZAÇÃO DO TIMESTAMP ---
             const now = new Date();
             const dataHoje = now.toLocaleDateString('pt-BR');
             const horaAgora = now.toLocaleTimeString('pt-BR');
@@ -373,10 +361,9 @@
             }
         }
 
-        // --- FUNÇÕES DO MODAL ---
         function openUnknownModal() {
             const tbody = document.querySelector('#tabela-desconhecidos tbody');
-            tbody.innerHTML = ''; // Limpa a tabela
+            tbody.innerHTML = ''; 
 
             window.listaDesconhecidos.forEach(item => {
                 const statusHtml = item.isOnline 
