@@ -857,4 +857,13 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     .toast, .toast.super-priority {
         max-width: 90vw; /* Garante que nunca passe do ecrã do telemóvel */
     }
+
+    /* --- AJUSTE DE RESPONSIVIDADE PARA OS TOTAIS DO CARD GLOBAL NO MOBILE --- */
+    .global-stat {
+        display: flex !important;
+        flex-direction: column-reverse !important;
+        align-items: flex-start !important;
+        gap: 5px !important;
+        margin-bottom: 12px;
+    }
 }

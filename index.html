@@ -462,6 +462,19 @@
             setInterval(runOverview, REFRESH_INTERVAL_SECONDS * 1000);
         });
     </script>
+    
+    <style>
+        /* Ajuste de responsividade para os Totais do Card Global no Mobile */
+        @media (max-width: 768px) {
+            .global-stat {
+                display: flex !important;
+                flex-direction: column-reverse !important;
+                align-items: flex-start !important;
+                gap: 5px !important;
+                margin-bottom: 12px;
+            }
+        }
+    </style>
 
 </body>
 </html>
