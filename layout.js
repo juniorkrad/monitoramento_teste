@@ -75,7 +75,9 @@ function loadHeader(config) {
     headerPlaceholder.innerHTML = `
         <header class="header">
             <div class="logo-title-group">
-                <img src="banner2.png" alt="Logo" onerror="this.style.display='none'">
+                <a href="index.html" title="Voltar para a Home" style="display: flex; align-items: center; text-decoration: none;">
+                    <img src="banner2.png" alt="Logo" onerror="this.style.display='none'">
+                </a>
                 <h1>${config.title}</h1>
             </div>
             <nav class="header-nav">
