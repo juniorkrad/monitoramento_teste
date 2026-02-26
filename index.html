@@ -22,6 +22,9 @@
         <div id="header-placeholder"></div>
 
         <main class="main-content" style="flex-direction: column;">
+            
+            <div id="backbone-alert-container" style="display: none; width: 100%; margin-bottom: 20px;"></div>
+
             <div id="global-overview-container" style="margin-bottom: 20px; width: 100%;"></div>
             
             <div id="overview-grid" class="grid-container">
@@ -264,7 +267,6 @@
             card.querySelector('.card-body').innerHTML = `<div class="card-stats">${statsHtml}</div>${chartHtml}`;
         }
 
-        // --- NOVA FUNÇÃO: Atualiza o Card Gigante (Versão Definitiva com Imagens e sem títulos) ---
         function updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, top3Olts) {
             const card = document.getElementById('card-global');
             if (!card) return;
@@ -367,7 +369,6 @@
                 </div>
             `;
             
-            // Montagem Flexbox 3 Colunas (Alinhamento alterado de flex-start para center)
             card.querySelector('.card-body').innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 20px;">
                     <div class="card-stats" style="padding-right: 0; min-width: 200px;">${statsHtml}</div>
@@ -396,11 +397,9 @@
             let globalOnline = 0;
             let globalOffline = 0;
             
-            // Variáveis para Fabricantes
             let nokiaOnline = 0, nokiaTotal = 0;
             let furukawaOnline = 0, furukawaTotal = 0;
             
-            // Lista para o Ranking
             let oltStatsList = [];
 
             results.forEach(result => {
@@ -410,7 +409,6 @@
                 
                 let oltTotal = result.onlineCount + result.offlineCount;
                 
-                // Contabilidade por fabricante
                 if (result.type === 'nokia') {
                     nokiaOnline += result.onlineCount;
                     nokiaTotal += oltTotal;
@@ -419,7 +417,6 @@
                     furukawaTotal += oltTotal;
                 }
 
-                // Lista de Status para o ranking
                 oltStatsList.push({
                     id: result.id,
                     offline: result.offlineCount,
@@ -427,11 +424,9 @@
                 });
             });
 
-            // Prepara o Top 3
             oltStatsList.sort((a, b) => b.offline - a.offline);
             const top3Olts = oltStatsList.slice(0, 3);
 
-            // Envia todos os dados para a função de renderização
             updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, top3Olts);
 
             if (typeof checkAndNotifyForNewProblems === 'function') {
@@ -464,7 +459,6 @@
     </script>
     
     <style>
-        /* Ajuste de responsividade para os Totais do Card Global no Mobile */
         @media (max-width: 768px) {
             .global-stat {
                 display: flex !important;
