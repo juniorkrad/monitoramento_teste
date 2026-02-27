@@ -247,8 +247,9 @@
             const header = card.querySelector('.card-header');
             header.classList.remove('status-normal', 'status-atencao', 'status-problema');
             
-            if (offlinePercent > 10) { header.classList.add('status-problema'); }
-            else if (offlinePercent > 5) { header.classList.add('status-atencao'); }
+            // --- NOVA RÉGUA DE CORES (Mais Tolerante) ---
+            if (offlinePercent > 15) { header.classList.add('status-problema'); }
+            else if (offlinePercent > 8) { header.classList.add('status-atencao'); }
             else { header.classList.add('status-normal'); }
             
             const statsHtml = `
@@ -296,8 +297,9 @@
             const header = card.querySelector('.card-header');
             header.classList.remove('status-normal', 'status-atencao', 'status-problema');
             
-            if (offlinePercent > 10) { header.classList.add('status-problema'); }
-            else if (offlinePercent > 5) { header.classList.add('status-atencao'); }
+            // --- NOVA RÉGUA DE CORES (Mais Tolerante) ---
+            if (offlinePercent > 15) { header.classList.add('status-problema'); }
+            else if (offlinePercent > 8) { header.classList.add('status-atencao'); }
             else { header.classList.add('status-normal'); }
             
             const statsHtml = `
