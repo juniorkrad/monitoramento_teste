@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão 5.6 (Trava de Segurança: Mínimo 5 Clientes)
+// olt-engine.js - Versão 5.7 (Unificação de Regras: 50% ou 32 clientes)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -250,10 +250,9 @@ function startOltMonitoring(config) {
                 window.OLT_CLIENTS_DATA[portKey].push(clientData);
             });
 
-            // --- 1. DETECÇÃO DE PROBLEMAS NA PLACA (TRAVA DE SEGURANÇA AQUI TAMBÉM) ---
+            // --- 1. DETECÇÃO DE PROBLEMAS NA PLACA ---
             for (const placa in boardStats) {
                 const bStat = boardStats[placa];
-                // Só considera falha massiva de placa se ela tiver um volume real de clientes
                 if (bStat.total >= 5 && bStat.offline === bStat.total) {
                     newProblems.add(`[${config.id} PLACA ${placa}] FALHA::SUPER`);
                 }
@@ -272,21 +271,15 @@ function startOltMonitoring(config) {
                 const percOffline = total > 0 ? (offline / total) : 0;
 
                 // ==========================================
-                // NOVA LÓGICA V3 - TRAVA DE 5 CLIENTES
+                // LÓGICA V4 - UNIFICAÇÃO (50% OU 32 clientes)
                 // ==========================================
-                
-                // Se a porta for muito pequena (< 5 clientes), ignora as lógicas críticas
                 if (total >= 5) {
                     if (percOffline === 1) {
                         statusClass = 'status-critico'; // 100% DOWN
                         statusText = 'Crítico';
                         alertTag = '::SUPER';
-                    } else if (percOffline >= 0.5) {
-                        statusClass = 'status-problema'; // 50% ou + DOWN
-                        statusText = 'Problema';
-                        alertTag = '::SUPER';
-                    } else if (offline >= 32) {
-                        statusClass = 'status-problema';
+                    } else if (percOffline >= 0.5 || offline >= 32) {
+                        statusClass = 'status-problema'; // Unificação: 50% OU 32+ DOWN
                         statusText = 'Problema';
                         alertTag = '::CRIT';
                     } else if (offline >= 16) {
@@ -295,8 +288,7 @@ function startOltMonitoring(config) {
                         alertTag = '::WARN';
                     }
                 } else {
-                    // Portas Micro (< 5): Nunca saem do "Normal" no botão de status,
-                    // a menos que queira monitorar quedas parciais de portas minúsculas (opcional).
+                    // Portas Micro (< 5 clientes)
                     statusClass = 'status-normal';
                     statusText = 'Normal';
                     alertTag = '::NORMAL';
