@@ -247,10 +247,16 @@
             const header = card.querySelector('.card-header');
             header.classList.remove('status-normal', 'status-atencao', 'status-problema');
             
-            // --- NOVA RÉGUA DE CORES (Mais Tolerante) ---
-            if (offlinePercent > 15) { header.classList.add('status-problema'); }
-            else if (offlinePercent > 8) { header.classList.add('status-atencao'); }
-            else { header.classList.add('status-normal'); }
+            // --- NOVA RÉGUA DE CORES HÍBRIDA (Porcentagem + Absoluto) ---
+            if (offlinePercent > 15 || offlineCount >= 300) { 
+                header.classList.add('status-problema'); 
+            }
+            else if (offlinePercent > 8 || offlineCount >= 150) { 
+                header.classList.add('status-atencao'); 
+            }
+            else { 
+                header.classList.add('status-normal'); 
+            }
             
             const statsHtml = `
                 <div class="stat-item">
