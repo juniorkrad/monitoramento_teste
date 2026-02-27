@@ -62,6 +62,9 @@
         const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
         const REFRESH_INTERVAL_SECONDS = 300;
         
+        // Memória global para o status de Backbone
+        let previousBackbones = new Set();
+        
         function createCardPlaceholders() {
             // Cria o Placeholder Global
             const globalContainer = document.getElementById('global-overview-container');
@@ -408,6 +411,27 @@
             `;
         }
 
+        // Função para injetar o Toast de Normalização do Backbone
+        function showBackboneRepairedToast(oltId) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = 'toast status-normal';
+            toast.innerHTML = `
+                <span class="material-symbols-rounded">check_circle</span>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <strong style="font-size: 1.1em; margin: 0;">Reparo de Backbone</strong>
+                    <span style="font-family: var(--font-family-mono); font-size: 0.95em; margin: 0;">OLT: ${oltId} normalizada</span>
+                </div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 500);
+            }, 8000); // Fica 8 segundos na tela para garantir que a equipe veja
+        }
+
         async function runOverview() {
             const timestampEl = document.getElementById('update-timestamp');
             if (timestampEl) {
@@ -432,6 +456,7 @@
             
             let oltStatsList = [];
             let activeBackboneDetails = []; // Lista para armazenar alertas de Backbone ativos
+            let currentBackbones = new Set(); // Guarda quem está com Backbone agora
 
             results.forEach(result => {
                 // Adiciona problemas padrão (Toasts) ao Set
@@ -456,9 +481,10 @@
                     total: oltTotal
                 });
 
-                // Coleta alertas de Backbone, se houver
+                // Coleta alertas de Backbone e alimenta a memória de estado atual
                 if (result.hasBackbone) {
                     activeBackboneDetails.push(result.backboneDetails);
+                    currentBackbones.add(result.id);
                 }
             });
 
@@ -466,6 +492,15 @@
             const top3Olts = oltStatsList.slice(0, 3);
 
             updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, top3Olts);
+
+            // GESTÃO DA NORMALIZAÇÃO DO BACKBONE (Se estava rompido antes, e agora não está)
+            previousBackbones.forEach(oltId => {
+                if (!currentBackbones.has(oltId)) {
+                    showBackboneRepairedToast(oltId);
+                }
+            });
+            // Atualiza a memória para a próxima varredura
+            previousBackbones = currentBackbones;
 
             // GESTÃO DO BANNER DE BACKBONE NA INTERFACE
             const backboneContainer = document.getElementById('backbone-alert-container');
