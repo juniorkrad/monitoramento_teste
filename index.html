@@ -63,7 +63,6 @@
         const REFRESH_INTERVAL_SECONDS = 300;
         
         function createCardPlaceholders() {
-            // Cria o Placeholder Global
             const globalContainer = document.getElementById('global-overview-container');
             globalContainer.innerHTML = `
                 <div class="overview-card global-card" id="card-global" style="max-width: 100%;">
@@ -82,9 +81,8 @@
             `;
 
             const grid = document.getElementById('overview-grid');
-            grid.innerHTML = ''; // Limpa o grid antes de popular
+            grid.innerHTML = ''; 
             
-            // Loop das OLTs normais primeiro
             oltsConfig.forEach(olt => {
                 const pageUrl = olt.id.toLowerCase().replace('-', '') + '.html';
                 grid.innerHTML += `
@@ -105,7 +103,6 @@
                 `;
             });
 
-            // CARD DE MÓDULO EXCLUSIVO (Adicionado no final da grelha)
             grid.innerHTML += `
                 <a href="equipamentos.html" class="overview-card" style="text-decoration: none; display: flex; flex-direction: column; border: 1px solid var(--m3-primary); background: linear-gradient(145deg, var(--m3-surface-container), var(--m3-surface-container-high));">
                     <div class="card-header" style="background-color: transparent; justify-content: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 12px;">
@@ -174,7 +171,7 @@
                 });
 
                 // ==========================================
-                // LÓGICA DE ALARMES V2 (HIERARQUIA E EXCEÇÕES)
+                // LÓGICA DE ALARMES V3 (TRAVA DE 5 CLIENTES)
                 // ==========================================
                 let isMicroSuper = false;
                 let isCritical = false;     
@@ -182,40 +179,31 @@
                 let ports100Down = 0;
                 let hasBackbone = false;
 
-                const isExceptionOlt = (olt.id === 'MGP' || olt.id === 'HEL-2');
-
-                // 2. AVALIAÇÃO POR PORTA (MICRO)
                 for (const key in portData) {
                     const { off, total } = portData[key];
                     if (total === 0) continue; 
 
                     const percOffline = off / total;
 
-                    // Gatilho de Backbone (Porta 100% OFF)
-                    if (percOffline === 1) {
-                        ports100Down++;
-                    }
-
-                    if (isExceptionOlt) {
-                        // Exceção MGP/HEL-2: Só alerta se porta bater 100%
+                    // --- TRAVA DE SEGURANÇA: MÍNIMO 5 CLIENTES NA PORTA ---
+                    if (total >= 5) {
+                        // Gatilho de Backbone (Porta 100% OFF)
                         if (percOffline === 1) {
-                            isMicroSuper = true;
+                            ports100Down++;
+                            isMicroSuper = true; 
                         }
-                    } else {
                         // OLTs Padrão
-                        if (percOffline >= 0.5 && total >= 5) {
+                        else if (percOffline >= 0.5) {
                             isMicroSuper = true;
                         } else if (off >= 32) {
-                            isCritical = true; // Novo gatilho: 32+ clientes
+                            isCritical = true; 
                         } else if (off >= 16 && off < 32) {
-                            isWarning = true;  // Mantém lógica antiga para Atenção
+                            isWarning = true;  
                         }
                     }
                 }
 
-                // 3. APLICAÇÃO DA HIERARQUIA DE SUPRESSÃO
                 if (ports100Down >= 2) {
-                    // Backbone Detectado: Gera a faixa no topo e ENGOLE os Toasts laterais da OLT
                     hasBackbone = true;
                 } else if (isMicroSuper) {
                     localProblems.add(`[${olt.id}] STATUS::SUPER`);
@@ -312,7 +300,6 @@
             else if (offlinePercent > 5) { header.classList.add('status-atencao'); }
             else { header.classList.add('status-normal'); }
             
-            // Coluna 1: Totais (Esquerda)
             const statsHtml = `
                 <div class="stat-item global-stat">
                     <span class="stat-number">${total}</span>
@@ -328,7 +315,6 @@
                 </div>
             `;
 
-            // Coluna 2: Fabricantes (Centro com Imagens)
             const nokiaPct = nokiaTotal > 0 ? (nokiaOnline / nokiaTotal) * 100 : 0;
             const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
             
@@ -362,7 +348,6 @@
                 </div>
             `;
 
-            // Coluna 3: Ranking Top 3 (Direita)
             let rankingHtmlContent = '';
             const temOffline = top3Olts.some(olt => olt.offline > 0);
             
@@ -431,18 +416,15 @@
             let furukawaOnline = 0, furukawaTotal = 0;
             
             let oltStatsList = [];
-            let activeBackboneDetails = []; // Lista para armazenar alertas de Backbone ativos
-            let currentBackbones = new Set(); // Guarda quem está com Backbone agora
+            let activeBackboneDetails = []; 
+            let currentBackbones = new Set(); 
 
             results.forEach(result => {
-                // Adiciona problemas padrão (Toasts) ao Set
                 result.problems.forEach(problem => allProblems.add(problem));
-                
                 globalOnline += result.onlineCount;
                 globalOffline += result.offlineCount;
                 
                 let oltTotal = result.onlineCount + result.offlineCount;
-                
                 if (result.type === 'nokia') {
                     nokiaOnline += result.onlineCount;
                     nokiaTotal += oltTotal;
@@ -451,13 +433,8 @@
                     furukawaTotal += oltTotal;
                 }
 
-                oltStatsList.push({
-                    id: result.id,
-                    offline: result.offlineCount,
-                    total: oltTotal
-                });
+                oltStatsList.push({ id: result.id, offline: result.offlineCount, total: oltTotal });
 
-                // Coleta alertas de Backbone e alimenta a memória de estado atual
                 if (result.hasBackbone) {
                     activeBackboneDetails.push(result.backboneDetails);
                     currentBackbones.add(result.id);
@@ -469,15 +446,14 @@
 
             updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, top3Olts);
 
-            // GESTÃO DO BANNER DE BACKBONE NA INTERFACE
             const backboneContainer = document.getElementById('backbone-alert-container');
             if (activeBackboneDetails.length > 0) {
                 backboneContainer.innerHTML = `
-                    <div class="backbone-alert">
-                        <span class="material-symbols-rounded">sos</span>
-                        <div class="backbone-text-container">
-                            <p class="backbone-title">Rompimento de Backbone?!</p>
-                            <p class="backbone-details">${activeBackboneDetails.join('<br>')}</p>
+                    <div class=\"backbone-alert\">
+                        <span class=\"material-symbols-rounded\">sos</span>
+                        <div class=\"backbone-text-container\">
+                            <p class=\"backbone-title\">Rompimento de Backbone?!</p>
+                            <p class=\"backbone-details\">${activeBackboneDetails.join('<br>')}</p>
                         </div>
                     </div>
                 `;
@@ -487,7 +463,6 @@
                 backboneContainer.innerHTML = '';
             }
 
-            // GESTÃO DOS TOASTS LATERAIS (AGORA ENVIANDO A MEMÓRIA DOS BACKBONES)
             if (typeof checkAndNotifyForNewProblems === 'function') {
                 checkAndNotifyForNewProblems(allProblems, currentBackbones);
             }
@@ -498,11 +473,10 @@
             
             if(timestampEl) {
                 timestampEl.innerHTML = `
-                    <span class="material-symbols-rounded">calendar_today</span> ${dataHoje}
-                    <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
-                    <span class="material-symbols-rounded">schedule</span> ${horaAgora}
+                    <span class=\"material-symbols-rounded\">calendar_today</span> ${dataHoje}
+                    <span style=\"width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;\"></span>
+                    <span class=\"material-symbols-rounded\">schedule</span> ${horaAgora}
                 `;
-                
                 timestampEl.classList.remove('updated-anim');
                 void timestampEl.offsetWidth; 
                 timestampEl.classList.add('updated-anim');
@@ -516,18 +490,5 @@
             setInterval(runOverview, REFRESH_INTERVAL_SECONDS * 1000);
         });
     </script>
-    
-    <style>
-        @media (max-width: 768px) {
-            .global-stat {
-                display: flex !important;
-                flex-direction: column-reverse !important;
-                align-items: flex-start !important;
-                gap: 5px !important;
-                margin-bottom: 12px;
-            }
-        }
-    </style>
-
 </body>
 </html>

@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão 5.5 (Nova Hierarquia de Alertas e Exceções MGP/HEL-2)
+// olt-engine.js - Versão 5.6 (Trava de Segurança: Mínimo 5 Clientes)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -180,20 +180,17 @@ function startOltMonitoring(config) {
                 if (columns.length === 0) return;
                 let placa, porta, isOnline;
 
-                // --- Lógica de Identificação (Coluna A) ---
                 if (config.type === 'nokia') {
-                    // Nokia: 1/1/Slot/Port
                     const pon = columns[0];
-                    const status = columns[4]; // Status Nokia Col E
+                    const status = columns[4]; 
                     
                     if (!pon || !status) return;
                     const parts = pon.split('/'); 
                     if (parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
                     isOnline = status.trim().toLowerCase().includes('up');
                 } else { 
-                    // Furukawa (Todas)
                     const portStr = columns[0];
-                    const status = columns[2]; // Status Furukawa Col C
+                    const status = columns[2]; 
                     if (!portStr || !status) return;
                     
                     if (config.type === 'furukawa-10') {
@@ -210,30 +207,25 @@ function startOltMonitoring(config) {
 
                 const portKey = `${placa}/${porta}`;
                 
-                // Inicializa dados da Porta
                 if (!portData[portKey]) {
                     const infoExtra = getCircuitInfo(rowsCircuitos, config.id, placa, porta, config.type);
                     portData[portKey] = { online: 0, offline: 0, info: infoExtra };
                     window.OLT_CLIENTS_DATA[portKey] = [];
                 }
 
-                // Inicializa dados da Placa
                 if (!boardStats[placa]) {
                     boardStats[placa] = { total: 0, offline: 0 };
                 }
 
-                // Contabiliza Porta
                 if (isOnline) {
                     portData[portKey].online++;
                 } else {
                     portData[portKey].offline++;
                 }
                 
-                // Contabiliza Placa
                 boardStats[placa].total++;
                 if (!isOnline) boardStats[placa].offline++;
 
-                // --- Lógica de Coleta de Dados para o POP-UP ---
                 let clientData = {};
                 
                 if (config.type === 'nokia') {
@@ -258,10 +250,11 @@ function startOltMonitoring(config) {
                 window.OLT_CLIENTS_DATA[portKey].push(clientData);
             });
 
-            // --- 1. DETECÇÃO DE PROBLEMAS NA PLACA (Super Prioridade de Hardware) ---
+            // --- 1. DETECÇÃO DE PROBLEMAS NA PLACA (TRAVA DE SEGURANÇA AQUI TAMBÉM) ---
             for (const placa in boardStats) {
                 const bStat = boardStats[placa];
-                if (bStat.total > 0 && bStat.offline === bStat.total) {
+                // Só considera falha massiva de placa se ela tiver um volume real de clientes
+                if (bStat.total >= 5 && bStat.offline === bStat.total) {
                     newProblems.add(`[${config.id} PLACA ${placa}] FALHA::SUPER`);
                 }
             }
@@ -277,24 +270,19 @@ function startOltMonitoring(config) {
                 let alertTag = '::NORMAL';
 
                 const percOffline = total > 0 ? (offline / total) : 0;
-                const isExceptionOlt = (config.id === 'MGP' || config.id === 'HEL-2');
 
-                // --- NOVA HIERARQUIA E LÓGICA DE EXCEÇÕES ---
-                if (isExceptionOlt) {
-                    // Exceção: Apenas se 100% da porta cair
-                    if (percOffline === 1 && total > 0) {
-                        statusClass = 'status-critico';
+                // ==========================================
+                // NOVA LÓGICA V3 - TRAVA DE 5 CLIENTES
+                // ==========================================
+                
+                // Se a porta for muito pequena (< 5 clientes), ignora as lógicas críticas
+                if (total >= 5) {
+                    if (percOffline === 1) {
+                        statusClass = 'status-critico'; // 100% DOWN
                         statusText = 'Crítico';
                         alertTag = '::SUPER';
-                    }
-                } else {
-                    // OLTs Padrão
-                    if (percOffline === 1 && total > 0) {
-                        statusClass = 'status-critico';
-                        statusText = 'Crítico';
-                        alertTag = '::SUPER';
-                    } else if (percOffline >= 0.5 && total >= 5) {
-                        statusClass = 'status-problema';
+                    } else if (percOffline >= 0.5) {
+                        statusClass = 'status-problema'; // 50% ou + DOWN
                         statusText = 'Problema';
                         alertTag = '::SUPER';
                     } else if (offline >= 32) {
@@ -306,6 +294,12 @@ function startOltMonitoring(config) {
                         statusText = 'Atenção';
                         alertTag = '::WARN';
                     }
+                } else {
+                    // Portas Micro (< 5): Nunca saem do "Normal" no botão de status,
+                    // a menos que queira monitorar quedas parciais de portas minúsculas (opcional).
+                    statusClass = 'status-normal';
+                    statusText = 'Normal';
+                    alertTag = '::NORMAL';
                 }
 
                 if (alertTag !== '::NORMAL') {
