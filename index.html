@@ -176,21 +176,13 @@
                 // ==========================================
                 // LÓGICA DE ALARMES V2 (HIERARQUIA E EXCEÇÕES)
                 // ==========================================
-                let isMacroSuper = false;
                 let isMicroSuper = false;
                 let isCritical = false;     
                 let isWarning = false;
                 let ports100Down = 0;
-                let backbonePortsList = [];
                 let hasBackbone = false;
 
                 const isExceptionOlt = (olt.id === 'MGP' || olt.id === 'HEL-2');
-                const totalClients = totalOnline + totalOffline;
-
-                // 1. MACRO SUPER PRIORIDADE (OLT > 50% OFF)
-                if (totalClients > 0 && (totalOffline / totalClients) > 0.5) {
-                    isMacroSuper = true;
-                }
 
                 // 2. AVALIAÇÃO POR PORTA (MICRO)
                 for (const key in portData) {
@@ -202,7 +194,6 @@
                     // Gatilho de Backbone (Porta 100% OFF)
                     if (percOffline === 1) {
                         ports100Down++;
-                        backbonePortsList.push(key);
                     }
 
                     if (isExceptionOlt) {
@@ -223,10 +214,7 @@
                 }
 
                 // 3. APLICAÇÃO DA HIERARQUIA DE SUPRESSÃO
-                if (isMacroSuper) {
-                    // Falha Massiva: Engole Backbone e engole Toasts menores
-                    localProblems.add(`[${olt.id}] STATUS::SUPER`);
-                } else if (ports100Down >= 2) {
+                if (ports100Down >= 2) {
                     // Backbone Detectado: Gera a faixa no topo e ENGOLE os Toasts laterais da OLT
                     hasBackbone = true;
                 } else if (isMicroSuper) {
@@ -246,7 +234,7 @@
                     offlineCount: totalOffline, 
                     type: olt.type,
                     hasBackbone: hasBackbone,
-                    backboneDetails: hasBackbone ? `Atenção Equipe! OLT: ${olt.id} possui ${ports100Down} circuitos TOTALMENTE DOWN. (${backbonePortsList.join(', ')})` : null
+                    backboneDetails: hasBackbone ? `OLT: ${olt.id}` : null
                 };
 
             } catch (error) {
@@ -486,8 +474,8 @@
                     <div class="backbone-alert">
                         <span class="material-symbols-rounded">sos</span>
                         <div class="backbone-text-container">
-                            <p class="backbone-title">Incidente Maior: Rompimento de Backbone?!</p>
-                            <p class="backbone-details">${activeBackboneDetails.join('<br><br>')}</p>
+                            <p class="backbone-title">Rompimento de Backbone?!</p>
+                            <p class="backbone-details">${activeBackboneDetails.join('<br>')}</p>
                         </div>
                     </div>
                 `;
