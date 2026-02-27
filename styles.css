@@ -339,6 +339,27 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     border-color: var(--m3-primary);
 }
 
+/* --- STATUS GERAIS E BOTÕES --- */
+.status { font-weight: bold; padding: 4px 12px; border-radius: 20px; display: inline-block; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px; }
+.status-normal { background-color: var(--m3-color-success); color: #fff; }
+.status-atencao { background-color: var(--m3-color-warning); color: #000; }
+.status-problema { background-color: var(--m3-color-error); color: #fff; }
+
+/* NOVO ESTADO: CRÍTICO (100% DOWN) */
+.status-critico {
+    background-color: #000000;
+    color: #FF1744;
+    border: 1px solid #FF1744;
+    box-shadow: 0 0 10px rgba(255, 23, 68, 0.4);
+    animation: pulseBtn 2s infinite;
+}
+
+@keyframes pulseBtn {
+    0% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0.6); }
+    70% { box-shadow: 0 0 0 8px rgba(255, 23, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0); }
+}
+
 .status-btn {
     cursor: pointer;
     transition: transform 0.1s, box-shadow 0.2s;
@@ -463,11 +484,6 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 .filter-input { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #5c4e72; background-color: rgba(0,0,0,0.2); color: #fff; }
 .filter-select { padding: 8px; border-radius: 4px; border: 1px solid #5c4e72; background-color: #3a1c63; color: #fff; cursor: pointer; }
 
-/* STATUS GERAIS */
-.status { font-weight: bold; padding: 4px 12px; border-radius: 20px; display: inline-block; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px; }
-.status-normal { background-color: var(--m3-color-success); color: #fff; }
-.status-atencao { background-color: var(--m3-color-warning); color: #000; }
-.status-problema { background-color: var(--m3-color-error); color: #fff; }
 
 /* --- CARD DO DASHBOARD (SEM BORDA) --- */
 .overview-card { 

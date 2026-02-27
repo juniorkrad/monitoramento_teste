@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão 5.4 (Título do modal inclui "Circuito: Nome")
+// olt-engine.js - Versão 5.5 (Nova Hierarquia de Alertas e Exceções MGP/HEL-2)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -261,7 +261,6 @@ function startOltMonitoring(config) {
             // --- 1. DETECÇÃO DE PROBLEMAS NA PLACA (Super Prioridade de Hardware) ---
             for (const placa in boardStats) {
                 const bStat = boardStats[placa];
-                // Se a placa tem clientes E todos estão offline
                 if (bStat.total > 0 && bStat.offline === bStat.total) {
                     newProblems.add(`[${config.id} PLACA ${placa}] FALHA::SUPER`);
                 }
@@ -277,28 +276,38 @@ function startOltMonitoring(config) {
                 let statusText = 'Normal';
                 let alertTag = '::NORMAL';
 
-                // --- NOVA HIERARQUIA DE ALARMES ---
-                
-                // 1. SUPER (Maioria Absoluta: > 50% Offline)
-                if (total > 0 && (offline / total) > 0.5) {
-                    statusClass = 'status-problema'; // Vermelho na tabela
-                    statusText = 'CRÍTICO';
-                    alertTag = '::SUPER';
-                }
-                // 2. PROBLEMA (>16 ou ==50%)
-                else if (offline > 16 || (total > 0 && (offline / total) === 0.5)) {
-                    statusClass = 'status-problema';
-                    statusText = 'Problema';
-                    alertTag = '::CRIT';
-                }
-                // 3. ATENÇÃO (==16)
-                else if (offline === 16) {
-                    statusClass = 'status-atencao';
-                    statusText = 'Atenção';
-                    alertTag = '::WARN';
+                const percOffline = total > 0 ? (offline / total) : 0;
+                const isExceptionOlt = (config.id === 'MGP' || config.id === 'HEL-2');
+
+                // --- NOVA HIERARQUIA E LÓGICA DE EXCEÇÕES ---
+                if (isExceptionOlt) {
+                    // Exceção: Apenas se 100% da porta cair
+                    if (percOffline === 1 && total > 0) {
+                        statusClass = 'status-critico';
+                        statusText = 'Crítico';
+                        alertTag = '::SUPER';
+                    }
+                } else {
+                    // OLTs Padrão
+                    if (percOffline === 1 && total > 0) {
+                        statusClass = 'status-critico';
+                        statusText = 'Crítico';
+                        alertTag = '::SUPER';
+                    } else if (percOffline >= 0.5 && total >= 5) {
+                        statusClass = 'status-problema';
+                        statusText = 'Problema';
+                        alertTag = '::SUPER';
+                    } else if (offline >= 32) {
+                        statusClass = 'status-problema';
+                        statusText = 'Problema';
+                        alertTag = '::CRIT';
+                    } else if (offline >= 16) {
+                        statusClass = 'status-atencao';
+                        statusText = 'Atenção';
+                        alertTag = '::WARN';
+                    }
                 }
 
-                // Se houver algum alarme, adiciona à lista para o notifications.js
                 if (alertTag !== '::NORMAL') {
                     newProblems.add(`[${config.id} PORTA ${porta}] ${alertTag}`);
                 }
@@ -348,17 +357,13 @@ function closeModal(event) {
     document.getElementById('detail-modal').style.display = 'none';
 }
 
-// MUDANÇA AQUI: Adicionado "Circuito:" no texto formatado
 function openPortDetails(placa, porta, circuito, online, offline, total) {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.querySelector('.modal-content');
 
-    // --- LÓGICA DE CLASSES DO MODAL (STATUS) ---
     modalContent.classList.remove('modal-large'); 
     modalContent.classList.add('modal-status');   
 
-    // Formata o título: "Placa X / Porta Y - Circuito: NomeDoCircuito"
-    // Se não houver circuito, mostra apenas a placa/porta
     const textoCircuito = (circuito && circuito !== "-") ? ` - Circuito: ${circuito}` : "";
     document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta}${textoCircuito}`;
     
@@ -371,20 +376,17 @@ function openPortDetails(placa, porta, circuito, online, offline, total) {
     modal.style.display = 'flex';
 }
 
-// Variável global para saber qual tipo de OLT está aberta
 window.CURRENT_MODAL_TYPE = '';
 
 function openCircuitClients(placa, porta, circuitoNome, oltType) {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.querySelector('.modal-content');
 
-    // --- LÓGICA DE CLASSES DO MODAL (CIRCUITO) ---
     modalContent.classList.remove('modal-status'); 
     modalContent.classList.add('modal-large');     
     
     window.CURRENT_MODAL_TYPE = oltType; 
 
-    // Adiciona Classe de Estilo na Tabela (Nokia vs Furukawa)
     const tableObj = document.getElementById('table-clients');
     tableObj.className = 'client-table ' + (oltType === 'nokia' ? 'mode-nokia' : 'mode-furukawa');
 
@@ -393,12 +395,10 @@ function openCircuitClients(placa, porta, circuitoNome, oltType) {
     document.getElementById('view-stats').style.display = 'none';
     document.getElementById('view-clients').style.display = 'block';
     
-    // --- RESET DO CAMPO DE BUSCA ---
     document.getElementById('search-input').value = '';
 
-    // --- CONFIGURAÇÃO DINÂMICA DO DROPDOWN ---
     const statusSelect = document.getElementById('status-filter');
-    statusSelect.innerHTML = '<option value="all">Todos Status</option>'; // Reset
+    statusSelect.innerHTML = '<option value="all">Todos Status</option>';
 
     if (oltType === 'nokia') {
         statusSelect.innerHTML += `
@@ -411,24 +411,21 @@ function openCircuitClients(placa, porta, circuitoNome, oltType) {
             <option value="offline">Offline (Inactive)</option>
         `;
     }
-    statusSelect.value = 'all'; // Seleciona "Todos" por padrão
+    statusSelect.value = 'all'; 
 
     const thead = document.getElementById('clients-thead');
     const tbody = document.getElementById('clients-tbody');
     
-    // --- MUDANÇA AQUI: LIMPA O HEADER E NÃO ADICIONA NADA ---
     thead.innerHTML = '';
     tbody.innerHTML = '';
 
     const portKey = `${placa}/${porta}`;
     const clients = window.OLT_CLIENTS_DATA[portKey] || [];
 
-    // --- DESENHA AS LINHAS ---
     if (clients.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum cliente encontrado.</td></tr>';
     } else {
         clients.forEach(c => {
-            // Lógica de Classificação para Filtro
             let statusRaw = c.statusRef.toLowerCase();
             let statusClass = 'filter-unknown';
             
@@ -436,7 +433,6 @@ function openCircuitClients(placa, porta, circuitoNome, oltType) {
                 if (statusRaw.includes('up')) statusClass = 'filter-online';
                 else if (statusRaw.includes('down')) statusClass = 'filter-offline';
             } else {
-                // Furukawa
                 if (statusRaw.includes('active') && !statusRaw.includes('inactive')) statusClass = 'filter-online';
                 else if (statusRaw.includes('inactive')) statusClass = 'filter-offline';
             }
@@ -458,10 +454,9 @@ function openCircuitClients(placa, porta, circuitoNome, oltType) {
     modal.style.display = 'flex';
 }
 
-// --- FUNÇÃO DE FILTRO INTELIGENTE ---
 function filterClients() {
     const searchText = document.getElementById('search-input').value.toLowerCase();
-    const statusFilter = document.getElementById('status-filter').value; // all, online, offline
+    const statusFilter = document.getElementById('status-filter').value;
     
     const rows = document.querySelectorAll('.client-row');
     
