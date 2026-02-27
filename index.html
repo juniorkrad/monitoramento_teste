@@ -173,44 +173,86 @@
                     }
                 });
 
-                let hasSuperPriority = false;
-                let hasCritical = false;     
-                let hasWarning = false;       
+                // ==========================================
+                // LÓGICA DE ALARMES V2 (HIERARQUIA E EXCEÇÕES)
+                // ==========================================
+                let isMacroSuper = false;
+                let isMicroSuper = false;
+                let isCritical = false;     
+                let isWarning = false;
+                let ports100Down = 0;
+                let backbonePortsList = [];
+                let hasBackbone = false;
 
+                const isExceptionOlt = (olt.id === 'MGP' || olt.id === 'HEL-2');
                 const totalClients = totalOnline + totalOffline;
+
+                // 1. MACRO SUPER PRIORIDADE (OLT > 50% OFF)
                 if (totalClients > 0 && (totalOffline / totalClients) > 0.5) {
-                    hasSuperPriority = true;
+                    isMacroSuper = true;
                 }
 
-                if (!hasSuperPriority) {
-                    for (const key in portData) {
-                        const { off, total } = portData[key];
-                        if (total < 5) continue; 
+                // 2. AVALIAÇÃO POR PORTA (MICRO)
+                for (const key in portData) {
+                    const { off, total } = portData[key];
+                    if (total === 0) continue; 
 
-                        if (total > 0 && (off / total) > 0.5) {
-                            hasSuperPriority = true;
-                            break; 
+                    const percOffline = off / total;
+
+                    // Gatilho de Backbone (Porta 100% OFF)
+                    if (percOffline === 1) {
+                        ports100Down++;
+                        backbonePortsList.push(key);
+                    }
+
+                    if (isExceptionOlt) {
+                        // Exceção MGP/HEL-2: Só alerta se porta bater 100%
+                        if (percOffline === 1) {
+                            isMicroSuper = true;
                         }
-                        if (off > 16 || (total > 0 && (off / total) === 0.5)) {
-                            hasCritical = true;
-                        } else if (off === 16) {
-                            hasWarning = true;
+                    } else {
+                        // OLTs Padrão
+                        if (percOffline >= 0.5 && total >= 5) {
+                            isMicroSuper = true;
+                        } else if (off >= 32) {
+                            isCritical = true; // Novo gatilho: 32+ clientes
+                        } else if (off >= 16 && off < 32) {
+                            isWarning = true;  // Mantém lógica antiga para Atenção
                         }
                     }
                 }
 
-                if (hasSuperPriority) localProblems.add(`[${olt.id}] STATUS::SUPER`);
-                else if (hasCritical) localProblems.add(`[${olt.id}] STATUS::CRIT`);
-                else if (hasWarning) localProblems.add(`[${olt.id}] STATUS::WARN`);
+                // 3. APLICAÇÃO DA HIERARQUIA DE SUPRESSÃO
+                if (isMacroSuper) {
+                    // Falha Massiva: Engole Backbone e engole Toasts menores
+                    localProblems.add(`[${olt.id}] STATUS::SUPER`);
+                } else if (ports100Down >= 2) {
+                    // Backbone Detectado: Gera a faixa no topo e ENGOLE os Toasts laterais da OLT
+                    hasBackbone = true;
+                } else if (isMicroSuper) {
+                    localProblems.add(`[${olt.id}] STATUS::SUPER`);
+                } else if (isCritical) {
+                    localProblems.add(`[${olt.id}] STATUS::CRIT`);
+                } else if (isWarning) {
+                    localProblems.add(`[${olt.id}] STATUS::WARN`);
+                }
 
                 updateCardUI(olt.id, { onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type });
                 
-                return { id: olt.id, problems: localProblems, onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type };
+                return { 
+                    id: olt.id, 
+                    problems: localProblems, 
+                    onlineCount: totalOnline, 
+                    offlineCount: totalOffline, 
+                    type: olt.type,
+                    hasBackbone: hasBackbone,
+                    backboneDetails: hasBackbone ? `Atenção Equipe! OLT: ${olt.id} possui ${ports100Down} circuitos TOTALMENTE DOWN. (${backbonePortsList.join(', ')})` : null
+                };
 
             } catch (error) {
                 console.error(`Erro para OLT ${olt.id}:`, error);
                 updateCardUI(olt.id, { error: true });
-                return { id: olt.id, problems: new Set(), onlineCount: 0, offlineCount: 0, type: olt.type };
+                return { id: olt.id, problems: new Set(), onlineCount: 0, offlineCount: 0, type: olt.type, hasBackbone: false };
             }
         }
         
@@ -298,7 +340,7 @@
                 </div>
             `;
 
-            // Coluna 2: Fabricantes (Centro com Imagens - Título Removido, Fontes Aumentadas)
+            // Coluna 2: Fabricantes (Centro com Imagens)
             const nokiaPct = nokiaTotal > 0 ? (nokiaOnline / nokiaTotal) * 100 : 0;
             const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
             
@@ -332,7 +374,7 @@
                 </div>
             `;
 
-            // Coluna 3: Ranking Top 3 (Direita - Título Removido, Fontes Aumentadas)
+            // Coluna 3: Ranking Top 3 (Direita)
             let rankingHtmlContent = '';
             const temOffline = top3Olts.some(olt => olt.offline > 0);
             
@@ -401,9 +443,12 @@
             let furukawaOnline = 0, furukawaTotal = 0;
             
             let oltStatsList = [];
+            let activeBackboneDetails = []; // Lista para armazenar alertas de Backbone ativos
 
             results.forEach(result => {
+                // Adiciona problemas padrão (Toasts) ao Set
                 result.problems.forEach(problem => allProblems.add(problem));
+                
                 globalOnline += result.onlineCount;
                 globalOffline += result.offlineCount;
                 
@@ -422,6 +467,11 @@
                     offline: result.offlineCount,
                     total: oltTotal
                 });
+
+                // Coleta alertas de Backbone, se houver
+                if (result.hasBackbone) {
+                    activeBackboneDetails.push(result.backboneDetails);
+                }
             });
 
             oltStatsList.sort((a, b) => b.offline - a.offline);
@@ -429,6 +479,25 @@
 
             updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, top3Olts);
 
+            // GESTÃO DO BANNER DE BACKBONE NA INTERFACE
+            const backboneContainer = document.getElementById('backbone-alert-container');
+            if (activeBackboneDetails.length > 0) {
+                backboneContainer.innerHTML = `
+                    <div class="backbone-alert">
+                        <span class="material-symbols-rounded">sos</span>
+                        <div class="backbone-text-container">
+                            <p class="backbone-title">Incidente Maior: Rompimento de Backbone?!</p>
+                            <p class="backbone-details">${activeBackboneDetails.join('<br><br>')}</p>
+                        </div>
+                    </div>
+                `;
+                backboneContainer.style.display = 'block';
+            } else {
+                backboneContainer.style.display = 'none';
+                backboneContainer.innerHTML = '';
+            }
+
+            // GESTÃO DOS TOASTS LATERAIS
             if (typeof checkAndNotifyForNewProblems === 'function') {
                 checkAndNotifyForNewProblems(allProblems);
             }
