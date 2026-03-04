@@ -32,7 +32,7 @@
         .energy-master-left {
             flex: 0 0 280px; 
             padding: 20px;
-            border-right: 1px solid var(--m3-outline-variant); 
+            border-right: 1px solid rgba(255, 255, 255, 0.15); /* Linha divisória fina e visível */
             border-left: 5px solid #f87171;
             display: flex;
             flex-direction: column;
@@ -54,7 +54,7 @@
             .energy-master-left {
                 flex: auto;
                 border-right: none;
-                border-bottom: 1px solid var(--m3-outline-variant); 
+                border-bottom: 1px solid rgba(255, 255, 255, 0.15); /* Linha divisória desce no mobile */
             }
         }
 
@@ -290,7 +290,7 @@
             }
         });
 
-        // Função corrigida buscando exatamente o ID do layout.js
+        // Função formatada exatamente com o padrão visual do layout.js
         function setPageOpenTime() {
             let timestampEl = document.getElementById('update-timestamp');
             
@@ -299,7 +299,11 @@
                 const dataFormatada = now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 const horaFormatada = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
                 
-                timestampEl.innerHTML = `<span class="material-symbols-rounded">schedule</span> Página aberta: ${dataFormatada} às ${horaFormatada}`;
+                timestampEl.innerHTML = `
+                    <span class="material-symbols-rounded">calendar_today</span> ${dataFormatada}
+                    <span style="display: inline-block; width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
+                    <span class="material-symbols-rounded">schedule</span> ${horaFormatada}
+                `;
                 timestampEl.style.color = 'var(--m3-on-surface-variant)';
             }
         }
