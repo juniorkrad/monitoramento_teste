@@ -18,12 +18,13 @@
            ESTILOS ESPECÍFICOS - PAINEL DE ENERGIA
            ========================================== */
         
-        /* Grid Superior Otimizado (Fixo Esq, Fluido Dir) */
+        /* Grid Superior Otimizado (Fixo Esq, Fluido Dir com trava de sobreposição) */
         .energy-top-grid {
             display: grid;
-            grid-template-columns: 280px 1fr;
+            grid-template-columns: 280px minmax(0, 1fr); /* minmax resolve a sobreposição! */
             gap: 16px;
             margin-bottom: 20px;
+            width: 100%;
         }
 
         @media (max-width: 900px) {
@@ -46,7 +47,7 @@
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
-            color: var(--m3-on-surface); /* Atualizado: Branco/Gelo para acompanhar o título */
+            color: var(--m3-on-surface); 
             display: flex;
             align-items: center;
             justify-content: center;
@@ -57,7 +58,7 @@
             transform: translateY(-1px);
         }
 
-        /* Barra de Progresso Tríplice */
+        /* Barra de Progresso Tríplice (Cores Básicas Atualizadas) */
         .triple-progress-bar {
             height: 8px; 
             width: 100%;
@@ -67,9 +68,9 @@
             overflow: hidden;
             margin-top: 12px;
         }
-        .bar-online { background-color: #0ea5e9; } /* Azul Claro/Ciano - Total Offline */
+        .bar-online { background-color: var(--m3-color-success); } /* Verde - Total Offline */
         .bar-poweroff { background-color: #f87171; } /* Vermelho - Energia */
-        .bar-offline { background-color: #d8b4fe; } /* Lilás - GPON */
+        .bar-offline { background-color: var(--m3-color-warning); } /* Amarelo - GPON */
 
         /* Estilização do Modal de Energia */
         .placas-grid {
@@ -173,8 +174,10 @@
                         <span class="material-symbols-rounded" style="color: var(--m3-primary); font-size: 20px;">bar_chart</span>
                         <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Ranking de OLTs Críticas</h3>
                     </div>
-                    <div style="flex: 1; position: relative; width: 100%; min-height: 160px;">
-                        <canvas id="energyChartOlt"></canvas>
+                    <div style="flex: 1; width: 100%; overflow-x: auto; padding-bottom: 5px;">
+                        <div style="position: relative; min-width: 500px; height: 160px;">
+                            <canvas id="energyChartOlt"></canvas>
+                        </div>
                     </div>
                 </div>
 

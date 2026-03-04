@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão 7.2 (Nova Métrica Relativa e Paleta Laranja Queimado)
+// olt-engine.js - Versão 7.3 (Cores Básicas e Otimização Visual)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -570,7 +570,7 @@ window.startEnergyMonitoring = async function() {
             const pctPowerOff = oData.totalClients ? (oData.powerOff / oData.totalClients * 100) : 0;
             const pctOfflineOther = oData.totalClients ? (oData.offlineOther / oData.totalClients * 100) : 0;
             
-            // Geração da UI dos Cards com as novas Cores (Laranja Queimado #ea580c)
+            // Geração da UI dos Cards com as novas Cores
             gridEl.innerHTML += `
                 <div class="overview-card" style="display: flex; flex-direction: column;">
                     <div class="energy-olt-card-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -585,8 +585,8 @@ window.startEnergyMonitoring = async function() {
                     <div class="card-body" style="flex-direction: column; padding: 15px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; text-align: center; margin-bottom: 12px;">
                             <div style="flex: 1;">
-                                <span class="material-symbols-rounded" style="color:#ea580c; font-size: 26px;">router</span><br>
-                                <strong style="color:#ea580c; font-size: 1.3rem;">${oData.offline}</strong><br>
+                                <span class="material-symbols-rounded" style="color:var(--m3-on-surface); font-size: 26px;">router</span><br>
+                                <strong style="color:var(--m3-on-surface); font-size: 1.3rem;">${oData.offline}</strong><br>
                                 <small style="color:var(--m3-on-surface-variant); font-size: 0.8rem; font-weight: 600;">TOTAL</small>
                             </div>
                             <div style="flex: 1;">
@@ -595,8 +595,8 @@ window.startEnergyMonitoring = async function() {
                                 <small style="color:var(--m3-on-surface-variant); font-size: 0.8rem; font-weight: 600;">ENERGIA</small>
                             </div>
                             <div style="flex: 1;">
-                                <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 26px;">wifi_off</span><br>
-                                <strong style="color:#fbbf24; font-size: 1.3rem;">${oData.offlineOther}</strong><br>
+                                <span class="material-symbols-rounded" style="color:var(--m3-color-warning); font-size: 26px;">wifi_off</span><br>
+                                <strong style="color:var(--m3-color-warning); font-size: 1.3rem;">${oData.offlineOther}</strong><br>
                                 <small style="color:var(--m3-on-surface-variant); font-size: 0.8rem; font-weight: 600;">GPON</small>
                             </div>
                         </div>
