@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão 5.7 (Unificação de Regras: 50% ou 32 clientes)
+// olt-engine.js - Versão 6.0 (Unificação de Regras + Painel de Energia MD3)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -288,7 +288,6 @@ function startOltMonitoring(config) {
                         alertTag = '::WARN';
                     }
                 } else {
-                    // Portas Micro (< 5 clientes)
                     statusClass = 'status-normal';
                     statusText = 'Normal';
                     alertTag = '::NORMAL';
@@ -460,4 +459,185 @@ function filterClients() {
             row.style.display = 'none';
         }
     });
+}
+
+// ==============================================================================
+// NOVO MÓDULO: PAINEL GLOBAL DE ENERGIA (DYING GASP)
+// Puxa as quedas da aba ENERGIA e cruza com o total de clientes das abas das OLTs
+// ==============================================================================
+
+window.startEnergyMonitoring = async function() {
+    const tableBody = document.getElementById('energy-table-body');
+    const totalQuedasEl = document.getElementById('card-total-quedas');
+    const portasAfetadasEl = document.getElementById('card-portas-afetadas');
+    const lastUpdateEl = document.getElementById('card-last-update');
+    const chartCtx = document.getElementById('energyChart');
+    
+    if (!tableBody) return;
+
+    try {
+        // 1. Busca os dados brutos de energia (Power Off)
+        const urlEnergia = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/ENERGIA!A:D?key=${ENGINE_API_KEY}`;
+        const resEnergia = await fetch(urlEnergia);
+        const dataEnergia = await resEnergia.json();
+        const rowsEnergia = dataEnergia.values ? dataEnergia.values.slice(1) : [];
+
+        // Filtra portas que realmente têm queda (Qtd > 0)
+        const portasComQueda = rowsEnergia.filter(r => parseInt(r[2]) > 0);
+        let totalPowerOffGeral = 0;
+        let ultimaAtt = "-";
+
+        // 2. Descobre quais OLTs precisam ser consultadas para cruzar o total de clientes
+        // (Remove o hífen de LTXV-1 para virar LTXV1, que é o nome da aba)
+        const oltsAfetadas = [...new Set(portasComQueda.map(r => r[0].replace('-', '')))];
+        let clientesPorPorta = {}; // Ex: { 'LTXV1': { '1/5': 32, '2/10': 64 } }
+
+        if (oltsAfetadas.length > 0) {
+            // Monta uma consulta em lote (batchGet) para puxar só as OLTs afetadas de uma vez
+            const ranges = oltsAfetadas.map(olt => `ranges=${olt}!A:E`).join('&');
+            const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values:batchGet?key=${ENGINE_API_KEY}&${ranges}`;
+            
+            const resBatch = await fetch(batchUrl);
+            const dataBatch = await resBatch.json();
+
+            // Processa as abas das OLTs para somar o total de clientes de cada porta
+            if (dataBatch.valueRanges) {
+                dataBatch.valueRanges.forEach(vr => {
+                    const sheetName = vr.range.split('!')[0].replace(/'/g, ''); // Limpa o nome da aba
+                    clientesPorPorta[sheetName] = {};
+                    const rows = vr.values ? vr.values.slice(1) : [];
+
+                    rows.forEach(col => {
+                        if(col.length === 0) return;
+                        let val0 = col[0];
+                        let placa, porta;
+                        
+                        // Lógica de mapeamento universal (Nokia vs Furukawa)
+                        if (val0.includes('1/1/')) { // Nokia (1/1/1/13/110)
+                            let parts = val0.split('/');
+                            if(parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
+                        } else if (val0.toLowerCase().startsWith('gpon')) { // Furukawa V1 (GPON1/13)
+                            let match = val0.match(/GPON(\d+)\/(\d+)/i);
+                            if(match) { placa = match[1]; porta = match[2]; }
+                        } else if (val0.includes('/')) { // Furukawa V2 (1/13)
+                            let parts = val0.split('/');
+                            placa = parts[0]; porta = parts[1];
+                        }
+
+                        if (placa && porta) {
+                            let key = `${placa}/${porta}`; // Fica "1/13" (Exatamente como na aba ENERGIA)
+                            clientesPorPorta[sheetName][key] = (clientesPorPorta[sheetName][key] || 0) + 1;
+                        }
+                    });
+                });
+            }
+        }
+
+        // 3. Busca a aba CIRCUITO para colocar o nome amigável do bairro
+        const rowsCircuitos = await fetchCircuitosData();
+
+        // 4. Constrói os dados finais, cruza tudo e calcula porcentagem
+        let chartLabels = [];
+        let chartData = [];
+        tableBody.innerHTML = '';
+
+        // Ordena por quantidade de quedas (do maior para o menor)
+        portasComQueda.sort((a, b) => parseInt(b[2]) - parseInt(a[2]));
+
+        portasComQueda.forEach(row => {
+            const oltName = row[0]; // LTXV-1
+            const porta = row[1]; // 1/5
+            const qtdPowerOff = parseInt(row[2]);
+            const abaName = oltName.replace('-', '');
+            ultimaAtt = row[3];
+
+            totalPowerOffGeral += qtdPowerOff;
+
+            // Busca o total de clientes e o circuito
+            const totalClientes = (clientesPorPorta[abaName] && clientesPorPorta[abaName][porta]) ? clientesPorPorta[abaName][porta] : qtdPowerOff;
+            
+            // Simula o tipo de OLT baseando no nome para buscar o circuito correto
+            const isNokia = ['HEL1', 'HEL2', 'MGP', 'PQA1', 'PSV1'].includes(abaName);
+            const oltType = isNokia ? 'nokia' : 'furukawa-10'; // O getCircuitInfo funciona igual para v1 ou v2 passando as strings certas
+            
+            const [placaNum, portaNum] = porta.split('/');
+            const circuitoNome = getCircuitInfo(rowsCircuitos, abaName, placaNum, portaNum, oltType);
+
+            // Calcula %
+            const porcentagem = Math.round((qtdPowerOff / totalClientes) * 100);
+            
+            // Define cor do status
+            let statusBadge = `<span style="color: #4ade80;">Mínimo</span>`; // Verde
+            if (porcentagem >= 50) statusBadge = `<span style="color: #f87171;">Crítico</span>`; // Vermelho
+            else if (porcentagem >= 20) statusBadge = `<span style="color: #fbbf24;">Atenção</span>`; // Amarelo
+
+            // Preenche Tabela
+            tableBody.innerHTML += `
+                <tr>
+                    <td style="font-weight: bold; color: #EADDFF;">${oltName}</td>
+                    <td>${porta}</td>
+                    <td>${circuitoNome}</td>
+                    <td>${totalClientes}</td>
+                    <td style="color: #f87171; font-weight: bold;">${qtdPowerOff}</td>
+                    <td>${porcentagem}%</td>
+                    <td>${statusBadge}</td>
+                </tr>
+            `;
+
+            // Guarda dados para o Gráfico (Top 8 portas)
+            if (chartLabels.length < 8) {
+                chartLabels.push(`${oltName} (${porta})`);
+                chartData.push(qtdPowerOff);
+            }
+        });
+
+        if (portasComQueda.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px;">🎉 Nenhuma queda de energia detectada no momento!</td></tr>`;
+        }
+
+        // 5. Atualiza os Cards
+        if(totalQuedasEl) totalQuedasEl.innerText = totalPowerOffGeral;
+        if(portasAfetadasEl) portasAfetadasEl.innerText = portasComQueda.length;
+        if(lastUpdateEl) lastUpdateEl.innerText = ultimaAtt;
+
+        // 6. Renderiza o Gráfico Simples usando Chart.js (se existir o canvas)
+        if (chartCtx && window.Chart) {
+            // Destroi gráfico antigo se houver
+            if (window.energyChartInstance) window.energyChartInstance.destroy();
+            
+            window.energyChartInstance = new Chart(chartCtx, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Clientes Offline (Power Off)',
+                        data: chartData,
+                        backgroundColor: '#f87171',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#EADDFF' } }
+                    },
+                    scales: {
+                        y: { ticks: { color: '#EADDFF' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                        x: { ticks: { color: '#EADDFF' }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+    } catch (e) {
+        console.error("Erro ao carregar o Painel de Energia:", e);
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #f87171;">❌ Erro ao cruzar os dados. Verifique a conexão com o Google Sheets.</td></tr>`;
+    }
+};
+
+// Auto-refresh do painel de Energia (a cada 5 minutos)
+if (window.location.pathname.includes('energia.html')) {
+    startEnergyMonitoring();
+    setInterval(startEnergyMonitoring, ENGINE_REFRESH_SECONDS * 1000);
 }
