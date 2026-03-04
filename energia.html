@@ -34,32 +34,32 @@
 
         /* Preparação para os novos Cards de OLT gerados pelo JS */
         .energy-olt-card-header {
-            padding: 8px 16px !important; /* Altura drasticamente reduzida */
+            padding: 8px 16px !important; 
             border-bottom: 1px solid var(--m3-outline-variant); 
             background: rgba(234, 208, 255, 0.05);
         }
         
         .btn-energy-details {
-            background: rgba(234, 208, 255, 0.05); /* Fundo muito sutil indicando clique */
-            border: none !important; /* Sem contorno branco */
+            background: rgba(234, 208, 255, 0.05); 
+            border: none !important; 
             padding: 6px 10px;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
-            color: var(--m3-primary);
+            color: var(--m3-on-surface); /* Atualizado: Branco/Gelo para acompanhar o título */
             display: flex;
             align-items: center;
             justify-content: center;
         }
         
         .btn-energy-details:hover {
-            background: rgba(234, 208, 255, 0.15); /* Brilha levemente no hover */
+            background: rgba(234, 208, 255, 0.15); 
             transform: translateY(-1px);
         }
 
         /* Barra de Progresso Tríplice */
         .triple-progress-bar {
-            height: 8px; /* Mais fina para economizar espaço */
+            height: 8px; 
             width: 100%;
             background: rgba(255,255,255,0.05);
             border-radius: 4px;
@@ -67,7 +67,7 @@
             overflow: hidden;
             margin-top: 12px;
         }
-        .bar-online { background-color: #64748b; } /* Slate - Total Offline */
+        .bar-online { background-color: #ea580c; } /* Laranja Queimado (Preparando para a nova cor do Total) */
         .bar-poweroff { background-color: #f87171; } /* Vermelho - Energia */
         .bar-offline { background-color: #fbbf24; } /* Âmbar - GPON */
 
@@ -163,11 +163,12 @@
                     <h2 id="global-poweroff-total" style="font-size: 2.8rem; margin: 0; color: #f87171; line-height: 1;">0</h2>
                     <div id="global-poweroff-context" style="margin-top: 10px; color: var(--m3-on-surface-variant); font-size: 0.85rem; line-height: 1.4;">
                         <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">dns</span> <strong id="global-olts-afetadas" style="color: var(--m3-on-surface);">0</strong> de 17 OLTs afetadas.<br>
-                        <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">public</span> Impacto rede: <strong id="global-impacto-perc" style="color: var(--m3-on-surface);">0%</strong>
+                        <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">public</span> Impacto rede: <strong id="global-impacto-perc" style="color: var(--m3-on-surface);">0%</strong><br>
+                        <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">pie_chart</span> Relativo OFF: <strong id="global-offline-relativo-perc" style="color: #f87171;">0%</strong>
                     </div>
                 </div>
 
-                <div class="overview-card" style="padding: 16px 20px; display: flex; flex-direction: column;">
+                <div class="overview-card" style="padding: 16px 20px; display: flex; flex-direction: column; min-width: 0;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
                         <span class="material-symbols-rounded" style="color: var(--m3-primary); font-size: 20px;">bar_chart</span>
                         <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Ranking de OLTs Críticas</h3>

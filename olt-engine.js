@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão 7.1 (Otimização Layout Painel Energia e Métricas)
+// olt-engine.js - Versão 7.2 (Nova Métrica Relativa e Paleta Laranja Queimado)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -430,7 +430,7 @@ window.startEnergyMonitoring = async function() {
 
     try {
         window.ENERGY_DATA_STORE = {
-            global: { powerOff: 0, totalClients: 0, oltsAffected: 0 },
+            global: { powerOff: 0, totalClients: 0, oltsAffected: 0, totalOffline: 0 },
             olts: {} 
         };
 
@@ -497,6 +497,7 @@ window.startEnergyMonitoring = async function() {
                     } else {
                         oltData.ports[placa][porta].offline++;
                         oltData.offline++;
+                        window.ENERGY_DATA_STORE.global.totalOffline++; // Incrementa global de Offline
                     }
                     
                     oltData.totalClients++;
@@ -545,10 +546,17 @@ window.startEnergyMonitoring = async function() {
         const globalPerc = window.ENERGY_DATA_STORE.global.totalClients > 0 
             ? ((window.ENERGY_DATA_STORE.global.powerOff / window.ENERGY_DATA_STORE.global.totalClients) * 100).toFixed(1) 
             : 0;
+
+        const globalRelativoPerc = window.ENERGY_DATA_STORE.global.totalOffline > 0 
+            ? ((window.ENERGY_DATA_STORE.global.powerOff / window.ENERGY_DATA_STORE.global.totalOffline) * 100).toFixed(1) 
+            : 0;
         
         document.getElementById('global-poweroff-total').innerText = window.ENERGY_DATA_STORE.global.powerOff;
         document.getElementById('global-olts-afetadas').innerText = window.ENERGY_DATA_STORE.global.oltsAffected;
         document.getElementById('global-impacto-perc').innerText = `${globalPerc}%`;
+        
+        const elRelativo = document.getElementById('global-offline-relativo-perc');
+        if(elRelativo) elRelativo.innerText = `${globalRelativoPerc}%`;
 
         gridEl.innerHTML = '';
         let chartLabels = [];
@@ -562,7 +570,7 @@ window.startEnergyMonitoring = async function() {
             const pctPowerOff = oData.totalClients ? (oData.powerOff / oData.totalClients * 100) : 0;
             const pctOfflineOther = oData.totalClients ? (oData.offlineOther / oData.totalClients * 100) : 0;
             
-            // Geração da UI dos Cards com as novas Cores e Ícones
+            // Geração da UI dos Cards com as novas Cores (Laranja Queimado #ea580c)
             gridEl.innerHTML += `
                 <div class="overview-card" style="display: flex; flex-direction: column;">
                     <div class="energy-olt-card-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -577,8 +585,8 @@ window.startEnergyMonitoring = async function() {
                     <div class="card-body" style="flex-direction: column; padding: 15px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; text-align: center; margin-bottom: 12px;">
                             <div style="flex: 1;">
-                                <span class="material-symbols-rounded" style="color:#64748b; font-size: 26px;">router</span><br>
-                                <strong style="color:#64748b; font-size: 1.3rem;">${oData.offline}</strong><br>
+                                <span class="material-symbols-rounded" style="color:#ea580c; font-size: 26px;">router</span><br>
+                                <strong style="color:#ea580c; font-size: 1.3rem;">${oData.offline}</strong><br>
                                 <small style="color:var(--m3-on-surface-variant); font-size: 0.8rem; font-weight: 600;">TOTAL</small>
                             </div>
                             <div style="flex: 1;">
