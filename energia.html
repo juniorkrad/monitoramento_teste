@@ -18,18 +18,43 @@
            ESTILOS ESPECÍFICOS - PAINEL DE ENERGIA
            ========================================== */
         
-        /* Grid Superior Otimizado (Fixo Esq, Fluido Dir com trava de sobreposição) */
-        .energy-top-grid {
-            display: grid;
-            grid-template-columns: 280px minmax(0, 1fr); /* minmax resolve a sobreposição! */
-            gap: 16px;
-            margin-bottom: 20px;
+        /* Único Card Master (Blindado contra sobreposição) */
+        .energy-master-card {
+            display: flex;
+            flex-direction: row;
+            max-width: 100% !important; 
             width: 100%;
+            margin-bottom: 24px;
+            padding: 0; 
+            overflow: hidden; 
+        }
+
+        .energy-master-left {
+            flex: 0 0 280px; 
+            padding: 20px;
+            border-right: 1px solid var(--m3-outline-variant); 
+            border-left: 5px solid #f87171;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .energy-master-right {
+            flex: 1; 
+            min-width: 0; 
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
         }
 
         @media (max-width: 900px) {
-            .energy-top-grid {
-                grid-template-columns: 1fr;
+            .energy-master-card {
+                flex-direction: column; 
+            }
+            .energy-master-left {
+                flex: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--m3-outline-variant); 
             }
         }
 
@@ -68,7 +93,7 @@
             overflow: hidden;
             margin-top: 12px;
         }
-        .bar-online { background-color: var(--m3-color-success); } /* Verde - Total Offline */
+        .bar-online { background-color: var(--m3-on-surface); } /* Branco/Gelo - Total Offline */
         .bar-poweroff { background-color: #f87171; } /* Vermelho - Energia */
         .bar-offline { background-color: var(--m3-color-warning); } /* Amarelo - GPON */
 
@@ -154,9 +179,9 @@
 
         <main class="main-content" style="flex-direction: column;">
             
-            <div class="energy-top-grid">
+            <div class="overview-card energy-master-card">
                 
-                <div class="overview-card" style="border-left: 5px solid #f87171; justify-content: center; padding: 16px 20px;">
+                <div class="energy-master-left">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
                         <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;">CLIENTES SEM ENERGIA</span>
                         <span class="material-symbols-rounded" style="font-size: 28px; color: #f87171; opacity: 0.8;">bolt</span>
@@ -169,7 +194,7 @@
                     </div>
                 </div>
 
-                <div class="overview-card" style="padding: 16px 20px; display: flex; flex-direction: column; min-width: 0; max-width: 100%;">
+                <div class="energy-master-right">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
                         <span class="material-symbols-rounded" style="color: var(--m3-primary); font-size: 20px;">bar_chart</span>
                         <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Ranking de OLTs Críticas</h3>
@@ -257,10 +282,27 @@
             loadHeader({ title: "Alarmes de Energia", exactTitle: true });
             loadFooter();
 
+            // Injeta a data/hora logo após o cabeçalho ser criado
+            setPageOpenTime();
+
             if (typeof startEnergyMonitoring === 'function') {
                 startEnergyMonitoring();
             }
         });
+
+        // Função corrigida buscando exatamente o ID do layout.js
+        function setPageOpenTime() {
+            let timestampEl = document.getElementById('update-timestamp');
+            
+            if (timestampEl) {
+                const now = new Date();
+                const dataFormatada = now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const horaFormatada = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                
+                timestampEl.innerHTML = `<span class="material-symbols-rounded">schedule</span> Página aberta: ${dataFormatada} às ${horaFormatada}`;
+                timestampEl.style.color = 'var(--m3-on-surface-variant)';
+            }
+        }
 
         function closeEnergyModal(event) {
             if (event && event.target.id !== 'energy-detail-modal') return;
