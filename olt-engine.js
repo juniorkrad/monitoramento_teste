@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão 6.0 (Unificação de Regras + Painel de Energia MD3)
+// olt-engine.js - Versão 6.1 (Correção de Escopo Global para Painel de Energia)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -18,11 +18,47 @@ const OLT_COLUMN_MAP = {
 // Armazena dados dos clientes para o Pop-up
 window.OLT_CLIENTS_DATA = {};
 
+// ==============================================================================
+// FUNÇÕES GLOBAIS (COMPARTILHADAS ENTRE OLTS E ENERGIA)
+// ==============================================================================
+
+async function fetchCircuitosData() {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${TAB_CIRCUITOS}!A:AK?key=${ENGINE_API_KEY}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) return [];
+        const data = await response.json();
+        return data.values || [];
+    } catch (e) { return []; }
+}
+
+function getCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
+    const colIndex = OLT_COLUMN_MAP[oltId];
+    if (colIndex === undefined) return "-";
+    if (!rowsCircuitos.length) return "-";
+
+    let rowIndex = -1;
+    const p = parseInt(porta);
+    const sl = parseInt(placa);
+
+    if (type === 'nokia') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
+    else if (type === 'furukawa-2') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
+    else if (type === 'furukawa-10') rowIndex = ((sl - 1) * 4) + (p - 1) + 1;
+
+    if (rowIndex > 0 && rowIndex < rowsCircuitos.length) {
+        return rowsCircuitos[rowIndex][colIndex] || "-";
+    }
+    return "-";
+}
+
+// ==============================================================================
+// MOTOR DE MONITORAMENTO DE OLTS (PÁGINAS INDIVIDUAIS)
+// ==============================================================================
+
 function startOltMonitoring(config) {
     const container = document.querySelector('.grid-container');
     if (!container) return;
 
-    // --- 1. INJEÇÃO DO MODAL (POP-UP) COM FILTROS ---
     if (!document.getElementById('detail-modal')) {
         const modalStyles = `
             <style>
@@ -36,14 +72,12 @@ function startOltMonitoring(config) {
                 .client-table tr:hover { background-color: #f1f1f1; }
                 .modal-section-title { font-size: 1.1rem; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
                 
-                /* Tema Escuro para Modal */
                 .modal-content { background-color: #2f0e51; color: #EADDFF; border: 1px solid #5c4e72; }
                 .client-table th { background-color: #3a1c63; color: #fff; }
                 .client-table td { color: #EADDFF; border-bottom: 1px solid #5c4e72; }
                 .client-table tr:nth-child(even) { background-color: rgba(0,0,0,0.2); }
                 .client-table tr:hover { background-color: rgba(255,255,255,0.1); }
                 
-                /* Estilos dos Filtros */
                 .filter-bar { display: flex; gap: 10px; margin-bottom: 10px; }
                 .filter-input { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #5c4e72; background-color: rgba(0,0,0,0.2); color: #fff; }
                 .filter-select { padding: 8px; border-radius: 4px; border: 1px solid #5c4e72; background-color: #3a1c63; color: #fff; cursor: pointer; }
@@ -62,7 +96,6 @@ function startOltMonitoring(config) {
                         <button class="close-modal" onclick="closeModal()">×</button>
                     </div>
                     <div class="modal-body">
-                        
                         <div id="view-stats" class="modal-stats-grid">
                             <div class="modal-stat-box">
                                 <span id="modal-up" class="modal-stat-value val-online">0</span>
@@ -82,23 +115,17 @@ function startOltMonitoring(config) {
                             <div class="modal-section-title">
                                 <span id="circuit-title-text">Clientes do Circuito</span>
                             </div>
-                            
                             <div class="filter-bar">
                                 <input type="text" id="search-input" class="filter-input" placeholder="Buscar (Nome, Serial...)" onkeyup="filterClients()">
-                                <select id="status-filter" class="filter-select" onchange="filterClients()">
-                                    </select>
+                                <select id="status-filter" class="filter-select" onchange="filterClients()"></select>
                             </div>
-
                             <div class="client-table-container">
                                 <table class="client-table" id="table-clients">
-                                    <thead id="clients-thead">
-                                        </thead>
-                                    <tbody id="clients-tbody">
-                                        </tbody>
+                                    <thead id="clients-thead"></thead>
+                                    <tbody id="clients-tbody"></tbody>
                                 </table>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -106,7 +133,6 @@ function startOltMonitoring(config) {
         document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
 
-    // 2. Cria a estrutura HTML
     function createTableStructure() {
         container.innerHTML = ''; 
         for (let i = 1; i <= config.boards; i++) {
@@ -126,37 +152,8 @@ function startOltMonitoring(config) {
         }
     }
 
-    async function fetchCircuitosData() {
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${TAB_CIRCUITOS}!A:AK?key=${ENGINE_API_KEY}`;
-        try {
-            const response = await fetch(url);
-            if (!response.ok) return [];
-            const data = await response.json();
-            return data.values || [];
-        } catch (e) { return []; }
-    }
-
-    function getCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
-        const colIndex = OLT_COLUMN_MAP[oltId];
-        if (colIndex === undefined) return "-";
-        if (!rowsCircuitos.length) return "-";
-
-        let rowIndex = -1;
-        const p = parseInt(porta);
-        const sl = parseInt(placa);
-
-        if (type === 'nokia') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
-        else if (type === 'furukawa-2') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
-        else if (type === 'furukawa-10') rowIndex = ((sl - 1) * 4) + (p - 1) + 1;
-
-        if (rowIndex > 0 && rowIndex < rowsCircuitos.length) {
-            return rowsCircuitos[rowIndex][colIndex] || "-";
-        }
-        return "-";
-    }
-
     async function populateTables() {
-        window.OLT_CLIENTS_DATA = {}; // Limpa cache
+        window.OLT_CLIENTS_DATA = {}; 
 
         for (let i = 1; i <= config.boards; i++) {
             const tbody = document.getElementById(`tbody-placa-${i}`);
@@ -183,7 +180,6 @@ function startOltMonitoring(config) {
                 if (config.type === 'nokia') {
                     const pon = columns[0];
                     const status = columns[4]; 
-                    
                     if (!pon || !status) return;
                     const parts = pon.split('/'); 
                     if (parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
@@ -204,7 +200,6 @@ function startOltMonitoring(config) {
                 }
 
                 if (!placa || !porta) return;
-
                 const portKey = `${placa}/${porta}`;
                 
                 if (!portData[portKey]) {
@@ -213,44 +208,24 @@ function startOltMonitoring(config) {
                     window.OLT_CLIENTS_DATA[portKey] = [];
                 }
 
-                if (!boardStats[placa]) {
-                    boardStats[placa] = { total: 0, offline: 0 };
-                }
+                if (!boardStats[placa]) boardStats[placa] = { total: 0, offline: 0 };
 
-                if (isOnline) {
-                    portData[portKey].online++;
-                } else {
-                    portData[portKey].offline++;
-                }
+                if (isOnline) portData[portKey].online++;
+                else portData[portKey].offline++;
                 
                 boardStats[placa].total++;
                 if (!isOnline) boardStats[placa].offline++;
 
                 let clientData = {};
-                
                 if (config.type === 'nokia') {
-                    clientData = {
-                        colB: columns[1] || '',
-                        colC: columns[2] || '',
-                        colE: columns[4] || '',
-                        colH: columns[7] || '',
-                        colI: columns[8] || '',
-                        statusRef: columns[4] || '' 
-                    };
+                    clientData = { colB: columns[1] || '', colC: columns[2] || '', colE: columns[4] || '', colH: columns[7] || '', colI: columns[8] || '', statusRef: columns[4] || '' };
                 } else {
-                    clientData = {
-                        colB: columns[1] || '',
-                        colC: columns[2] || '',
-                        colD: columns[3] || '',
-                        colH: columns[7] || '',
-                        statusRef: columns[2] || '' 
-                    };
+                    clientData = { colB: columns[1] || '', colC: columns[2] || '', colD: columns[3] || '', colH: columns[7] || '', statusRef: columns[2] || '' };
                 }
                 
                 window.OLT_CLIENTS_DATA[portKey].push(clientData);
             });
 
-            // --- 1. DETECÇÃO DE PROBLEMAS NA PLACA ---
             for (const placa in boardStats) {
                 const bStat = boardStats[placa];
                 if (bStat.total >= 5 && bStat.offline === bStat.total) {
@@ -258,7 +233,6 @@ function startOltMonitoring(config) {
                 }
             }
 
-            // --- 2. RENDERIZAÇÃO E PROBLEMAS DE PORTA ---
             for (const portKey in portData) {
                 const [placa, porta] = portKey.split('/');
                 const { online, offline, info } = portData[portKey];
@@ -270,16 +244,13 @@ function startOltMonitoring(config) {
 
                 const percOffline = total > 0 ? (offline / total) : 0;
 
-                // ==========================================
-                // LÓGICA V4 - UNIFICAÇÃO (50% OU 32 clientes)
-                // ==========================================
                 if (total >= 5) {
                     if (percOffline === 1) {
-                        statusClass = 'status-critico'; // 100% DOWN
+                        statusClass = 'status-critico'; 
                         statusText = 'Crítico';
                         alertTag = '::SUPER';
                     } else if (percOffline >= 0.5 || offline >= 32) {
-                        statusClass = 'status-problema'; // Unificação: 50% OU 32+ DOWN
+                        statusClass = 'status-problema'; 
                         statusText = 'Problema';
                         alertTag = '::CRIT';
                     } else if (offline >= 16) {
@@ -293,9 +264,7 @@ function startOltMonitoring(config) {
                     alertTag = '::NORMAL';
                 }
 
-                if (alertTag !== '::NORMAL') {
-                    newProblems.add(`[${config.id} PORTA ${porta}] ${alertTag}`);
-                }
+                if (alertTag !== '::NORMAL') newProblems.add(`[${config.id} PORTA ${porta}] ${alertTag}`);
 
                 const htmlRow = `
                     <tr>
@@ -335,8 +304,6 @@ function startOltMonitoring(config) {
     setInterval(runUpdate, ENGINE_REFRESH_SECONDS * 1000); 
 }
 
-// --- FUNÇÕES DO MODAL (POP-UP) ---
-
 function closeModal(event) {
     if (event && event.target.id !== 'detail-modal') return;
     document.getElementById('detail-modal').style.display = 'none';
@@ -345,16 +312,13 @@ function closeModal(event) {
 function openPortDetails(placa, porta, circuito, online, offline, total) {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.querySelector('.modal-content');
-
     modalContent.classList.remove('modal-large'); 
     modalContent.classList.add('modal-status');   
 
     const textoCircuito = (circuito && circuito !== "-") ? ` - Circuito: ${circuito}` : "";
     document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta}${textoCircuito}`;
-    
     document.getElementById('view-stats').style.display = 'flex';
     document.getElementById('view-clients').style.display = 'none';
-
     document.getElementById('modal-up').textContent = online;
     document.getElementById('modal-down').textContent = offline;
     document.getElementById('modal-total').textContent = total;
@@ -366,43 +330,30 @@ window.CURRENT_MODAL_TYPE = '';
 function openCircuitClients(placa, porta, circuitoNome, oltType) {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.querySelector('.modal-content');
-
     modalContent.classList.remove('modal-status'); 
     modalContent.classList.add('modal-large');     
-    
     window.CURRENT_MODAL_TYPE = oltType; 
 
     const tableObj = document.getElementById('table-clients');
     tableObj.className = 'client-table ' + (oltType === 'nokia' ? 'mode-nokia' : 'mode-furukawa');
 
     document.getElementById('circuit-title-text').textContent = `Circuito: ${circuitoNome} (Placa ${placa}/Porta ${porta})`;
-
     document.getElementById('view-stats').style.display = 'none';
     document.getElementById('view-clients').style.display = 'block';
-    
     document.getElementById('search-input').value = '';
 
     const statusSelect = document.getElementById('status-filter');
     statusSelect.innerHTML = '<option value="all">Todos Status</option>';
-
     if (oltType === 'nokia') {
-        statusSelect.innerHTML += `
-            <option value="online">Online (UP)</option>
-            <option value="offline">Offline (DOWN)</option>
-        `;
+        statusSelect.innerHTML += `<option value="online">Online (UP)</option><option value="offline">Offline (DOWN)</option>`;
     } else {
-        statusSelect.innerHTML += `
-            <option value="online">Online (Active)</option>
-            <option value="offline">Offline (Inactive)</option>
-        `;
+        statusSelect.innerHTML += `<option value="online">Online (Active)</option><option value="offline">Offline (Inactive)</option>`;
     }
     statusSelect.value = 'all'; 
 
     const thead = document.getElementById('clients-thead');
     const tbody = document.getElementById('clients-tbody');
-    
-    thead.innerHTML = '';
-    tbody.innerHTML = '';
+    thead.innerHTML = ''; tbody.innerHTML = '';
 
     const portKey = `${placa}/${porta}`;
     const clients = window.OLT_CLIENTS_DATA[portKey] || [];
@@ -413,7 +364,6 @@ function openCircuitClients(placa, porta, circuitoNome, oltType) {
         clients.forEach(c => {
             let statusRaw = c.statusRef.toLowerCase();
             let statusClass = 'filter-unknown';
-            
             if (oltType === 'nokia') {
                 if (statusRaw.includes('up')) statusClass = 'filter-online';
                 else if (statusRaw.includes('down')) statusClass = 'filter-offline';
@@ -421,49 +371,37 @@ function openCircuitClients(placa, porta, circuitoNome, oltType) {
                 if (statusRaw.includes('active') && !statusRaw.includes('inactive')) statusClass = 'filter-online';
                 else if (statusRaw.includes('inactive')) statusClass = 'filter-offline';
             }
-
             let rowHTML = '';
             if (oltType === 'nokia') {
-                rowHTML = `<tr class="client-row ${statusClass}">
-                    <td>${c.colB}</td><td>${c.colC}</td><td>${c.colE}</td><td>${c.colH}</td><td>${c.colI}</td>
-                </tr>`;
+                rowHTML = `<tr class="client-row ${statusClass}"><td>${c.colB}</td><td>${c.colC}</td><td>${c.colE}</td><td>${c.colH}</td><td>${c.colI}</td></tr>`;
             } else {
-                rowHTML = `<tr class="client-row ${statusClass}">
-                    <td>${c.colB}</td><td>${c.colC}</td><td>${c.colD}</td><td>${c.colH}</td>
-                </tr>`;
+                rowHTML = `<tr class="client-row ${statusClass}"><td>${c.colB}</td><td>${c.colC}</td><td>${c.colD}</td><td>${c.colH}</td></tr>`;
             }
             tbody.innerHTML += rowHTML;
         });
     }
-
     modal.style.display = 'flex';
 }
 
 function filterClients() {
     const searchText = document.getElementById('search-input').value.toLowerCase();
     const statusFilter = document.getElementById('status-filter').value;
-    
     const rows = document.querySelectorAll('.client-row');
     
     rows.forEach(row => {
         const textContent = row.textContent.toLowerCase();
         let matchesSearch = textContent.includes(searchText);
-        
         let matchesStatus = true;
         if (statusFilter === 'online') matchesStatus = row.classList.contains('filter-online');
         if (statusFilter === 'offline') matchesStatus = row.classList.contains('filter-offline');
         
-        if (matchesSearch && matchesStatus) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
+        if (matchesSearch && matchesStatus) row.style.display = '';
+        else row.style.display = 'none';
     });
 }
 
 // ==============================================================================
-// NOVO MÓDULO: PAINEL GLOBAL DE ENERGIA (DYING GASP)
-// Puxa as quedas da aba ENERGIA e cruza com o total de clientes das abas das OLTs
+// MOTOR GLOBAL DE ENERGIA (DYING GASP)
 // ==============================================================================
 
 window.startEnergyMonitoring = async function() {
@@ -476,34 +414,28 @@ window.startEnergyMonitoring = async function() {
     if (!tableBody) return;
 
     try {
-        // 1. Busca os dados brutos de energia (Power Off)
         const urlEnergia = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/ENERGIA!A:D?key=${ENGINE_API_KEY}`;
         const resEnergia = await fetch(urlEnergia);
         const dataEnergia = await resEnergia.json();
         const rowsEnergia = dataEnergia.values ? dataEnergia.values.slice(1) : [];
 
-        // Filtra portas que realmente têm queda (Qtd > 0)
         const portasComQueda = rowsEnergia.filter(r => parseInt(r[2]) > 0);
         let totalPowerOffGeral = 0;
         let ultimaAtt = "-";
 
-        // 2. Descobre quais OLTs precisam ser consultadas para cruzar o total de clientes
-        // (Remove o hífen de LTXV-1 para virar LTXV1, que é o nome da aba)
         const oltsAfetadas = [...new Set(portasComQueda.map(r => r[0].replace('-', '')))];
-        let clientesPorPorta = {}; // Ex: { 'LTXV1': { '1/5': 32, '2/10': 64 } }
+        let clientesPorPorta = {}; 
 
         if (oltsAfetadas.length > 0) {
-            // Monta uma consulta em lote (batchGet) para puxar só as OLTs afetadas de uma vez
             const ranges = oltsAfetadas.map(olt => `ranges=${olt}!A:E`).join('&');
             const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values:batchGet?key=${ENGINE_API_KEY}&${ranges}`;
             
             const resBatch = await fetch(batchUrl);
             const dataBatch = await resBatch.json();
 
-            // Processa as abas das OLTs para somar o total de clientes de cada porta
             if (dataBatch.valueRanges) {
                 dataBatch.valueRanges.forEach(vr => {
-                    const sheetName = vr.range.split('!')[0].replace(/'/g, ''); // Limpa o nome da aba
+                    const sheetName = vr.range.split('!')[0].replace(/'/g, ''); 
                     clientesPorPorta[sheetName] = {};
                     const rows = vr.values ? vr.values.slice(1) : [];
 
@@ -512,20 +444,19 @@ window.startEnergyMonitoring = async function() {
                         let val0 = col[0];
                         let placa, porta;
                         
-                        // Lógica de mapeamento universal (Nokia vs Furukawa)
-                        if (val0.includes('1/1/')) { // Nokia (1/1/1/13/110)
+                        if (val0.includes('1/1/')) { 
                             let parts = val0.split('/');
                             if(parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
-                        } else if (val0.toLowerCase().startsWith('gpon')) { // Furukawa V1 (GPON1/13)
+                        } else if (val0.toLowerCase().startsWith('gpon')) { 
                             let match = val0.match(/GPON(\d+)\/(\d+)/i);
                             if(match) { placa = match[1]; porta = match[2]; }
-                        } else if (val0.includes('/')) { // Furukawa V2 (1/13)
+                        } else if (val0.includes('/')) { 
                             let parts = val0.split('/');
                             placa = parts[0]; porta = parts[1];
                         }
 
                         if (placa && porta) {
-                            let key = `${placa}/${porta}`; // Fica "1/13" (Exatamente como na aba ENERGIA)
+                            let key = `${placa}/${porta}`; 
                             clientesPorPorta[sheetName][key] = (clientesPorPorta[sheetName][key] || 0) + 1;
                         }
                     });
@@ -533,50 +464,43 @@ window.startEnergyMonitoring = async function() {
             }
         }
 
-        // 3. Busca a aba CIRCUITO para colocar o nome amigável do bairro
+        // AQUI ESTÁ O SEGREDO: Agora a função consegue enxergar a fetchCircuitosData globalmente
         const rowsCircuitos = await fetchCircuitosData();
 
-        // 4. Constrói os dados finais, cruza tudo e calcula porcentagem
         let chartLabels = [];
         let chartData = [];
         tableBody.innerHTML = '';
 
-        // Ordena por quantidade de quedas (do maior para o menor)
         portasComQueda.sort((a, b) => parseInt(b[2]) - parseInt(a[2]));
 
         portasComQueda.forEach(row => {
-            const oltName = row[0]; // LTXV-1
-            const porta = row[1]; // 1/5
+            const oltName = row[0]; 
+            const porta = row[1]; 
             const qtdPowerOff = parseInt(row[2]);
             const abaName = oltName.replace('-', '');
             ultimaAtt = row[3];
 
             totalPowerOffGeral += qtdPowerOff;
 
-            // Busca o total de clientes e o circuito
             const totalClientes = (clientesPorPorta[abaName] && clientesPorPorta[abaName][porta]) ? clientesPorPorta[abaName][porta] : qtdPowerOff;
             
-            // Simula o tipo de OLT baseando no nome para buscar o circuito correto
             const isNokia = ['HEL1', 'HEL2', 'MGP', 'PQA1', 'PSV1'].includes(abaName);
-            const oltType = isNokia ? 'nokia' : 'furukawa-10'; // O getCircuitInfo funciona igual para v1 ou v2 passando as strings certas
+            const oltType = isNokia ? 'nokia' : 'furukawa-10'; 
             
             const [placaNum, portaNum] = porta.split('/');
             const circuitoNome = getCircuitInfo(rowsCircuitos, abaName, placaNum, portaNum, oltType);
 
-            // Calcula %
             const porcentagem = Math.round((qtdPowerOff / totalClientes) * 100);
             
-            // Define cor do status
-            let statusBadge = `<span style="color: #4ade80;">Mínimo</span>`; // Verde
-            if (porcentagem >= 50) statusBadge = `<span style="color: #f87171;">Crítico</span>`; // Vermelho
-            else if (porcentagem >= 20) statusBadge = `<span style="color: #fbbf24;">Atenção</span>`; // Amarelo
+            let statusBadge = `<span class="impact-badge impact-low">Mínimo</span>`; 
+            if (porcentagem >= 50) statusBadge = `<span class="impact-badge impact-high">Crítico</span>`; 
+            else if (porcentagem >= 20) statusBadge = `<span class="impact-badge impact-med">Atenção</span>`; 
 
-            // Preenche Tabela
             tableBody.innerHTML += `
                 <tr>
-                    <td style="font-weight: bold; color: #EADDFF;">${oltName}</td>
+                    <td style="font-weight: 700;">${oltName}</td>
                     <td>${porta}</td>
-                    <td>${circuitoNome}</td>
+                    <td><span class="circuit-badge">${circuitoNome}</span></td>
                     <td>${totalClientes}</td>
                     <td style="color: #f87171; font-weight: bold;">${qtdPowerOff}</td>
                     <td>${porcentagem}%</td>
@@ -584,7 +508,6 @@ window.startEnergyMonitoring = async function() {
                 </tr>
             `;
 
-            // Guarda dados para o Gráfico (Top 8 portas)
             if (chartLabels.length < 8) {
                 chartLabels.push(`${oltName} (${porta})`);
                 chartData.push(qtdPowerOff);
@@ -592,17 +515,14 @@ window.startEnergyMonitoring = async function() {
         });
 
         if (portasComQueda.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px;">🎉 Nenhuma queda de energia detectada no momento!</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--m3-on-surface-variant);">Nenhuma queda de energia detectada no momento!</td></tr>`;
         }
 
-        // 5. Atualiza os Cards
         if(totalQuedasEl) totalQuedasEl.innerText = totalPowerOffGeral;
         if(portasAfetadasEl) portasAfetadasEl.innerText = portasComQueda.length;
         if(lastUpdateEl) lastUpdateEl.innerText = ultimaAtt;
 
-        // 6. Renderiza o Gráfico Simples usando Chart.js (se existir o canvas)
         if (chartCtx && window.Chart) {
-            // Destroi gráfico antigo se houver
             if (window.energyChartInstance) window.energyChartInstance.destroy();
             
             window.energyChartInstance = new Chart(chartCtx, {
@@ -613,17 +533,17 @@ window.startEnergyMonitoring = async function() {
                         label: 'Clientes Offline (Power Off)',
                         data: chartData,
                         backgroundColor: '#f87171',
-                        borderRadius: 4
+                        borderRadius: 8
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { labels: { color: '#EADDFF' } }
+                        legend: { labels: { color: '#EADDFF', font: { family: "'Montserrat', sans-serif" } } }
                     },
                     scales: {
-                        y: { ticks: { color: '#EADDFF' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                        y: { ticks: { color: '#EADDFF' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
                         x: { ticks: { color: '#EADDFF' }, grid: { display: false } }
                     }
                 }
@@ -632,12 +552,10 @@ window.startEnergyMonitoring = async function() {
 
     } catch (e) {
         console.error("Erro ao carregar o Painel de Energia:", e);
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #f87171;">❌ Erro ao cruzar os dados. Verifique a conexão com o Google Sheets.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #f87171; padding: 20px;">❌ Erro ao cruzar os dados. Verifique o console ou a conexão com a Planilha.</td></tr>`;
     }
 };
 
-// Auto-refresh do painel de Energia (a cada 5 minutos)
 if (window.location.pathname.includes('energia.html')) {
-    startEnergyMonitoring();
     setInterval(startEnergyMonitoring, ENGINE_REFRESH_SECONDS * 1000);
 }
