@@ -1,5 +1,5 @@
 // ==============================================================================
-// layout.js - Construtor de Layout e Menu Inteligente (Versão 2.2 - Grid 2 Colunas)
+// layout.js - Construtor de Layout e Menu Inteligente (Versão 2.3 - Módulo Energia)
 // ==============================================================================
 
 // --- LISTA MESTRA DE PÁGINAS ---
@@ -134,6 +134,11 @@ function loadSidebar(currentPage) {
                 <a href="equipamentos.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px;">
                     <span class="material-symbols-rounded" style="font-size: 24px;">router</span>
                     EQUIPAMENTOS
+                </a>
+
+                <a href="energia.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px;">
+                    <span class="material-symbols-rounded" style="font-size: 24px; color: #f87171;">battery_alert</span>
+                    ENERGIA
                 </a>
                 
                 <div class="sidebar-divider"></div>
