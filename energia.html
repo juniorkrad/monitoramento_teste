@@ -56,6 +56,9 @@
                 border-right: none;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.15); /* Linha divisória desce no mobile */
             }
+            .placas-grid {
+                grid-template-columns: repeat(2, 1fr) !important; /* 2 colunas no mobile */
+            }
         }
 
         /* Preparação para os novos Cards de OLT gerados pelo JS */
@@ -100,7 +103,7 @@
         /* Estilização do Modal de Energia */
         .placas-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            grid-template-columns: repeat(4, 1fr); /* FORÇA EXATAMENTE 4 COLUNAS NO DESKTOP */
             gap: 12px;
             margin-bottom: 20px;
         }
@@ -196,7 +199,7 @@
 
                 <div class="energy-master-right">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
-                        <span class="material-symbols-rounded" style="color: var(--m3-primary); font-size: 20px;">bar_chart</span>
+                        <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">bar_chart</span>
                         <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Ranking de OLTs Críticas</h3>
                     </div>
                     <div style="flex: 1; width: 100%; overflow-x: auto; padding-bottom: 5px;">
@@ -228,7 +231,7 @@
                     <h3 id="energy-modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
                         <span class="material-symbols-rounded">router</span> OLT Selecionada
                     </h3>
-                    <p id="energy-modal-last-update" style="margin: 5px 0 0 0; font-size: 0.85rem; color: var(--m3-primary); font-family: 'Roboto Mono', monospace; display: flex; align-items: center; gap: 5px;">
+                    <p id="energy-modal-last-update" style="margin: 5px 0 0 0; font-size: 0.85rem; color: var(--m3-on-surface); font-family: 'Roboto Mono', monospace; display: flex; align-items: center; gap: 5px;">
                         <span class="material-symbols-rounded" style="font-size: 14px;">history</span> Última Varredura: --/-- --:--
                     </p>
                 </div>
@@ -290,14 +293,14 @@
             }
         });
 
-        // Função formatada exatamente com o padrão visual do layout.js
+        // Função formatada com o padrão visual do layout.js (com segundos)
         function setPageOpenTime() {
             let timestampEl = document.getElementById('update-timestamp');
             
             if (timestampEl) {
                 const now = new Date();
                 const dataFormatada = now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                const horaFormatada = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const horaFormatada = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 
                 timestampEl.innerHTML = `
                     <span class="material-symbols-rounded">calendar_today</span> ${dataFormatada}
