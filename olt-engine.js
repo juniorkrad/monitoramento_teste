@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão 7.0 (Módulo de Energia - Cards por OLT e Modal de Placas)
+// olt-engine.js - Versão 7.1 (Otimização Layout Painel Energia e Métricas)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -35,13 +35,11 @@ const ENGINE_OLT_LIST = [
     { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa-2' }
 ];
 
-// Armazena dados dos clientes para o Pop-up das páginas individuais
 window.OLT_CLIENTS_DATA = {};
-// Armazena todos os dados mastigados para a página de Energia
 window.ENERGY_DATA_STORE = {};
 
 // ==============================================================================
-// FUNÇÕES GLOBAIS (COMPARTILHADAS ENTRE OLTS E ENERGIA)
+// FUNÇÕES GLOBAIS
 // ==============================================================================
 
 async function fetchCircuitosData() {
@@ -431,7 +429,6 @@ window.startEnergyMonitoring = async function() {
     if (!gridEl) return;
 
     try {
-        // 1. Inicializa o Armazém Global de Dados
         window.ENERGY_DATA_STORE = {
             global: { powerOff: 0, totalClients: 0, oltsAffected: 0 },
             olts: {} 
@@ -444,7 +441,6 @@ window.startEnergyMonitoring = async function() {
             };
         });
 
-        // 2. Prepara e dispara requisição em LOTE (Batch) para Google Sheets
         const ranges = ['ENERGIA!A:D', 'CIRCUITO!A:AK'].concat(ENGINE_OLT_LIST.map(o => o.type === 'nokia' ? `${o.sheetTab}!A:E` : `${o.sheetTab}!A:C`));
         const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values:batchGet?key=${ENGINE_API_KEY}&ranges=${ranges.join('&ranges=')}`;
         
@@ -453,10 +449,8 @@ window.startEnergyMonitoring = async function() {
 
         if (!dataBatch.valueRanges) throw new Error("Falha na estrutura de retorno da API");
 
-        // 3. Mapeia Circuitos (Índice 1)
         const rowsCircuitos = dataBatch.valueRanges[1].values || [];
 
-        // 4. Mapeia Total de Clientes, Online e Offline por OLT e Porta (Índices 2 a 18)
         ENGINE_OLT_LIST.forEach((olt, index) => {
             const vrIndex = index + 2;
             const rows = dataBatch.valueRanges[vrIndex].values ? dataBatch.valueRanges[vrIndex].values.slice(1) : [];
@@ -511,11 +505,10 @@ window.startEnergyMonitoring = async function() {
             });
         });
 
-        // 5. Mapeia e cruza Alarmes de Energia - Dying Gasp (Índice 0)
         const rowsEnergia = dataBatch.valueRanges[0].values ? dataBatch.valueRanges[0].values.slice(1) : [];
         rowsEnergia.forEach(row => {
-            const oltId = row[0]; // e.g. LTXV-1
-            const portaFull = row[1]; // e.g. 1/5
+            const oltId = row[0]; 
+            const portaFull = row[1]; 
             const qtd = parseInt(row[2]) || 0;
             const lastUpdate = row[3] || '--/-- --:--';
 
@@ -525,7 +518,6 @@ window.startEnergyMonitoring = async function() {
                 const placa = parts[0];
                 const porta = parts[1];
 
-                // Seguranca caso a porta alarme energia mas não exista mais clientes na planilha de coleta
                 if (!oltData.ports[placa]) oltData.ports[placa] = {};
                 if (!oltData.ports[placa][porta]) {
                     const sheetAbaName = oltId.replace('-', '');
@@ -540,7 +532,6 @@ window.startEnergyMonitoring = async function() {
             }
         });
 
-        // 6. Calcula Offline Outros e OLTs afetadas
         ENGINE_OLT_LIST.forEach(olt => {
             const oData = window.ENERGY_DATA_STORE.olts[olt.id];
             oData.offlineOther = Math.max(0, oData.offline - oData.powerOff);
@@ -551,7 +542,6 @@ window.startEnergyMonitoring = async function() {
         // ATUALIZAÇÃO DA INTERFACE (UI)
         // ==========================================
 
-        // Atualiza Cards de Topo
         const globalPerc = window.ENERGY_DATA_STORE.global.totalClients > 0 
             ? ((window.ENERGY_DATA_STORE.global.powerOff / window.ENERGY_DATA_STORE.global.totalClients) * 100).toFixed(1) 
             : 0;
@@ -560,7 +550,6 @@ window.startEnergyMonitoring = async function() {
         document.getElementById('global-olts-afetadas').innerText = window.ENERGY_DATA_STORE.global.oltsAffected;
         document.getElementById('global-impacto-perc').innerText = `${globalPerc}%`;
 
-        // Prepara Grid de Cards
         gridEl.innerHTML = '';
         let chartLabels = [];
         let chartData = [];
@@ -573,44 +562,57 @@ window.startEnergyMonitoring = async function() {
             const pctPowerOff = oData.totalClients ? (oData.powerOff / oData.totalClients * 100) : 0;
             const pctOfflineOther = oData.totalClients ? (oData.offlineOther / oData.totalClients * 100) : 0;
             
-            // Popula os Cards
+            // Geração da UI dos Cards com as novas Cores e Ícones
             gridEl.innerHTML += `
                 <div class="overview-card" style="display: flex; flex-direction: column;">
-                    <div class="card-header" style="justify-content: space-between; border-bottom: 1px solid var(--m3-outline-variant); background: rgba(234, 208, 255, 0.05); padding: 12px 20px;">
-                        <h3 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-rounded">dns</span> ${oData.id}</h3>
-                        <button class="icon-btn" onclick="window.openEnergyModal('${oData.id}')" title="Detalhes Placas/Portas" style="background: var(--m3-surface-container-high); border: 1px solid var(--m3-outline); padding: 6px; border-radius: 8px;">
-                            <span class="material-symbols-rounded" style="font-size: 20px; color: var(--m3-primary);">open_in_new</span>
+                    <div class="energy-olt-card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0; font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
+                            <span class="material-symbols-rounded" style="font-size: 18px;">dns</span> ${oData.id}
+                        </h3>
+                        <button class="btn-energy-details" onclick="window.openEnergyModal('${oData.id}')" title="Ver Detalhes">
+                            <span class="material-symbols-rounded" style="font-size: 22px;">pageview</span>
                         </button>
                     </div>
-                    <div class="card-body" style="flex-direction: column; padding: 20px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; text-align: center; margin-bottom: 15px;">
-                            <div style="flex: 1;"><span class="material-symbols-rounded" style="color:var(--m3-color-success); font-size: 28px;">check_circle</span><br><strong style="color:var(--m3-on-surface); font-size: 1.3rem;">${oData.online}</strong><br><small style="color:var(--m3-on-surface-variant); font-size: 0.8rem;">Online</small></div>
-                            <div style="flex: 1;"><span class="material-symbols-rounded" style="color:#f87171; font-size: 28px;">bolt</span><br><strong style="color:#f87171; font-size: 1.3rem;">${oData.powerOff}</strong><br><small style="color:var(--m3-on-surface-variant); font-size: 0.8rem;">Energia OFF</small></div>
-                            <div style="flex: 1;"><span class="material-symbols-rounded" style="color:var(--m3-on-surface-variant); font-size: 28px;">wifi_off</span><br><strong style="color:var(--m3-on-surface); font-size: 1.3rem;">${oData.offlineOther}</strong><br><small style="color:var(--m3-on-surface-variant); font-size: 0.8rem;">Outros OFF</small></div>
+                    
+                    <div class="card-body" style="flex-direction: column; padding: 15px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; text-align: center; margin-bottom: 12px;">
+                            <div style="flex: 1;">
+                                <span class="material-symbols-rounded" style="color:#64748b; font-size: 26px;">router</span><br>
+                                <strong style="color:#64748b; font-size: 1.3rem;">${oData.offline}</strong><br>
+                                <small style="color:var(--m3-on-surface-variant); font-size: 0.8rem; font-weight: 600;">TOTAL</small>
+                            </div>
+                            <div style="flex: 1;">
+                                <span class="material-symbols-rounded" style="color:#f87171; font-size: 26px;">bolt</span><br>
+                                <strong style="color:#f87171; font-size: 1.3rem;">${oData.powerOff}</strong><br>
+                                <small style="color:var(--m3-on-surface-variant); font-size: 0.8rem; font-weight: 600;">ENERGIA</small>
+                            </div>
+                            <div style="flex: 1;">
+                                <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 26px;">wifi_off</span><br>
+                                <strong style="color:#fbbf24; font-size: 1.3rem;">${oData.offlineOther}</strong><br>
+                                <small style="color:var(--m3-on-surface-variant); font-size: 0.8rem; font-weight: 600;">GPON</small>
+                            </div>
                         </div>
+                        
                         <div class="triple-progress-bar">
-                            <div class="bar-online" style="width: ${pctOnline}%"></div>
-                            <div class="bar-poweroff" style="width: ${pctPowerOff}%"></div>
-                            <div class="bar-offline" style="width: ${pctOfflineOther}%"></div>
+                            <div class="bar-online" style="width: ${pctOnline}%" title="Online (Oculto)"></div>
+                            <div class="bar-poweroff" style="width: ${pctPowerOff}%" title="Energia OFF"></div>
+                            <div class="bar-offline" style="width: ${pctOfflineOther}%" title="GPON OFF"></div>
                         </div>
                     </div>
                 </div>
             `;
             
-            // Popula arrays para o Gráfico de OLTs com problemas
             if (oData.powerOff > 0) {
                 chartLabels.push(oData.id);
                 chartData.push(oData.powerOff);
             }
         });
 
-        // Ordena dados do gráfico (Maior para Menor)
         let chartCombined = chartLabels.map((l, i) => ({ label: l, data: chartData[i] }));
         chartCombined.sort((a, b) => b.data - a.data);
         chartLabels = chartCombined.map(x => x.label);
         chartData = chartCombined.map(x => x.data);
 
-        // Atualiza Gráfico Chart.js com Tooltip Customizado
         const chartCtx = document.getElementById('energyChartOlt');
         if (chartCtx && window.Chart) {
             if (window.energyChartInstance) window.energyChartInstance.destroy();
