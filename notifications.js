@@ -1,5 +1,5 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 6.2 - Agrupamento e Supressão Nativa)
+// notifications.js - Sistema Central de Alertas (Versão 6.3 - Minimalismo)
 // ==============================================================================
 
 // Memórias de Estado (O "Cérebro" do Vigilante)
@@ -99,7 +99,7 @@ function showToast(message, type = '') {
  */
 function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), newEnergyProblems = new Set()) {
     
-    // 1. PROCESSAR ALARMES DE ENERGIA (Já chegam agrupados por OLT)
+    // 1. PROCESSAR ALARMES DE ENERGIA (Visual Minimalista)
     for (const ep of newEnergyProblems) {
         if (!currentEnergyProblems.has(ep)) {
             // Extrai: [HEL-1] ENERGIA::CRIT::150::4
@@ -107,12 +107,20 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
             if (match) {
                 const oltId = match[1];
                 const severity = match[2];
-                const clients = match[3];
                 const ports = parseInt(match[4]);
                 
                 const severityClass = severity === 'CRIT' ? 'toast-energy-crit' : 'toast-energy-warn';
-                const title = severity === 'CRIT' ? 'Queda de Energia' : 'Atenção: Energia';
-                const desc = ports > 1 ? `OLT: ${oltId} (${clients} clientes em ${ports} portas)` : `OLT: ${oltId} (${clients} clientes afetados)`;
+                
+                let title = '';
+                if (ports > 1) {
+                    title = 'Alarme Múltiplo de Energia';
+                } else if (severity === 'CRIT') {
+                    title = 'Queda de Energia';
+                } else {
+                    title = 'Atenção de Energia';
+                }
+
+                const desc = `OLT: ${oltId}`;
                 
                 showToast(`<strong style="font-size: 1.1em; margin: 0;">${title}</strong><span style="font-family: var(--font-family-mono); font-size: 0.95em; margin: 0;">${desc}</span>`, severityClass);
             }
