@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão 7.3 (Cores Básicas e Otimização Visual)
+// olt-engine.js - Versão 7.4 (Sincronia de Gatilho Duplo - Energia)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -309,6 +309,7 @@ function startOltMonitoring(config) {
                 if (targetTbody) targetTbody.innerHTML += htmlRow;
             }
 
+            // checkAndNotifyForNewProblems é chamado aqui para as páginas de OLT, mas os toasts só aparecem na Home.
             if (typeof checkAndNotifyForNewProblems === 'function') checkAndNotifyForNewProblems(newProblems);
 
         } catch (error) { console.error('Erro na engine:', error); }
@@ -751,19 +752,27 @@ window.openEnergyPlacaDetails = function(oltId, placa) {
         const pData = ports[pt];
         if (pData.total > 0) {
             hasRows = true;
-            const perc = Math.round((pData.powerOff / pData.total) * 100);
+            
+            // --- CÁLCULO ATUALIZADO (GATILHO DUPLO SINCROMIZADO COM A HOME) ---
+            const perc = pData.powerOff / pData.total;
+            const percDisplay = Math.round(perc * 100);
             
             let statusBadge = `<span class="impact-badge impact-low">Mínimo</span>`; 
-            if (perc >= 50) statusBadge = `<span class="impact-badge impact-high">Crítico</span>`; 
-            else if (perc >= 20) statusBadge = `<span class="impact-badge impact-med">Atenção</span>`; 
             
+            if ((perc >= 0.5 && pData.powerOff >= 10) || (perc === 1 && pData.total >= 5)) {
+                statusBadge = `<span class="impact-badge impact-high">Crítico</span>`; 
+            } else if (perc >= 0.2 && pData.powerOff >= 5) {
+                statusBadge = `<span class="impact-badge impact-med">Atenção</span>`; 
+            }
+            // ------------------------------------------------------------------
+
             tbody.innerHTML += `
                 <tr>
                     <td style="font-weight: bold;">${placa}/${pt}</td>
                     <td><span class="circuit-badge">${pData.circuit}</span></td>
                     <td>${pData.total}</td>
                     <td style="color: #f87171; font-weight: bold;">${pData.powerOff > 0 ? pData.powerOff : '-'}</td>
-                    <td>${perc}%</td>
+                    <td>${percDisplay}%</td>
                     <td>${statusBadge}</td>
                 </tr>
             `;
