@@ -58,6 +58,14 @@
             { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa-2' },
         ];
 
+        // MAPA FIXO: Índice da coluna inicial (A=0, E=4, etc.) para cada OLT na aba ENERGIA
+        const ENERGY_MAP = {
+            'HEL-1': 0, 'HEL-2': 4, 'PQA-1': 8, 'PSV-1': 12, 'MGP': 16,
+            'LTXV-1': 20, 'SBO-1': 24, 'LTXV-2': 28, 'PQA-2': 32, 'PQA-3': 36,
+            'SB-1': 40, 'SB-2': 44, 'SB-3': 48, 'SBO-2': 52, 'SBO-3': 56,
+            'SBO-4': 60, 'PSV-7': 64
+        };
+
         const API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
         const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
         const REFRESH_INTERVAL_SECONDS = 300;
@@ -359,7 +367,8 @@
                 createCardPlaceholders();
             }
             
-            const energyUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/ENERGIA!A:D?key=${API_KEY}`;
+            // MUDANÇA: Buscando a aba ENERGIA inteira (Até a coluna BP)
+            const energyUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/ENERGIA!A:BP?key=${API_KEY}`;
             const oltPromises = oltsConfig.map(olt => fetchOltData(olt));
             const energyPromise = fetch(energyUrl).then(res => res.json()).catch(() => null);
             
@@ -380,7 +389,7 @@
             let currentBackbones = new Set(); 
 
             // =================================================================
-            // 1. PROCESSAMENTO DE ENERGIA (CRIAÇÃO DA LISTA DE BLOQUEIO)
+            // 1. PROCESSAMENTO DE ENERGIA (MAPA HORIZONTAL)
             // =================================================================
             let energyProblems = new Set();
             let portsWithEnergy = new Set();
@@ -389,40 +398,44 @@
             if (energyDataJson && energyDataJson.values) {
                 const energyRows = energyDataJson.values.slice(1);
                 
-                energyRows.forEach(row => {
-                    const oltId = row[0];
-                    const portaFull = row[1];
-                    const powerOffQtd = parseInt(row[2]) || 0;
+                // Iterando sobre o novo mapa de colunas (Ex: HEL-1 olha colunas 0 a 3, PQA-1 olha colunas 8 a 11)
+                for (const [oltId, colIndex] of Object.entries(ENERGY_MAP)) {
+                    
+                    energyRows.forEach(row => {
+                        // Verifica se a linha tem dados suficientes para alcançar esta OLT específica
+                        if (row.length > colIndex + 2) {
+                            const portaFull = row[colIndex + 1]; // Coluna de Porta (Ex: B, F, J)
+                            const powerOffQtd = parseInt(row[colIndex + 2]) || 0; // Coluna de Qtd (Ex: C, G, K)
 
-                    if (powerOffQtd > 0) {
-                        const oltResult = results.find(r => r.id === oltId);
-                        if (oltResult && oltResult.portData && oltResult.portData[portaFull]) {
-                            const portTotal = oltResult.portData[portaFull].total;
-                            const perc = powerOffQtd / portTotal;
+                            if (portaFull && powerOffQtd > 0) {
+                                const oltResult = results.find(r => r.id === oltId);
+                                if (oltResult && oltResult.portData && oltResult.portData[portaFull]) {
+                                    const portTotal = oltResult.portData[portaFull].total;
+                                    const perc = powerOffQtd / portTotal;
 
-                            let severity = null;
-                            if ((perc >= 0.5 && powerOffQtd >= 10) || (perc === 1 && portTotal >= 5)) {
-                                severity = 'CRIT'; 
-                            } else if (perc >= 0.2 && powerOffQtd >= 5) {
-                                severity = 'WARN'; 
-                            }
+                                    let severity = null;
+                                    if ((perc >= 0.5 && powerOffQtd >= 10) || (perc === 1 && portTotal >= 5)) {
+                                        severity = 'CRIT'; 
+                                    } else if (perc >= 0.2 && powerOffQtd >= 5) {
+                                        severity = 'WARN'; 
+                                    }
 
-                            if (severity) {
-                                // MARCA A PORTA PARA SER SILENCIADA NO STATUS OFFLINE
-                                portsWithEnergy.add(`[${oltId} PORTA ${portaFull}]`);
-                                
-                                // Agrupa os eventos de energia por OLT
-                                if (!energyGroups[oltId]) energyGroups[oltId] = { crit: 0, warn: 0, clientsOff: 0, portsCount: 0 };
-                                energyGroups[oltId].clientsOff += powerOffQtd;
-                                energyGroups[oltId].portsCount++;
-                                if (severity === 'CRIT') energyGroups[oltId].crit++;
-                                else energyGroups[oltId].warn++;
+                                    if (severity) {
+                                        portsWithEnergy.add(`[${oltId} PORTA ${portaFull}]`);
+                                        
+                                        if (!energyGroups[oltId]) energyGroups[oltId] = { crit: 0, warn: 0, clientsOff: 0, portsCount: 0 };
+                                        energyGroups[oltId].clientsOff += powerOffQtd;
+                                        energyGroups[oltId].portsCount++;
+                                        if (severity === 'CRIT') energyGroups[oltId].crit++;
+                                        else energyGroups[oltId].warn++;
+                                    }
+                                }
                             }
                         }
-                    }
-                });
+                    });
+                }
 
-                // Gera apenas UM aviso de energia por OLT para o vigilante
+                // Gera apenas UM aviso de energia por OLT
                 for (const olt in energyGroups) {
                     const group = energyGroups[olt];
                     const overallSeverity = group.crit > 0 ? 'CRIT' : 'WARN'; 
@@ -454,7 +467,6 @@
                 let ports100Down = 0;
 
                 for (const key in result.portData) {
-                    // SUPRESSÃO CIRÚRGICA: Se a porta está na lista de falta de luz, IGNORA o alerta offline!
                     if (portsWithEnergy.has(`[${result.id} PORTA ${key}]`)) continue;
 
                     const { off, total } = result.portData[key];
@@ -477,7 +489,6 @@
                     }
                 }
 
-                // GERA APENAS UM AVISO DE STATUS POR OLT (Restaurando o comportamento antigo)
                 if (ports100Down >= 2) {
                     activeBackboneDetails.push(`OLT: ${result.id}`);
                     currentBackbones.add(result.id);
@@ -512,7 +523,6 @@
                 backboneContainer.innerHTML = '';
             }
 
-            // Envia TUDO (limpo e agrupado) para o notifications.js
             if (typeof checkAndNotifyForNewProblems === 'function') {
                 checkAndNotifyForNewProblems(allProblems, currentBackbones, energyProblems);
             }

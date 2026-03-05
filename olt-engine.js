@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão 7.4 (Sincronia de Gatilho Duplo - Energia)
+// olt-engine.js - Versão 7.5 (Mapa Horizontal de Energia Integrado)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -34,6 +34,14 @@ const ENGINE_OLT_LIST = [
     { id: 'SBO-3',  sheetTab: 'SBO3',  type: 'furukawa-2' },
     { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa-2' }
 ];
+
+// MAPA FIXO: Índice da coluna inicial (A=0, E=4, etc.) para cada OLT na aba ENERGIA
+const ENERGY_MAP = {
+    'HEL-1': 0, 'HEL-2': 4, 'PQA-1': 8, 'PSV-1': 12, 'MGP': 16,
+    'LTXV-1': 20, 'SBO-1': 24, 'LTXV-2': 28, 'PQA-2': 32, 'PQA-3': 36,
+    'SB-1': 40, 'SB-2': 44, 'SB-3': 48, 'SBO-2': 52, 'SBO-3': 56,
+    'SBO-4': 60, 'PSV-7': 64
+};
 
 window.OLT_CLIENTS_DATA = {};
 window.ENERGY_DATA_STORE = {};
@@ -309,7 +317,6 @@ function startOltMonitoring(config) {
                 if (targetTbody) targetTbody.innerHTML += htmlRow;
             }
 
-            // checkAndNotifyForNewProblems é chamado aqui para as páginas de OLT, mas os toasts só aparecem na Home.
             if (typeof checkAndNotifyForNewProblems === 'function') checkAndNotifyForNewProblems(newProblems);
 
         } catch (error) { console.error('Erro na engine:', error); }
@@ -442,7 +449,8 @@ window.startEnergyMonitoring = async function() {
             };
         });
 
-        const ranges = ['ENERGIA!A:D', 'CIRCUITO!A:AK'].concat(ENGINE_OLT_LIST.map(o => o.type === 'nokia' ? `${o.sheetTab}!A:E` : `${o.sheetTab}!A:C`));
+        // MUDANÇA: Buscando a aba ENERGIA inteira (Até a coluna BP)
+        const ranges = ['ENERGIA!A:BP', 'CIRCUITO!A:AK'].concat(ENGINE_OLT_LIST.map(o => o.type === 'nokia' ? `${o.sheetTab}!A:E` : `${o.sheetTab}!A:C`));
         const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values:batchGet?key=${ENGINE_API_KEY}&ranges=${ranges.join('&ranges=')}`;
         
         const resBatch = await fetch(batchUrl);
@@ -498,7 +506,7 @@ window.startEnergyMonitoring = async function() {
                     } else {
                         oltData.ports[placa][porta].offline++;
                         oltData.offline++;
-                        window.ENERGY_DATA_STORE.global.totalOffline++; // Incrementa global de Offline
+                        window.ENERGY_DATA_STORE.global.totalOffline++;
                     }
                     
                     oltData.totalClients++;
@@ -507,32 +515,46 @@ window.startEnergyMonitoring = async function() {
             });
         });
 
+        // =================================================================
+        // PROCESSAMENTO DE ENERGIA (NOVO MAPA HORIZONTAL)
+        // =================================================================
         const rowsEnergia = dataBatch.valueRanges[0].values ? dataBatch.valueRanges[0].values.slice(1) : [];
-        rowsEnergia.forEach(row => {
-            const oltId = row[0]; 
-            const portaFull = row[1]; 
-            const qtd = parseInt(row[2]) || 0;
-            const lastUpdate = row[3] || '--/-- --:--';
-
+        
+        for (const [oltId, colIndex] of Object.entries(ENERGY_MAP)) {
             const oltData = window.ENERGY_DATA_STORE.olts[oltId];
-            if (oltData && qtd > 0) {
-                const parts = portaFull.split('/');
-                const placa = parts[0];
-                const porta = parts[1];
+            if (!oltData) continue;
 
-                if (!oltData.ports[placa]) oltData.ports[placa] = {};
-                if (!oltData.ports[placa][porta]) {
-                    const sheetAbaName = oltId.replace('-', '');
-                    const circ = getCircuitInfo(rowsCircuitos, sheetAbaName, placa, porta, oltData.type);
-                    oltData.ports[placa][porta] = { total: qtd, online: 0, offline: qtd, powerOff: 0, circuit: circ };
-                }
-
-                oltData.ports[placa][porta].powerOff = qtd;
-                oltData.powerOff += qtd;
-                oltData.lastUpdate = lastUpdate;
-                window.ENERGY_DATA_STORE.global.powerOff += qtd;
+            // Pega a data de atualização da OLT na primeira linha de dados do bloco (linha 2)
+            if (rowsEnergia.length > 0 && rowsEnergia[0][colIndex + 3]) {
+                oltData.lastUpdate = rowsEnergia[0][colIndex + 3];
             }
-        });
+
+            rowsEnergia.forEach(row => {
+                // Verifica se a linha alcança a coluna da porta e quantidade para essa OLT
+                if (row.length > colIndex + 2) {
+                    const portaFull = row[colIndex + 1];
+                    const qtd = parseInt(row[colIndex + 2]) || 0;
+
+                    if (portaFull && qtd > 0) {
+                        const parts = portaFull.split('/');
+                        const placa = parts[0];
+                        const porta = parts[1];
+
+                        if (!oltData.ports[placa]) oltData.ports[placa] = {};
+                        if (!oltData.ports[placa][porta]) {
+                            const sheetAbaName = oltId.replace('-', '');
+                            const circ = getCircuitInfo(rowsCircuitos, sheetAbaName, placa, porta, oltData.type);
+                            // Cria a estrutura caso a porta não tenha sido vista na aba da OLT
+                            oltData.ports[placa][porta] = { total: qtd, online: 0, offline: qtd, powerOff: 0, circuit: circ };
+                        }
+
+                        oltData.ports[placa][porta].powerOff = qtd;
+                        oltData.powerOff += qtd;
+                        window.ENERGY_DATA_STORE.global.powerOff += qtd;
+                    }
+                }
+            });
+        }
 
         ENGINE_OLT_LIST.forEach(olt => {
             const oData = window.ENERGY_DATA_STORE.olts[olt.id];
@@ -566,12 +588,10 @@ window.startEnergyMonitoring = async function() {
         ENGINE_OLT_LIST.forEach(oltDef => {
             const oData = window.ENERGY_DATA_STORE.olts[oltDef.id];
             
-            // Cálculos para a barrinha tríplice
             const pctOnline = oData.totalClients ? (oData.online / oData.totalClients * 100) : 0;
             const pctPowerOff = oData.totalClients ? (oData.powerOff / oData.totalClients * 100) : 0;
             const pctOfflineOther = oData.totalClients ? (oData.offlineOther / oData.totalClients * 100) : 0;
             
-            // Geração da UI dos Cards com as novas Cores
             gridEl.innerHTML += `
                 <div class="overview-card" style="display: flex; flex-direction: column;">
                     <div class="energy-olt-card-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -753,7 +773,6 @@ window.openEnergyPlacaDetails = function(oltId, placa) {
         if (pData.total > 0) {
             hasRows = true;
             
-            // --- CÁLCULO ATUALIZADO (GATILHO DUPLO SINCROMIZADO COM A HOME) ---
             const perc = pData.powerOff / pData.total;
             const percDisplay = Math.round(perc * 100);
             
@@ -764,7 +783,6 @@ window.openEnergyPlacaDetails = function(oltId, placa) {
             } else if (perc >= 0.2 && pData.powerOff >= 5) {
                 statusBadge = `<span class="impact-badge impact-med">Atenção</span>`; 
             }
-            // ------------------------------------------------------------------
 
             tbody.innerHTML += `
                 <tr>
