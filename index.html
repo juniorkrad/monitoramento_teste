@@ -68,8 +68,8 @@
                 <div class="overview-card global-card" id="card-global" style="max-width: 100%;">
                     <div class="card-header" style="flex-wrap: wrap; gap: 10px; background-color: rgba(234, 208, 255, 0.15);">
                         <h3><span class="material-symbols-rounded" style="font-size: 28px;">public</span> VISÃO GERAL DA REDE</h3>
-                        <a href="energia.html" class="card-header-button" title="Ver Painel de Energia" style="padding: 6px 16px; font-size: 0.95rem; gap: 8px; border: 1px solid rgba(248, 113, 113, 0.4); color: #f87171;">
-                            <span class="material-symbols-rounded" style="font-size: 22px;">bolt</span> Ver Energia
+                        <a href="equipamentos.html" class="card-header-button" title="Ver Distribuição por Fabricante" style="padding: 6px 16px; font-size: 0.95rem; gap: 8px; border: 1px solid rgba(255,255,255,0.2);">
+                            <span class="material-symbols-rounded" style="font-size: 22px;">router</span> Ver Equipamentos
                         </a>
                     </div>
                     <div class="card-body">
@@ -170,6 +170,9 @@
                     }
                 });
 
+                // ==========================================
+                // LÓGICA DE ALARMES V3 (TRAVA DE 5 CLIENTES)
+                // ==========================================
                 let isMicroSuper = false;
                 let isCritical = false;     
                 let isWarning = false;
@@ -182,11 +185,14 @@
 
                     const percOffline = off / total;
 
+                    // --- TRAVA DE SEGURANÇA: MÍNIMO 5 CLIENTES NA PORTA ---
                     if (total >= 5) {
+                        // Gatilho de Backbone (Porta 100% OFF)
                         if (percOffline === 1) {
                             ports100Down++;
                             isMicroSuper = true; 
                         }
+                        // OLTs Padrão
                         else if (percOffline >= 0.5) {
                             isMicroSuper = true;
                         } else if (off >= 32) {
@@ -216,14 +222,13 @@
                     offlineCount: totalOffline, 
                     type: olt.type,
                     hasBackbone: hasBackbone,
-                    backboneDetails: hasBackbone ? `OLT: ${olt.id}` : null,
-                    portData: portData // <--- Exportado para cruzar com energia
+                    backboneDetails: hasBackbone ? `OLT: ${olt.id}` : null
                 };
 
             } catch (error) {
                 console.error(`Erro para OLT ${olt.id}:`, error);
                 updateCardUI(olt.id, { error: true });
-                return { id: olt.id, problems: new Set(), onlineCount: 0, offlineCount: 0, type: olt.type, hasBackbone: false, portData: {} };
+                return { id: olt.id, problems: new Set(), onlineCount: 0, offlineCount: 0, type: olt.type, hasBackbone: false };
             }
         }
         
@@ -242,6 +247,7 @@
             const header = card.querySelector('.card-header');
             header.classList.remove('status-normal', 'status-atencao', 'status-problema');
             
+            // --- NOVA RÉGUA DE CORES HÍBRIDA (Porcentagem + Absoluto) ---
             if (offlinePercent > 15 || offlineCount >= 300) { 
                 header.classList.add('status-problema'); 
             }
@@ -286,12 +292,13 @@
             card.querySelector('.card-body').innerHTML = `<div class="card-stats">${statsHtml}</div>${chartHtml}`;
         }
 
-        // --- UI DO CARD GLOBAL ATUALIZADA (COM ENERGIA) ---
-        function updateGlobalCardUI(globalOnline, globalOffline, totalPowerOff, oltsAffectedCount, top3Olts) {
+        function updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, top3Olts) {
             const card = document.getElementById('card-global');
             if (!card) return;
             
             const header = card.querySelector('.card-header');
+            
+            // GARANTIA: Remove qualquer classe de alerta que possa mudar a cor fixa
             header.classList.remove('status-normal', 'status-atencao', 'status-problema');
             
             const total = globalOnline + globalOffline;
@@ -311,22 +318,35 @@
                 </div>
             `;
 
-            // Bloco de Energia substituindo Fabricantes
-            const energyHtml = `
-                <div style="display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 300px; justify-content: center;">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
-                        <span class="material-symbols-rounded" style="color: #f87171; font-size: 28px;">bolt</span>
-                        <h4 style="margin: 0; font-size: 1.1rem; color: var(--m3-on-surface); font-weight: 600;">Status de Energia</h4>
+            const nokiaPct = nokiaTotal > 0 ? (nokiaOnline / nokiaTotal) * 100 : 0;
+            const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
+            
+            const vendorHtml = `
+                <div style="display: flex; flex-direction: column; gap: 25px; width: 100%; max-width: 300px;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <img src="imagens/nokia.png" alt="Nokia" style="max-height: 28px; width: auto; object-fit: contain;">
+                            <span class="stat-number" style="font-size: 1.4rem; width: auto;">${Math.round(nokiaPct)}%</span>
+                        </div>
+                        <div style="height: 14px; background: var(--m3-surface-container-high); border-radius: 7px; overflow: hidden;">
+                            <div style="height: 100%; width: ${nokiaPct}%; background: var(--m3-color-success); border-radius: 7px;"></div>
+                        </div>
+                        <div style="font-size: 1rem; color: var(--m3-on-surface-variant); margin-top: 8px; text-align: right;">
+                            <span class="stat-number" style="font-size: 1.1rem; width: auto;">${nokiaOnline}</span> / <span class="stat-number" style="font-size: 1.1rem; width: auto;">${nokiaTotal}</span> Online
+                        </div>
                     </div>
                     
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(248, 113, 113, 0.1); padding: 12px 16px; border-radius: 8px; border-left: 4px solid #f87171;">
-                        <span style="color: var(--m3-on-surface-variant); font-size: 0.95rem; font-weight: 500;">Clientes s/ Luz:</span>
-                        <strong style="color: #f87171; font-size: 1.5rem; line-height: 1;">${totalPowerOff}</strong>
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(234, 208, 255, 0.05); padding: 12px 16px; border-radius: 8px; border-left: 4px solid var(--m3-color-warning);">
-                        <span style="color: var(--m3-on-surface-variant); font-size: 0.95rem; font-weight: 500;">OLTs Afetadas:</span>
-                        <strong style="color: var(--m3-color-warning); font-size: 1.3rem; line-height: 1;">${oltsAffectedCount}</strong>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <img src="imagens/furukawa.png" alt="Furukawa" style="max-height: 28px; width: auto; object-fit: contain;">
+                            <span class="stat-number" style="font-size: 1.4rem; width: auto;">${Math.round(furukawaPct)}%</span>
+                        </div>
+                        <div style="height: 14px; background: var(--m3-surface-container-high); border-radius: 7px; overflow: hidden;">
+                            <div style="height: 100%; width: ${furukawaPct}%; background: var(--m3-color-success); border-radius: 7px;"></div>
+                        </div>
+                        <div style="font-size: 1rem; color: var(--m3-on-surface-variant); margin-top: 8px; text-align: right;">
+                            <span class="stat-number" style="font-size: 1.1rem; width: auto;">${furukawaOnline}</span> / <span class="stat-number" style="font-size: 1.1rem; width: auto;">${furukawaTotal}</span> Online
+                        </div>
                     </div>
                 </div>
             `;
@@ -337,7 +357,9 @@
             if (temOffline) {
                 top3Olts.forEach((olt, index) => {
                     if (olt.offline === 0) return;
+                    
                     const offlinePct = olt.total > 0 ? (olt.offline / olt.total) * 100 : 0;
+                    
                     rankingHtmlContent += `
                         <div style="margin-bottom: 18px;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items: baseline;">
@@ -368,7 +390,7 @@
             card.querySelector('.card-body').innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 20px;">
                     <div class="card-stats" style="padding-right: 0; min-width: 200px;">${statsHtml}</div>
-                    <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; justify-content: center; min-width: 250px;">${energyHtml}</div>
+                    <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; justify-content: center; min-width: 250px;">${vendorHtml}</div>
                     <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; justify-content: center; min-width: 250px;">${rankingHtml}</div>
                 </div>
             `;
@@ -386,19 +408,16 @@
                 createCardPlaceholders();
             }
             
-            // --- OTIMIZAÇÃO: BUSCA OLT E ENERGIA SIMULTANEAMENTE ---
-            const energyUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/ENERGIA!A:D?key=${API_KEY}`;
-            const oltPromises = oltsConfig.map(olt => fetchOltData(olt));
-            const energyPromise = fetch(energyUrl).then(res => res.json()).catch(() => null);
-            
-            const allResults = await Promise.all([...oltPromises, energyPromise]);
-            
-            const energyDataJson = allResults.pop(); // Remove a última promessa que é a da Energia
-            const results = allResults; // O restante são as OLTs
+            const promises = oltsConfig.map(olt => fetchOltData(olt));
+            const results = await Promise.all(promises);
             
             const allProblems = new Set();
             let globalOnline = 0;
             let globalOffline = 0;
+            
+            let nokiaOnline = 0, nokiaTotal = 0;
+            let furukawaOnline = 0, furukawaTotal = 0;
+            
             let oltStatsList = [];
             let activeBackboneDetails = []; 
             let currentBackbones = new Set(); 
@@ -409,6 +428,14 @@
                 globalOffline += result.offlineCount;
                 
                 let oltTotal = result.onlineCount + result.offlineCount;
+                if (result.type === 'nokia') {
+                    nokiaOnline += result.onlineCount;
+                    nokiaTotal += oltTotal;
+                } else {
+                    furukawaOnline += result.onlineCount;
+                    furukawaTotal += oltTotal;
+                }
+
                 oltStatsList.push({ id: result.id, offline: result.offlineCount, total: oltTotal });
 
                 if (result.hasBackbone) {
@@ -417,72 +444,19 @@
                 }
             });
 
-            // --- PROCESSAMENTO DA INTELIGÊNCIA DE ENERGIA (GATILHO DUPLO) ---
-            let totalPowerOff = 0;
-            let oltsAffectedEnergy = new Set();
-            let energyGroups = {}; // Para agrupar alarmes
-            let energyProblems = new Set();
-
-            if (energyDataJson && energyDataJson.values) {
-                const energyRows = energyDataJson.values.slice(1);
-                
-                energyRows.forEach(row => {
-                    const oltId = row[0];
-                    const portaFull = row[1];
-                    const powerOffQtd = parseInt(row[2]) || 0;
-
-                    if (powerOffQtd > 0) {
-                        totalPowerOff += powerOffQtd;
-                        oltsAffectedEnergy.add(oltId);
-
-                        // Cruza com o total de clientes da porta para achar a porcentagem
-                        const oltResult = results.find(r => r.id === oltId);
-                        if (oltResult && oltResult.portData && oltResult.portData[portaFull]) {
-                            const portTotal = oltResult.portData[portaFull].total;
-                            const perc = powerOffQtd / portTotal;
-
-                            // REGRA DE GATILHO DUPLO
-                            let severity = null;
-                            if ((perc >= 0.5 && powerOffQtd >= 10) || (perc === 1 && portTotal >= 5)) {
-                                severity = 'CRIT'; // Vermelho (Massa)
-                            } else if (perc >= 0.2 && powerOffQtd >= 5) {
-                                severity = 'WARN'; // Amarelo (Atenção)
-                            }
-
-                            if (severity) {
-                                if (!energyGroups[oltId]) energyGroups[oltId] = { crit: 0, warn: 0, totalClientsOff: 0, portsCount: 0 };
-                                energyGroups[oltId].totalClientsOff += powerOffQtd;
-                                energyGroups[oltId].portsCount++;
-                                if (severity === 'CRIT') energyGroups[oltId].crit++;
-                                else energyGroups[oltId].warn++;
-                            }
-                        }
-                    }
-                });
-
-                // Constrói os alarmes empacotados para o notifications.js ler
-                for (const olt in energyGroups) {
-                    const group = energyGroups[olt];
-                    // Se tiver pelo menos 1 crítico, o pacote todo vira crítico
-                    const overallSeverity = group.crit > 0 ? 'CRIT' : 'WARN'; 
-                    energyProblems.add(`[${olt}] ENERGIA::${overallSeverity}::${group.totalClientsOff}::${group.portsCount}`);
-                }
-            }
-
             oltStatsList.sort((a, b) => b.offline - a.offline);
             const top3Olts = oltStatsList.slice(0, 3);
 
-            // Atualiza UI da Home enviando dados de energia no lugar de fabricantes
-            updateGlobalCardUI(globalOnline, globalOffline, totalPowerOff, oltsAffectedEnergy.size, top3Olts);
+            updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, top3Olts);
 
             const backboneContainer = document.getElementById('backbone-alert-container');
             if (activeBackboneDetails.length > 0) {
                 backboneContainer.innerHTML = `
-                    <div class="backbone-alert">
-                        <span class="material-symbols-rounded">sos</span>
-                        <div class="backbone-text-container">
-                            <p class="backbone-title">Rompimento de Backbone?!</p>
-                            <p class="backbone-details">${activeBackboneDetails.join('<br>')}</p>
+                    <div class=\"backbone-alert\">
+                        <span class=\"material-symbols-rounded\">sos</span>
+                        <div class=\"backbone-text-container\">
+                            <p class=\"backbone-title\">Rompimento de Backbone?!</p>
+                            <p class=\"backbone-details\">${activeBackboneDetails.join('<br>')}</p>
                         </div>
                     </div>
                 `;
@@ -492,10 +466,8 @@
                 backboneContainer.innerHTML = '';
             }
 
-            // Envia TUDO (Status e Energia) para o vigilante central do NOC
             if (typeof checkAndNotifyForNewProblems === 'function') {
-                // Adicionamos o 3º parâmetro sem quebrar o código anterior!
-                checkAndNotifyForNewProblems(allProblems, currentBackbones, energyProblems); 
+                checkAndNotifyForNewProblems(allProblems, currentBackbones);
             }
             
             const now = new Date();
@@ -504,9 +476,9 @@
             
             if(timestampEl) {
                 timestampEl.innerHTML = `
-                    <span class="material-symbols-rounded">calendar_today</span> ${dataHoje}
-                    <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
-                    <span class="material-symbols-rounded">schedule</span> ${horaAgora}
+                    <span class=\"material-symbols-rounded\">calendar_today</span> ${dataHoje}
+                    <span style=\"width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;\"></span>
+                    <span class=\"material-symbols-rounded\">schedule</span> ${horaAgora}
                 `;
                 timestampEl.classList.remove('updated-anim');
                 void timestampEl.offsetWidth; 
