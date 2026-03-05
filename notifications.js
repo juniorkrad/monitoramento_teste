@@ -1,5 +1,5 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 6.3 - Minimalismo)
+// notifications.js - Sistema Central de Alertas (Versão 6.4 - Alto Impacto Visual)
 // ==============================================================================
 
 // Memórias de Estado (O "Cérebro" do Vigilante)
@@ -14,17 +14,64 @@ const alertSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAAB
 (function injectEnergyStyles() {
     const style = document.createElement('style');
     style.innerHTML = `
+        /* --- ESTILO 1: ATENÇÃO DE ENERGIA (AMARELO ÂMBAR SÓLIDO) --- */
         .toast-energy-warn {
-            border-left-color: #fbbf24 !important;
-            background: linear-gradient(90deg, rgba(251, 191, 36, 0.1) 0%, var(--m3-surface-container-high) 20%) !important;
+            background-color: #f59e0b !important;
+            color: #1a1a1a !important;
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4) !important;
+            border-left: 8px solid #b45309 !important;
+            padding: 18px 24px !important;
+            min-width: 350px !important;
         }
-        .toast-energy-warn .toast-icon { color: #fbbf24 !important; }
+        .toast-energy-warn .toast-icon { 
+            color: #1a1a1a !important; 
+            font-size: 32px !important;
+        }
+        .toast-energy-warn strong {
+            font-size: 1.25rem !important;
+            font-weight: 800 !important;
+            text-transform: uppercase;
+            letter-spacing: -0.5px;
+            color: #1a1a1a !important;
+        }
+        .toast-energy-warn span {
+            font-size: 1.1rem !important;
+            font-weight: 600 !important;
+            color: #1a1a1a !important;
+        }
 
+        /* --- ESTILO 2: QUEDA DE ENERGIA CRÍTICA (LARANJA QUEIMADO SÓLIDO) --- */
         .toast-energy-crit {
-            border-left-color: #f87171 !important;
-            background: linear-gradient(90deg, rgba(248, 113, 113, 0.1) 0%, var(--m3-surface-container-high) 20%) !important;
+            background-color: #f97316 !important;
+            color: #1a1a1a !important;
+            box-shadow: 0 8px 25px rgba(249, 115, 22, 0.5) !important;
+            border-left: 8px solid #c2410c !important;
+            padding: 18px 24px !important;
+            min-width: 350px !important;
+            animation: pulse-border 1.5s infinite;
         }
-        .toast-energy-crit .toast-icon { color: #f87171 !important; }
+        .toast-energy-crit .toast-icon { 
+            color: #1a1a1a !important; 
+            font-size: 32px !important;
+        }
+        .toast-energy-crit strong {
+            font-size: 1.25rem !important;
+            font-weight: 800 !important;
+            text-transform: uppercase;
+            letter-spacing: -0.5px;
+            color: #1a1a1a !important;
+        }
+        .toast-energy-crit span {
+            font-size: 1.1rem !important;
+            font-weight: 600 !important;
+            color: #1a1a1a !important;
+        }
+
+        @keyframes pulse-border {
+            0% { border-left-width: 8px; }
+            50% { border-left-width: 15px; }
+            100% { border-left-width: 8px; }
+        }
     `;
     document.head.appendChild(style);
 })();
@@ -68,7 +115,8 @@ function showToast(message, type = '') {
         setTimeout(() => toast.remove(), 500);
     };
 
-    container.appendChild(toast);
+    // Usa prepend para que o novo alarme apareça no topo da lista
+    container.prepend(toast);
     
     // --- LÓGICA DE SOM ---
     if (type.includes('problem') || type.includes('warning') || type.includes('super-priority') || type.includes('energy')) {
@@ -80,7 +128,7 @@ function showToast(message, type = '') {
         } catch(e){} 
     }
 
-    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => toast.classList.add('show'), 50);
 
     // --- TEMPO DE EXIBIÇÃO ---
     const duration = (type === 'super-priority' || type === 'toast-energy-crit') ? 10000 : 8000;
@@ -95,7 +143,6 @@ function showToast(message, type = '') {
 
 /**
  * Lógica Inteligente: Detecta Novos Problemas, Normalizações, Reparo de Backbone E ENERGIA
- * (A Supressão por porta agora é feita NATIVAMENTE no index.html. O notifications.js apenas exibe!)
  */
 function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), newEnergyProblems = new Set()) {
     
@@ -122,7 +169,8 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
 
                 const desc = `OLT: ${oltId}`;
                 
-                showToast(`<strong style="font-size: 1.1em; margin: 0;">${title}</strong><span style="font-family: var(--font-family-mono); font-size: 0.95em; margin: 0;">${desc}</span>`, severityClass);
+                // Formatação interna agora é sobrescrita pelo CSS das classes acima
+                showToast(`<strong>${title}</strong><span>${desc}</span>`, severityClass);
             }
         }
     }
@@ -144,7 +192,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     }
     currentEnergyProblems = newEnergyProblems;
 
-    // 2. DETECTAR NOVOS PROBLEMAS DE STATUS (Já chegam limpos da supressão do index.html)
+    // 2. DETECTAR NOVOS PROBLEMAS DE STATUS
     for (const problemKey of newProblems) {
         if (!currentProblems.has(problemKey)) {
             // Extrai: [HEL-1] STATUS::SUPER
