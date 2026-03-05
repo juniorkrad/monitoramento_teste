@@ -1,5 +1,5 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 6.6 - Padronização Global)
+// notifications.js - Sistema Central de Alertas (Versão 6.7 - Correção de Ícones)
 // ==============================================================================
 
 // Memórias de Estado (O "Cérebro" do Vigilante)
@@ -24,9 +24,11 @@ const alertSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAAB
             box-sizing: border-box !important;
         }
         
+        /* Garantindo que o ícone mantenha sua fonte original */
         .toast .toast-icon { 
             font-size: 32px !important;
             margin-right: 15px !important;
+            font-family: 'Material Symbols Rounded' !important;
         }
         
         /* Estilo do Título (Strong) */
@@ -39,8 +41,8 @@ const alertSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAAB
             margin-bottom: 2px;
         }
         
-        /* Estilo da Descrição/OLT (Span) */
-        .toast span {
+        /* Estilo da Descrição/OLT (Span) - Ignorando o span do ícone */
+        .toast span:not(.toast-icon) {
             font-size: 1.1rem !important;
             font-weight: 600 !important;
             font-family: var(--font-family-mono) !important;
@@ -53,7 +55,7 @@ const alertSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAAB
             box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4) !important;
             border-left: 8px solid #b45309 !important;
         }
-        .toast-energy-warn .toast-icon, .toast-energy-warn strong, .toast-energy-warn span { 
+        .toast-energy-warn .toast-icon, .toast-energy-warn strong, .toast-energy-warn span:not(.toast-icon) { 
             color: #1a1a1a !important; 
         }
 
@@ -64,7 +66,7 @@ const alertSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAAB
             border-left: 8px solid #c2410c !important;
             animation: pulse-border 1.5s infinite;
         }
-        .toast-energy-crit .toast-icon, .toast-energy-crit strong, .toast-energy-crit span { 
+        .toast-energy-crit .toast-icon, .toast-energy-crit strong, .toast-energy-crit span:not(.toast-icon) { 
             color: #1a1a1a !important; 
         }
 
