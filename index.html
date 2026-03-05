@@ -130,7 +130,6 @@
                 let totalOnline = 0;
                 let totalOffline = 0;
                 const portData = {};
-                const localProblems = new Set(); 
 
                 rows.forEach(columns => {
                     if (columns.length === 0) return;
@@ -170,50 +169,20 @@
                     }
                 });
 
-                let ports100Down = 0;
-                let hasBackbone = false;
-
-                // --- GERAÇÃO CIRÚRGICA DE ALARMES POR PORTA ---
-                for (const key in portData) {
-                    const { off, total } = portData[key];
-                    if (total === 0) continue; 
-
-                    const percOffline = off / total;
-
-                    if (total >= 5) {
-                        if (percOffline === 1) {
-                            ports100Down++;
-                            localProblems.add(`[${olt.id} PORTA ${key}] ::SUPER`);
-                        }
-                        else if (percOffline >= 0.5 || off >= 32) {
-                            localProblems.add(`[${olt.id} PORTA ${key}] ::CRIT`);
-                        } else if (off >= 16 && off < 32) {
-                            localProblems.add(`[${olt.id} PORTA ${key}] ::WARN`);
-                        }
-                    }
-                }
-
-                if (ports100Down >= 2) {
-                    hasBackbone = true;
-                }
-
                 updateCardUI(olt.id, { onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type });
                 
                 return { 
                     id: olt.id, 
-                    problems: localProblems, 
                     onlineCount: totalOnline, 
                     offlineCount: totalOffline, 
                     type: olt.type,
-                    hasBackbone: hasBackbone,
-                    backboneDetails: hasBackbone ? `OLT: ${olt.id}` : null,
                     portData: portData 
                 };
 
             } catch (error) {
                 console.error(`Erro para OLT ${olt.id}:`, error);
                 updateCardUI(olt.id, { error: true });
-                return { id: olt.id, problems: new Set(), onlineCount: 0, offlineCount: 0, type: olt.type, hasBackbone: false, portData: {} };
+                return { id: olt.id, onlineCount: 0, offlineCount: 0, type: olt.type, portData: {} };
             }
         }
         
@@ -390,7 +359,6 @@
                 createCardPlaceholders();
             }
             
-            // --- OTIMIZAÇÃO: BUSCA OLT E ENERGIA SIMULTANEAMENTE ---
             const energyUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/ENERGIA!A:D?key=${API_KEY}`;
             const oltPromises = oltsConfig.map(olt => fetchOltData(olt));
             const energyPromise = fetch(energyUrl).then(res => res.json()).catch(() => null);
@@ -411,30 +379,12 @@
             let activeBackboneDetails = []; 
             let currentBackbones = new Set(); 
 
-            results.forEach(result => {
-                result.problems.forEach(problem => allProblems.add(problem));
-                globalOnline += result.onlineCount;
-                globalOffline += result.offlineCount;
-                
-                let oltTotal = result.onlineCount + result.offlineCount;
-                if (result.type === 'nokia') {
-                    nokiaOnline += result.onlineCount;
-                    nokiaTotal += oltTotal;
-                } else {
-                    furukawaOnline += result.onlineCount;
-                    furukawaTotal += oltTotal;
-                }
-
-                oltStatsList.push({ id: result.id, offline: result.offlineCount, total: oltTotal });
-
-                if (result.hasBackbone) {
-                    activeBackboneDetails.push(result.backboneDetails);
-                    currentBackbones.add(result.id);
-                }
-            });
-
-            // --- PROCESSAMENTO DA INTELIGÊNCIA DE ENERGIA CIRÚRGICA ---
+            // =================================================================
+            // 1. PROCESSAMENTO DE ENERGIA (CRIAÇÃO DA LISTA DE BLOQUEIO)
+            // =================================================================
             let energyProblems = new Set();
+            let portsWithEnergy = new Set();
+            let energyGroups = {}; 
 
             if (energyDataJson && energyDataJson.values) {
                 const energyRows = energyDataJson.values.slice(1);
@@ -458,13 +408,87 @@
                             }
 
                             if (severity) {
-                                // ENVIA EXATAMENTE QUAL PORTA ESTÁ SEM LUZ PARA O VIGILANTE
-                                energyProblems.add(`[${oltId} PORTA ${portaFull}] ENERGIA::${severity}::${powerOffQtd}`);
+                                // MARCA A PORTA PARA SER SILENCIADA NO STATUS OFFLINE
+                                portsWithEnergy.add(`[${oltId} PORTA ${portaFull}]`);
+                                
+                                // Agrupa os eventos de energia por OLT
+                                if (!energyGroups[oltId]) energyGroups[oltId] = { crit: 0, warn: 0, clientsOff: 0, portsCount: 0 };
+                                energyGroups[oltId].clientsOff += powerOffQtd;
+                                energyGroups[oltId].portsCount++;
+                                if (severity === 'CRIT') energyGroups[oltId].crit++;
+                                else energyGroups[oltId].warn++;
                             }
                         }
                     }
                 });
+
+                // Gera apenas UM aviso de energia por OLT para o vigilante
+                for (const olt in energyGroups) {
+                    const group = energyGroups[olt];
+                    const overallSeverity = group.crit > 0 ? 'CRIT' : 'WARN'; 
+                    energyProblems.add(`[${olt}] ENERGIA::${overallSeverity}::${group.clientsOff}::${group.portsCount}`);
+                }
             }
+
+            // =================================================================
+            // 2. PROCESSAMENTO DE STATUS E AGRUPAMENTO (COM SUPRESSÃO)
+            // =================================================================
+            results.forEach(result => {
+                globalOnline += result.onlineCount;
+                globalOffline += result.offlineCount;
+                
+                let oltTotal = result.onlineCount + result.offlineCount;
+                if (result.type === 'nokia') {
+                    nokiaOnline += result.onlineCount;
+                    nokiaTotal += oltTotal;
+                } else {
+                    furukawaOnline += result.onlineCount;
+                    furukawaTotal += oltTotal;
+                }
+
+                oltStatsList.push({ id: result.id, offline: result.offlineCount, total: oltTotal });
+
+                let isMicroSuper = false;
+                let isCritical = false;     
+                let isWarning = false;
+                let ports100Down = 0;
+
+                for (const key in result.portData) {
+                    // SUPRESSÃO CIRÚRGICA: Se a porta está na lista de falta de luz, IGNORA o alerta offline!
+                    if (portsWithEnergy.has(`[${result.id} PORTA ${key}]`)) continue;
+
+                    const { off, total } = result.portData[key];
+                    if (total === 0) continue; 
+
+                    const percOffline = off / total;
+
+                    if (total >= 5) {
+                        if (percOffline === 1) {
+                            ports100Down++;
+                            isMicroSuper = true; 
+                        }
+                        else if (percOffline >= 0.5) {
+                            isMicroSuper = true;
+                        } else if (off >= 32) {
+                            isCritical = true; 
+                        } else if (off >= 16 && off < 32) {
+                            isWarning = true;  
+                        }
+                    }
+                }
+
+                // GERA APENAS UM AVISO DE STATUS POR OLT (Restaurando o comportamento antigo)
+                if (ports100Down >= 2) {
+                    activeBackboneDetails.push(`OLT: ${result.id}`);
+                    currentBackbones.add(result.id);
+                } else if (isMicroSuper) {
+                    allProblems.add(`[${result.id}] STATUS::SUPER`);
+                } else if (isCritical) {
+                    allProblems.add(`[${result.id}] STATUS::CRIT`);
+                } else if (isWarning) {
+                    allProblems.add(`[${result.id}] STATUS::WARN`);
+                }
+            });
 
             oltStatsList.sort((a, b) => b.offline - a.offline);
             const top3Olts = oltStatsList.slice(0, 3);
@@ -488,7 +512,7 @@
                 backboneContainer.innerHTML = '';
             }
 
-            // Envia tudo para o notifications.js processar a Supressão Inteligente
+            // Envia TUDO (limpo e agrupado) para o notifications.js
             if (typeof checkAndNotifyForNewProblems === 'function') {
                 checkAndNotifyForNewProblems(allProblems, currentBackbones, energyProblems);
             }
