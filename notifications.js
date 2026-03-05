@@ -1,5 +1,5 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 6.4 - Alto Impacto Visual)
+// notifications.js - Sistema Central de Alertas (Versão 6.5 - Fluidez de Animação)
 // ==============================================================================
 
 // Memórias de Estado (O "Cérebro" do Vigilante)
@@ -21,7 +21,13 @@ const alertSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAAB
             box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4) !important;
             border-left: 8px solid #b45309 !important;
             padding: 18px 24px !important;
-            min-width: 350px !important;
+            
+            /* Ajustes para liberar a animação do balanço */
+            width: auto !important;
+            min-width: 280px !important;
+            max-width: 400px !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
         }
         .toast-energy-warn .toast-icon { 
             color: #1a1a1a !important; 
@@ -47,7 +53,14 @@ const alertSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAAB
             box-shadow: 0 8px 25px rgba(249, 115, 22, 0.5) !important;
             border-left: 8px solid #c2410c !important;
             padding: 18px 24px !important;
-            min-width: 350px !important;
+            
+            /* Ajustes para liberar a animação do balanço */
+            width: auto !important;
+            min-width: 280px !important;
+            max-width: 400px !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            
             animation: pulse-border 1.5s infinite;
         }
         .toast-energy-crit .toast-icon { 
