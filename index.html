@@ -170,9 +170,6 @@
                     }
                 });
 
-                // ==========================================
-                // LÓGICA DE ALARMES V3 (TRAVA DE 5 CLIENTES)
-                // ==========================================
                 let isMicroSuper = false;
                 let isCritical = false;     
                 let isWarning = false;
@@ -185,14 +182,11 @@
 
                     const percOffline = off / total;
 
-                    // --- TRAVA DE SEGURANÇA: MÍNIMO 5 CLIENTES NA PORTA ---
                     if (total >= 5) {
-                        // Gatilho de Backbone (Porta 100% OFF)
                         if (percOffline === 1) {
                             ports100Down++;
                             isMicroSuper = true; 
                         }
-                        // OLTs Padrão
                         else if (percOffline >= 0.5) {
                             isMicroSuper = true;
                         } else if (off >= 32) {
@@ -222,13 +216,14 @@
                     offlineCount: totalOffline, 
                     type: olt.type,
                     hasBackbone: hasBackbone,
-                    backboneDetails: hasBackbone ? `OLT: ${olt.id}` : null
+                    backboneDetails: hasBackbone ? `OLT: ${olt.id}` : null,
+                    portData: portData // Necessário para cruzar os dados com a energia
                 };
 
             } catch (error) {
                 console.error(`Erro para OLT ${olt.id}:`, error);
                 updateCardUI(olt.id, { error: true });
-                return { id: olt.id, problems: new Set(), onlineCount: 0, offlineCount: 0, type: olt.type, hasBackbone: false };
+                return { id: olt.id, problems: new Set(), onlineCount: 0, offlineCount: 0, type: olt.type, hasBackbone: false, portData: {} };
             }
         }
         
@@ -247,7 +242,6 @@
             const header = card.querySelector('.card-header');
             header.classList.remove('status-normal', 'status-atencao', 'status-problema');
             
-            // --- NOVA RÉGUA DE CORES HÍBRIDA (Porcentagem + Absoluto) ---
             if (offlinePercent > 15 || offlineCount >= 300) { 
                 header.classList.add('status-problema'); 
             }
@@ -297,8 +291,6 @@
             if (!card) return;
             
             const header = card.querySelector('.card-header');
-            
-            // GARANTIA: Remove qualquer classe de alerta que possa mudar a cor fixa
             header.classList.remove('status-normal', 'status-atencao', 'status-problema');
             
             const total = globalOnline + globalOffline;
@@ -408,8 +400,15 @@
                 createCardPlaceholders();
             }
             
-            const promises = oltsConfig.map(olt => fetchOltData(olt));
-            const results = await Promise.all(promises);
+            // --- OTIMIZAÇÃO: BUSCA OLT E ENERGIA SIMULTANEAMENTE ---
+            const energyUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/ENERGIA!A:D?key=${API_KEY}`;
+            const oltPromises = oltsConfig.map(olt => fetchOltData(olt));
+            const energyPromise = fetch(energyUrl).then(res => res.json()).catch(() => null);
+            
+            const allResults = await Promise.all([...oltPromises, energyPromise]);
+            
+            const energyDataJson = allResults.pop(); // Puxa os dados de Energia do fim da lista
+            const results = allResults; // O resto são os resultados das OLTs
             
             const allProblems = new Set();
             let globalOnline = 0;
@@ -444,6 +443,49 @@
                 }
             });
 
+            // --- PROCESSAMENTO DA INTELIGÊNCIA DE ENERGIA (GATILHO DUPLO) ---
+            let energyGroups = {}; 
+            let energyProblems = new Set();
+
+            if (energyDataJson && energyDataJson.values) {
+                const energyRows = energyDataJson.values.slice(1);
+                
+                energyRows.forEach(row => {
+                    const oltId = row[0];
+                    const portaFull = row[1];
+                    const powerOffQtd = parseInt(row[2]) || 0;
+
+                    if (powerOffQtd > 0) {
+                        const oltResult = results.find(r => r.id === oltId);
+                        if (oltResult && oltResult.portData && oltResult.portData[portaFull]) {
+                            const portTotal = oltResult.portData[portaFull].total;
+                            const perc = powerOffQtd / portTotal;
+
+                            let severity = null;
+                            if ((perc >= 0.5 && powerOffQtd >= 10) || (perc === 1 && portTotal >= 5)) {
+                                severity = 'CRIT'; 
+                            } else if (perc >= 0.2 && powerOffQtd >= 5) {
+                                severity = 'WARN'; 
+                            }
+
+                            if (severity) {
+                                if (!energyGroups[oltId]) energyGroups[oltId] = { crit: 0, warn: 0, totalClientsOff: 0, portsCount: 0 };
+                                energyGroups[oltId].totalClientsOff += powerOffQtd;
+                                energyGroups[oltId].portsCount++;
+                                if (severity === 'CRIT') energyGroups[oltId].crit++;
+                                else energyGroups[oltId].warn++;
+                            }
+                        }
+                    }
+                });
+
+                for (const olt in energyGroups) {
+                    const group = energyGroups[olt];
+                    const overallSeverity = group.crit > 0 ? 'CRIT' : 'WARN'; 
+                    energyProblems.add(`[${olt}] ENERGIA::${overallSeverity}::${group.totalClientsOff}::${group.portsCount}`);
+                }
+            }
+
             oltStatsList.sort((a, b) => b.offline - a.offline);
             const top3Olts = oltStatsList.slice(0, 3);
 
@@ -466,8 +508,9 @@
                 backboneContainer.innerHTML = '';
             }
 
+            // Envia tudo para o notifications.js processar a Supressão Inteligente
             if (typeof checkAndNotifyForNewProblems === 'function') {
-                checkAndNotifyForNewProblems(allProblems, currentBackbones);
+                checkAndNotifyForNewProblems(allProblems, currentBackbones, energyProblems);
             }
             
             const now = new Date();
