@@ -1,11 +1,11 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 6.0 - Inteligência de Energia)
+// notifications.js - Sistema Central de Alertas (Versão 6.1 - Supressão por Porta)
 // ==============================================================================
 
 // Memórias de Estado (O "Cérebro" do Vigilante)
 let currentProblems = new Set();
 let currentBackbones = new Set(); 
-let currentEnergyProblems = new Set(); // NOVA MEMÓRIA: Guarda o estado de Energia
+let currentEnergyProblems = new Set(); // Guarda o estado de Energia
 
 // Som de Alerta (Beep curto)
 const alertSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"); 
@@ -70,7 +70,7 @@ function showToast(message, type = '') {
 
     container.appendChild(toast);
     
-    // --- LÓGICA DE SOM (Agora toca também para alarmes de Energia) ---
+    // --- LÓGICA DE SOM ---
     if (type.includes('problem') || type.includes('warning') || type.includes('super-priority') || type.includes('energy')) {
         try { 
             alertSound.play().catch(e => {}); 
@@ -98,65 +98,88 @@ function showToast(message, type = '') {
  */
 function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), newEnergyProblems = new Set()) {
     
-    // 0. MAPEAR OLTs COM PROBLEMA DE ENERGIA PARA SUPRESSÃO
-    const oltsWithEnergyIssues = new Set();
+    // 0. MAPEAR PORTAS EXATAS COM PROBLEMA DE ENERGIA PARA SUPRESSÃO
+    const portsWithEnergyIssues = new Set();
     for (const ep of newEnergyProblems) {
-        oltsWithEnergyIssues.add(formatMessage(ep));
+        const match = ep.match(/^\[(.*?) PORTA (.*?)\]/);
+        if (match) portsWithEnergyIssues.add(`[${match[1]} PORTA ${match[2]}]`);
     }
 
-    // 1. PROCESSAR ALARMES DE ENERGIA
+    // 1. PROCESSAR ALARMES DE ENERGIA E AGRUPAR PARA O TOAST VISUAL
+    let energyAlertsToTrigger = {};
     for (const ep of newEnergyProblems) {
         if (!currentEnergyProblems.has(ep)) {
-            // Extrai as variáveis do formato "[PQA-1] ENERGIA::CRIT::150::4"
-            const match = ep.match(/^\[(.*?)\] ENERGIA::(CRIT|WARN)::(\d+)::(\d+)$/);
+            const match = ep.match(/^\[(.*?) PORTA (.*?)\] ENERGIA::(CRIT|WARN)::(\d+)$/);
             if (match) {
                 const oltId = match[1];
-                const severity = match[2];
-                const clients = match[3];
-                const ports = match[4];
-
-                if (severity === 'CRIT') {
-                    showToast(`<strong style="font-size: 1.1em; margin: 0;">Queda de Energia</strong><span style="font-family: var(--font-family-mono); font-size: 0.95em; margin: 0;">OLT: ${oltId} (${clients} clientes afetados)</span>`, 'toast-energy-crit');
-                } else {
-                    showToast(`<strong style="font-size: 1.1em; margin: 0;">Atenção: Energia</strong><span style="font-family: var(--font-family-mono); font-size: 0.95em; margin: 0;">OLT: ${oltId} (${clients} clientes afetados)</span>`, 'toast-energy-warn');
+                const severity = match[3];
+                const clients = parseInt(match[4]);
+                
+                if (!energyAlertsToTrigger[oltId]) {
+                    energyAlertsToTrigger[oltId] = { clients: 0, ports: 0, crit: 0 };
                 }
+                energyAlertsToTrigger[oltId].clients += clients;
+                energyAlertsToTrigger[oltId].ports++;
+                if (severity === 'CRIT') energyAlertsToTrigger[oltId].crit++;
             }
         }
+    }
+
+    // Disparar os Toasts agrupados de energia (para não flodar a tela se várias portas caírem)
+    for (const oltId in energyAlertsToTrigger) {
+        const data = energyAlertsToTrigger[oltId];
+        const severityClass = data.crit > 0 ? 'toast-energy-crit' : 'toast-energy-warn';
+        const title = data.crit > 0 ? 'Queda de Energia' : 'Atenção: Energia';
+        const desc = data.ports > 1 ? `OLT: ${oltId} (${data.clients} clientes em ${data.ports} portas)` : `OLT: ${oltId} (${data.clients} clientes afetados)`;
+        showToast(`<strong style="font-size: 1.1em; margin: 0;">${title}</strong><span style="font-family: var(--font-family-mono); font-size: 0.95em; margin: 0;">${desc}</span>`, severityClass);
     }
 
     // Processar normalização de Energia
     for (const oldEp of currentEnergyProblems) {
         if (!newEnergyProblems.has(oldEp)) {
-            const oltId = formatMessage(oldEp);
-            // Só avisa que a energia voltou se a OLT realmente saiu da lista de problemas elétricos
-            if (!oltsWithEnergyIssues.has(oltId)) {
-                showToast(`<strong style="font-size: 1.1em; margin: 0;">Energia Restabelecida</strong><span style="font-family: var(--font-family-mono); font-size: 0.95em; margin: 0;">OLT: ${oltId}</span>`, 'status-normal');
+            const match = oldEp.match(/^\[(.*?) PORTA (.*?)\]/);
+            if (match) {
+                const portKey = `[${match[1]} PORTA ${match[2]}]`;
+                // Só avisa que a energia da porta voltou se ela não estiver na nova lista
+                if (!portsWithEnergyIssues.has(portKey)) {
+                    showToast(`<strong style="font-size: 1.1em; margin: 0;">Energia Restabelecida</strong><span style="font-family: var(--font-family-mono); font-size: 0.95em; margin: 0;">${match[1]} (Porta ${match[2]})</span>`, 'status-normal');
+                }
             }
         }
     }
     currentEnergyProblems = newEnergyProblems;
 
-
-    // 2. DETECTAR NOVOS PROBLEMAS DE STATUS (COM SUPRESSÃO DE CASCATA)
+    // 2. DETECTAR NOVOS PROBLEMAS DE STATUS (COM SUPRESSÃO CIRÚRGICA)
     for (const problemKey of newProblems) {
         if (!currentProblems.has(problemKey)) {
-            const oltName = formatMessage(problemKey);
+            // Regex agora aceita PORTA e PLACA (do olt-engine)
+            const match = problemKey.match(/^\[(.*?) (PORTA|PLACA) (.*?)\] (.*?)$/);
+            if (!match) continue; 
             
-            // --- A MÁGICA DA SUPRESSÃO ACONTECE AQUI ---
-            // Se a OLT estiver sem energia, nós IGNORAMOS o alerta genérico de offline
-            if (oltsWithEnergyIssues.has(oltName)) {
-                continue; 
+            const oltId = match[1];
+            const tipo = match[2]; // PORTA ou PLACA
+            const idAlvo = match[3];
+            const statusType = match[4];
+            
+            // --- A MÁGICA DA SUPRESSÃO CORRIGIDA ---
+            if (tipo === 'PORTA') {
+                const portKey = `[${oltId} PORTA ${idAlvo}]`;
+                // Se ESTA EXATA PORTA estiver sem luz, silencia o alerta genérico de "DOWN"!
+                if (portsWithEnergyIssues.has(portKey)) {
+                    continue; 
+                }
             }
 
-            // --- HIERARQUIA DE ALERTAS (CTO) ---
-            if (problemKey.includes('::SUPER')) {
-                showToast(`<strong style="font-size: 1.1em; margin: 0;">FALHA CRÍTICA</strong><span style="font-family: var(--font-family-mono); font-size: 0.95em; margin: 0;">OLT: ${oltName}</span>`, 'super-priority');
+            const descName = tipo === 'PORTA' ? `${oltId} (Porta ${idAlvo})` : `${oltId} (Placa ${idAlvo})`;
+
+            if (statusType.includes('SUPER')) {
+                showToast(`<strong style="font-size: 1.1em; margin: 0;">FALHA CRÍTICA</strong><span style="font-family: var(--font-family-mono); font-size: 0.95em; margin: 0;">${descName}</span>`, 'super-priority');
             } 
-            else if (problemKey.includes('::WARN')) {
-                showToast(`<strong style="font-size: 1.1em; margin: 0;">ATENÇÃO</strong><span style="font-family: var(--font-family-mono); font-size: 0.95em; margin: 0;">OLT: ${oltName}</span>`, 'warning');
+            else if (statusType.includes('WARN')) {
+                showToast(`<strong style="font-size: 1.1em; margin: 0;">ATENÇÃO</strong><span style="font-family: var(--font-family-mono); font-size: 0.95em; margin: 0;">${descName}</span>`, 'warning');
             } 
             else {
-                showToast(`<strong style="font-size: 1.1em; margin: 0;">PROBLEMA</strong><span style="font-family: var(--font-family-mono); font-size: 0.95em; margin: 0;">OLT: ${oltName}</span>`, 'problem');
+                showToast(`<strong style="font-size: 1.1em; margin: 0;">PROBLEMA</strong><span style="font-family: var(--font-family-mono); font-size: 0.95em; margin: 0;">${descName}</span>`, 'problem');
             }
         }
     }
@@ -164,10 +187,19 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     // 3. DETECTAR PROBLEMAS DE STATUS RESOLVIDOS
     for (const oldProblem of currentProblems) {
         if (!newProblems.has(oldProblem)) {
-            const oltName = formatMessage(oldProblem);
-            // Evita gerar pop-up de "Circuito Normalizado" se a OLT apenas trocou o motivo da falha para energia
-            if (!oltsWithEnergyIssues.has(oltName)) {
-                showToast(`<strong style="font-size: 1.1em; margin: 0;">Circuito Normalizado</strong><span style="font-family: var(--font-family-mono); font-size: 0.95em; margin: 0;">OLT: ${oltName} operante</span>`, 'status-normal'); 
+            const match = oldProblem.match(/^\[(.*?) (PORTA|PLACA) (.*?)\]/);
+            if (match) {
+                const oltId = match[1];
+                const tipo = match[2];
+                const idAlvo = match[3];
+                
+                if (tipo === 'PORTA') {
+                    const portKey = `[${oltId} PORTA ${idAlvo}]`;
+                    if (portsWithEnergyIssues.has(portKey)) continue; // Evita pop-up se ela "normalizou" o status só pq a energia caiu
+                }
+                
+                const descName = tipo === 'PORTA' ? `${oltId} (Porta ${idAlvo})` : `${oltId} (Placa ${idAlvo})`;
+                showToast(`<strong style="font-size: 1.1em; margin: 0;">Circuito Normalizado</strong><span style="font-family: var(--font-family-mono); font-size: 0.95em; margin: 0;">${descName} operante</span>`, 'status-normal'); 
             }
         }
     }
@@ -182,13 +214,4 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     }
     
     currentBackbones = activeBackbones;
-}
-
-// Função auxiliar para extrair APENAS o nome da OLT das strings criptografadas
-function formatMessage(key) {
-    const oltMatch = key.match(/^\[(.*?)\]/);
-    if (oltMatch) {
-        return oltMatch[1]; 
-    }
-    return "OLT DESCONHECIDA";
 }

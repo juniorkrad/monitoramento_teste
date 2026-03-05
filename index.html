@@ -170,12 +170,10 @@
                     }
                 });
 
-                let isMicroSuper = false;
-                let isCritical = false;     
-                let isWarning = false;
                 let ports100Down = 0;
                 let hasBackbone = false;
 
+                // --- GERAÇÃO CIRÚRGICA DE ALARMES POR PORTA ---
                 for (const key in portData) {
                     const { off, total } = portData[key];
                     if (total === 0) continue; 
@@ -185,26 +183,18 @@
                     if (total >= 5) {
                         if (percOffline === 1) {
                             ports100Down++;
-                            isMicroSuper = true; 
+                            localProblems.add(`[${olt.id} PORTA ${key}] ::SUPER`);
                         }
-                        else if (percOffline >= 0.5) {
-                            isMicroSuper = true;
-                        } else if (off >= 32) {
-                            isCritical = true; 
+                        else if (percOffline >= 0.5 || off >= 32) {
+                            localProblems.add(`[${olt.id} PORTA ${key}] ::CRIT`);
                         } else if (off >= 16 && off < 32) {
-                            isWarning = true;  
+                            localProblems.add(`[${olt.id} PORTA ${key}] ::WARN`);
                         }
                     }
                 }
 
                 if (ports100Down >= 2) {
                     hasBackbone = true;
-                } else if (isMicroSuper) {
-                    localProblems.add(`[${olt.id}] STATUS::SUPER`);
-                } else if (isCritical) {
-                    localProblems.add(`[${olt.id}] STATUS::CRIT`);
-                } else if (isWarning) {
-                    localProblems.add(`[${olt.id}] STATUS::WARN`);
                 }
 
                 updateCardUI(olt.id, { onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type });
@@ -217,7 +207,7 @@
                     type: olt.type,
                     hasBackbone: hasBackbone,
                     backboneDetails: hasBackbone ? `OLT: ${olt.id}` : null,
-                    portData: portData // Necessário para cruzar os dados com a energia
+                    portData: portData 
                 };
 
             } catch (error) {
@@ -407,8 +397,8 @@
             
             const allResults = await Promise.all([...oltPromises, energyPromise]);
             
-            const energyDataJson = allResults.pop(); // Puxa os dados de Energia do fim da lista
-            const results = allResults; // O resto são os resultados das OLTs
+            const energyDataJson = allResults.pop(); 
+            const results = allResults; 
             
             const allProblems = new Set();
             let globalOnline = 0;
@@ -443,8 +433,7 @@
                 }
             });
 
-            // --- PROCESSAMENTO DA INTELIGÊNCIA DE ENERGIA (GATILHO DUPLO) ---
-            let energyGroups = {}; 
+            // --- PROCESSAMENTO DA INTELIGÊNCIA DE ENERGIA CIRÚRGICA ---
             let energyProblems = new Set();
 
             if (energyDataJson && energyDataJson.values) {
@@ -469,21 +458,12 @@
                             }
 
                             if (severity) {
-                                if (!energyGroups[oltId]) energyGroups[oltId] = { crit: 0, warn: 0, totalClientsOff: 0, portsCount: 0 };
-                                energyGroups[oltId].totalClientsOff += powerOffQtd;
-                                energyGroups[oltId].portsCount++;
-                                if (severity === 'CRIT') energyGroups[oltId].crit++;
-                                else energyGroups[oltId].warn++;
+                                // ENVIA EXATAMENTE QUAL PORTA ESTÁ SEM LUZ PARA O VIGILANTE
+                                energyProblems.add(`[${oltId} PORTA ${portaFull}] ENERGIA::${severity}::${powerOffQtd}`);
                             }
                         }
                     }
                 });
-
-                for (const olt in energyGroups) {
-                    const group = energyGroups[olt];
-                    const overallSeverity = group.crit > 0 ? 'CRIT' : 'WARN'; 
-                    energyProblems.add(`[${olt}] ENERGIA::${overallSeverity}::${group.totalClientsOff}::${group.portsCount}`);
-                }
             }
 
             oltStatsList.sort((a, b) => b.offline - a.offline);
