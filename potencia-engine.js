@@ -225,7 +225,7 @@ async function runPotenciaEngine() {
 }
 
 // ==============================================================================
-// CONTROLE DO MODAL DE CLIENTES
+// CONTROLE DO MODAL DE CLIENTES (OTIMIZADO)
 // ==============================================================================
 
 window.abrirModalPotencia = function(oltId) {
@@ -237,18 +237,20 @@ window.abrirModalPotencia = function(oltId) {
     // Reseta o modal
     searchInput.value = '';
     title.innerHTML = `<span class="material-symbols-rounded">sensors</span> Preventiva - ${oltId}`;
-    tbody.innerHTML = '';
-
+    
     const clientes = window.POTENCIA_CLIENTS_DATA[oltId] || [];
 
     if (clientes.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--m3-color-success); font-weight: bold;">Nenhum cliente fora do padrão nesta OLT. Parabéns!</td></tr>`;
     } else {
+        // Cria um buffer de texto para evitar que o navegador trave (evita Múltiplos Reflows do DOM)
+        let htmlBuffer = '';
+        
         clientes.forEach(c => {
             // Regra visual de cor: Abaixo de -30 = Crítico (Vermelho). Entre -25 e -29.9 = Atenção (Amarelo)
             let colorClass = c.potencia <= -30 ? 'sinal-critico' : 'sinal-atencao';
             
-            tbody.innerHTML += `
+            htmlBuffer += `
                 <tr class="linha-cliente-potencia">
                     <td style="font-weight: bold;">${c.porta}</td>
                     <td>${c.serial}</td>
@@ -257,6 +259,9 @@ window.abrirModalPotencia = function(oltId) {
                 </tr>
             `;
         });
+        
+        // Injeta tudo de uma vez só na tela (Super rápido!)
+        tbody.innerHTML = htmlBuffer;
     }
 
     modal.style.display = 'flex';
