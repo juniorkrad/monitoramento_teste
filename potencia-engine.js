@@ -291,8 +291,10 @@ window.abrirModalPotencia = function(oltId) {
     modal.style.display = 'flex';
 };
 
-// Inicia o motor
-if (window.location.pathname.includes('potencia.html')) {
-    runPotenciaEngine();
-    setInterval(runPotenciaEngine, POTENCIA_REFRESH_SECONDS * 1000);
-}
+// Inicia o motor após o carregamento completo do DOM (garante que o layout.js já criou o relógio)
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.location.pathname.includes('potencia.html')) {
+        runPotenciaEngine();
+        setInterval(runPotenciaEngine, POTENCIA_REFRESH_SECONDS * 1000);
+    }
+});
