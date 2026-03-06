@@ -26,13 +26,13 @@ const POTENCIA_OLT_LIST = [
     { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa-2' }
 ];
 
-// Memória global para os modais
+// Memória global
 window.POTENCIA_CLIENTS_DATA = {};
+window.POTENCIA_LAST_UPDATES = {}; // Cofre para guardar as datas de cada OLT
 
 // Função para limpar e converter a string de potência num número real
 function parsePowerValue(powerStr) {
     if (!powerStr) return null;
-    // Remove tudo que não for número, ponto ou sinal de menos (ex: " - 21.3 dBm" -> "-21.3")
     const cleaned = powerStr.replace(/[^\d.-]/g, '');
     const val = parseFloat(cleaned);
     return isNaN(val) ? null : val;
@@ -41,17 +41,24 @@ function parsePowerValue(powerStr) {
 async function runPotenciaEngine() {
     const gridEl = document.getElementById('potencia-grid');
     const globalBody = document.getElementById('global-potencia-body');
+    const timestampEl = document.getElementById('update-timestamp');
+    
     if (!gridEl || !globalBody) return;
 
+    if (timestampEl && timestampEl.textContent.includes('Aguardando')) {
+        timestampEl.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Buscando dados...';
+    }
+
     try {
-        // Preparando a estrutura de dados
         let globalCriticos = 0;
         let globalAnalisados = 0;
         let oltStats = [];
+        
         window.POTENCIA_CLIENTS_DATA = {};
+        window.POTENCIA_LAST_UPDATES = {};
 
-        // Monta a URL para buscar todas as abas de uma vez (Até a coluna J atende todas as regras)
-        const ranges = POTENCIA_OLT_LIST.map(o => `${o.sheetTab}!A:J`);
+        // Busca agora vai de A até K (para alcançar a coluna do Timestamp na Planilha)
+        const ranges = POTENCIA_OLT_LIST.map(o => `${o.sheetTab}!A:K`);
         const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${POTENCIA_SHEET_ID}/values:batchGet?key=${POTENCIA_API_KEY}&ranges=${ranges.join('&ranges=')}`;
         
         const response = await fetch(batchUrl);
@@ -60,7 +67,19 @@ async function runPotenciaEngine() {
         if (!dataBatch.valueRanges) throw new Error("Falha ao carregar dados da API.");
 
         POTENCIA_OLT_LIST.forEach((olt, index) => {
-            const rows = dataBatch.valueRanges[index].values ? dataBatch.valueRanges[index].values.slice(1) : [];
+            const rawValues = dataBatch.valueRanges[index].values;
+            
+            // 1. EXTRAÇÃO CIRÚRGICA DO TIMESTAMP (Na Célula K1 - Coluna índice 10)
+            let timestamp = '--/-- --:--';
+            if (rawValues && rawValues.length > 0) {
+                timestamp = rawValues[0][10] || '--/-- --:--';
+                timestamp = timestamp.replace('Atualizado em:', '').trim();
+            }
+            window.POTENCIA_LAST_UPDATES[olt.id] = timestamp;
+            
+            // 2. CORTA A LINHA 1 PARA O LOOP DE DADOS
+            const rows = rawValues && rawValues.length > 1 ? rawValues.slice(1) : [];
+            
             let criticosNestaOlt = 0;
             let totalNestaOlt = 0;
             let clientesCriticos = [];
@@ -76,7 +95,6 @@ async function runPotenciaEngine() {
                 let potenciaValue = null;
 
                 if (olt.type === 'nokia') {
-                    // Mapeamento Nokia (Colunas: A=0, C=2, F=5, I=8)
                     let portaRaw = col[0] || '';
                     if (portaRaw.includes('1/1/')) {
                         let parts = portaRaw.split('/');
@@ -87,19 +105,14 @@ async function runPotenciaEngine() {
                     codigoCliente = col[8] || '-';
                     
                     potenciaValue = parsePowerValue(potenciaStr);
-                    // Tolerância Nokia: <= -25 (Ex: -25, -26, -30...)
                     if (potenciaValue !== null && potenciaValue <= -25) {
                         isCritical = true;
                     }
-
                 } else {
-                    // Mapeamento Furukawa (Colunas: A=0, D=3, F=5, H=7)
                     let portaRaw = col[0] || '';
-                    
                     if (olt.type === 'furukawa-10') {
-                        portaFinal = portaRaw; // Mantém "1/1"
+                        portaFinal = portaRaw;
                     } else {
-                        // Furukawa-2: Remove "GPON"
                         let match = portaRaw.match(/GPON(\d+\/\d+)/i);
                         if (match) portaFinal = match[1];
                         else portaFinal = portaRaw;
@@ -110,7 +123,6 @@ async function runPotenciaEngine() {
                     codigoCliente = col[7] || '-';
 
                     potenciaValue = parsePowerValue(potenciaStr);
-                    // Tolerância Furukawa: <= -23 (Ex: -23, -24, -28...)
                     if (potenciaValue !== null && potenciaValue <= -23) {
                         isCritical = true;
                     }
@@ -123,17 +135,11 @@ async function runPotenciaEngine() {
                     if (isCritical && portaFinal) {
                         criticosNestaOlt++;
                         globalCriticos++;
-                        clientesCriticos.push({
-                            porta: portaFinal,
-                            serial: serial,
-                            potencia: potenciaValue,
-                            codigo: codigoCliente
-                        });
+                        clientesCriticos.push({ porta: portaFinal, serial: serial, potencia: potenciaValue, codigo: codigoCliente });
                     }
                 }
             });
 
-            // Ordena os clientes do PIOR sinal para o "menos pior" (ex: -35 aparece antes de -25)
             clientesCriticos.sort((a, b) => a.potencia - b.potencia);
             
             window.POTENCIA_CLIENTS_DATA[olt.id] = clientesCriticos;
@@ -144,10 +150,9 @@ async function runPotenciaEngine() {
         // ATUALIZAÇÃO DA INTERFACE VISUAL
         // =========================================================
         
-        // 1. Atualiza Cartão Global
         const percCritico = globalAnalisados > 0 ? ((globalCriticos / globalAnalisados) * 100).toFixed(1) : 0;
         
-        oltStats.sort((a, b) => b.criticos - a.criticos); // Ordena pelo maior número de problemas
+        oltStats.sort((a, b) => b.criticos - a.criticos);
         const pioresOlts = oltStats.filter(o => o.criticos > 0).slice(0, 3);
         
         let rankingHtml = '';
@@ -187,7 +192,6 @@ async function runPotenciaEngine() {
             </div>
         `;
 
-        // 2. Atualiza Grid de OLTs
         gridEl.innerHTML = '';
         oltStats.forEach(olt => {
             const percOlt = olt.total > 0 ? ((olt.criticos / olt.total) * 100).toFixed(1) : 0;
@@ -218,6 +222,24 @@ async function runPotenciaEngine() {
             `;
         });
 
+        // =========================================================
+        // ATUALIZAÇÃO DO RELÓGIO PRINCIPAL
+        // =========================================================
+        const now = new Date();
+        const dataHoje = now.toLocaleDateString('pt-BR');
+        const horaAgora = now.toLocaleTimeString('pt-BR');
+        
+        if (timestampEl) {
+            timestampEl.innerHTML = `
+                <span class="material-symbols-rounded">calendar_today</span> ${dataHoje}
+                <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
+                <span class="material-symbols-rounded">schedule</span> ${horaAgora}
+            `;
+            timestampEl.classList.remove('updated-anim');
+            void timestampEl.offsetWidth; 
+            timestampEl.classList.add('updated-anim');
+        }
+
     } catch (e) {
         console.error("Erro no Motor de Potência:", e);
         globalBody.innerHTML = `<p style="color: #f87171;">❌ Falha ao processar os dados da rede. Verifique a conexão.</p>`;
@@ -232,24 +254,27 @@ window.abrirModalPotencia = function(oltId) {
     const modal = document.getElementById('potencia-modal');
     const tbody = document.getElementById('potencia-tbody');
     const title = document.getElementById('modal-potencia-title');
+    const lastUpdateEl = document.getElementById('modal-potencia-last-update');
     const searchInput = document.getElementById('potencia-search');
     
-    // Reseta o modal
     searchInput.value = '';
     title.innerHTML = `<span class="material-symbols-rounded">sensors</span> Preventiva - ${oltId}`;
+    
+    // Injeta a data de varredura coletada no cofre
+    const dataDaOlt = window.POTENCIA_LAST_UPDATES[oltId] || '--/-- --:--';
+    if (lastUpdateEl) {
+        lastUpdateEl.innerHTML = `<span class="material-symbols-rounded" style="font-size: 16px;">history</span> Varredura: ${dataDaOlt}`;
+    }
     
     const clientes = window.POTENCIA_CLIENTS_DATA[oltId] || [];
 
     if (clientes.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--m3-color-success); font-weight: bold;">Nenhum cliente fora do padrão nesta OLT. Parabéns!</td></tr>`;
     } else {
-        // Cria um buffer de texto para evitar que o navegador trave (evita Múltiplos Reflows do DOM)
         let htmlBuffer = '';
         
         clientes.forEach(c => {
-            // Regra visual de cor: Abaixo de -30 = Crítico (Vermelho). Entre -25 e -29.9 = Atenção (Amarelo)
             let colorClass = c.potencia <= -30 ? 'sinal-critico' : 'sinal-atencao';
-            
             htmlBuffer += `
                 <tr class="linha-cliente-potencia">
                     <td style="font-weight: bold;">${c.porta}</td>
@@ -260,14 +285,13 @@ window.abrirModalPotencia = function(oltId) {
             `;
         });
         
-        // Injeta tudo de uma vez só na tela (Super rápido!)
         tbody.innerHTML = htmlBuffer;
     }
 
     modal.style.display = 'flex';
 };
 
-// Inicia o motor assim que o script carrega (se estiver na página correta)
+// Inicia o motor
 if (window.location.pathname.includes('potencia.html')) {
     runPotenciaEngine();
     setInterval(runPotenciaEngine, POTENCIA_REFRESH_SECONDS * 1000);
