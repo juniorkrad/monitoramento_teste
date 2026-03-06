@@ -1,5 +1,5 @@
 // ==============================================================================
-// layout.js - Construtor de Layout e Menu Inteligente (Versão 2.4 - Ajuste Visual Energia)
+// layout.js - Construtor de Layout e Menu Inteligente (Versão 2.5 - Inclusão Potência)
 // ==============================================================================
 
 // --- LISTA MESTRA DE PÁGINAS ---
@@ -139,6 +139,11 @@ function loadSidebar(currentPage) {
                 <a href="energia.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px;">
                     <span class="material-symbols-rounded" style="font-size: 24px;">bolt</span>
                     ENERGIA
+                </a>
+
+                <a href="potencia.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px;">
+                    <span class="material-symbols-rounded" style="font-size: 24px;">sensors</span>
+                    POTÊNCIA
                 </a>
                 
                 <div class="sidebar-divider"></div>

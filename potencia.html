@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potência Óptica - NOC</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+
+    <style>
+        /* Estilos específicos para o Modal de Potência */
+        .potencia-table-container { max-height: 500px; overflow-y: auto; margin-top: 15px; border-radius: 8px; border: 1px solid var(--m3-outline); }
+        .potencia-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: center; }
+        .potencia-table th { background-color: var(--m3-surface-container-high); color: var(--m3-on-surface); padding: 12px; position: sticky; top: 0; z-index: 10; font-family: 'Montserrat', sans-serif; font-weight: 700; }
+        .potencia-table td { border-bottom: 1px solid var(--m3-outline); padding: 10px; color: var(--m3-on-surface); font-family: var(--font-family-mono); }
+        .potencia-table tr:nth-child(even) { background-color: rgba(255, 255, 255, 0.02); }
+        .potencia-table tr:hover { background-color: rgba(255, 255, 255, 0.05); }
+        
+        .sinal-critico { color: #f87171 !important; font-weight: bold; }
+        .sinal-atencao { color: #fbbf24 !important; font-weight: bold; }
+        
+        .search-bar-container { display: flex; gap: 10px; margin-bottom: 15px; }
+        .search-input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid var(--m3-outline); background-color: var(--m3-surface-container); color: var(--m3-on-surface); font-family: 'Montserrat', sans-serif; }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="page-container">
+        <div id="header-placeholder"></div>
+
+        <main class="main-content" style="flex-direction: column;">
+            
+            <div id="global-potencia-container" style="margin-bottom: 20px; width: 100%;">
+                <div class="overview-card global-card" style="max-width: 100%;">
+                    <div class="card-header" style="background-color: rgba(234, 208, 255, 0.15);">
+                        <h3><span class="material-symbols-rounded" style="font-size: 28px;">cable</span> VISÃO GERAL DE POTÊNCIA ÓPTICA</h3>
+                    </div>
+                    <div class="card-body" id="global-potencia-body" style="justify-content: center; padding: 30px;">
+                        <p style="color: var(--m3-on-surface-variant);"><span class="material-symbols-rounded rotate-anim">sync</span> Carregando dados da rede...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="potencia-grid" class="grid-container">
+                </div>
+
+        </main>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <div id="potencia-modal" class="modal-overlay" style="display: none;" onclick="fecharModalPotencia(event)">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 id="modal-potencia-title"><span class="material-symbols-rounded">sensors</span> Detalhes da OLT</h3>
+                <button class="close-modal" onclick="fecharModalPotencia()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="search-bar-container">
+                    <input type="text" id="potencia-search" class="search-input" placeholder="Buscar por porta, serial ou código..." onkeyup="filtrarTabelaPotencia()">
+                </div>
+                
+                <div class="potencia-table-container">
+                    <table class="potencia-table" id="tabela-potencia">
+                        <thead>
+                            <tr>
+                                <th>Placa/Porta</th>
+                                <th>Serial do Equip.</th>
+                                <th>Potência (dBm)</th>
+                                <th>Código Cliente</th>
+                            </tr>
+                        </thead>
+                        <tbody id="potencia-tbody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="layout.js"></script>
+    <script src="notifications.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadHeader({ title: "Análise de Potência", exactTitle: true });
+            loadFooter();
+        });
+
+        // Funções de controle do Modal
+        function fecharModalPotencia(event) {
+            if (event && event.target.id !== 'potencia-modal') return;
+            document.getElementById('potencia-modal').style.display = 'none';
+        }
+
+        function filtrarTabelaPotencia() {
+            const termo = document.getElementById('potencia-search').value.toLowerCase();
+            const linhas = document.querySelectorAll('.linha-cliente-potencia');
+            
+            linhas.forEach(linha => {
+                const texto = linha.textContent.toLowerCase();
+                linha.style.display = texto.includes(termo) ? '' : 'none';
+            });
+        }
+    </script>
+
+    <script src="potencia-engine.js"></script>
+
+</body>
+</html>
