@@ -180,7 +180,7 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
    ========================================================================== */
 .global-card {
     width: 100%;
-    margin: 0;
+    margin: 0 0 24px 0; /* O respiro vertical de 24px está aqui */
     background-color: var(--m3-surface-container);
     border-radius: 24px; /* Arredondamento MD3 super elegante */
     border: none; /* Sem contornos feios */
