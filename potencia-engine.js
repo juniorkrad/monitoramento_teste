@@ -53,6 +53,7 @@ async function runPotenciaEngine() {
         let globalCriticos = 0;
         let globalAnalisados = 0;
         let oltStats = [];
+        let todosClientesCriticos = []; // Novo rastreador global para o Top 5
         
         window.POTENCIA_CLIENTS_DATA = {};
         window.POTENCIA_LAST_UPDATES = {};
@@ -135,7 +136,9 @@ async function runPotenciaEngine() {
                     if (isCritical && portaFinal) {
                         criticosNestaOlt++;
                         globalCriticos++;
-                        clientesCriticos.push({ porta: portaFinal, serial: serial, potencia: potenciaValue, codigo: codigoCliente });
+                        const clientData = { olt: olt.id, porta: portaFinal, serial: serial, potencia: potenciaValue, codigo: codigoCliente };
+                        clientesCriticos.push(clientData);
+                        todosClientesCriticos.push(clientData); // Salva na lista global
                     }
                 }
             });
@@ -147,10 +150,40 @@ async function runPotenciaEngine() {
         });
 
         // =========================================================
-        // ATUALIZAÇÃO DA INTERFACE VISUAL
+        // PROCESSAMENTO DOS 5 PIORES DA REDE
         // =========================================================
         
-        const percCritico = globalAnalisados > 0 ? ((globalCriticos / globalAnalisados) * 100).toFixed(1) : 0;
+        // Ordena todos os clientes do pior para o melhor sinal
+        todosClientesCriticos.sort((a, b) => a.potencia - b.potencia);
+        const piores5 = todosClientesCriticos.slice(0, 5);
+
+        let piores5Html = '';
+        if (piores5.length > 0) {
+            piores5Html = `
+                <div style="display: grid; grid-template-columns: 2fr 2.5fr 1fr 1fr; gap: 8px; font-size: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; margin-bottom: 5px; color: var(--m3-on-surface-variant); font-weight: bold;">
+                    <div>OLT / Porta</div>
+                    <div>Serial</div>
+                    <div>Código</div>
+                    <div style="text-align: right;">Sinal</div>
+                </div>
+            `;
+            piores5.forEach(c => {
+                piores5Html += `
+                    <div style="display: grid; grid-template-columns: 2fr 2.5fr 1fr 1fr; gap: 8px; font-size: 0.8rem; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); padding: 5px 0;">
+                        <div><strong style="color: var(--m3-on-surface);">${c.olt}</strong> <span style="opacity: 0.7;">(${c.porta})</span></div>
+                        <div style="font-family: var(--font-family-mono); opacity: 0.8;">${c.serial}</div>
+                        <div style="opacity: 0.8;">${c.codigo}</div>
+                        <div style="text-align: right; color: #f87171; font-weight: bold; font-family: var(--font-family-mono);">${c.potencia}</div>
+                    </div>
+                `;
+            });
+        } else {
+            piores5Html = `<div style="text-align: center; color: var(--m3-color-success); font-weight: bold; margin-top: 20px;"><span class="material-symbols-rounded" style="vertical-align: middle;">verified</span> Nenhum sinal crítico na rede!</div>`;
+        }
+
+        // =========================================================
+        // ATUALIZAÇÃO DA INTERFACE VISUAL
+        // =========================================================
         
         oltStats.sort((a, b) => b.criticos - a.criticos);
         const pioresOlts = oltStats.filter(o => o.criticos > 0).slice(0, 3);
@@ -170,8 +203,8 @@ async function runPotenciaEngine() {
         }
 
         globalBody.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 20px;">
-                <div class="card-stats" style="flex: 1; min-width: 250px;">
+            <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 20px;">
+                <div class="card-stats" style="flex: 1; min-width: 200px; display: flex; flex-direction: column; justify-content: center;">
                     <div class="stat-item global-stat">
                         <span class="stat-number">${globalAnalisados}</span>
                         <label><span class="material-symbols-rounded icon-total">cable</span> Clientes Lidos</label>
@@ -181,11 +214,15 @@ async function runPotenciaEngine() {
                         <label><span class="material-symbols-rounded icon-down">sensors_off</span> Sinal Crítico</label>
                     </div>
                 </div>
-                <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; min-width: 250px; text-align: center;">
-                    <span style="font-size: 3rem; font-weight: 800; color: ${globalCriticos > 0 ? '#f87171' : 'var(--m3-color-success)'};">${percCritico}%</span><br>
-                    <span style="color: var(--m3-on-surface-variant); font-size: 0.9rem;">da rede requer preventiva</span>
+                
+                <div style="flex: 1.8; border-left: 1px solid var(--m3-outline); padding-left: 30px; min-width: 380px;">
+                    <h4 style="margin-top: 0; color: var(--m3-on-surface-variant); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                        <span class="material-symbols-rounded" style="font-size: 20px; color: #f87171;">warning</span> Top 5 Piores Sinais da Rede
+                    </h4>
+                    ${piores5Html}
                 </div>
-                <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; min-width: 250px;">
+                
+                <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; min-width: 200px; display: flex; flex-direction: column; justify-content: center;">
                     <h4 style="margin-top: 0; color: var(--m3-on-surface-variant); margin-bottom: 15px;">Equipamentos em Alerta</h4>
                     ${rankingHtml}
                 </div>
