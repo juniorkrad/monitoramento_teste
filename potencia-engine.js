@@ -43,7 +43,10 @@ async function runPotenciaEngine() {
     const globalBody = document.getElementById('global-potencia-body');
     const timestampEl = document.getElementById('update-timestamp');
     
-    if (!gridEl || !globalBody) return;
+    // Identifica se está rodando na página oficial de Potência
+    const isPotenciaPage = window.location.pathname.includes('potencia.html');
+    
+    if (!globalBody) return; // Trava básica
 
     if (timestampEl && timestampEl.textContent.includes('Aguardando')) {
         timestampEl.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Buscando dados...';
@@ -53,7 +56,7 @@ async function runPotenciaEngine() {
         let globalCriticos = 0;
         let globalAnalisados = 0;
         let oltStats = [];
-        let todosClientesCriticos = []; // Novo rastreador global para o Top 5
+        let todosClientesCriticos = []; // Rastreador global para o Top 5
         
         window.POTENCIA_CLIENTS_DATA = {};
         window.POTENCIA_LAST_UPDATES = {};
@@ -182,7 +185,7 @@ async function runPotenciaEngine() {
         }
 
         // =========================================================
-        // ATUALIZAÇÃO DA INTERFACE VISUAL
+        // ATUALIZAÇÃO DA INTERFACE VISUAL (GLOBAL)
         // =========================================================
         
         oltStats.sort((a, b) => b.criticos - a.criticos);
@@ -229,34 +232,39 @@ async function runPotenciaEngine() {
             </div>
         `;
 
-        gridEl.innerHTML = '';
-        oltStats.forEach(olt => {
-            const percOlt = olt.total > 0 ? ((olt.criticos / olt.total) * 100).toFixed(1) : 0;
-            let statusColor = olt.criticos > 0 ? '#f87171' : 'var(--m3-color-success)';
+        // =========================================================
+        // ATUALIZAÇÃO DA INTERFACE INDIVIDUAL (APENAS NA PÁGINA)
+        // =========================================================
+        if (isPotenciaPage && gridEl) {
+            gridEl.innerHTML = '';
+            oltStats.forEach(olt => {
+                const percOlt = olt.total > 0 ? ((olt.criticos / olt.total) * 100).toFixed(1) : 0;
+                let statusColor = olt.criticos > 0 ? '#f87171' : 'var(--m3-color-success)';
 
-            gridEl.innerHTML += `
-                <div class="overview-card" style="display: flex; flex-direction: column;">
-                    <div class="card-header" style="justify-content: space-between; background-color: rgba(234, 208, 255, 0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                            <span class="material-symbols-rounded">dns</span> ${olt.id}
-                        </h3>
-                        <button class="card-header-button" onclick="window.abrirModalPotencia('${olt.id}')" title="Ver Detalhes">
-                            <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
-                        </button>
-                    </div>
-                    <div class="card-body" style="padding: 20px; display: flex; align-items: center; justify-content: space-between;">
-                        <div>
-                            <span style="font-size: 2.2rem; font-weight: 800; color: ${statusColor};">${olt.criticos}</span><br>
-                            <span style="color: var(--m3-on-surface-variant); font-size: 0.8rem; text-transform: uppercase;">Atenção Necessária</span>
+                gridEl.innerHTML += `
+                    <div class="overview-card" style="display: flex; flex-direction: column;">
+                        <div class="card-header" style="justify-content: space-between; background-color: rgba(234, 208, 255, 0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <span class="material-symbols-rounded">dns</span> ${olt.id}
+                            </h3>
+                            <button class="card-header-button" onclick="window.abrirModalPotencia('${olt.id}')" title="Ver Detalhes">
+                                <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
+                            </button>
                         </div>
-                        <div style="text-align: right;">
-                            <span style="font-size: 1.2rem; font-weight: bold; color: var(--m3-on-surface);">${percOlt}%</span><br>
-                            <span style="color: var(--m3-on-surface-variant); font-size: 0.8rem;">do equipamento</span>
+                        <div class="card-body" style="padding: 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <span style="font-size: 2.2rem; font-weight: 800; color: ${statusColor};">${olt.criticos}</span><br>
+                                <span style="color: var(--m3-on-surface-variant); font-size: 0.8rem; text-transform: uppercase;">Atenção Necessária</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-size: 1.2rem; font-weight: bold; color: var(--m3-on-surface);">${percOlt}%</span><br>
+                                <span style="color: var(--m3-on-surface-variant); font-size: 0.8rem;">do equipamento</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-        });
+                `;
+            });
+        }
 
         // =========================================================
         // ATUALIZAÇÃO DO RELÓGIO PRINCIPAL
@@ -278,7 +286,9 @@ async function runPotenciaEngine() {
 
     } catch (e) {
         console.error("Erro no Motor de Potência:", e);
-        globalBody.innerHTML = `<p style="color: #f87171;">❌ Falha ao processar os dados da rede. Verifique a conexão.</p>`;
+        if (globalBody) {
+            globalBody.innerHTML = `<p style="color: #f87171;">❌ Falha ao processar os dados da rede. Verifique a conexão.</p>`;
+        }
     }
 }
 
@@ -288,13 +298,15 @@ async function runPotenciaEngine() {
 
 window.abrirModalPotencia = function(oltId) {
     const modal = document.getElementById('potencia-modal');
+    if (!modal) return; // Segurança caso acionado acidentalmente na Home
+
     const tbody = document.getElementById('potencia-tbody');
     const title = document.getElementById('modal-potencia-title');
     const lastUpdateEl = document.getElementById('modal-potencia-last-update');
     const searchInput = document.getElementById('potencia-search');
     
-    searchInput.value = '';
-    title.innerHTML = `<span class="material-symbols-rounded">sensors</span> Preventiva - ${oltId}`;
+    if (searchInput) searchInput.value = '';
+    if (title) title.innerHTML = `<span class="material-symbols-rounded">sensors</span> Preventiva - ${oltId}`;
     
     // Injeta a data de varredura coletada no cofre
     const dataDaOlt = window.POTENCIA_LAST_UPDATES[oltId] || '--/-- --:--';
@@ -305,7 +317,7 @@ window.abrirModalPotencia = function(oltId) {
     const clientes = window.POTENCIA_CLIENTS_DATA[oltId] || [];
 
     if (clientes.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--m3-color-success); font-weight: bold;">Nenhum cliente fora do padrão nesta OLT. Parabéns!</td></tr>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--m3-color-success); font-weight: bold;">Nenhum cliente fora do padrão nesta OLT. Parabéns!</td></tr>`;
     } else {
         let htmlBuffer = '';
         
@@ -321,13 +333,13 @@ window.abrirModalPotencia = function(oltId) {
             `;
         });
         
-        tbody.innerHTML = htmlBuffer;
+        if (tbody) tbody.innerHTML = htmlBuffer;
     }
 
     modal.style.display = 'flex';
 };
 
-// Inicia o motor após o carregamento completo do DOM (garante que o layout.js já criou o relógio)
+// Inicia o motor apenas se o script for chamado nativamente pela página de potência
 document.addEventListener('DOMContentLoaded', () => {
     if (window.location.pathname.includes('potencia.html')) {
         runPotenciaEngine();

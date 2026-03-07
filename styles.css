@@ -11,6 +11,7 @@
     --m3-surface-container: #2f0e51;
     --m3-surface-container-high: #3a1c63;
     --m3-outline: #5c4e72;
+    --m3-outline-variant: #4a3b69; /* Nova cor para bordas mais suaves */
     --m3-state-layer-hover: rgba(208, 188, 255, 0.12);
     --m3-color-success: #67c23a;
     --m3-color-warning: #e6a23c;
@@ -648,6 +649,145 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 .chart-text { position: absolute; font-size: 1.4em; font-weight: 700; color: var(--m3-on-surface); }
 
 
+/* ==========================================
+   WIDGETS: ENERGIA & POTÊNCIA (DASHBOARD)
+   ========================================== */
+.energy-master-card {
+    display: flex;
+    flex-direction: row;
+    max-width: 100% !important; 
+    width: 100%;
+    margin-bottom: 24px;
+    padding: 0; 
+    overflow: hidden; 
+}
+
+.energy-master-left {
+    flex: 0 0 280px; 
+    padding: 20px;
+    border-right: 1px solid rgba(255, 255, 255, 0.15);
+    border-left: 5px solid #f87171;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.energy-master-right {
+    flex: 1; 
+    min-width: 0; 
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.energy-olt-card-header {
+    padding: 8px 16px !important; 
+    border-bottom: 1px solid var(--m3-outline-variant); 
+    background: rgba(234, 208, 255, 0.05);
+}
+
+.btn-energy-details {
+    background: rgba(234, 208, 255, 0.05); 
+    border: none !important; 
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--m3-on-surface); 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-energy-details:hover {
+    background: rgba(234, 208, 255, 0.15); 
+    transform: translateY(-1px);
+}
+
+.triple-progress-bar {
+    height: 8px; 
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    display: flex;
+    overflow: hidden;
+    margin-top: 12px;
+}
+.bar-online { background-color: var(--m3-on-surface); } 
+.bar-poweroff { background-color: #f87171; } 
+.bar-offline { background-color: var(--m3-color-warning); }
+
+/* --- MODAL E TABELAS WIDGETS --- */
+.placas-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.placa-btn {
+    background: var(--m3-surface-container-high);
+    border: 1px solid var(--m3-outline-variant);
+    color: var(--m3-on-surface);
+    padding: 15px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.placa-btn:hover {
+    background: rgba(248, 113, 113, 0.1);
+    border-color: #f87171;
+}
+.placa-btn.has-alarm { border-bottom: 3px solid #f87171; }
+.placa-btn .alarm-count {
+    font-size: 0.8rem;
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.15);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.btn-voltar-placas {
+    background: transparent;
+    border: 1px solid var(--m3-outline);
+    color: var(--m3-on-surface);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    transition: background 0.2s;
+}
+.btn-voltar-placas:hover { background: var(--m3-surface-container-high); }
+
+.impact-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.impact-high { background: rgba(248, 113, 113, 0.2); color: #f87171; }
+.impact-med { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+.impact-low { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
+
+/* Auxiliares de Potência */
+.sinal-critico { color: #f87171; font-weight: bold; }
+.sinal-atencao { color: #fbbf24; font-weight: bold; }
+.linha-cliente-potencia td { border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+.loading-overlay { padding: 40px; text-align: center; color: var(--m3-on-surface-variant); }
+.spinner {
+    width: 40px; height: 40px; border: 4px solid var(--m3-surface-container-high);
+    border-top: 4px solid var(--m3-primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* ==========================================================================
    CARD GLOBAL DE DESTAQUE (VISÃO GERAL DA REDE) - TELA CHEIA (VERSÃO HÍBRIDA)
    ========================================================================== */
@@ -859,6 +999,19 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     /* Remove o espaço extra no fundo do último bloco */
     .global-card .card-body > div > div:last-child {
         padding-bottom: 0 !important;
+    }
+
+    /* WIDGETS RESPONSIVOS */
+    .energy-master-card {
+        flex-direction: column; 
+    }
+    .energy-master-left {
+        flex: auto;
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .placas-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
     }
 }
 
