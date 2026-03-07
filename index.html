@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Monitoramento</title>
+    <title>Dashboard Gerencial - Monitoramento</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,8 +27,9 @@
 
             <div id="global-overview-container" style="margin-bottom: 20px; width: 100%;"></div>
             
-            <div id="overview-grid" class="grid-container">
+            <div id="dashboard-widgets" class="grid-container">
                 </div>
+
         </main>
     </div>
 
@@ -58,7 +59,6 @@
             { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa-2' },
         ];
 
-        // MAPA FIXO: Índice da coluna inicial (A=0, E=4, etc.) para cada OLT na aba ENERGIA
         const ENERGY_MAP = {
             'HEL-1': 0, 'HEL-2': 4, 'PQA-1': 8, 'PSV-1': 12, 'MGP': 16,
             'LTXV-1': 20, 'SBO-1': 24, 'LTXV-2': 28, 'PQA-2': 32, 'PQA-3': 36,
@@ -79,33 +79,11 @@
                     </div>
                     <div class="card-body">
                          <div class="card-stats">
-                            <p>Calculando totais da rede...</p>
+                            <p>Analisando saúde da rede e alarmes...</p>
                         </div>
                     </div>
                 </div>
             `;
-
-            const grid = document.getElementById('overview-grid');
-            grid.innerHTML = ''; 
-            
-            oltsConfig.forEach(olt => {
-                const pageUrl = olt.id.toLowerCase().replace('-', '') + '.html';
-                grid.innerHTML += `
-                    <div class="overview-card" id="card-${olt.id}">
-                        <div class="card-header">
-                            <h3><span class="material-symbols-rounded">dns</span> ${olt.id}</h3>
-                            <a href="${pageUrl}" class="card-header-button" title="Ver Detalhes">
-                                <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
-                            </a>
-                        </div>
-                        <div class="card-body">
-                             <div class="card-stats">
-                                <p>Carregando...</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
         }
         
         async function fetchOltData(olt) {
@@ -114,7 +92,7 @@
             
             try {
                 const response = await fetch(url);
-                if (!response.ok) throw new Error(`Falha ao buscar dados da aba ${olt.sheetTab}`);
+                if (!response.ok) throw new Error(`Falha aba ${olt.sheetTab}`);
                 const data = await response.json();
                 const rows = (data.values || []).slice(1);
                 
@@ -124,34 +102,28 @@
 
                 rows.forEach(columns => {
                     if (columns.length === 0) return;
-                    
                     let placa, porta, isOnline;
 
                     if (olt.type === 'nokia') {
-                        const status = columns[4] || '';
-                        const pon = columns[0];
-                        isOnline = status.trim().toLowerCase().includes('up');
-                        if (pon) {
-                            const parts = pon.split('/');
+                        isOnline = (columns[4] || '').trim().toLowerCase().includes('up');
+                        if (columns[0] && columns[0].includes('1/1/')) {
+                            const parts = columns[0].split('/');
                             if (parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
                         }
                     } else { 
-                        const status = columns[2] || '';
-                        const portStr = columns[0];
-                        isOnline = status.trim().toLowerCase() === 'active';
-                        if (portStr) {
+                        isOnline = (columns[2] || '').trim().toLowerCase() === 'active';
+                        if (columns[0]) {
                             if (olt.type === 'furukawa-10') {
-                                const parts = portStr.split('/');
+                                const parts = columns[0].split('/');
                                 if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
                             } else { 
-                                const match = portStr.match(/GPON(\d+)\/(\d+)/);
+                                const match = columns[0].match(/GPON(\d+)\/(\d+)/);
                                 if (match) { placa = match[1]; porta = match[2]; }
                             }
                         }
                     }
 
                     if (isOnline) totalOnline++; else totalOffline++;
-
                     if (placa && porta) {
                         const portKey = `${placa}/${porta}`;
                         if (!portData[portKey]) portData[portKey] = { off: 0, total: 0 };
@@ -160,88 +132,15 @@
                     }
                 });
 
-                updateCardUI(olt.id, { onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type });
-                
-                return { 
-                    id: olt.id, 
-                    onlineCount: totalOnline, 
-                    offlineCount: totalOffline, 
-                    type: olt.type,
-                    portData: portData 
-                };
-
+                return { id: olt.id, onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type, portData };
             } catch (error) {
-                console.error(`Erro para OLT ${olt.id}:`, error);
-                updateCardUI(olt.id, { error: true });
                 return { id: olt.id, onlineCount: 0, offlineCount: 0, type: olt.type, portData: {} };
             }
         }
         
-        function updateCardUI(oltId, data) {
-            const card = document.getElementById(`card-${oltId}`);
-            if (!card) return;
-            if (data.error) {
-                card.querySelector('.card-stats').innerHTML = `<p>Erro ao carregar.</p>`;
-                return;
-            }
-            const { onlineCount, offlineCount, type } = data;
-            const total = onlineCount + offlineCount;
-            const onlinePercent = total > 0 ? (onlineCount / total) * 100 : 0;
-            const offlinePercent = 100 - onlinePercent;
-            
-            const header = card.querySelector('.card-header');
-            header.classList.remove('status-normal', 'status-atencao', 'status-problema');
-            
-            if (offlinePercent > 15 || offlineCount >= 300) { 
-                header.classList.add('status-problema'); 
-            }
-            else if (offlinePercent > 8 || offlineCount >= 150) { 
-                header.classList.add('status-atencao'); 
-            }
-            else { 
-                header.classList.add('status-normal'); 
-            }
-            
-            const statsHtml = `
-                <div class="stat-item">
-                    <span class="stat-number">${total}</span>
-                    <label><span class="material-symbols-rounded icon-total">router</span> Total</label>
-                </div>
-                <div class="stat-item online">
-                    <span class="stat-number">${onlineCount}</span>
-                    <label><span class="material-symbols-rounded icon-up">check_circle</span> ${type === 'nokia' ? 'Up' : 'Active'}</label>
-                </div>
-                <div class="stat-item offline">
-                    <span class="stat-number">${offlineCount}</span>
-                    <label><span class="material-symbols-rounded icon-down">error</span> ${type === 'nokia' ? 'Down' : 'Inactive'}</label>
-                </div>
-            `;
-            
-            const newRadius = 40; 
-            const circumference = 2 * Math.PI * newRadius; 
-            const offset = circumference - (onlinePercent / 100) * circumference;
-            const chartHtml = `
-                <div class="donut-chart-container">
-                    <svg class="donut-chart" width="100" height="100" viewBox="0 0 100 100">
-                        <circle class="donut-bg" cx="50" cy="50" r="${newRadius}"></circle>
-                        <circle class="donut-fg" cx="50" cy="50" r="${newRadius}"
-                            stroke-dasharray="${circumference}"
-                            stroke-dashoffset="${offset}">
-                        </circle>
-                    </svg>
-                    <div class="chart-text"><span class="stat-number">${Math.round(onlinePercent)}%</span></div>
-                </div>
-            `;
-
-            card.querySelector('.card-body').innerHTML = `<div class="card-stats">${statsHtml}</div>${chartHtml}`;
-        }
-
         function updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, top3Olts) {
             const card = document.getElementById('card-global');
             if (!card) return;
-            
-            const header = card.querySelector('.card-header');
-            header.classList.remove('status-normal', 'status-atencao', 'status-problema');
             
             const total = globalOnline + globalOffline;
             
@@ -273,11 +172,7 @@
                         <div style="height: 14px; background: var(--m3-surface-container-high); border-radius: 7px; overflow: hidden;">
                             <div style="height: 100%; width: ${nokiaPct}%; background: var(--m3-color-success); border-radius: 7px;"></div>
                         </div>
-                        <div style="font-size: 1rem; color: var(--m3-on-surface-variant); margin-top: 8px; text-align: right;">
-                            <span class="stat-number" style="font-size: 1.1rem; width: auto;">${nokiaOnline}</span> / <span class="stat-number" style="font-size: 1.1rem; width: auto;">${nokiaTotal}</span> Online
-                        </div>
                     </div>
-                    
                     <div>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <img src="imagens/furukawa.png" alt="Furukawa" style="max-height: 28px; width: auto; object-fit: contain;">
@@ -286,22 +181,15 @@
                         <div style="height: 14px; background: var(--m3-surface-container-high); border-radius: 7px; overflow: hidden;">
                             <div style="height: 100%; width: ${furukawaPct}%; background: var(--m3-color-success); border-radius: 7px;"></div>
                         </div>
-                        <div style="font-size: 1rem; color: var(--m3-on-surface-variant); margin-top: 8px; text-align: right;">
-                            <span class="stat-number" style="font-size: 1.1rem; width: auto;">${furukawaOnline}</span> / <span class="stat-number" style="font-size: 1.1rem; width: auto;">${furukawaTotal}</span> Online
-                        </div>
                     </div>
                 </div>
             `;
 
             let rankingHtmlContent = '';
-            const temOffline = top3Olts.some(olt => olt.offline > 0);
-            
-            if (temOffline) {
+            if (top3Olts.some(olt => olt.offline > 0)) {
                 top3Olts.forEach((olt, index) => {
                     if (olt.offline === 0) return;
-                    
                     const offlinePct = olt.total > 0 ? (olt.offline / olt.total) * 100 : 0;
-                    
                     rankingHtmlContent += `
                         <div style="margin-bottom: 18px;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items: baseline;">
@@ -315,219 +203,107 @@
                     `;
                 });
             } else {
-                rankingHtmlContent = `
-                    <div style="text-align: center; color: var(--m3-color-success); font-weight: 700; font-size: 1.4rem; margin-top: 15px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
-                        <span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span>
-                        Toda a Rede 100% Online!
-                    </div>
-                `;
+                rankingHtmlContent = `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px;"><span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Rede 100% Online!</div>`;
             }
 
-            const rankingHtml = `
-                <div style="display: flex; flex-direction: column; width: 100%; max-width: 300px;">
-                    ${rankingHtmlContent}
-                </div>
-            `;
-            
             card.querySelector('.card-body').innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 20px;">
                     <div class="card-stats" style="padding-right: 0; min-width: 200px;">${statsHtml}</div>
                     <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; justify-content: center; min-width: 250px;">${vendorHtml}</div>
-                    <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; justify-content: center; min-width: 250px;">${rankingHtml}</div>
+                    <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; justify-content: center; min-width: 250px;">${rankingHtmlContent}</div>
                 </div>
             `;
         }
 
         async function runOverview() {
-            const timestampEl = document.getElementById('update-timestamp');
-            if (timestampEl) {
-                if (timestampEl.textContent === "" || timestampEl.textContent === "Aguardando dados...") {
-                    timestampEl.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Buscando dados...';
-                }
-            }
+            createCardPlaceholders();
             
-            if(document.getElementById('overview-grid').innerHTML.trim() === "") {
-                createCardPlaceholders();
-            }
-            
-            // MUDANÇA: Buscando a aba ENERGIA inteira (Até a coluna BP)
             const energyUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/ENERGIA!A:BP?key=${API_KEY}`;
             const oltPromises = oltsConfig.map(olt => fetchOltData(olt));
             const energyPromise = fetch(energyUrl).then(res => res.json()).catch(() => null);
             
             const allResults = await Promise.all([...oltPromises, energyPromise]);
-            
             const energyDataJson = allResults.pop(); 
             const results = allResults; 
             
-            const allProblems = new Set();
-            let globalOnline = 0;
-            let globalOffline = 0;
-            
-            let nokiaOnline = 0, nokiaTotal = 0;
-            let furukawaOnline = 0, furukawaTotal = 0;
-            
-            let oltStatsList = [];
-            let activeBackboneDetails = []; 
-            let currentBackbones = new Set(); 
-
-            // =================================================================
-            // 1. PROCESSAMENTO DE ENERGIA (MAPA HORIZONTAL)
-            // =================================================================
-            let energyProblems = new Set();
-            let portsWithEnergy = new Set();
-            let energyGroups = {}; 
+            let globalOnline = 0, globalOffline = 0;
+            let nokiaOnline = 0, nokiaTotal = 0, furukawaOnline = 0, furukawaTotal = 0;
+            let oltStatsList = [], activeBackboneDetails = [], currentBackbones = new Set();
+            let allProblems = new Set(), energyProblems = new Set(), portsWithEnergy = new Set(), energyGroups = {};
 
             if (energyDataJson && energyDataJson.values) {
                 const energyRows = energyDataJson.values.slice(1);
-                
-                // Iterando sobre o novo mapa de colunas (Ex: HEL-1 olha colunas 0 a 3, PQA-1 olha colunas 8 a 11)
                 for (const [oltId, colIndex] of Object.entries(ENERGY_MAP)) {
-                    
                     energyRows.forEach(row => {
-                        // Verifica se a linha tem dados suficientes para alcançar esta OLT específica
                         if (row.length > colIndex + 2) {
-                            const portaFull = row[colIndex + 1]; // Coluna de Porta (Ex: B, F, J)
-                            const powerOffQtd = parseInt(row[colIndex + 2]) || 0; // Coluna de Qtd (Ex: C, G, K)
-
+                            const portaFull = row[colIndex + 1], powerOffQtd = parseInt(row[colIndex + 2]) || 0;
                             if (portaFull && powerOffQtd > 0) {
                                 const oltResult = results.find(r => r.id === oltId);
-                                if (oltResult && oltResult.portData && oltResult.portData[portaFull]) {
-                                    const portTotal = oltResult.portData[portaFull].total;
-                                    const perc = powerOffQtd / portTotal;
-
-                                    let severity = null;
-                                    if ((perc >= 0.5 && powerOffQtd >= 10) || (perc === 1 && portTotal >= 5)) {
-                                        severity = 'CRIT'; 
-                                    } else if (perc >= 0.2 && powerOffQtd >= 5) {
-                                        severity = 'WARN'; 
-                                    }
-
+                                if (oltResult && oltResult.portData[portaFull]) {
+                                    const perc = powerOffQtd / oltResult.portData[portaFull].total;
+                                    let severity = (perc >= 0.5 && powerOffQtd >= 10) || (perc === 1 && oltResult.portData[portaFull].total >= 5) ? 'CRIT' : (perc >= 0.2 && powerOffQtd >= 5 ? 'WARN' : null);
                                     if (severity) {
                                         portsWithEnergy.add(`[${oltId} PORTA ${portaFull}]`);
-                                        
                                         if (!energyGroups[oltId]) energyGroups[oltId] = { crit: 0, warn: 0, clientsOff: 0, portsCount: 0 };
                                         energyGroups[oltId].clientsOff += powerOffQtd;
                                         energyGroups[oltId].portsCount++;
-                                        if (severity === 'CRIT') energyGroups[oltId].crit++;
-                                        else energyGroups[oltId].warn++;
+                                        if (severity === 'CRIT') energyGroups[oltId].crit++; else energyGroups[oltId].warn++;
                                     }
                                 }
                             }
                         }
                     });
                 }
-
-                // Gera apenas UM aviso de energia por OLT
                 for (const olt in energyGroups) {
-                    const group = energyGroups[olt];
-                    const overallSeverity = group.crit > 0 ? 'CRIT' : 'WARN'; 
-                    energyProblems.add(`[${olt}] ENERGIA::${overallSeverity}::${group.clientsOff}::${group.portsCount}`);
+                    energyProblems.add(`[${olt}] ENERGIA::${energyGroups[olt].crit > 0 ? 'CRIT' : 'WARN'}::${energyGroups[olt].clientsOff}::${energyGroups[olt].portsCount}`);
                 }
             }
 
-            // =================================================================
-            // 2. PROCESSAMENTO DE STATUS E AGRUPAMENTO (COM SUPRESSÃO)
-            // =================================================================
             results.forEach(result => {
-                globalOnline += result.onlineCount;
-                globalOffline += result.offlineCount;
-                
-                let oltTotal = result.onlineCount + result.offlineCount;
-                if (result.type === 'nokia') {
-                    nokiaOnline += result.onlineCount;
-                    nokiaTotal += oltTotal;
-                } else {
-                    furukawaOnline += result.onlineCount;
-                    furukawaTotal += oltTotal;
-                }
+                globalOnline += result.onlineCount; globalOffline += result.offlineCount;
+                let total = result.onlineCount + result.offlineCount;
+                if (result.type === 'nokia') { nokiaOnline += result.onlineCount; nokiaTotal += total; }
+                else { furukawaOnline += result.onlineCount; furukawaTotal += total; }
+                oltStatsList.push({ id: result.id, offline: result.offlineCount, total });
 
-                oltStatsList.push({ id: result.id, offline: result.offlineCount, total: oltTotal });
-
-                let isMicroSuper = false;
-                let isCritical = false;     
-                let isWarning = false;
-                let ports100Down = 0;
-
+                let isMicroSuper = false, isCritical = false, isWarning = false, ports100Down = 0;
                 for (const key in result.portData) {
                     if (portsWithEnergy.has(`[${result.id} PORTA ${key}]`)) continue;
-
-                    const { off, total } = result.portData[key];
-                    if (total === 0) continue; 
-
-                    const percOffline = off / total;
-
-                    if (total >= 5) {
-                        if (percOffline === 1) {
-                            ports100Down++;
-                            isMicroSuper = true; 
-                        }
-                        else if (percOffline >= 0.5) {
-                            isMicroSuper = true;
-                        } else if (off >= 32) {
-                            isCritical = true; 
-                        } else if (off >= 16 && off < 32) {
-                            isWarning = true;  
-                        }
+                    const { off, total: pTotal } = result.portData[key];
+                    if (pTotal >= 5) {
+                        if (off / pTotal === 1) { ports100Down++; isMicroSuper = true; }
+                        else if (off / pTotal >= 0.5) isMicroSuper = true;
+                        else if (off >= 32) isCritical = true;
+                        else if (off >= 16) isWarning = true;
                     }
                 }
-
-                if (ports100Down >= 2) {
-                    activeBackboneDetails.push(`OLT: ${result.id}`);
-                    currentBackbones.add(result.id);
-                } else if (isMicroSuper) {
-                    allProblems.add(`[${result.id}] STATUS::SUPER`);
-                } else if (isCritical) {
-                    allProblems.add(`[${result.id}] STATUS::CRIT`);
-                } else if (isWarning) {
-                    allProblems.add(`[${result.id}] STATUS::WARN`);
-                }
+                if (ports100Down >= 2) { activeBackboneDetails.push(`OLT: ${result.id}`); currentBackbones.add(result.id); }
+                else if (isMicroSuper) allProblems.add(`[${result.id}] STATUS::SUPER`);
+                else if (isCritical) allProblems.add(`[${result.id}] STATUS::CRIT`);
+                else if (isWarning) allProblems.add(`[${result.id}] STATUS::WARN`);
             });
 
             oltStatsList.sort((a, b) => b.offline - a.offline);
-            const top3Olts = oltStatsList.slice(0, 3);
-
-            updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, top3Olts);
+            updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, oltStatsList.slice(0, 3));
 
             const backboneContainer = document.getElementById('backbone-alert-container');
             if (activeBackboneDetails.length > 0) {
-                backboneContainer.innerHTML = `
-                    <div class=\"backbone-alert\">
-                        <span class=\"material-symbols-rounded\">sos</span>
-                        <div class=\"backbone-text-container\">
-                            <p class=\"backbone-title\">Rompimento de Backbone?!</p>
-                            <p class=\"backbone-details\">${activeBackboneDetails.join('<br>')}</p>
-                        </div>
-                    </div>
-                `;
+                backboneContainer.innerHTML = `<div class="backbone-alert"><span class="material-symbols-rounded">sos</span><div class="backbone-text-container"><p class="backbone-title">Rompimento de Backbone?!</p><p class="backbone-details">${activeBackboneDetails.join('<br>')}</p></div></div>`;
                 backboneContainer.style.display = 'block';
-            } else {
-                backboneContainer.style.display = 'none';
-                backboneContainer.innerHTML = '';
-            }
+            } else backboneContainer.style.display = 'none';
 
-            if (typeof checkAndNotifyForNewProblems === 'function') {
-                checkAndNotifyForNewProblems(allProblems, currentBackbones, energyProblems);
-            }
+            if (typeof checkAndNotifyForNewProblems === 'function') checkAndNotifyForNewProblems(allProblems, currentBackbones, energyProblems);
             
-            const now = new Date();
-            const dataHoje = now.toLocaleDateString('pt-BR');
-            const horaAgora = now.toLocaleTimeString('pt-BR');
-            
+            const timestampEl = document.getElementById('update-timestamp');
             if(timestampEl) {
-                timestampEl.innerHTML = `
-                    <span class=\"material-symbols-rounded\">calendar_today</span> ${dataHoje}
-                    <span style=\"width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;\"></span>
-                    <span class=\"material-symbols-rounded\">schedule</span> ${horaAgora}
-                `;
-                timestampEl.classList.remove('updated-anim');
-                void timestampEl.offsetWidth; 
-                timestampEl.classList.add('updated-anim');
+                const now = new Date();
+                timestampEl.innerHTML = `<span class="material-symbols-rounded">calendar_today</span> ${now.toLocaleDateString('pt-BR')} <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span> <span class="material-symbols-rounded">schedule</span> ${now.toLocaleTimeString('pt-BR')}`;
+                timestampEl.classList.remove('updated-anim'); void timestampEl.offsetWidth; timestampEl.classList.add('updated-anim');
             }
         }
         
         document.addEventListener('DOMContentLoaded', () => {
-            loadHeader({ title: "Painel de Monitoramento", exactTitle: true });
+            loadHeader({ title: "Dashboard Gerencial", exactTitle: true });
             loadFooter();
             runOverview();
             setInterval(runOverview, REFRESH_INTERVAL_SECONDS * 1000);
