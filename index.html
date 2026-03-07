@@ -131,12 +131,16 @@
         
         function createCardPlaceholders() {
             const globalContainer = document.getElementById('global-overview-container');
+            // Geração da caixa "Visão Geral" atualizada com o botão para olt.html
             globalContainer.innerHTML = `
                 <div class="global-card" id="card-global">
-                    <div class="card-header" style="background-color: rgba(234, 208, 255, 0.08);">
+                    <div class="card-header" style="background-color: rgba(234, 208, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
                         <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; color: var(--m3-on-surface);">
                             <span class="material-symbols-rounded" style="color: #4ade80;">public</span> VISÃO GERAL DA REDE
                         </h3>
+                        <a href="olt.html" class="card-header-button" title="Ver Status das OLTs">
+                            <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
+                        </a>
                     </div>
                     <div class="card-body">
                          <div class="card-stats">
