@@ -1,5 +1,5 @@
 // ==============================================================================
-// layout.js - Construtor de Layout e Menu Inteligente (Versão 2.5 - Inclusão Potência)
+// layout.js - Construtor de Layout e Menu Inteligente (Versão 2.6 - Menu Universal)
 // ==============================================================================
 
 // --- LISTA MESTRA DE PÁGINAS ---
@@ -48,29 +48,17 @@ function loadHeader(config) {
     // Identifica a página atual
     const path = window.location.pathname;
     const currentPage = path.split('/').pop() || 'index.html';
-    const isHome = currentPage === 'index.html';
 
-    let navHtml = '';
-
-    if (!isHome) {
-        // --- BOTÃO MENU (Abre a sidebar) ---
-        navHtml = `
-            <button class="icon-btn" onclick="toggleSidebar()" title="Abrir Menu" style="border-radius: 8px; width: auto; padding: 0 15px; gap: 8px;">
-                <span class="material-symbols-rounded">menu</span>
-                <span style="font-weight: 500; font-size: 0.9rem;">MENU</span>
-            </button>
-        `;
-        loadSidebar(currentPage);
-    } else {
-        // --- BOTÃO HOME (Legado/Opcional) ---
-        if (config.buttonText && config.buttonLink) {
-            const iconName = config.buttonText.toLowerCase().includes('voltar') ? 'arrow_back' : 'home';
-            navHtml = `
-                <a href="${config.buttonLink}" class="icon-btn" title="${config.buttonText}">
-                    <span class="material-symbols-rounded">${iconName}</span>
-                </a>`;
-        }
-    }
+    // O botão MENU agora é universal para todas as páginas
+    let navHtml = `
+        <button class="icon-btn" onclick="toggleSidebar()" title="Abrir Menu" style="border-radius: 8px; width: auto; padding: 0 15px; gap: 8px;">
+            <span class="material-symbols-rounded">menu</span>
+            <span style="font-weight: 500; font-size: 0.9rem;">MENU</span>
+        </button>
+    `;
+    
+    // Sempre carrega a sidebar
+    loadSidebar(currentPage);
 
     headerPlaceholder.innerHTML = `
         <header class="header">
