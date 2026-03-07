@@ -189,7 +189,8 @@ window.startEnergyMonitoring = async function() {
             });
         }
 
-        ENGINE_OLT_LIST.forEach(olt => {
+        // CORREÇÃO: ENERGY_OLT_LIST em vez de ENGINE_OLT_LIST
+        ENERGY_OLT_LIST.forEach(olt => {
             const oData = window.ENERGY_DATA_STORE.olts[olt.id];
             oData.offlineOther = Math.max(0, oData.offline - oData.powerOff);
             if (oData.powerOff > 0) window.ENERGY_DATA_STORE.global.oltsAffected++;
@@ -215,7 +216,8 @@ window.startEnergyMonitoring = async function() {
         let chartLabels = [];
         let chartData = [];
 
-        ENGINE_OLT_LIST.forEach(oltDef => {
+        // CORREÇÃO: ENERGY_OLT_LIST em vez de ENGINE_OLT_LIST
+        ENERGY_OLT_LIST.forEach(oltDef => {
             const oData = window.ENERGY_DATA_STORE.olts[oltDef.id];
             
             const pctOnline = oData.totalClients ? (oData.online / oData.totalClients * 100) : 0;
