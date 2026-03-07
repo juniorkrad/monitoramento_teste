@@ -38,19 +38,14 @@
 
         <main class="main-content" style="flex-direction: column;">
             
-            <div id="global-potencia-container" style="margin-bottom: 20px; width: 100%;">
-                <div class="overview-card global-card" style="max-width: 100%;">
-                    <div class="card-header" style="background-color: rgba(234, 208, 255, 0.15);">
-                        <h3><span class="material-symbols-rounded" style="font-size: 28px;">cable</span> VISÃO GERAL DE POTÊNCIA ÓPTICA</h3>
-                    </div>
-                    <div class="card-body" id="global-potencia-body" style="justify-content: center; padding: 30px;">
-                        <p style="color: var(--m3-on-surface-variant);"><span class="material-symbols-rounded rotate-anim">sync</span> Carregando dados da rede...</p>
-                    </div>
-                </div>
-            </div>
+            <div id="global-potencia-body" style="display: none;"></div>
             
             <div id="potencia-grid" class="grid-container">
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                    <span class="material-symbols-rounded" style="font-size: 40px; color: var(--m3-on-surface-variant); animation: spin 1s linear infinite;">sync</span>
+                    <p style="color: var(--m3-on-surface-variant);">Processando potências da rede...</p>
                 </div>
+            </div>
 
         </main>
     </div>
