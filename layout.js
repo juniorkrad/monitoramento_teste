@@ -1,5 +1,5 @@
 // ==============================================================================
-// layout.js - Construtor de Layout e Menu Inteligente (Versão 2.6 - Menu Universal)
+// layout.js - Construtor de Layout e Menu Inteligente (Versão 2.7 - Menu Universal e Alinhado)
 // ==============================================================================
 
 // --- LISTA MESTRA DE PÁGINAS ---
@@ -94,14 +94,16 @@ function loadSidebar(currentPage) {
     OLT_MENU_LIST.forEach(olt => {
         if (olt.file === currentPage) return; 
 
+        // Alinhamento à esquerda para os itens do grid de OLTs
         linksHtml += `
-            <a href="${olt.file}" class="sidebar-link">
-                <span class="material-symbols-rounded">dns</span>
+            <a href="${olt.file}" class="sidebar-link" style="justify-content: flex-start; text-align: left; padding-left: 15px;">
+                <span class="material-symbols-rounded" style="margin-right: 8px;">dns</span>
                 ${olt.name}
             </a>
         `;
     });
 
+    // Adicionado o botão "STATUS OLTS" e alinhamento à esquerda em todos
     sidebarContainer.innerHTML = `
         <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
         
@@ -114,23 +116,28 @@ function loadSidebar(currentPage) {
             </div>
             
             <nav class="sidebar-nav">
-                <a href="index.html" class="sidebar-link home-highlight">
-                    <span class="material-symbols-rounded" style="font-size: 28px;">home</span>
+                <a href="index.html" class="sidebar-link home-highlight" style="justify-content: flex-start; text-align: left; padding-left: 20px;">
+                    <span class="material-symbols-rounded" style="font-size: 28px; margin-right: 12px;">home</span>
                     HOME
                 </a>
+
+                <a href="olt.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
+                    <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px;">dns</span>
+                    STATUS OLTS
+                </a>
                 
-                <a href="equipamentos.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px;">
-                    <span class="material-symbols-rounded" style="font-size: 24px;">router</span>
+                <a href="equipamentos.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
+                    <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px;">router</span>
                     EQUIPAMENTOS
                 </a>
 
-                <a href="energia.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px;">
-                    <span class="material-symbols-rounded" style="font-size: 24px;">bolt</span>
+                <a href="energia.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
+                    <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px;">bolt</span>
                     ENERGIA
                 </a>
 
-                <a href="potencia.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px;">
-                    <span class="material-symbols-rounded" style="font-size: 24px;">sensors</span>
+                <a href="potencia.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
+                    <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px;">sensors</span>
                     POTÊNCIA
                 </a>
                 
