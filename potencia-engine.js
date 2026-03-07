@@ -204,7 +204,7 @@ async function runPotenciaEngine() {
                         <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
                             <span class="material-symbols-rounded">${iconType}</span> ${olt.id}
                         </h3>
-                        <button class="card-header-button" onclick="window.abrirModalPotencia('${olt.id}')" title="Ver Clientes">
+                        <button class="card-header-button" onclick="window.abrirModalPotencia('${olt.id}')" title="Ver Detalhes">
                             <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
                         </button>
                     </div>

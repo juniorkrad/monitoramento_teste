@@ -515,20 +515,27 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 .card-header.status-normal h3, .card-header.status-problema h3 { color: #fff; }
 .card-header.status-atencao h3 { color: #000; }
 
+/* --- BOTÃO DE DETALHES UNIFICADO E MINIMALISTA --- */
 .card-header-button { 
     background-color: rgba(0, 0, 0, 0.2); 
     color: var(--m3-on-surface-variant); 
-    padding: 4px 10px; 
+    padding: 6px 12px; 
     border-radius: 16px; 
     text-decoration: none; 
     font-size: 0.85em; 
     font-weight: 500; 
-    transition: background-color 0.2s ease, color 0.2s ease; 
+    border: none; /* REMOVE AS BORDAS HORRÍVEIS DO <BUTTON> */
+    cursor: pointer; /* ADICIONA A MÃOZINHA DE CLIQUE */
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease; 
     display: flex;
     align-items: center;
     gap: 4px;
 }
-.card-header-button:hover { background-color: rgba(0, 0, 0, 0.4); color: var(--m3-on-surface); }
+.card-header-button:hover { 
+    background-color: rgba(0, 0, 0, 0.4); 
+    color: var(--m3-on-surface); 
+    transform: scale(1.05); /* LEVE DESTAQUE AO PASSAR O MOUSE */
+}
 .card-header.status-normal .card-header-button, .card-header.status-problema .card-header-button { color: rgba(255,255,255,0.8); }
 .card-header.status-atencao .card-header-button { color: rgba(0,0,0,0.7); }
 
