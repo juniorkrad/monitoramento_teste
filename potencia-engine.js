@@ -242,12 +242,10 @@ async function runPotenciaEngine() {
                 let statusColor = olt.criticos > 0 ? '#f87171' : 'var(--m3-color-success)';
 
                 gridEl.innerHTML += `
-                    <div class="overview-card" style="display: flex; flex-direction: column;">
-                        <div class="card-header" style="justify-content: space-between; background-color: rgba(234, 208, 255, 0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">
-                            <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                                <span class="material-symbols-rounded">dns</span> ${olt.id}
-                            </h3>
-                            <button class="card-header-button" onclick="window.abrirModalPotencia('${olt.id}')" title="Ver Detalhes">
+                    <div class="potencia-olt-card overview-card" style="display: flex; flex-direction: column;">
+                        <div class="potencia-olt-card-header">
+                            <h3><span class="material-symbols-rounded">dns</span> ${olt.id}</h3>
+                            <button class="btn-potencia-details" onclick="window.abrirModalPotencia('${olt.id}')" title="Ver Detalhes">
                                 <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
                             </button>
                         </div>
@@ -327,7 +325,7 @@ window.abrirModalPotencia = function(oltId) {
                 <tr class="linha-cliente-potencia">
                     <td style="font-weight: bold;">${c.porta}</td>
                     <td>${c.serial}</td>
-                    <td class="${colorClass}">${c.potencia} dBm</td>
+                    <td><span class="${colorClass}">${c.potencia} dBm</span></td>
                     <td>${c.codigo}</td>
                 </tr>
             `;
