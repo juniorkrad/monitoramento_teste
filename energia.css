@@ -2,7 +2,7 @@
    ESTILOS ESPECÍFICOS - PAINEL DE ENERGIA (energia.html)
    ========================================================================== */
 
-/* Único Card Master (Blindado contra sobreposição) */
+/* Único Card Master - Estilo MD3 Arredondado */
 .energy-master-card {
     display: flex;
     flex-direction: row;
@@ -11,13 +11,16 @@
     margin-bottom: 24px;
     padding: 0; 
     overflow: hidden; 
+    border-radius: 24px !important; /* Arredondamento MD3 */
+    background-color: var(--m3-surface-container);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 .energy-master-left {
     flex: 0 0 280px; 
-    padding: 20px;
-    border-right: 1px solid rgba(255, 255, 255, 0.15); /* Linha divisória fina e visível */
-    border-left: 5px solid #f87171;
+    padding: 25px;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 6px solid #f87171; /* Destaque lateral mais robusto */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -26,86 +29,101 @@
 .energy-master-right {
     flex: 1; 
     min-width: 0; 
-    padding: 20px;
+    padding: 25px;
     display: flex;
     flex-direction: column;
 }
 
-/* Preparação para os novos Cards de OLT gerados pelo JS */
+/* --- AJUSTE DOS CARDS DE OLT (Grid inferior) --- */
+.energy-olt-card {
+    border-radius: 24px !important; /* Padronização MD3 */
+    overflow: hidden;
+}
+
+/* Correção do Cabeçalho: Título e Botão na mesma linha */
 .energy-olt-card-header {
-    padding: 8px 16px !important; 
+    padding: 12px 20px !important; 
     border-bottom: 1px solid var(--m3-outline-variant); 
     background: rgba(234, 208, 255, 0.05);
+    display: flex !important;
+    justify-content: space-between !important; /* Empurra o botão para a direita */
+    align-items: center !important; /* Alinha verticalmente no centro */
+}
+
+.energy-olt-card-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .btn-energy-details {
-    background: rgba(234, 208, 255, 0.05); 
+    background: var(--m3-primary); 
     border: none !important; 
-    padding: 6px 10px;
-    border-radius: 8px;
+    padding: 8px 12px;
+    border-radius: 12px; /* Botão mais arredondado */
     cursor: pointer;
-    transition: all 0.2s;
-    color: var(--m3-on-surface); 
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--m3-on-primary); 
     display: flex;
     align-items: center;
     justify-content: center;
+    font-weight: 600;
 }
 
 .btn-energy-details:hover {
-    background: rgba(234, 208, 255, 0.15); 
-    transform: translateY(-1px);
+    background: var(--m3-primary-hover); 
+    transform: scale(1.05);
 }
 
-/* Barra de Progresso Tríplice (Cores Básicas Atualizadas) */
+/* Barra de Progresso Tríplice */
 .triple-progress-bar {
-    height: 8px; 
+    height: 10px; /* Um pouco mais espessa para MD3 */
     width: 100%;
     background: rgba(255,255,255,0.05);
-    border-radius: 4px;
+    border-radius: 5px;
     display: flex;
     overflow: hidden;
-    margin-top: 12px;
+    margin-top: 15px;
 }
-.bar-online { background-color: var(--m3-on-surface); } /* Branco/Gelo - Total Offline */
-.bar-poweroff { background-color: #f87171; } /* Vermelho - Energia */
-.bar-offline { background-color: var(--m3-color-warning); } /* Amarelo - GPON */
+.bar-online { background-color: var(--m3-on-surface-variant); } 
+.bar-poweroff { background-color: #f87171; } 
+.bar-offline { background-color: var(--m3-color-warning); }
 
 /* ==========================================================================
-   ESTILIZAÇÃO DO MODAL DE ENERGIA (PLACAS E PORTAS)
+   ESTILIZAÇÃO DO MODAL DE ENERGIA (MD3)
    ========================================================================== */
 .placas-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr); /* FORÇA EXATAMENTE 4 COLUNAS NO DESKTOP */
-    gap: 12px;
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 15px;
     margin-bottom: 20px;
 }
+
 .placa-btn {
     background: var(--m3-surface-container-high);
     border: 1px solid var(--m3-outline-variant);
     color: var(--m3-on-surface);
-    padding: 15px;
-    border-radius: 12px;
+    padding: 20px;
+    border-radius: 20px; /* MD3 Style */
     cursor: pointer;
     font-weight: 600;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    transition: all 0.2s;
+    gap: 10px;
+    transition: all 0.2s ease;
 }
+
 .placa-btn:hover {
-    background: rgba(248, 113, 113, 0.1);
-    border-color: #f87171;
+    background: rgba(208, 188, 255, 0.08);
+    border-color: var(--m3-primary);
 }
+
 .placa-btn.has-alarm {
-    border-bottom: 3px solid #f87171;
-}
-.placa-btn .alarm-count {
-    font-size: 0.8rem;
-    color: #f87171;
-    background: rgba(248, 113, 113, 0.15);
-    padding: 2px 8px;
-    border-radius: 10px;
+    border: 2px solid #f87171;
+    background: rgba(248, 113, 113, 0.05);
 }
 
 /* Botão Voltar no Modal */
@@ -113,51 +131,42 @@
     background: transparent;
     border: 1px solid var(--m3-outline);
     color: var(--m3-on-surface);
-    padding: 8px 16px;
-    border-radius: 8px;
+    padding: 10px 20px;
+    border-radius: 12px;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 16px;
-    transition: background 0.2s;
-}
-.btn-voltar-placas:hover {
-    background: var(--m3-surface-container-high);
+    margin-bottom: 20px;
 }
 
-/* Status Badges para a Tabela */
+/* Status Badges */
 .impact-badge {
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
 }
-.impact-high { background: rgba(248, 113, 113, 0.2); color: #f87171; }
-.impact-med { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
-.impact-low { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
-
-/* Carregamento */
-.loading-overlay { padding: 40px; text-align: center; color: var(--m3-on-surface-variant); }
-.spinner {
-    width: 40px; height: 40px; border: 4px solid var(--m3-surface-container-high);
-    border-top: 4px solid var(--m3-primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+.impact-high { background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
+.impact-med { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+.impact-low { background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
 
 /* ==========================================================================
-   RESPONSIVIDADE EXCLUSIVA DA ENERGIA (MÓVEL & TABLETS)
+   RESPONSIVIDADE
    ========================================================================== */
 @media (max-width: 900px) {
     .energy-master-card {
         flex-direction: column; 
+        border-radius: 20px !important;
     }
     .energy-master-left {
         flex: auto;
         border-right: none;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.15); /* Linha divisória desce no mobile */
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 20px;
     }
     .placas-grid {
-        grid-template-columns: repeat(2, 1fr) !important; /* 2 colunas no mobile */
+        grid-template-columns: repeat(2, 1fr) !important;
     }
 }

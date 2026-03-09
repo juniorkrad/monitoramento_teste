@@ -34,7 +34,6 @@ const ENERGY_OLT_LIST = [
     { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa-2' }
 ];
 
-// MAPA FIXO: Índice da coluna inicial para cada OLT na aba ENERGIA
 const HORIZONTAL_ENERGY_MAP = {
     'HEL-1': 0, 'HEL-2': 4, 'PQA-1': 8, 'PSV-1': 12, 'MGP': 16,
     'LTXV-1': 20, 'SBO-1': 24, 'LTXV-2': 28, 'PQA-2': 32, 'PQA-3': 36,
@@ -43,10 +42,6 @@ const HORIZONTAL_ENERGY_MAP = {
 };
 
 window.ENERGY_DATA_STORE = {};
-
-// ==============================================================================
-// FUNÇÕES AUXILIARES DE ENERGIA
-// ==============================================================================
 
 function getEnergyCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
     const colIndex = ENERGY_OLT_COLUMN_MAP[oltId];
@@ -67,12 +62,7 @@ function getEnergyCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
     return "-";
 }
 
-// ==============================================================================
-// MOTOR GLOBAL DE ENERGIA
-// ==============================================================================
-
 window.startEnergyMonitoring = async function() {
-    // REMOVIDA A TRAVA: Agora o motor continua executando mesmo sem achar a grid (perfeito para a Home)
     try {
         window.ENERGY_DATA_STORE = {
             global: { powerOff: 0, totalClients: 0, oltsAffected: 0, totalOffline: 0 },
@@ -151,7 +141,6 @@ window.startEnergyMonitoring = async function() {
             });
         });
 
-        // PROCESSAMENTO DE ENERGIA (MAPA HORIZONTAL)
         const rowsEnergia = dataBatch.valueRanges[0].values ? dataBatch.valueRanges[0].values.slice(1) : [];
         
         for (const [oltId, colIndex] of Object.entries(HORIZONTAL_ENERGY_MAP)) {
@@ -193,217 +182,83 @@ window.startEnergyMonitoring = async function() {
             if (oData.powerOff > 0) window.ENERGY_DATA_STORE.global.oltsAffected++;
         });
 
-        // =========================================================
-        // ATUALIZAÇÃO DA INTERFACE (UI) GLOBAL
-        // =========================================================
-        const globalPerc = window.ENERGY_DATA_STORE.global.totalClients > 0 
-            ? ((window.ENERGY_DATA_STORE.global.powerOff / window.ENERGY_DATA_STORE.global.totalClients) * 100).toFixed(1) 
-            : 0;
-
-        const globalRelativoPerc = window.ENERGY_DATA_STORE.global.totalOffline > 0 
-            ? ((window.ENERGY_DATA_STORE.global.powerOff / window.ENERGY_DATA_STORE.global.totalOffline) * 100).toFixed(1) 
-            : 0;
-        
+        // UI GLOBAL
         const elTotal = document.getElementById('global-poweroff-total');
         if (elTotal) elTotal.innerText = window.ENERGY_DATA_STORE.global.powerOff;
         
         const elOlts = document.getElementById('global-olts-afetadas');
         if (elOlts) elOlts.innerText = window.ENERGY_DATA_STORE.global.oltsAffected;
-        
-        const elImpacto = document.getElementById('global-impacto-perc');
-        if (elImpacto) elImpacto.innerText = `${globalPerc}%`;
-        
-        const elRelativo = document.getElementById('global-offline-relativo-perc');
-        if (elRelativo) elRelativo.innerText = `${globalRelativoPerc}%`;
 
-        // =========================================================
-        // ATUALIZAÇÃO DOS GRÁFICOS E CARDS INDIVIDUAIS
-        // =========================================================
-        let chartLabels = [];
-        let chartData = [];
-        
+        // UI CARDS (energia.html)
         const gridEl = document.getElementById('energy-olt-grid');
         const isEnergyPage = window.location.pathname.includes('energia.html');
 
         if (isEnergyPage && gridEl) {
-            gridEl.innerHTML = ''; // Limpa a grid apenas se for a página oficial de Energia
-        }
-
-        ENERGY_OLT_LIST.forEach(oltDef => {
-            const oData = window.ENERGY_DATA_STORE.olts[oltDef.id];
-            
-            // Popula os dados do gráfico (Necessário na Home e na página de Energia)
-            if (oData.powerOff > 0) {
-                chartLabels.push(oData.id);
-                chartData.push(oData.powerOff);
-            }
-            
-            // Renderiza o card individual (SOMENTE se estivermos na página de Energia)
-            if (isEnergyPage && gridEl) {
+            gridEl.innerHTML = '';
+            ENERGY_OLT_LIST.forEach(oltDef => {
+                const oData = window.ENERGY_DATA_STORE.olts[oltDef.id];
                 const pctOnline = oData.totalClients ? (oData.online / oData.totalClients * 100) : 0;
                 const pctPowerOff = oData.totalClients ? (oData.powerOff / oData.totalClients * 100) : 0;
                 const pctOfflineOther = oData.totalClients ? (oData.offlineOther / oData.totalClients * 100) : 0;
                 
                 gridEl.innerHTML += `
-                    <div class="overview-card" style="display: flex; flex-direction: column;">
-                        <div class="card-header" style="justify-content: space-between; background-color: rgba(234, 208, 255, 0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">
-                            <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                                <span class="material-symbols-rounded">dns</span> ${oData.id}
-                            </h3>
-                            <button class="card-header-button" onclick="window.openEnergyModal('${oData.id}')" title="Ver Detalhes">
-                                <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
+                    <div class="energy-olt-card overview-card" style="display: flex; flex-direction: column;">
+                        <div class="energy-olt-card-header">
+                            <h3><span class="material-symbols-rounded">dns</span> ${oData.id}</h3>
+                            <button class="btn-energy-details" onclick="window.openEnergyModal('${oData.id}')">
+                                <span class="material-symbols-rounded" style="font-size: 20px; margin-right: 4px;">analytics</span> Detalhes
                             </button>
                         </div>
-                        
                         <div class="card-body" style="flex-direction: column; padding: 15px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; text-align: center; margin-bottom: 12px;">
                                 <div style="flex: 1;">
                                     <span class="material-symbols-rounded" style="color:var(--m3-on-surface); font-size: 26px;">router</span><br>
-                                    <strong style="color:var(--m3-on-surface); font-size: 1.3rem;">${oData.offline}</strong><br>
-                                    <small style="color:var(--m3-on-surface-variant); font-size: 0.8rem; font-weight: 600;">TOTAL</small>
+                                    <strong style="color:var(--m3-on-surface); font-size: 1.3rem;">${oData.offline}</strong>
                                 </div>
                                 <div style="flex: 1;">
                                     <span class="material-symbols-rounded" style="color:#f87171; font-size: 26px;">bolt</span><br>
-                                    <strong style="color:#f87171; font-size: 1.3rem;">${oData.powerOff}</strong><br>
-                                    <small style="color:var(--m3-on-surface-variant); font-size: 0.8rem; font-weight: 600;">ENERGIA</small>
+                                    <strong style="color:#f87171; font-size: 1.3rem;">${oData.powerOff}</strong>
                                 </div>
                                 <div style="flex: 1;">
                                     <span class="material-symbols-rounded" style="color:var(--m3-color-warning); font-size: 26px;">wifi_off</span><br>
-                                    <strong style="color:var(--m3-color-warning); font-size: 1.3rem;">${oData.offlineOther}</strong><br>
-                                    <small style="color:var(--m3-on-surface-variant); font-size: 0.8rem; font-weight: 600;">GPON</small>
+                                    <strong style="color:var(--m3-color-warning); font-size: 1.3rem;">${oData.offlineOther}</strong>
                                 </div>
                             </div>
-                            
                             <div class="triple-progress-bar">
-                                <div class="bar-online" style="width: ${pctOnline}%" title="Online (Oculto)"></div>
-                                <div class="bar-poweroff" style="width: ${pctPowerOff}%" title="Energia OFF"></div>
-                                <div class="bar-offline" style="width: ${pctOfflineOther}%" title="GPON OFF"></div>
+                                <div class="bar-online" style="width: ${pctOnline}%"></div>
+                                <div class="bar-poweroff" style="width: ${pctPowerOff}%"></div>
+                                <div class="bar-offline" style="width: ${pctOfflineOther}%"></div>
                             </div>
                         </div>
-                    </div>
-                `;
-            }
-        });
-
-        // Ordenação e Renderização do Gráfico Global
-        let chartCombined = chartLabels.map((l, i) => ({ label: l, data: chartData[i] }));
-        chartCombined.sort((a, b) => b.data - a.data);
-        chartLabels = chartCombined.map(x => x.label);
-        chartData = chartCombined.map(x => x.data);
-
-        const chartCtx = document.getElementById('energyChartOlt');
-        if (chartCtx && window.Chart) {
-            if (window.energyChartInstance) window.energyChartInstance.destroy();
-            
-            window.energyChartInstance = new Chart(chartCtx, {
-                type: 'bar',
-                data: {
-                    labels: chartLabels,
-                    datasets: [{
-                        label: 'Clientes Sem Energia',
-                        data: chartData,
-                        backgroundColor: '#f87171',
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const val = context.raw;
-                                    const oData = window.ENERGY_DATA_STORE.olts[context.label];
-                                    let portsAffected = 0;
-                                    let worstCircuit = '';
-                                    let maxPortOff = 0;
-                                    
-                                    if (oData) {
-                                        for (const pl in oData.ports) {
-                                            for (const pt in oData.ports[pl]) {
-                                                if (oData.ports[pl][pt].powerOff > 0) {
-                                                    portsAffected++;
-                                                    if (oData.ports[pl][pt].powerOff > maxPortOff) {
-                                                        maxPortOff = oData.ports[pl][pt].powerOff;
-                                                        worstCircuit = oData.ports[pl][pt].circuit;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    return [
-                                        ` Clientes OFF: ${val}`,
-                                        ` Portas Afetadas: ${portsAffected}`,
-                                        ` Pior Circuito: ${worstCircuit || 'N/A'}`
-                                    ];
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: { ticks: { color: '#EADDFF' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
-                        x: { ticks: { color: '#EADDFF', font: { family: "'Montserrat', sans-serif" } }, grid: { display: false } }
-                    }
-                }
+                    </div>`;
             });
         }
-
     } catch (e) {
         console.error("Erro na Engine de Energia:", e);
-        const gridEl = document.getElementById('energy-olt-grid');
-        const isEnergyPage = window.location.pathname.includes('energia.html');
-        if (isEnergyPage && gridEl) {
-            gridEl.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #f87171; padding: 40px;">❌ Erro ao cruzar dados. Verifique a conexão com a API.</div>`;
-        }
     }
 };
 
-// ==============================================================================
-// CONTROLE DO MODAL DE DETALHES DE ENERGIA (PLACAS E PORTAS)
-// ==============================================================================
-
 window.openEnergyModal = function(oltId) {
     const modal = document.getElementById('energy-detail-modal');
-    if (!modal) return; // Trava de segurança caso seja chamado na Home
-    
+    if (!modal) return;
     const oData = window.ENERGY_DATA_STORE.olts[oltId];
-    
     document.getElementById('energy-modal-title').innerHTML = `<span class="material-symbols-rounded">router</span> Detalhes - ${oltId}`;
     document.getElementById('energy-modal-last-update').innerHTML = `<span class="material-symbols-rounded" style="font-size: 14px;">history</span> Última Varredura: ${oData.lastUpdate}`;
-    
     const placasGrid = document.getElementById('energy-placas-list');
     placasGrid.innerHTML = '';
-    
     const placas = Object.keys(oData.ports).sort((a, b) => parseInt(a) - parseInt(b));
-    
-    if (placas.length === 0) {
-        placasGrid.innerHTML = '<p style="color: var(--m3-on-surface-variant); width: 100%;">Nenhuma placa conectada.</p>';
-    }
-
     placas.forEach(placa => {
         let placaPowerOff = 0;
-        for (const pt in oData.ports[placa]) {
-            placaPowerOff += oData.ports[placa][pt].powerOff;
-        }
-        
+        for (const pt in oData.ports[placa]) placaPowerOff += oData.ports[placa][pt].powerOff;
         let btnClass = 'placa-btn';
-        let badgeHtml = '';
-        if (placaPowerOff > 0) {
-            btnClass += ' has-alarm';
-            badgeHtml = `<span class="alarm-count">${placaPowerOff} sem luz</span>`;
-        }
-        
+        if (placaPowerOff > 0) btnClass += ' has-alarm';
         placasGrid.innerHTML += `
             <button class="${btnClass}" onclick="window.openEnergyPlacaDetails('${oltId}', '${placa}')">
-                <span class="material-symbols-rounded" style="font-size: 32px; color: ${placaPowerOff > 0 ? '#f87171' : 'var(--m3-on-surface-variant)'};">developer_board</span>
+                <span class="material-symbols-rounded" style="font-size: 32px;">developer_board</span>
                 Placa ${placa}
-                ${badgeHtml}
-            </button>
-        `;
+                ${placaPowerOff > 0 ? `<span class="alarm-count">${placaPowerOff} sem luz</span>` : ''}
+            </button>`;
     });
-    
     document.getElementById('energy-view-detalhes').style.display = 'none';
     document.getElementById('energy-view-placas').style.display = 'block';
     modal.style.display = 'flex';
@@ -412,52 +267,30 @@ window.openEnergyModal = function(oltId) {
 window.openEnergyPlacaDetails = function(oltId, placa) {
     document.getElementById('energy-view-placas').style.display = 'none';
     document.getElementById('energy-view-detalhes').style.display = 'block';
-    
     document.getElementById('energy-placa-subtitle').innerText = `Ocorrências - Placa ${placa}`;
-    
     const tbody = document.getElementById('energy-detalhes-tbody');
     tbody.innerHTML = '';
-    
     const ports = window.ENERGY_DATA_STORE.olts[oltId].ports[placa];
-    const portKeys = Object.keys(ports).sort((a, b) => parseInt(a) - parseInt(b));
-    
-    let hasRows = false;
-
-    portKeys.forEach(pt => {
+    Object.keys(ports).sort((a, b) => parseInt(a) - parseInt(b)).forEach(pt => {
         const pData = ports[pt];
         if (pData.total > 0) {
-            hasRows = true;
-            
             const perc = pData.powerOff / pData.total;
-            const percDisplay = Math.round(perc * 100);
-            
             let statusBadge = `<span class="impact-badge impact-low">Mínimo</span>`; 
-            
-            if ((perc >= 0.5 && pData.powerOff >= 10) || (perc === 1 && pData.total >= 5)) {
-                statusBadge = `<span class="impact-badge impact-high">Crítico</span>`; 
-            } else if (perc >= 0.2 && pData.powerOff >= 5) {
-                statusBadge = `<span class="impact-badge impact-med">Atenção</span>`; 
-            }
-
+            if ((perc >= 0.5 && pData.powerOff >= 10) || (perc === 1 && pData.total >= 5)) statusBadge = `<span class="impact-badge impact-high">Crítico</span>`; 
+            else if (perc >= 0.2 && pData.powerOff >= 5) statusBadge = `<span class="impact-badge impact-med">Atenção</span>`; 
             tbody.innerHTML += `
                 <tr>
                     <td style="font-weight: bold;">${placa}/${pt}</td>
                     <td><span class="circuit-badge">${pData.circuit}</span></td>
                     <td>${pData.total}</td>
                     <td style="color: #f87171; font-weight: bold;">${pData.powerOff > 0 ? pData.powerOff : '-'}</td>
-                    <td>${percDisplay}%</td>
+                    <td>${Math.round(perc * 100)}%</td>
                     <td>${statusBadge}</td>
-                </tr>
-            `;
+                </tr>`;
         }
     });
-
-    if (!hasRows) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px;">Nenhum cliente registrado nesta placa.</td></tr>`;
-    }
 };
 
-// Inicia o motor após o carregamento completo do DOM (garante que o layout.js já carregou tudo)
 document.addEventListener('DOMContentLoaded', () => {
     if (window.location.pathname.includes('energia.html')) {
         startEnergyMonitoring();
