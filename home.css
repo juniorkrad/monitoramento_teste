@@ -1,0 +1,94 @@
+/* ==========================================================================
+   ESTILOS ESPECÍFICOS - DASHBOARD HOME (index.html)
+   ========================================================================== */
+
+/* Padronização forçada dos cards na Home (Ignorando estilos inline do HTML) */
+.global-card .card-body {
+    padding: 25px 30px !important;
+    box-sizing: border-box !important;
+}
+
+/* Empilhamento Vertical do Ranking e Gráficos da Home */
+.global-card div[style*="flex: 1"] {
+    display: flex !important;
+    flex-direction: column !important; /* Força os itens a formarem uma coluna vertical */
+    justify-content: center !important;
+}
+
+/* Tamanhos Padronizados para os Grandes Cards do Dashboard */
+.global-card .stat-item { 
+    grid-template-columns: 140px 1fr !important; 
+    gap: 15px !important; 
+    margin-bottom: 12px; 
+}
+
+/* Fonte Gigante (3rem) APENAS aos contadores numéricos da esquerda */
+.global-card .global-stat .stat-number { 
+    font-size: 3rem !important; 
+    font-weight: 600; 
+}
+
+.global-card label { 
+    font-size: 1.1rem; 
+    font-weight: 500; 
+    opacity: 0.9;
+}
+
+.global-card label .material-symbols-rounded { 
+    font-size: 24px; 
+    width: 24px; 
+}
+
+/* Scroll horizontal forçado para o container de Potência na Home */
+#global-potencia-body {
+    overflow-x: auto;
+}
+
+/* Barras do Gráfico de Energia (Ranking de OLTs) */
+.triple-progress-bar { 
+    height: 8px; width: 100%; background: rgba(255,255,255,0.05); 
+    border-radius: 4px; display: flex; overflow: hidden; margin-top: 12px; 
+}
+.bar-online { background-color: var(--m3-on-surface); } 
+.bar-poweroff { background-color: #f87171; } 
+.bar-offline { background-color: var(--m3-color-warning); }
+
+
+/* ==========================================================================
+   RESPONSIVIDADE EXCLUSIVA DA HOME (MÓVEL & TABLETS)
+   ========================================================================== */
+@media (max-width: 900px) {
+    /* Faz as linhas laterais virarem linhas de topo no celular */
+    .global-card .card-body, 
+    .global-card .card-body > div[style*="flex-wrap"] {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0 !important;
+    }
+
+    /* Ajuste para as colunas empilhadas no Dashboard */
+    .global-card .card-stats,
+    .global-card div[style*="flex: 1"] {
+        width: 100% !important; 
+        max-width: 100% !important;
+        border-left: none !important; /* Desliga borda lateral */
+        padding-left: 0 !important; 
+        padding-right: 0 !important;
+        padding-top: 20px !important; 
+        padding-bottom: 20px !important;
+    }
+
+    /* Liga a borda superior para dividir os itens horizontalmente */
+    .global-card div[style*="flex: 1"] {
+        border-top: 1px solid rgba(255,255,255,0.05) !important;
+    }
+
+    /* Acertos finos para que o topo e a base não fiquem com espaço sobrando */
+    .global-card .card-stats { padding-top: 0 !important; }
+    .global-card div[style*="flex: 1"]:last-child { padding-bottom: 0 !important; }
+    
+    #global-potencia-body > div {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+}

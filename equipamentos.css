@@ -1,0 +1,189 @@
+/* ==========================================================================
+   ESTILOS ESPECÍFICOS - CARDS DE EQUIPAMENTOS / OLTs (equipamentos.html)
+   ========================================================================== */
+
+/* --- CARD PADRÃO (PEQUENO) --- */
+.overview-card { 
+    background-color: var(--m3-surface-container); 
+    border-radius: 16px; 
+    border: none; 
+    overflow: hidden; 
+    display: flex; 
+    flex-direction: column; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
+    transition: transform 0.2s ease, box-shadow 0.2s ease; 
+    max-width: 380px; 
+    width: 100%; 
+    margin: 0 auto;    
+}
+
+.overview-card:hover { 
+    transform: translateY(-4px); 
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3); 
+}
+
+.card-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 10px 15px; 
+    transition: background-color 0.5s ease; 
+    border-bottom: 1px solid rgba(255,255,255,0.05); 
+}
+
+.card-header h3 { 
+    margin: 0; 
+    font-size: 1.2em; 
+    font-weight: 600; 
+    color: var(--m3-on-surface); 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+}
+
+/* Cores de Status no Cabeçalho do Card */
+.card-header.status-normal { background-color: var(--m3-color-success); }
+.card-header.status-atencao { background-color: var(--m3-color-warning); }
+.card-header.status-problema { background-color: var(--m3-color-error); }
+.card-header.status-normal h3, .card-header.status-problema h3 { color: #fff; }
+.card-header.status-atencao h3 { color: #000; }
+
+.card-header-button { 
+    background-color: rgba(0, 0, 0, 0.2); 
+    color: var(--m3-on-surface-variant); 
+    padding: 6px 12px; 
+    border-radius: 16px; 
+    text-decoration: none; 
+    font-size: 0.85em; 
+    font-weight: 500; 
+    border: none; 
+    cursor: pointer; 
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease; 
+    display: flex; 
+    align-items: center; 
+    gap: 4px;
+}
+
+.card-header-button:hover { 
+    background-color: rgba(0, 0, 0, 0.4); 
+    color: var(--m3-on-surface); 
+    transform: scale(1.05); 
+}
+
+/* Corpo do Card e Estatísticas */
+.card-body { 
+    flex: 1; 
+    display: flex; 
+    align-items: center; 
+    justify-content: flex-start; 
+    padding: 15px; 
+    position: relative; 
+}
+
+.card-stats { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 5px; 
+    flex: 1; 
+    padding-right: 110px; 
+}
+
+.stat-item { 
+    display: grid; 
+    grid-template-columns: 85px 1fr !important; 
+    align-items: center; 
+    gap: 10px !important; 
+}
+
+.stat-number { 
+    font-family: var(--font-family-mono); 
+    font-size: 1.8em; 
+    font-weight: 600; 
+    line-height: 1; 
+    text-align: left; 
+    width: 100%; 
+    letter-spacing: -0.5px; 
+}
+
+.stat-item label { 
+    font-size: 0.9em; 
+    font-weight: 500; 
+    color: var(--m3-on-surface-variant); 
+    display: flex; 
+    align-items: center; 
+    gap: 4px; 
+    white-space: nowrap; 
+    justify-content: flex-start; 
+}
+
+.stat-item label .material-symbols-rounded { 
+    width: 20px; 
+    text-align: center; 
+    font-size: 20px; 
+}
+
+/* Cores das Estatísticas Internas */
+.stat-item:not(.online):not(.offline) .stat-number, 
+.stat-item:not(.online):not(.offline) label, 
+.stat-item:not(.online):not(.offline) label .material-symbols-rounded { 
+    color: var(--m3-on-surface); 
+    font-weight: 600; 
+}
+
+.stat-item.online .stat-number, 
+.stat-item.online label, 
+.stat-item.online label .material-symbols-rounded { 
+    color: var(--m3-color-success); 
+    font-weight: 600; 
+}
+
+.stat-item.offline .stat-number, 
+.stat-item.offline label, 
+.stat-item.offline label .material-symbols-rounded { 
+    color: var(--m3-color-error); 
+    font-weight: 600; 
+}
+
+/* --- GRÁFICO DE ROSCA (DONUT CHART) --- */
+.donut-chart-container { 
+    position: absolute; 
+    right: 15px; 
+    top: 50%; 
+    transform: translateY(-50%); 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    width: 100px; 
+    height: 100px; 
+}
+
+.donut-chart { 
+    transform: rotate(-90deg); 
+}
+
+.donut-chart circle { 
+    fill: none; 
+    stroke-width: 10; 
+}
+
+.donut-chart .donut-bg { 
+    stroke: var(--m3-surface-container-high); 
+}
+
+.donut-chart .donut-fg { 
+    stroke: var(--m3-color-success); 
+    stroke-linecap: round; 
+    transition: stroke-dashoffset 1s ease-out; 
+}
+
+.chart-text { 
+    position: absolute; 
+    font-size: 1.4em; 
+    font-weight: 700; 
+    color: var(--m3-on-surface); 
+}
+
+.chart-text .stat-number { 
+    font-size: 1.2em; 
+    text-align: center; 
+}

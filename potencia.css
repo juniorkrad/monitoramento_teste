@@ -1,0 +1,84 @@
+/* ==========================================================================
+   ESTILOS ESPECÍFICOS - PAINEL DE POTÊNCIA ÓPTICA (potencia.html)
+   ========================================================================== */
+
+/* Container da Tabela no Modal */
+.potencia-table-container { 
+    max-height: 500px; 
+    overflow-y: auto; 
+    margin-top: 15px; 
+    border-radius: 8px; 
+    border: 1px solid var(--m3-outline); 
+}
+
+/* Tabela de Clientes e Sinais */
+.potencia-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    font-size: 0.9rem; 
+    text-align: center; 
+}
+
+.potencia-table th { 
+    background-color: var(--m3-surface-container-high); 
+    color: var(--m3-on-surface); 
+    padding: 12px; 
+    position: sticky; 
+    top: 0; 
+    z-index: 10; 
+    font-family: 'Montserrat', sans-serif; 
+    font-weight: 700; 
+}
+
+.potencia-table td { 
+    border-bottom: 1px solid var(--m3-outline); 
+    padding: 10px; 
+    color: var(--m3-on-surface); 
+    font-family: var(--font-family-mono); 
+}
+
+.potencia-table tr:nth-child(even) { 
+    background-color: rgba(255, 255, 255, 0.02); 
+}
+
+.potencia-table tr:hover { 
+    background-color: rgba(255, 255, 255, 0.05); 
+}
+
+/* Badges de Alerta de Sinal Específicos */
+.sinal-critico { 
+    color: #f87171 !important; 
+    font-weight: bold; 
+}
+
+.sinal-atencao { 
+    color: #fbbf24 !important; 
+    font-weight: bold; 
+}
+
+/* Barra de Busca do Modal */
+.search-bar-container { 
+    display: flex; 
+    gap: 10px; 
+    margin-bottom: 15px; 
+}
+
+.search-input { 
+    flex: 1; 
+    padding: 10px; 
+    border-radius: 6px; 
+    border: 1px solid var(--m3-outline); 
+    background-color: var(--m3-surface-container); 
+    color: var(--m3-on-surface); 
+    font-family: 'Montserrat', sans-serif; 
+}
+
+/* Animação do Ícone de Carregamento (Sync) */
+.rotate-anim {
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin { 
+    to { transform: rotate(360deg); } 
+}

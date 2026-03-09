@@ -1,0 +1,163 @@
+/* ==========================================================================
+   ESTILOS ESPECÍFICOS - PAINEL DE ENERGIA (energia.html)
+   ========================================================================== */
+
+/* Único Card Master (Blindado contra sobreposição) */
+.energy-master-card {
+    display: flex;
+    flex-direction: row;
+    max-width: 100% !important; 
+    width: 100%;
+    margin-bottom: 24px;
+    padding: 0; 
+    overflow: hidden; 
+}
+
+.energy-master-left {
+    flex: 0 0 280px; 
+    padding: 20px;
+    border-right: 1px solid rgba(255, 255, 255, 0.15); /* Linha divisória fina e visível */
+    border-left: 5px solid #f87171;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.energy-master-right {
+    flex: 1; 
+    min-width: 0; 
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Preparação para os novos Cards de OLT gerados pelo JS */
+.energy-olt-card-header {
+    padding: 8px 16px !important; 
+    border-bottom: 1px solid var(--m3-outline-variant); 
+    background: rgba(234, 208, 255, 0.05);
+}
+
+.btn-energy-details {
+    background: rgba(234, 208, 255, 0.05); 
+    border: none !important; 
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--m3-on-surface); 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-energy-details:hover {
+    background: rgba(234, 208, 255, 0.15); 
+    transform: translateY(-1px);
+}
+
+/* Barra de Progresso Tríplice (Cores Básicas Atualizadas) */
+.triple-progress-bar {
+    height: 8px; 
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    display: flex;
+    overflow: hidden;
+    margin-top: 12px;
+}
+.bar-online { background-color: var(--m3-on-surface); } /* Branco/Gelo - Total Offline */
+.bar-poweroff { background-color: #f87171; } /* Vermelho - Energia */
+.bar-offline { background-color: var(--m3-color-warning); } /* Amarelo - GPON */
+
+/* ==========================================================================
+   ESTILIZAÇÃO DO MODAL DE ENERGIA (PLACAS E PORTAS)
+   ========================================================================== */
+.placas-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* FORÇA EXATAMENTE 4 COLUNAS NO DESKTOP */
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.placa-btn {
+    background: var(--m3-surface-container-high);
+    border: 1px solid var(--m3-outline-variant);
+    color: var(--m3-on-surface);
+    padding: 15px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.placa-btn:hover {
+    background: rgba(248, 113, 113, 0.1);
+    border-color: #f87171;
+}
+.placa-btn.has-alarm {
+    border-bottom: 3px solid #f87171;
+}
+.placa-btn .alarm-count {
+    font-size: 0.8rem;
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.15);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+/* Botão Voltar no Modal */
+.btn-voltar-placas {
+    background: transparent;
+    border: 1px solid var(--m3-outline);
+    color: var(--m3-on-surface);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    transition: background 0.2s;
+}
+.btn-voltar-placas:hover {
+    background: var(--m3-surface-container-high);
+}
+
+/* Status Badges para a Tabela */
+.impact-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.impact-high { background: rgba(248, 113, 113, 0.2); color: #f87171; }
+.impact-med { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+.impact-low { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
+
+/* Carregamento */
+.loading-overlay { padding: 40px; text-align: center; color: var(--m3-on-surface-variant); }
+.spinner {
+    width: 40px; height: 40px; border: 4px solid var(--m3-surface-container-high);
+    border-top: 4px solid var(--m3-primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ==========================================================================
+   RESPONSIVIDADE EXCLUSIVA DA ENERGIA (MÓVEL & TABLETS)
+   ========================================================================== */
+@media (max-width: 900px) {
+    .energy-master-card {
+        flex-direction: column; 
+    }
+    .energy-master-left {
+        flex: auto;
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15); /* Linha divisória desce no mobile */
+    }
+    .placas-grid {
+        grid-template-columns: repeat(2, 1fr) !important; /* 2 colunas no mobile */
+    }
+}
