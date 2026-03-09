@@ -21,44 +21,44 @@
     <div class="page-container">
         <div id="header-placeholder"></div>
 
-        <main class="main-content" style="flex-direction: column;">
+        <main class="main-content">
             
             <div id="backbone-alert-container" style="display: none; width: 100%; margin-bottom: 20px;"></div>
 
-            <div id="global-overview-container" style="width: 100%;"></div>
+            <div id="global-overview-container" class="widget-container"></div>
             
-            <div id="dashboard-widgets" style="display: flex; flex-direction: column; width: 100%;">
+            <div id="dashboard-widgets" class="dashboard-widgets-group">
                 
                 <div class="global-card">
-                    <div class="card-header" style="background-color: rgba(234, 208, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; color: var(--m3-on-surface);">
-                            <span class="material-symbols-rounded" style="color: #f87171;">bolt</span> ALARME DE ENERGIA (DYING GASP)
+                    <div class="card-header">
+                        <h3>
+                            <span class="material-symbols-rounded icon-energia">bolt</span> ALARME DE ENERGIA (DYING GASP)
                         </h3>
                         <a href="energia.html" class="card-header-button" title="Ver Painel Completo">
-                            <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
+                            <span class="material-symbols-rounded icon-action">open_in_new</span>
                         </a>
                     </div>
-                    <div class="card-body" style="padding: 0; display: flex; flex-wrap: wrap;">
-                        <div style="flex: 0 0 280px; padding: 25px 30px; border-right: 1px solid var(--m3-outline); display: flex; flex-direction: column; justify-content: center; border-left: 5px solid #f87171;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
-                                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;">CLIENTES SEM ENERGIA</span>
-                                <span class="material-symbols-rounded" style="font-size: 28px; color: #f87171; opacity: 0.8;">power_off</span>
+                    <div class="card-body energy-master-body">
+                        <div class="energy-master-left">
+                            <div class="energy-left-header">
+                                <span class="energy-left-title">CLIENTES SEM ENERGIA</span>
+                                <span class="material-symbols-rounded energy-left-icon">power_off</span>
                             </div>
-                            <h2 id="global-poweroff-total" style="font-size: 3.4em; margin: 0; color: #f87171; line-height: 1; font-family: var(--font-family-mono);">0</h2>
-                            <div id="global-poweroff-context" style="margin-top: 10px; color: var(--m3-on-surface-variant); font-size: 0.85rem; line-height: 1.4;">
-                                <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">dns</span> <strong id="global-olts-afetadas" style="color: var(--m3-on-surface);">0</strong> de 17 OLTs afetadas.<br>
-                                <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">public</span> Impacto rede: <strong id="global-impacto-perc" style="color: var(--m3-on-surface);">0%</strong><br>
-                                <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">pie_chart</span> Relativo OFF: <strong id="global-offline-relativo-perc" style="color: #f87171;">0%</strong>
+                            <h2 id="global-poweroff-total" class="energy-main-value">0</h2>
+                            <div id="global-poweroff-context" class="energy-context">
+                                <p><span class="material-symbols-rounded">dns</span> <strong id="global-olts-afetadas">0</strong> de 17 OLTs afetadas.</p>
+                                <p><span class="material-symbols-rounded">public</span> Impacto rede: <strong id="global-impacto-perc">0%</strong></p>
+                                <p><span class="material-symbols-rounded">pie_chart</span> Relativo OFF: <strong id="global-offline-relativo-perc" class="energy-highlight">0%</strong></p>
                             </div>
                         </div>
 
-                        <div style="flex: 1; min-width: 300px; padding: 25px 30px; display: flex; flex-direction: column;">
-                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
-                                <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">bar_chart</span>
-                                <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Ranking de OLTs Críticas</h3>
+                        <div class="energy-master-right">
+                            <div class="energy-right-header">
+                                <span class="material-symbols-rounded">bar_chart</span>
+                                <h3>Ranking de OLTs Críticas</h3>
                             </div>
-                            <div style="flex: 1; width: 100%; overflow-x: auto; padding-bottom: 5px;">
-                                <div style="position: relative; min-width: 500px; height: 160px;">
+                            <div class="energy-chart-wrapper">
+                                <div class="energy-chart-inner">
                                     <canvas id="energyChartOlt"></canvas>
                                 </div>
                             </div>
@@ -67,16 +67,16 @@
                 </div>
 
                 <div class="global-card">
-                    <div class="card-header" style="background-color: rgba(234, 208, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; color: var(--m3-on-surface);">
-                            <span class="material-symbols-rounded" style="color: #fbbf24;">sensors</span> SAÚDE DO SINAL (POTÊNCIA ÓPTICA)
+                    <div class="card-header">
+                        <h3>
+                            <span class="material-symbols-rounded icon-potencia">sensors</span> SAÚDE DO SINAL (POTÊNCIA ÓPTICA)
                         </h3>
                         <a href="potencia.html" class="card-header-button" title="Ver Painel Completo">
-                            <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
+                            <span class="material-symbols-rounded icon-action">open_in_new</span>
                         </a>
                     </div>
-                    <div class="card-body" id="global-potencia-body" style="padding: 25px 30px;">
-                        <p style="color: var(--m3-on-surface-variant);">Processando dados de potência óptica...</p>
+                    <div class="card-body potencia-master-body" id="global-potencia-body">
+                        <p class="loading-text">Processando dados de potência óptica...</p>
                     </div>
                 </div>
 
@@ -131,20 +131,20 @@
         
         function createCardPlaceholders() {
             const globalContainer = document.getElementById('global-overview-container');
-            // Geração da caixa "Visão Geral" atualizada com o botão para olt.html
+            // HTML Gerado limpo de inline styles
             globalContainer.innerHTML = `
                 <div class="global-card" id="card-global">
-                    <div class="card-header" style="background-color: rgba(234, 208, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; color: var(--m3-on-surface);">
-                            <span class="material-symbols-rounded" style="color: #4ade80;">public</span> VISÃO GERAL DA REDE
+                    <div class="card-header">
+                        <h3>
+                            <span class="material-symbols-rounded icon-visaogeral">public</span> VISÃO GERAL DA REDE
                         </h3>
                         <a href="olt.html" class="card-header-button" title="Ver Status das OLTs">
-                            <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
+                            <span class="material-symbols-rounded icon-action">open_in_new</span>
                         </a>
                     </div>
                     <div class="card-body">
                          <div class="card-stats">
-                            <p>Analisando saúde da rede e alarmes...</p>
+                            <p class="loading-text">Analisando saúde da rede e alarmes...</p>
                         </div>
                     </div>
                 </div>
@@ -228,23 +228,23 @@
             const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
             
             const vendorHtml = `
-                <div style="display: flex; flex-direction: column; gap: 25px; width: 100%; max-width: 300px;">
-                    <div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <img src="imagens/nokia.png" alt="Nokia" style="max-height: 28px; width: auto; object-fit: contain;">
-                            <span class="stat-number" style="font-size: 1.4rem; width: auto;">${Math.round(nokiaPct)}%</span>
+                <div class="vendor-container">
+                    <div class="vendor-item">
+                        <div class="vendor-header">
+                            <img src="imagens/nokia.png" alt="Nokia" class="vendor-logo">
+                            <span class="stat-number vendor-pct">${Math.round(nokiaPct)}%</span>
                         </div>
-                        <div style="height: 14px; background: var(--m3-surface-container-high); border-radius: 7px; overflow: hidden;">
-                            <div style="height: 100%; width: ${nokiaPct}%; background: var(--m3-color-success); border-radius: 7px;"></div>
+                        <div class="vendor-progress-bg">
+                            <div class="vendor-progress-fill success-fill" style="width: ${nokiaPct}%;"></div>
                         </div>
                     </div>
-                    <div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <img src="imagens/furukawa.png" alt="Furukawa" style="max-height: 28px; width: auto; object-fit: contain;">
-                            <span class="stat-number" style="font-size: 1.4rem; width: auto;">${Math.round(furukawaPct)}%</span>
+                    <div class="vendor-item">
+                        <div class="vendor-header">
+                            <img src="imagens/furukawa.png" alt="Furukawa" class="vendor-logo">
+                            <span class="stat-number vendor-pct">${Math.round(furukawaPct)}%</span>
                         </div>
-                        <div style="height: 14px; background: var(--m3-surface-container-high); border-radius: 7px; overflow: hidden;">
-                            <div style="height: 100%; width: ${furukawaPct}%; background: var(--m3-color-success); border-radius: 7px;"></div>
+                        <div class="vendor-progress-bg">
+                            <div class="vendor-progress-fill success-fill" style="width: ${furukawaPct}%;"></div>
                         </div>
                     </div>
                 </div>
@@ -256,26 +256,27 @@
                     if (olt.offline === 0) return;
                     const offlinePct = olt.total > 0 ? (olt.offline / olt.total) * 100 : 0;
                     rankingHtmlContent += `
-                        <div style="margin-bottom: 18px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items: baseline;">
-                                <strong style="color: var(--m3-on-surface); font-size: 1.2rem;">${index + 1}º ${olt.id}</strong>
-                                <span class="stat-number" style="font-size: 1.3rem; color: var(--m3-color-error); width: auto;">${olt.offline} OFF</span>
+                        <div class="ranking-item">
+                            <div class="ranking-header">
+                                <strong class="ranking-title">${index + 1}º ${olt.id}</strong>
+                                <span class="stat-number ranking-val">${olt.offline} OFF</span>
                             </div>
-                            <div style="height: 12px; background: var(--m3-surface-container-high); border-radius: 6px; overflow: hidden;">
-                                <div style="height: 100%; width: ${offlinePct}%; background: var(--m3-color-error); border-radius: 6px;"></div>
+                            <div class="ranking-progress-bg">
+                                <div class="ranking-progress-fill error-fill" style="width: ${offlinePct}%;"></div>
                             </div>
                         </div>
                     `;
                 });
             } else {
-                rankingHtmlContent = `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px;"><span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Rede 100% Online!</div>`;
+                rankingHtmlContent = `<div class="ranking-perfect"><span class="material-symbols-rounded icon-perfect">sentiment_very_satisfied</span><br>Rede 100% Online!</div>`;
             }
 
+            // Injeção limpa e estruturada
             card.querySelector('.card-body').innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 20px;">
-                    <div class="card-stats" style="padding-right: 0; min-width: 200px;">${statsHtml}</div>
-                    <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; justify-content: center; min-width: 250px;">${vendorHtml}</div>
-                    <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; justify-content: center; min-width: 250px;">${rankingHtmlContent}</div>
+                <div class="overview-body-grid">
+                    <div class="overview-left-col">${statsHtml}</div>
+                    <div class="overview-middle-col">${vendorHtml}</div>
+                    <div class="overview-right-col">${rankingHtmlContent}</div>
                 </div>
             `;
         }
