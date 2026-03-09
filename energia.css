@@ -36,8 +36,16 @@
 
 /* --- AJUSTE DOS CARDS DE OLT (Grid inferior) --- */
 .energy-olt-card {
+    background-color: var(--m3-surface-container); /* Restaura a cor de fundo */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15); /* Restaura a sombra para destacar da página */
     border-radius: 24px !important; /* Padronização MD3 */
     overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.energy-olt-card:hover {
+    transform: translateY(-4px); 
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3); 
 }
 
 /* Correção do Cabeçalho: Título e Botão na mesma linha */
@@ -46,8 +54,8 @@
     border-bottom: 1px solid var(--m3-outline-variant); 
     background: rgba(234, 208, 255, 0.05);
     display: flex !important;
-    justify-content: space-between !important; /* Empurra o botão para a direita */
-    align-items: center !important; /* Alinha verticalmente no centro */
+    justify-content: space-between !important; 
+    align-items: center !important; 
 }
 
 .energy-olt-card-header h3 {
@@ -58,28 +66,31 @@
     gap: 8px;
 }
 
+/* Restauração do estilo minimalista do botão (Ícone Circular) */
 .btn-energy-details {
-    background: var(--m3-primary); 
+    background-color: rgba(0, 0, 0, 0.2); 
+    color: var(--m3-on-surface-variant);
     border: none !important; 
-    padding: 8px 12px;
-    border-radius: 12px; /* Botão mais arredondado */
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%; /* Botão perfeitamente circular */
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    color: var(--m3-on-primary); 
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
 }
 
 .btn-energy-details:hover {
-    background: var(--m3-primary-hover); 
-    transform: scale(1.05);
+    background-color: rgba(0, 0, 0, 0.4); 
+    color: var(--m3-on-surface); 
+    transform: scale(1.1);
 }
 
 /* Barra de Progresso Tríplice */
 .triple-progress-bar {
-    height: 10px; /* Um pouco mais espessa para MD3 */
+    height: 10px; 
     width: 100%;
     background: rgba(255,255,255,0.05);
     border-radius: 5px;

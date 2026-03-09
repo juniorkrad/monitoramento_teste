@@ -205,8 +205,8 @@ window.startEnergyMonitoring = async function() {
                     <div class="energy-olt-card overview-card" style="display: flex; flex-direction: column;">
                         <div class="energy-olt-card-header">
                             <h3><span class="material-symbols-rounded">dns</span> ${oData.id}</h3>
-                            <button class="btn-energy-details" onclick="window.openEnergyModal('${oData.id}')">
-                                <span class="material-symbols-rounded" style="font-size: 20px; margin-right: 4px;">analytics</span> Detalhes
+                            <button class="btn-energy-details" onclick="window.openEnergyModal('${oData.id}')" title="Ver Detalhes">
+                                <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
                             </button>
                         </div>
                         <div class="card-body" style="flex-direction: column; padding: 15px;">
