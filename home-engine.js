@@ -2,9 +2,14 @@
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
    ========================================================================== */
 
-let lastNotifiedEnergyState = ""; // Memória para não spammar o alarme a cada 2 segundos
+let lastNotifiedState = ""; // Memória unificada para não spammar os alarmes
 
 function watchHomeAlarms() {
+    // Busca os dados dos cofres de rede que o olt-engine.js guardou
+    let networkProblems = window.NETWORK_PROBLEMS_STORE || new Set();
+    let backboneProblems = window.NETWORK_BACKBONE_STORE || new Set();
+    let energyProblems = new Set();
+
     // ============================================================
     // 1. VIGILANTE DE ENERGIA (Atualiza Card da Home e Toasts)
     // ============================================================
@@ -39,11 +44,9 @@ function watchHomeAlarms() {
         }
 
         // ============================================================
-        // 1.2 GATILHO DOS TOASTS DE EMERGÊNCIA (ENERGIA)
+        // 1.2 PREPARAÇÃO DOS TOASTS DE EMERGÊNCIA (ENERGIA)
         // ============================================================
         let energyGroups = {};
-        let energyProblems = new Set();
-        let currentEnergyStateStr = ""; 
 
         // Varre o cofre de energia procurando portas acima do limite aceitável
         for (const oltId in window.ENERGY_DATA_STORE.olts) {
@@ -77,17 +80,25 @@ function watchHomeAlarms() {
         for (const olt in energyGroups) {
             const tag = `[${olt}] ENERGIA::${energyGroups[olt].crit > 0 ? 'CRIT' : 'WARN'}::${energyGroups[olt].clientsOff}::${energyGroups[olt].portsCount}`;
             energyProblems.add(tag);
-            currentEnergyStateStr += tag + "|";
         }
+    }
 
-        // Dispara o alerta no notifications.js APENAS se os dados de energia mudaram desde a última checagem
-        if (currentEnergyStateStr !== lastNotifiedEnergyState) {
-            lastNotifiedEnergyState = currentEnergyStateStr;
-            
-            if (typeof checkAndNotifyForNewProblems === 'function') {
-                // Parâmetro 1 (Rede) e 2 (Backbone) vão vazios, Parâmetro 3 leva os de Energia!
-                checkAndNotifyForNewProblems(new Set(), new Set(), energyProblems);
-            }
+    // ============================================================
+    // 2. DISPARO CENTRALIZADO DE TODOS OS ALARMES
+    // ============================================================
+    // Constrói uma assinatura única baseada nos 3 cofres (Rede, Backbone, Energia)
+    const currentStateStr = 
+        Array.from(networkProblems).sort().join('|') + "||" + 
+        Array.from(backboneProblems).sort().join('|') + "||" + 
+        Array.from(energyProblems).sort().join('|');
+
+    // Dispara o alerta no notifications.js APENAS se houver alguma mudança de estado em qualquer um dos cofres
+    if (currentStateStr !== lastNotifiedState) {
+        lastNotifiedState = currentStateStr;
+        
+        if (typeof checkAndNotifyForNewProblems === 'function') {
+            // Parâmetro 1: Rede | Parâmetro 2: Backbone | Parâmetro 3: Energia
+            checkAndNotifyForNewProblems(networkProblems, backboneProblems, energyProblems);
         }
     }
 }
@@ -106,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
     
     if (isHomePage) {
-        // Checa os cofres de dados a cada 2 segundos e atualiza a interface e dispara alertas se necessário
+        // Checa os cofres de dados a cada 2 segundos e dispara alarmes de rede e energia simultaneamente
         setInterval(watchHomeAlarms, 2000); 
     }
 });
