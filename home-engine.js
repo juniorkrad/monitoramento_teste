@@ -113,24 +113,23 @@ document.addEventListener('DOMContentLoaded', () => {
         loadFooter();
     }
 
-    // 2. RECUPERAÇÃO DO RELÓGIO NO PADRÃO DA PÁGINA (Sem quebrar o layout!)
+    // 2. RECUPERAÇÃO DO RELÓGIO NO PADRÃO EXATO DO LAYOUT.JS
     setTimeout(() => {
-        const now = new Date();
-        const data = now.toLocaleDateString('pt-BR');
-        const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        
-        // Em vez de criar um novo elemento, injeta o horário no campo padrão que o seu layout.js já criou!
-        const campoPadrao = document.getElementById('timestamp') || 
-                            document.getElementById('last-update') || 
-                            document.querySelector('.timestamp');
-
-        if (campoPadrao) {
-            campoPadrao.innerHTML = `Atualizado em: ${data} às ${hora}`;
-        } else if (typeof loadTimestamp === 'function') {
-            // Se o padrão da sua home for usar a própria API do Google para a hora global
-            loadTimestamp('HOME', 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I', '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU');
+        const timestampEl = document.getElementById('update-timestamp');
+        if (timestampEl) {
+            const now = new Date();
+            const data = now.toLocaleDateString('pt-BR');
+            const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            
+            // Injeta o HTML exatamente no mesmo formato e na mesma caixa que o layout.js usa nas outras páginas!
+            timestampEl.innerHTML = `
+                <span class="material-symbols-rounded">calendar_today</span> ${data}
+                <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
+                <span class="material-symbols-rounded">schedule</span> ${hora}
+            `;
+            timestampEl.style.color = 'var(--m3-on-surface-variant)';
         }
-    }, 500); // Aguarda meio segundo para garantir que o loadHeader terminou de desenhar a tela
+    }, 500); // Aguarda meio segundo para garantir que o loadHeader terminou de desenhar o cabeçalho
 
     // 3. Inicia o Vigilante de Alarmes apenas na página Home
     const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
