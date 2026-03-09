@@ -4,6 +4,41 @@
 
 let lastNotifiedState = ""; // Memória unificada para não spammar os alarmes
 
+// ============================================================
+// FUNÇÃO NOVA: RELÓGIO DO CABEÇALHO
+// ============================================================
+function injectHomeTimestamp() {
+    const now = new Date();
+    const data = now.toLocaleDateString('pt-BR');
+    const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const timestampText = `Atualizado em: ${data} às ${hora}`;
+
+    // Pequeno atraso (500ms) para garantir que o layout.js já desenhou o cabeçalho na tela
+    setTimeout(() => {
+        // Tenta encontrar o contêiner esquerdo do header (ou o próprio header)
+        const headerContainer = document.querySelector('header .header-left') || document.querySelector('header') || document.getElementById('header-placeholder');
+        
+        // Evita duplicar caso a função rode duas vezes
+        if (headerContainer && !document.getElementById('home-timestamp')) {
+            const timeEl = document.createElement('div');
+            timeEl.id = 'home-timestamp';
+            timeEl.style.fontSize = '0.85rem';
+            timeEl.style.color = 'var(--m3-on-surface-variant)';
+            timeEl.style.marginTop = '4px';
+            timeEl.style.display = 'flex';
+            timeEl.style.alignItems = 'center';
+            timeEl.style.gap = '6px';
+            timeEl.style.fontFamily = 'var(--font-family-mono)';
+            timeEl.style.fontWeight = '500';
+            
+            // Adiciona o ícone de relógio e o texto
+            timeEl.innerHTML = `<span class="material-symbols-rounded" style="font-size: 16px;">schedule</span> ${timestampText}`;
+            
+            headerContainer.appendChild(timeEl);
+        }
+    }, 500);
+}
+
 function watchHomeAlarms() {
     // Busca os dados dos cofres de rede que o olt-engine.js guardou
     let networkProblems = window.NETWORK_PROBLEMS_STORE || new Set();
@@ -113,7 +148,10 @@ document.addEventListener('DOMContentLoaded', () => {
         loadFooter();
     }
 
-    // 2. Inicia o Vigilante de Alarmes apenas na página Home
+    // 2. Injeta a Data e Hora de Carregamento no Cabeçalho
+    injectHomeTimestamp();
+
+    // 3. Inicia o Vigilante de Alarmes apenas na página Home
     const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
     
     if (isHomePage) {
