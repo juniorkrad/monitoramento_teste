@@ -35,7 +35,8 @@ const REFRESH_INTERVAL_SECONDS = 300;
 
 function createCardPlaceholders() {
     const globalContainer = document.getElementById('global-overview-container');
-    // Geração da caixa "Visão Geral" atualizada com o botão para olt.html
+    if (!globalContainer) return;
+    
     globalContainer.innerHTML = `
         <div class="global-card" id="card-global">
             <div class="card-header" style="background-color: rgba(234, 208, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
@@ -184,6 +185,96 @@ function updateGlobalCardUI(globalOnline, globalOffline, nokiaOnline, nokiaTotal
     `;
 }
 
+// ==========================================================================
+// ORQUESTRAÇÃO VISUAL DA HOME (Gráficos e Estatísticas de Energia)
+// ==========================================================================
+let energyChartInstance = null;
+
+function updateHomeEnergyChart() {
+    // Só atualiza se o motor de energia já tiver montado o cofre de dados
+    if (!window.ENERGY_DATA_STORE || !window.ENERGY_DATA_STORE.global) return;
+
+    const globalData = window.ENERGY_DATA_STORE.global;
+    const oltsData = window.ENERGY_DATA_STORE.olts;
+
+    // 1. Atualizar porcentagens de impacto exclusivas da Home
+    if (globalData.totalClients > 0) {
+        const impactoEl = document.getElementById('global-impacto-perc');
+        if (impactoEl) impactoEl.innerText = ((globalData.powerOff / globalData.totalClients) * 100).toFixed(1) + '%';
+    }
+    if (globalData.totalOffline > 0) {
+        const relativoEl = document.getElementById('global-offline-relativo-perc');
+        if (relativoEl) relativoEl.innerText = ((globalData.powerOff / globalData.totalOffline) * 100).toFixed(1) + '%';
+    }
+
+    // 2. Preparar dados para o Gráfico (Somente OLTs com problemas)
+    let chartData = [];
+    for (const key in oltsData) {
+        if (oltsData[key].powerOff > 0) {
+            chartData.push({ label: key, value: oltsData[key].powerOff });
+        }
+    }
+
+    if (chartData.length === 0) {
+        chartData.push({ label: 'Nenhuma OLT', value: 0 });
+    } else {
+        chartData.sort((a, b) => b.value - a.value); // Ordena do pior para o melhor
+    }
+
+    const labels = chartData.map(item => item.label);
+    const data = chartData.map(item => item.value);
+
+    const ctx = document.getElementById('energyChartOlt');
+    if (!ctx) return; // Se não estiver na home, ignora silenciosamente
+
+    if (energyChartInstance) {
+        energyChartInstance.data.labels = labels;
+        energyChartInstance.data.datasets[0].data = data;
+        energyChartInstance.update();
+    } else {
+        if (typeof Chart !== 'undefined') {
+            energyChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Clientes Offline (Energia)',
+                        data: data,
+                        backgroundColor: '#f87171',
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(47, 14, 81, 0.9)',
+                            titleFont: { family: 'Montserrat', size: 14 },
+                            bodyFont: { family: 'Roboto Mono', size: 13, weight: 'bold' },
+                            padding: 10,
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { color: 'rgba(255,255,255,0.05)' }, 
+                            ticks: { color: '#CAC4D0', font: { family: 'Roboto Mono' } } 
+                        },
+                        x: { 
+                            grid: { display: false }, 
+                            ticks: { color: '#EADDFF', font: { family: 'Montserrat', weight: '600' } } 
+                        }
+                    }
+                }
+            });
+        }
+    }
+}
+
 async function runOverview() {
     createCardPlaceholders();
     
@@ -258,8 +349,10 @@ async function runOverview() {
     const backboneContainer = document.getElementById('backbone-alert-container');
     if (activeBackboneDetails.length > 0) {
         backboneContainer.innerHTML = `<div class="backbone-alert"><span class="material-symbols-rounded">sos</span><div class="backbone-text-container"><p class="backbone-title">Rompimento de Backbone?!</p><p class="backbone-details">${activeBackboneDetails.join('<br>')}</p></div></div>`;
-        backboneContainer.style.display = 'block';
-    } else backboneContainer.style.display = 'none';
+        if (backboneContainer) backboneContainer.style.display = 'block';
+    } else {
+        if (backboneContainer) backboneContainer.style.display = 'none';
+    }
 
     if (typeof checkAndNotifyForNewProblems === 'function') checkAndNotifyForNewProblems(allProblems, currentBackbones, energyProblems);
     
@@ -272,18 +365,29 @@ async function runOverview() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadHeader({ title: "Dashboard Gerencial", exactTitle: true });
-    loadFooter();
-    runOverview();
-    setInterval(runOverview, REFRESH_INTERVAL_SECONDS * 1000);
+    // Inicia os componentes de layout globais
+    if (typeof loadHeader === 'function') loadHeader({ title: "Dashboard Gerencial", exactTitle: true });
+    if (typeof loadFooter === 'function') loadFooter();
     
-    // Ligar Motores Adicionais (Energia e Potência) na Home
-    if (typeof startEnergyMonitoring === 'function') {
-        startEnergyMonitoring();
-        setInterval(startEnergyMonitoring, REFRESH_INTERVAL_SECONDS * 1000);
-    }
-    if (typeof runPotenciaEngine === 'function') {
-        runPotenciaEngine();
-        setInterval(runPotenciaEngine, REFRESH_INTERVAL_SECONDS * 1000);
+    // Identifica se estamos rodando na Home (index.html)
+    const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
+    
+    if (isHomePage) {
+        // 1. Roda a Visão Geral principal
+        runOverview();
+        setInterval(runOverview, REFRESH_INTERVAL_SECONDS * 1000);
+        
+        // 2. Aciona os motores secundários para alimentarem o cofre global
+        if (typeof startEnergyMonitoring === 'function') {
+            startEnergyMonitoring();
+            setInterval(startEnergyMonitoring, REFRESH_INTERVAL_SECONDS * 1000);
+        }
+        if (typeof runPotenciaEngine === 'function') {
+            runPotenciaEngine();
+            setInterval(runPotenciaEngine, REFRESH_INTERVAL_SECONDS * 1000);
+        }
+
+        // 3. O Maestro passa a orquestrar os gráficos locais da Home a cada 4 segundos
+        setInterval(updateHomeEnergyChart, 4000);
     }
 });
