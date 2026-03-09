@@ -36,6 +36,8 @@ const GLOBAL_OLT_LIST = [
 ];
 
 window.OLT_CLIENTS_DATA = {};
+window.NETWORK_PROBLEMS_STORE = new Set();
+window.NETWORK_BACKBONE_STORE = new Set();
 
 // ==============================================================================
 // FUNÇÕES DE VARREDURA DE REDE GLOBAL (PARA A HOME)
@@ -219,7 +221,7 @@ async function runGlobalNetworkOverview() {
     oltStatsList.sort((a, b) => b.offline - a.offline);
     updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, oltStatsList.slice(0, 3));
 
-    // Controle do Alarme de Backbone
+    // Controle do Alarme de Backbone (Apenas injeta visualmente na Home)
     const backboneContainer = document.getElementById('backbone-alert-container');
     if (backboneContainer) {
         if (activeBackboneDetails.length > 0) {
@@ -230,7 +232,9 @@ async function runGlobalNetworkOverview() {
         }
     }
 
-    if (typeof checkAndNotifyForNewProblems === 'function') checkAndNotifyForNewProblems(allProblems, currentBackbones, new Set()); // Energia tratada no engine dela
+    // Salva os problemas no cofre global para o Vigilante (home-engine.js) ler!
+    window.NETWORK_PROBLEMS_STORE = allProblems;
+    window.NETWORK_BACKBONE_STORE = currentBackbones;
 }
 
 // ==============================================================================
@@ -500,7 +504,9 @@ function startOltMonitoring(config) {
                 if (targetTbody) targetTbody.innerHTML += htmlRow;
             }
 
-            if (typeof checkAndNotifyForNewProblems === 'function') checkAndNotifyForNewProblems(newProblems);
+            // Salva os problemas no cofre global para o Vigilante!
+            window.NETWORK_PROBLEMS_STORE = newProblems;
+            window.NETWORK_BACKBONE_STORE = new Set(); 
 
         } catch (error) { console.error('Erro na engine:', error); }
     }
