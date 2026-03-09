@@ -2,24 +2,53 @@
    ESTILOS ESPECÍFICOS - DASHBOARD HOME (index.html)
    ========================================================================== */
 
-/* Padronização forçada dos cards na Home (Ignorando estilos inline do HTML) */
+/* Padronização forçada dos cards na Home */
 .global-card .card-body {
     padding: 25px 30px !important;
     box-sizing: border-box !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important; /* MANTÉM TODAS AS COLUNAS ALINHADAS AO CENTRO VERTICALMENTE */
+    flex-wrap: wrap !important;
 }
 
-/* Empilhamento Vertical do Ranking e Gráficos da Home */
+/* Ajuste das colunas internas para garantir centralização */
 .global-card div[style*="flex: 1"] {
     display: flex !important;
-    flex-direction: column !important; /* Força os itens a formarem uma coluna vertical */
+    flex-direction: column !important;
     justify-content: center !important;
+    align-items: center !important; /* CENTRALIZA O CONTEÚDO (RANKING E VENDORS) */
+    text-align: center !important;
+}
+
+/* Garante que a primeira coluna (Estatísticas) alinhe à esquerda */
+.global-card .card-stats {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+}
+
+/* --- RESTAURAÇÃO DE CORES DOS INDICADORES --- */
+.global-card .stat-item.online .stat-number, 
+.global-card .stat-item.online label, 
+.global-card .stat-item.online .material-symbols-rounded { 
+    color: var(--m3-color-success) !important; 
+}
+
+.global-card .stat-item.offline .stat-number, 
+.global-card .stat-item.offline label, 
+.global-card .stat-item.offline .material-symbols-rounded { 
+    color: var(--m3-color-error) !important; 
 }
 
 /* Tamanhos Padronizados para os Grandes Cards do Dashboard */
 .global-card .stat-item { 
+    display: grid !important;
     grid-template-columns: 140px 1fr !important; 
     gap: 15px !important; 
     margin-bottom: 12px; 
+    align-items: center !important;
 }
 
 /* Fonte Gigante (3rem) APENAS aos contadores numéricos da esquerda */
@@ -32,6 +61,9 @@
     font-size: 1.1rem; 
     font-weight: 500; 
     opacity: 0.9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .global-card label .material-symbols-rounded { 
@@ -39,7 +71,7 @@
     width: 24px; 
 }
 
-/* Scroll horizontal forçado para o container de Potência na Home */
+/* Scroll horizontal para o container de Potência na Home */
 #global-potencia-body {
     overflow-x: auto;
 }
@@ -58,37 +90,28 @@
    RESPONSIVIDADE EXCLUSIVA DA HOME (MÓVEL & TABLETS)
    ========================================================================== */
 @media (max-width: 900px) {
-    /* Faz as linhas laterais virarem linhas de topo no celular */
-    .global-card .card-body, 
-    .global-card .card-body > div[style*="flex-wrap"] {
+    .global-card .card-body {
         flex-direction: column !important;
         align-items: stretch !important;
-        gap: 0 !important;
     }
 
-    /* Ajuste para as colunas empilhadas no Dashboard */
     .global-card .card-stats,
     .global-card div[style*="flex: 1"] {
         width: 100% !important; 
         max-width: 100% !important;
-        border-left: none !important; /* Desliga borda lateral */
+        border-left: none !important;
         padding-left: 0 !important; 
         padding-right: 0 !important;
         padding-top: 20px !important; 
         padding-bottom: 20px !important;
+        align-items: flex-start !important; /* No mobile volta a alinhar à esquerda */
+        text-align: left !important;
     }
 
-    /* Liga a borda superior para dividir os itens horizontalmente */
     .global-card div[style*="flex: 1"] {
         border-top: 1px solid rgba(255,255,255,0.05) !important;
     }
 
-    /* Acertos finos para que o topo e a base não fiquem com espaço sobrando */
     .global-card .card-stats { padding-top: 0 !important; }
     .global-card div[style*="flex: 1"]:last-child { padding-bottom: 0 !important; }
-    
-    #global-potencia-body > div {
-        flex-direction: column !important;
-        align-items: stretch !important;
-    }
 }
