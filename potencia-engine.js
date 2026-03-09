@@ -46,7 +46,7 @@ async function runPotenciaEngine() {
     // Identifica se está rodando na página oficial de Potência
     const isPotenciaPage = window.location.pathname.includes('potencia.html');
     
-    if (!globalBody) return; // Trava básica
+    if (!globalBody && !gridEl) return; // Trava básica se nenhum elemento for encontrado
 
     if (timestampEl && timestampEl.textContent.includes('Aguardando')) {
         timestampEl.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Buscando dados...';
@@ -56,7 +56,7 @@ async function runPotenciaEngine() {
         let globalCriticos = 0;
         let globalAnalisados = 0;
         let oltStats = [];
-        let todosClientesCriticos = []; // Rastreador global para o Top 5
+        let todosClientesCriticos = []; 
         
         window.POTENCIA_CLIENTS_DATA = {};
         window.POTENCIA_LAST_UPDATES = {};
@@ -141,7 +141,7 @@ async function runPotenciaEngine() {
                         globalCriticos++;
                         const clientData = { olt: olt.id, porta: portaFinal, serial: serial, potencia: potenciaValue, codigo: codigoCliente };
                         clientesCriticos.push(clientData);
-                        todosClientesCriticos.push(clientData); // Salva na lista global
+                        todosClientesCriticos.push(clientData); 
                     }
                 }
             });
@@ -153,87 +153,106 @@ async function runPotenciaEngine() {
         });
 
         // =========================================================
-        // PROCESSAMENTO DOS 5 PIORES DA REDE
+        // ATUALIZAÇÃO DA INTERFACE VISUAL DA HOME (Se a div existir)
         // =========================================================
-        
-        // Ordena todos os clientes do pior para o melhor sinal
-        todosClientesCriticos.sort((a, b) => a.potencia - b.potencia);
-        const piores5 = todosClientesCriticos.slice(0, 5);
+        if (globalBody) {
+            
+            // PROCESSAMENTO DOS 5 PIORES DA REDE
+            todosClientesCriticos.sort((a, b) => a.potencia - b.potencia);
+            const piores5 = todosClientesCriticos.slice(0, 5);
 
-        let piores5Html = '';
-        if (piores5.length > 0) {
-            piores5Html = `
-                <div style="display: grid; grid-template-columns: 2fr 2.5fr 1fr 1fr; gap: 8px; font-size: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; margin-bottom: 5px; color: var(--m3-on-surface-variant); font-weight: bold;">
-                    <div>OLT / Porta</div>
-                    <div>Serial</div>
-                    <div>Código</div>
-                    <div style="text-align: right;">Sinal</div>
+            let piores5Html = '';
+            if (piores5.length > 0) {
+                // Cabeçalho da Tabela Estrita e Alinhada à Esquerda
+                piores5Html = `
+                    <div style="display: grid; grid-template-columns: 1.5fr 2fr 1fr 1fr; gap: 10px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 8px; color: var(--m3-on-surface-variant); font-weight: 700; text-align: left;">
+                        <div>OLT / Porta</div>
+                        <div>Serial</div>
+                        <div>Código</div>
+                        <div style="text-align: right;">Sinal</div>
+                    </div>
+                `;
+                // Linhas da Tabela Estritas
+                piores5.forEach(c => {
+                    piores5Html += `
+                        <div style="display: grid; grid-template-columns: 1.5fr 2fr 1fr 1fr; gap: 10px; font-size: 0.85rem; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); padding: 6px 0; text-align: left;">
+                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><strong style="color: var(--m3-on-surface);">${c.olt}</strong> <span style="opacity: 0.7;">(${c.porta})</span></div>
+                            <div style="font-family: var(--font-family-mono); opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.serial}</div>
+                            <div style="opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.codigo}</div>
+                            <div style="text-align: right; color: #f87171; font-weight: bold; font-family: var(--font-family-mono);">${c.potencia}</div>
+                        </div>
+                    `;
+                });
+            } else {
+                piores5Html = `<div style="text-align: center; color: var(--m3-color-success); font-weight: bold; margin-top: 20px;"><span class="material-symbols-rounded" style="vertical-align: middle;">verified</span> Nenhum sinal crítico na rede!</div>`;
+            }
+
+            // RANKING (Esticado em barras)
+            oltStats.sort((a, b) => b.criticos - a.criticos);
+            const pioresOlts = oltStats.filter(o => o.criticos > 0).slice(0, 3);
+            
+            let rankingHtml = '';
+            if (pioresOlts.length > 0) {
+                pioresOlts.forEach((olt, idx) => {
+                    const offlinePct = olt.total > 0 ? (olt.criticos / olt.total) * 100 : 0;
+                    rankingHtml += `
+                        <div style="margin-bottom: 18px; width: 100%;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items: baseline;">
+                                <strong style="color: var(--m3-on-surface); font-size: 1.2rem;">${idx + 1}º ${olt.id}</strong>
+                                <span class="stat-number" style="font-size: 1.3rem; color: #f87171; width: auto;">${olt.criticos} OFF</span>
+                            </div>
+                            <div style="height: 12px; background: var(--m3-surface-container-high); border-radius: 6px; overflow: hidden; width: 100%;">
+                                <div style="height: 100%; width: ${offlinePct}%; background: #f87171; border-radius: 6px;"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                rankingHtml = `<span style="color: var(--m3-color-success); font-weight: bold;"><span class="material-symbols-rounded" style="vertical-align: middle;">check_circle</span> Rede 100% no padrão!</span>`;
+            }
+
+            // INJEÇÃO DA HOME (Aplicando as correções de layout solicitadas)
+            globalBody.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 20px; height: 100%;">
+                    
+                    <div class="card-stats" style="flex: 1; min-width: 200px; display: flex; flex-direction: column; justify-content: center;">
+                        <div class="stat-item global-stat" style="display: flex; flex-direction: column; align-items: flex-start; padding: 0;">
+                            <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 5px; gap: 8px;">
+                                <span class="material-symbols-rounded" style="font-size: 24px; color: var(--m3-on-surface-variant); opacity: 0.9;">cable</span>
+                                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Clientes Lidos</span>
+                            </div>
+                            <h2 class="stat-number" style="margin: 0; color: var(--m3-on-surface); line-height: 1; font-size: 2.2rem;">${globalAnalisados}</h2>
+                        </div>
+                        <div class="stat-item offline global-stat" style="display: flex; flex-direction: column; align-items: flex-start; margin-top: 25px; padding: 0;">
+                            <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 5px; gap: 8px;">
+                                <span class="material-symbols-rounded" style="font-size: 24px; color: #f87171; opacity: 0.9;">sensors_off</span>
+                                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Sinal Crítico</span>
+                            </div>
+                            <h2 class="stat-number" style="margin: 0; color: #f87171; line-height: 1; font-size: 2.2rem;">${globalCriticos}</h2>
+                        </div>
+                    </div>
+                    
+                    <div style="flex: 1.8; border-left: 1px solid var(--m3-outline); padding-left: 30px; min-width: 380px; display: flex; flex-direction: column; justify-content: center;">
+                        <h4 style="margin-top: 0; color: var(--m3-on-surface-variant); margin-bottom: 15px; display: flex; align-items: center; gap: 6px;">
+                            <span class="material-symbols-rounded" style="font-size: 20px; color: #f87171;">warning</span> Top 5 Piores Sinais da Rede
+                        </h4>
+                        <div style="width: 100%;">
+                            ${piores5Html}
+                        </div>
+                    </div>
+                    
+                    <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; min-width: 250px; display: flex; flex-direction: column; justify-content: center;">
+                        <h4 style="margin-top: 0; color: var(--m3-on-surface-variant); margin-bottom: 15px;">Equipamentos em Alerta</h4>
+                        <div style="width: 100%;">
+                            ${rankingHtml}
+                        </div>
+                    </div>
                 </div>
             `;
-            piores5.forEach(c => {
-                piores5Html += `
-                    <div style="display: grid; grid-template-columns: 2fr 2.5fr 1fr 1fr; gap: 8px; font-size: 0.8rem; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); padding: 5px 0;">
-                        <div><strong style="color: var(--m3-on-surface);">${c.olt}</strong> <span style="opacity: 0.7;">(${c.porta})</span></div>
-                        <div style="font-family: var(--font-family-mono); opacity: 0.8;">${c.serial}</div>
-                        <div style="opacity: 0.8;">${c.codigo}</div>
-                        <div style="text-align: right; color: #f87171; font-weight: bold; font-family: var(--font-family-mono);">${c.potencia}</div>
-                    </div>
-                `;
-            });
-        } else {
-            piores5Html = `<div style="text-align: center; color: var(--m3-color-success); font-weight: bold; margin-top: 20px;"><span class="material-symbols-rounded" style="vertical-align: middle;">verified</span> Nenhum sinal crítico na rede!</div>`;
         }
 
         // =========================================================
-        // ATUALIZAÇÃO DA INTERFACE VISUAL (GLOBAL)
-        // =========================================================
-        
-        oltStats.sort((a, b) => b.criticos - a.criticos);
-        const pioresOlts = oltStats.filter(o => o.criticos > 0).slice(0, 3);
-        
-        let rankingHtml = '';
-        if (pioresOlts.length > 0) {
-            pioresOlts.forEach((olt, idx) => {
-                rankingHtml += `
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 1.1rem;">
-                        <span style="color: var(--m3-on-surface);">${idx + 1}º ${olt.id}</span>
-                        <span style="color: #f87171; font-weight: bold;">${olt.criticos} OFF</span>
-                    </div>
-                `;
-            });
-        } else {
-            rankingHtml = `<span style="color: var(--m3-color-success); font-weight: bold;"><span class="material-symbols-rounded" style="vertical-align: middle;">check_circle</span> Rede 100% no padrão!</span>`;
-        }
-
-        globalBody.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 20px;">
-                <div class="card-stats" style="flex: 1; min-width: 200px; display: flex; flex-direction: column; justify-content: center;">
-                    <div class="stat-item global-stat">
-                        <span class="stat-number">${globalAnalisados}</span>
-                        <label><span class="material-symbols-rounded icon-total">cable</span> Clientes Lidos</label>
-                    </div>
-                    <div class="stat-item offline global-stat">
-                        <span class="stat-number" style="color: #f87171;">${globalCriticos}</span>
-                        <label><span class="material-symbols-rounded icon-down">sensors_off</span> Sinal Crítico</label>
-                    </div>
-                </div>
-                
-                <div style="flex: 1.8; border-left: 1px solid var(--m3-outline); padding-left: 30px; min-width: 380px;">
-                    <h4 style="margin-top: 0; color: var(--m3-on-surface-variant); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                        <span class="material-symbols-rounded" style="font-size: 20px; color: #f87171;">warning</span> Top 5 Piores Sinais da Rede
-                    </h4>
-                    ${piores5Html}
-                </div>
-                
-                <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; min-width: 200px; display: flex; flex-direction: column; justify-content: center;">
-                    <h4 style="margin-top: 0; color: var(--m3-on-surface-variant); margin-bottom: 15px;">Equipamentos em Alerta</h4>
-                    ${rankingHtml}
-                </div>
-            </div>
-        `;
-
-        // =========================================================
-        // ATUALIZAÇÃO DA INTERFACE INDIVIDUAL (APENAS NA PÁGINA)
+        // ATUALIZAÇÃO DA INTERFACE INDIVIDUAL (Apenas na página de Potência)
         // =========================================================
         if (isPotenciaPage && gridEl) {
             gridEl.innerHTML = '';
@@ -265,17 +284,14 @@ async function runPotenciaEngine() {
         }
 
         // =========================================================
-        // ATUALIZAÇÃO DO RELÓGIO PRINCIPAL
+        // ATUALIZAÇÃO DO RELÓGIO (Se o elemento existir)
         // =========================================================
-        const now = new Date();
-        const dataHoje = now.toLocaleDateString('pt-BR');
-        const horaAgora = now.toLocaleTimeString('pt-BR');
-        
         if (timestampEl) {
+            const now = new Date();
             timestampEl.innerHTML = `
-                <span class="material-symbols-rounded">calendar_today</span> ${dataHoje}
+                <span class="material-symbols-rounded">calendar_today</span> ${now.toLocaleDateString('pt-BR')}
                 <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
-                <span class="material-symbols-rounded">schedule</span> ${horaAgora}
+                <span class="material-symbols-rounded">schedule</span> ${now.toLocaleTimeString('pt-BR')}
             `;
             timestampEl.classList.remove('updated-anim');
             void timestampEl.offsetWidth; 
@@ -296,7 +312,7 @@ async function runPotenciaEngine() {
 
 window.abrirModalPotencia = function(oltId) {
     const modal = document.getElementById('potencia-modal');
-    if (!modal) return; // Segurança caso acionado acidentalmente na Home
+    if (!modal) return; 
 
     const tbody = document.getElementById('potencia-tbody');
     const title = document.getElementById('modal-potencia-title');
@@ -337,9 +353,14 @@ window.abrirModalPotencia = function(oltId) {
     modal.style.display = 'flex';
 };
 
-// Inicia o motor apenas se o script for chamado nativamente pela página de potência
+// ==============================================================================
+// INICIALIZADOR AUTÔNOMO
+// ==============================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    if (window.location.pathname.includes('potencia.html')) {
+    const isPotenciaPage = window.location.pathname.includes('potencia.html');
+    const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
+
+    if (isPotenciaPage || isHomePage) {
         runPotenciaEngine();
         setInterval(runPotenciaEngine, POTENCIA_REFRESH_SECONDS * 1000);
     }

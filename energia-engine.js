@@ -42,6 +42,7 @@ const HORIZONTAL_ENERGY_MAP = {
 };
 
 window.ENERGY_DATA_STORE = {};
+let energyChartInstance = null; // Instância global do gráfico
 
 function getEnergyCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
     const colIndex = ENERGY_OLT_COLUMN_MAP[oltId];
@@ -61,6 +62,133 @@ function getEnergyCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
     }
     return "-";
 }
+
+// ==============================================================================
+// FUNÇÕES DE CRIAÇÃO DO CARD DA HOME (Injeta dados e estica o gráfico)
+// ==============================================================================
+
+function drawEnergyChart(oltsData) {
+    let chartData = [];
+    for (const key in oltsData) {
+        if (oltsData[key].powerOff > 0) {
+            chartData.push({ label: key, value: oltsData[key].powerOff });
+        }
+    }
+
+    if (chartData.length === 0) {
+        chartData.push({ label: 'Nenhuma OLT', value: 0 });
+    } else {
+        chartData.sort((a, b) => b.value - a.value); 
+    }
+
+    const labels = chartData.map(item => item.label);
+    const data = chartData.map(item => item.value);
+
+    const ctx = document.getElementById('energyChartOlt');
+    if (!ctx) return; 
+
+    // Destrói o gráfico antigo para evitar vazamento de memória ao recriar o Canvas
+    if (energyChartInstance) {
+        energyChartInstance.destroy();
+    }
+
+    if (typeof Chart !== 'undefined') {
+        energyChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Clientes Offline (Energia)',
+                    data: data,
+                    backgroundColor: '#f87171',
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // Permite que o gráfico estique livremente
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(47, 14, 81, 0.9)',
+                        titleFont: { family: 'Montserrat', size: 14 },
+                        bodyFont: { family: 'Roboto Mono', size: 13, weight: 'bold' },
+                        padding: 10,
+                        cornerRadius: 8
+                    }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: 'rgba(255,255,255,0.05)' }, 
+                        ticks: { color: '#CAC4D0', font: { family: 'Roboto Mono' } } 
+                    },
+                    x: { 
+                        grid: { display: false }, 
+                        ticks: { color: '#EADDFF', font: { family: 'Montserrat', weight: '600' } } 
+                    }
+                }
+            }
+        });
+    }
+}
+
+function updateGlobalEnergyCard() {
+    const globalData = window.ENERGY_DATA_STORE.global;
+    const oltsData = window.ENERGY_DATA_STORE.olts;
+
+    // Procura o Card de Energia pela âncora do total ou id do gráfico
+    let cardBody = document.getElementById('global-poweroff-total')?.closest('.card-body');
+    if (!cardBody) {
+        const chartCanvas = document.getElementById('energyChartOlt');
+        if (chartCanvas) cardBody = chartCanvas.closest('.card-body');
+    }
+    
+    if (!cardBody) return; // Não está na Home, aborta.
+
+    let impactoPerc = "0%";
+    if (globalData.totalClients > 0) impactoPerc = ((globalData.powerOff / globalData.totalClients) * 100).toFixed(1) + '%';
+
+    let relativoPerc = "0%";
+    if (globalData.totalOffline > 0) relativoPerc = ((globalData.powerOff / globalData.totalOffline) * 100).toFixed(1) + '%';
+
+    // Injeta a estrutura corrigida para esticar o gráfico perfeitamente
+    cardBody.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 20px; height: 100%;">
+            
+            <div class="card-stats global-stat" style="padding-right: 0; min-width: 200px; display: flex; flex-direction: column; justify-content: center;">
+                <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 5px; gap: 8px;">
+                    <span class="material-symbols-rounded" style="font-size: 24px; color: #f87171; opacity: 0.9;">power_off</span>
+                    <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;">CLIENTES SEM ENERGIA</span>
+                </div>
+                <h2 id="global-poweroff-total" class="stat-number" style="margin: 0; color: #f87171; line-height: 1;">${globalData.powerOff}</h2>
+                <div id="global-poweroff-context" style="margin-top: 10px; color: var(--m3-on-surface-variant); font-size: 0.85rem; line-height: 1.4;">
+                    <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">dns</span> <strong id="global-olts-afetadas" style="color: var(--m3-on-surface);">${globalData.oltsAffected}</strong> de 17 OLTs afetadas.<br>
+                    <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">public</span> Impacto rede: <strong id="global-impacto-perc" style="color: var(--m3-on-surface);">${impactoPerc}</strong><br>
+                    <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">pie_chart</span> Relativo OFF: <strong id="global-offline-relativo-perc" style="color: #f87171;">${relativoPerc}</strong>
+                </div>
+            </div>
+
+            <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; flex-direction: column; min-width: 300px; justify-content: stretch;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
+                    <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">bar_chart</span>
+                    <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Ranking de OLTs Críticas</h3>
+                </div>
+                <div style="flex: 1; width: 100%; position: relative; min-height: 160px; display: flex; flex-direction: column;">
+                    <canvas id="energyChartOlt" style="flex: 1;"></canvas>
+                </div>
+            </div>
+
+        </div>
+    `;
+
+    drawEnergyChart(oltsData);
+}
+
+// ==============================================================================
+// MOTOR DE VARREDURA
+// ==============================================================================
 
 window.startEnergyMonitoring = async function() {
     try {
@@ -182,14 +310,14 @@ window.startEnergyMonitoring = async function() {
             if (oData.powerOff > 0) window.ENERGY_DATA_STORE.global.oltsAffected++;
         });
 
-        // UI GLOBAL
-        const elTotal = document.getElementById('global-poweroff-total');
-        if (elTotal) elTotal.innerText = window.ENERGY_DATA_STORE.global.powerOff;
-        
-        const elOlts = document.getElementById('global-olts-afetadas');
-        if (elOlts) elOlts.innerText = window.ENERGY_DATA_STORE.global.oltsAffected;
+        // ============================================
+        // 1. Atualiza a Home (Se estiver nela)
+        // ============================================
+        updateGlobalEnergyCard();
 
-        // UI CARDS (energia.html)
+        // ============================================
+        // 2. Atualiza os Cards (Se estiver na página de Energia)
+        // ============================================
         const gridEl = document.getElementById('energy-olt-grid');
         const isEnergyPage = window.location.pathname.includes('energia.html');
 
@@ -291,8 +419,14 @@ window.openEnergyPlacaDetails = function(oltId, placa) {
     });
 };
 
+// ==============================================================================
+// INICIALIZADOR AUTÔNOMO
+// ==============================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    if (window.location.pathname.includes('energia.html')) {
+    const isEnergyPage = window.location.pathname.includes('energia.html');
+    const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
+
+    if (isEnergyPage || isHomePage) {
         startEnergyMonitoring();
         setInterval(startEnergyMonitoring, ENERGY_REFRESH_SECONDS * 1000);
     }

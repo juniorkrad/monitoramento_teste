@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-engine.js - Versão 8.0 (Limpa e Exclusiva para Páginas Individuais)
+// olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -15,10 +15,226 @@ const OLT_COLUMN_MAP = {
     'PQA2':  25, 'PQA3':  27, 'LTXV2': 29, 'LTXV1': 31, 'SBO1':  33
 };
 
+const GLOBAL_OLT_LIST = [
+    { id: 'HEL-1', sheetTab: 'HEL1', type: 'nokia' },
+    { id: 'HEL-2', sheetTab: 'HEL2', type: 'nokia' },
+    { id: 'PQA-1', sheetTab: 'PQA1', type: 'nokia' },
+    { id: 'PSV-1', sheetTab: 'PSV1', type: 'nokia' },
+    { id: 'MGP',   sheetTab: 'MGP',  type: 'nokia' },
+    { id: 'LTXV-1', sheetTab: 'LTXV1', type: 'furukawa-10' }, 
+    { id: 'LTXV-2', sheetTab: 'LTXV2', type: 'furukawa-2' },
+    { id: 'PQA-2',  sheetTab: 'PQA2',  type: 'furukawa-2' },
+    { id: 'PQA-3',  sheetTab: 'PQA3',  type: 'furukawa-2' },
+    { id: 'SB-1',   sheetTab: 'SB1',   type: 'furukawa-2' },
+    { id: 'SB-2',   sheetTab: 'SB2',   type: 'furukawa-2' },
+    { id: 'SB-3',   sheetTab: 'SB3',   type: 'furukawa-2' },
+    { id: 'PSV-7',  sheetTab: 'PSV7',  type: 'furukawa-2' },
+    { id: 'SBO-1',  sheetTab: 'SBO1',  type: 'furukawa-10' },
+    { id: 'SBO-2',  sheetTab: 'SBO2',  type: 'furukawa-2' },
+    { id: 'SBO-3',  sheetTab: 'SBO3',  type: 'furukawa-2' },
+    { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa-2' }
+];
+
 window.OLT_CLIENTS_DATA = {};
 
 // ==============================================================================
-// FUNÇÕES GLOBAIS
+// FUNÇÕES DE VARREDURA DE REDE GLOBAL (PARA A HOME)
+// ==============================================================================
+
+async function fetchGlobalOltData(olt) {
+    const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:C`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${range}?key=${ENGINE_API_KEY}`;
+    
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Falha aba ${olt.sheetTab}`);
+        const data = await response.json();
+        const rows = (data.values || []).slice(1);
+        
+        let totalOnline = 0, totalOffline = 0;
+        const portData = {};
+
+        rows.forEach(columns => {
+            if (columns.length === 0) return;
+            let placa, porta, isOnline;
+
+            if (olt.type === 'nokia') {
+                isOnline = (columns[4] || '').trim().toLowerCase().includes('up');
+                if (columns[0] && columns[0].includes('1/1/')) {
+                    const parts = columns[0].split('/');
+                    if (parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
+                }
+            } else { 
+                isOnline = (columns[2] || '').trim().toLowerCase() === 'active';
+                if (columns[0]) {
+                    if (olt.type === 'furukawa-10') {
+                        const parts = columns[0].split('/');
+                        if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
+                    } else { 
+                        const match = columns[0].match(/GPON(\d+)\/(\d+)/);
+                        if (match) { placa = match[1]; porta = match[2]; }
+                    }
+                }
+            }
+
+            if (isOnline) totalOnline++; else totalOffline++;
+            if (placa && porta) {
+                const portKey = `${placa}/${porta}`;
+                if (!portData[portKey]) portData[portKey] = { off: 0, total: 0 };
+                portData[portKey].total++;
+                if (!isOnline) portData[portKey].off++;
+            }
+        });
+
+        return { id: olt.id, onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type, portData };
+    } catch (error) {
+        return { id: olt.id, onlineCount: 0, offlineCount: 0, type: olt.type, portData: {} };
+    }
+}
+
+function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, top3Olts) {
+    const cardBody = document.querySelector('#card-global .card-body');
+    if (!cardBody) return;
+    
+    const total = globalOnline + globalOffline;
+    
+    // 1. Coluna de Estatísticas Base
+    const statsHtml = `
+        <div class="stat-item global-stat">
+            <span class="stat-number">${total}</span>
+            <label><span class="material-symbols-rounded icon-total">router</span> Total Geral</label>
+        </div>
+        <div class="stat-item online global-stat">
+            <span class="stat-number">${globalOnline}</span>
+            <label><span class="material-symbols-rounded icon-up">check_circle</span> Equipamentos Online</label>
+        </div>
+        <div class="stat-item offline global-stat">
+            <span class="stat-number">${globalOffline}</span>
+            <label><span class="material-symbols-rounded icon-down">error</span> Equipamentos Offline</label>
+        </div>
+    `;
+
+    // 2. Coluna das Marcas (Expandida para preencher o espaço)
+    const nokiaPct = nokiaTotal > 0 ? (nokiaOnline / nokiaTotal) * 100 : 0;
+    const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
+    
+    const vendorHtml = `
+        <div style="display: flex; flex-direction: column; justify-content: center; gap: 25px; width: 100%; height: 100%;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <img src="imagens/nokia.png" alt="Nokia" style="max-height: 28px; width: auto; object-fit: contain;">
+                    <span class="stat-number" style="font-size: 1.4rem; width: auto;">${Math.round(nokiaPct)}%</span>
+                </div>
+                <div style="height: 14px; background: var(--m3-surface-container-high); border-radius: 7px; overflow: hidden;">
+                    <div style="height: 100%; width: ${nokiaPct}%; background: var(--m3-color-success); border-radius: 7px;"></div>
+                </div>
+            </div>
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <img src="imagens/furukawa.png" alt="Furukawa" style="max-height: 28px; width: auto; object-fit: contain;">
+                    <span class="stat-number" style="font-size: 1.4rem; width: auto;">${Math.round(furukawaPct)}%</span>
+                </div>
+                <div style="height: 14px; background: var(--m3-surface-container-high); border-radius: 7px; overflow: hidden;">
+                    <div style="height: 100%; width: ${furukawaPct}%; background: var(--m3-color-success); border-radius: 7px;"></div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 3. Coluna do Ranking (Expandida para preencher o espaço)
+    let rankingHtmlContent = '';
+    if (top3Olts.some(olt => olt.offline > 0)) {
+        top3Olts.forEach((olt, index) => {
+            if (olt.offline === 0) return;
+            const offlinePct = olt.total > 0 ? (olt.offline / olt.total) * 100 : 0;
+            rankingHtmlContent += `
+                <div style="margin-bottom: 18px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items: baseline;">
+                        <strong style="color: var(--m3-on-surface); font-size: 1.2rem;">${index + 1}º ${olt.id}</strong>
+                        <span class="stat-number" style="font-size: 1.3rem; color: var(--m3-color-error); width: auto;">${olt.offline} OFF</span>
+                    </div>
+                    <div style="height: 12px; background: var(--m3-surface-container-high); border-radius: 6px; overflow: hidden;">
+                        <div style="height: 100%; width: ${offlinePct}%; background: var(--m3-color-error); border-radius: 6px;"></div>
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        rankingHtmlContent = `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px; width: 100%;"><span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Rede 100% Online!</div>`;
+    }
+
+    cardBody.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 20px;">
+            <div class="card-stats" style="padding-right: 0; min-width: 200px;">
+                ${statsHtml}
+            </div>
+            <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; flex-direction: column; min-width: 250px;">
+                ${vendorHtml}
+            </div>
+            <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; flex-direction: column; justify-content: center; min-width: 250px;">
+                <div style="display: flex; flex-direction: column; justify-content: center; width: 100%; height: 100%;">
+                    ${rankingHtmlContent}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function runGlobalNetworkOverview() {
+    const oltPromises = GLOBAL_OLT_LIST.map(olt => fetchGlobalOltData(olt));
+    const results = await Promise.all(oltPromises);
+    
+    let globalOnline = 0, globalOffline = 0;
+    let nokiaOnline = 0, nokiaTotal = 0, furukawaOnline = 0, furukawaTotal = 0;
+    let oltStatsList = [], activeBackboneDetails = [], currentBackbones = new Set();
+    let allProblems = new Set();
+
+    results.forEach(result => {
+        globalOnline += result.onlineCount; 
+        globalOffline += result.offlineCount;
+        let total = result.onlineCount + result.offlineCount;
+        
+        if (result.type === 'nokia') { nokiaOnline += result.onlineCount; nokiaTotal += total; }
+        else { furukawaOnline += result.onlineCount; furukawaTotal += total; }
+        
+        oltStatsList.push({ id: result.id, offline: result.offlineCount, total });
+
+        let isMicroSuper = false, isCritical = false, isWarning = false, ports100Down = 0;
+        for (const key in result.portData) {
+            const { off, total: pTotal } = result.portData[key];
+            if (pTotal >= 5) {
+                if (off / pTotal === 1) { ports100Down++; isMicroSuper = true; }
+                else if (off / pTotal >= 0.5) isMicroSuper = true;
+                else if (off >= 32) isCritical = true;
+                else if (off >= 16) isWarning = true;
+            }
+        }
+        
+        if (ports100Down >= 2) { activeBackboneDetails.push(`OLT: ${result.id}`); currentBackbones.add(result.id); }
+        else if (isMicroSuper) allProblems.add(`[${result.id}] STATUS::SUPER`);
+        else if (isCritical) allProblems.add(`[${result.id}] STATUS::CRIT`);
+        else if (isWarning) allProblems.add(`[${result.id}] STATUS::WARN`);
+    });
+
+    oltStatsList.sort((a, b) => b.offline - a.offline);
+    updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, oltStatsList.slice(0, 3));
+
+    // Controle do Alarme de Backbone
+    const backboneContainer = document.getElementById('backbone-alert-container');
+    if (backboneContainer) {
+        if (activeBackboneDetails.length > 0) {
+            backboneContainer.innerHTML = `<div class="backbone-alert"><span class="material-symbols-rounded">sos</span><div class="backbone-text-container"><p class="backbone-title">Rompimento de Backbone?!</p><p class="backbone-details">${activeBackboneDetails.join('<br>')}</p></div></div>`;
+            backboneContainer.style.display = 'block';
+        } else {
+            backboneContainer.style.display = 'none';
+        }
+    }
+
+    if (typeof checkAndNotifyForNewProblems === 'function') checkAndNotifyForNewProblems(allProblems, currentBackbones, new Set()); // Energia tratada no engine dela
+}
+
+// ==============================================================================
+// MOTOR DE OLT (PÁGINAS INDIVIDUAIS)
 // ==============================================================================
 
 async function fetchCircuitosData() {
@@ -49,10 +265,6 @@ function getCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
     }
     return "-";
 }
-
-// ==============================================================================
-// MOTOR DE MONITORAMENTO DE OLTS (PÁGINAS INDIVIDUAIS)
-// ==============================================================================
 
 function startOltMonitoring(config) {
     const container = document.querySelector('.grid-container');
@@ -398,3 +610,12 @@ function filterClients() {
         else row.style.display = 'none';
     });
 }
+
+// Inicializador Automático para a Home
+document.addEventListener('DOMContentLoaded', () => {
+    const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
+    if (isHomePage) {
+        runGlobalNetworkOverview();
+        setInterval(runGlobalNetworkOverview, ENGINE_REFRESH_SECONDS * 1000);
+    }
+});

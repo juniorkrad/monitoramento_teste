@@ -37,10 +37,8 @@
                             <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
                         </a>
                     </div>
-                    <div class="card-body">
-                         <div class="card-stats">
-                            <p style="color: var(--m3-on-surface-variant);">Analisando saúde da rede e alarmes...</p>
-                        </div>
+                    <div class="card-body" style="padding: 25px 30px;">
+                        <p style="color: var(--m3-on-surface-variant);">Processando saúde da rede e alarmes...</p>
                     </div>
                 </div>
             </div>
@@ -57,33 +55,9 @@
                         </a>
                     </div>
                     
-                    <div class="card-body" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 20px;">
-                        
-                        <div class="card-stats global-stat" style="padding-right: 0; min-width: 200px;">
-                            <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 5px; gap: 8px;">
-                                <span class="material-symbols-rounded" style="font-size: 24px; color: #f87171; opacity: 0.9;">power_off</span>
-                                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;">CLIENTES SEM ENERGIA</span>
-                            </div>
-                            <h2 id="global-poweroff-total" class="stat-number" style="margin: 0; color: #f87171; line-height: 1;">0</h2>
-                            <div id="global-poweroff-context" style="margin-top: 10px; color: var(--m3-on-surface-variant); font-size: 0.85rem; line-height: 1.4;">
-                                <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">dns</span> <strong id="global-olts-afetadas" style="color: var(--m3-on-surface);">0</strong> de 17 OLTs afetadas.<br>
-                                <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">public</span> Impacto rede: <strong id="global-impacto-perc" style="color: var(--m3-on-surface);">0%</strong><br>
-                                <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">pie_chart</span> Relativo OFF: <strong id="global-offline-relativo-perc" style="color: #f87171;">0%</strong>
-                            </div>
-                        </div>
-
-                        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; flex-direction: column; min-width: 300px;">
-                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
-                                <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">bar_chart</span>
-                                <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Ranking de OLTs Críticas</h3>
-                            </div>
-                            <div style="flex: 1; width: 100%; overflow-x: auto; padding-bottom: 5px;">
-                                <div style="position: relative; min-width: 500px; height: 160px;">
-                                    <canvas id="energyChartOlt"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
+                    <div class="card-body" style="padding: 25px 30px;">
+                        <span id="global-poweroff-total" style="display: none;"></span>
+                        <p style="color: var(--m3-on-surface-variant);">Processando dados de falha de energia (Dying Gasp)...</p>
                     </div>
                 </div>
 
@@ -96,8 +70,9 @@
                             <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
                         </a>
                     </div>
+                    
                     <div class="card-body" id="global-potencia-body" style="padding: 25px 30px;">
-                        <p style="color: var(--m3-on-surface-variant);">Processando dados de potência óptica...</p>
+                        <p style="color: var(--m3-on-surface-variant);">Processando dados de sinais e potência óptica...</p>
                     </div>
                 </div>
 
@@ -113,8 +88,9 @@
 
     <script src="layout.js"></script>
     <script src="notifications.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="olt-engine.js"></script>
     <script src="energia-engine.js"></script>
     <script src="potencia-engine.js"></script>
     
