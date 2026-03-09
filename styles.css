@@ -129,17 +129,17 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 /* --- CARD PADRÃO (PEQUENO) --- */
 .overview-card { 
     background-color: var(--m3-surface-container); 
-    border-radius: 16px; /* Borda mais suave MD3 */
-    border: none; /* Remoção do contorno branco */
+    border-radius: 16px; 
+    border: none; 
     overflow: hidden; 
     display: flex; flex-direction: column; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15); /* Sombra MD3 */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
     transition: transform 0.2s ease, box-shadow 0.2s ease; 
     max-width: 380px; width: 100%; margin: 0 auto;    
 }
 .overview-card:hover { 
     transform: translateY(-4px); 
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3); /* Sombra acende ao invés da borda */
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3); 
 }
 .card-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; transition: background-color 0.5s ease; border-bottom: 1px solid rgba(255,255,255,0.05); }
 .card-header h3 { margin: 0; font-size: 1.2em; font-weight: 600; color: var(--m3-on-surface); display: flex; align-items: center; gap: 8px; }
@@ -180,11 +180,11 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
    ========================================================================== */
 .global-card {
     width: 100%;
-    margin: 0 0 24px 0; /* O respiro vertical de 24px está aqui */
+    margin: 0 0 24px 0;
     background-color: var(--m3-surface-container);
-    border-radius: 24px; /* Arredondamento MD3 super elegante */
-    border: none; /* Sem contornos feios */
-    box-shadow: 0 8px 25px rgba(0,0,0,0.2); /* Sombra elegante */
+    border-radius: 24px;
+    border: none;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -192,12 +192,12 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 }
 .global-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 35px rgba(0,0,0,0.3); /* Destaque no hover */
+    box-shadow: 0 12px 35px rgba(0,0,0,0.3);
 }
 .global-card .card-header {
     padding: 16px 25px;
-    background-color: rgba(234, 208, 255, 0.03); /* Leve transparência, sem cor chapada */
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Linha divisória super suave */
+    background-color: rgba(234, 208, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -208,11 +208,22 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     text-transform: uppercase;
     letter-spacing: 1px;
 }
+
+/* ==========================================================================
+   MÁGICA 1: PADRONIZAÇÃO FORÇADA DE TODOS OS CARDS (Ignora estilos do HTML)
+   ========================================================================== */
 .global-card .card-body {
-    padding: 25px 30px;
-    display: flex; 
-    flex-direction: row; 
-    align-items: center;
+    padding: 25px 30px !important;
+    box-sizing: border-box !important;
+}
+
+/* ==========================================================================
+   MÁGICA 2: EMPILHAMENTO VERTICAL DO RANKING E GRÁFICOS (Corrige Lado a Lado)
+   ========================================================================== */
+.global-card div[style*="flex: 1"] {
+    display: flex !important;
+    flex-direction: column !important; /* Força os itens a formarem uma coluna vertical */
+    justify-content: center !important;
 }
 
 /* Tamanhos Padronizados para os Grandes Cards */
@@ -222,18 +233,23 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     margin-bottom: 12px; 
 }
 
-/* AQUI ESTÁ A CORREÇÃO: Aplica 3rem APENAS aos contadores da esquerda */
+/* Fonte Gigante (3rem) APENAS aos contadores da esquerda */
 .global-card .global-stat .stat-number { 
     font-size: 3rem !important; 
     font-weight: 600; 
 }
 
 .global-card label { 
-    font-size: 1.1rem; /* Textos de leitura aprimorados */
+    font-size: 1.1rem; 
     font-weight: 500; 
     opacity: 0.9;
 }
 .global-card label .material-symbols-rounded { font-size: 24px; width: 24px; }
+
+/* Scroll horizontal forçado para o container de Potência */
+#global-potencia-body {
+    overflow-x: auto;
+}
 
 /* Barras de Energia */
 .triple-progress-bar { height: 8px; width: 100%; background: rgba(255,255,255,0.05); border-radius: 4px; display: flex; overflow: hidden; margin-top: 12px; }
@@ -275,10 +291,10 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 .sidebar-overlay.active { opacity: 1; visibility: visible; }
 
 /* ==========================================================================
-   MODAIS (POPUPS DE DETALHES)
+   MODAIS (POPUPS DE DETALHES) - BLOQUEADO PARA NÃO ABRIR SOZINHO
    ========================================================================== */
 .modal-overlay {
-    display: none; /* RESOLVE O PROBLEMA DO MODAL CARREGANDO SOZINHO */
+    display: none; 
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);
     justify-content: center; align-items: center;
@@ -328,24 +344,42 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 @keyframes stripeMove { 0% { transform: translateX(0); } 100% { transform: translateX(50%); } }
 
 /* ==========================================================================
-   MÍDIAS RESPONSIVAS (MÓVEL & TABLETS)
+   MÍDIAS RESPONSIVAS (MÓVEL & TABLETS) - AJUSTADAS PARA O NOVO PADRÃO
    ========================================================================== */
 @media (max-width: 900px) {
-    .global-card .card-body, #global-potencia-body > div {
+    /* Faz as linhas laterais virarem linhas de topo no celular */
+    .global-card .card-body, 
+    .global-card .card-body > div[style*="flex-wrap"] {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0 !important;
+    }
+
+    /* Ajuste para as colunas empilhadas */
+    .global-card .card-stats,
+    .global-card div[style*="flex: 1"] {
+        width: 100% !important; 
+        max-width: 100% !important;
+        border-left: none !important; /* Desliga borda lateral */
+        padding-left: 0 !important; 
+        padding-right: 0 !important;
+        padding-top: 20px !important; 
+        padding-bottom: 20px !important;
+    }
+
+    /* Liga a borda superior para dividir os itens */
+    .global-card div[style*="flex: 1"] {
+        border-top: 1px solid rgba(255,255,255,0.05) !important;
+    }
+
+    /* Acertos finos para que o topo não fique com espaço sobrando */
+    .global-card .card-stats { padding-top: 0 !important; }
+    .global-card div[style*="flex: 1"]:last-child { padding-bottom: 0 !important; }
+    
+    #global-potencia-body > div {
         flex-direction: column !important;
         align-items: stretch !important;
     }
-    .global-card .card-body > div, #global-potencia-body > div > div {
-        width: 100% !important; max-width: 100% !important;
-        border-left: none !important; border-right: none !important;
-        padding-left: 0 !important; padding-right: 0 !important;
-        padding-top: 20px !important; padding-bottom: 20px !important;
-    }
-    .global-card .card-body > div:not(:first-child), #global-potencia-body > div > div:not(:first-child) {
-        border-top: 1px solid rgba(255,255,255,0.05) !important;
-    }
-    .global-card .card-body > div:first-child, #global-potencia-body > div > div:first-child { padding-top: 0 !important; }
-    .global-card .card-body > div:last-child, #global-potencia-body > div > div:last-child { padding-bottom: 0 !important; }
 }
 
 @media (max-width: 768px) {
