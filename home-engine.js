@@ -33,29 +33,6 @@ const API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
 const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
 const REFRESH_INTERVAL_SECONDS = 300;
 
-function createCardPlaceholders() {
-    const globalContainer = document.getElementById('global-overview-container');
-    if (!globalContainer) return;
-    
-    globalContainer.innerHTML = `
-        <div class="global-card" id="card-global">
-            <div class="card-header" style="background-color: rgba(234, 208, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; color: var(--m3-on-surface);">
-                    <span class="material-symbols-rounded" style="color: #4ade80;">public</span> VISÃO GERAL DA REDE
-                </h3>
-                <a href="olt.html" class="card-header-button" title="Ver Status das OLTs">
-                    <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
-                </a>
-            </div>
-            <div class="card-body">
-                 <div class="card-stats">
-                    <p>Analisando saúde da rede e alarmes...</p>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
 async function fetchOltData(olt) {
     const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:C`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
@@ -276,8 +253,6 @@ function updateHomeEnergyChart() {
 }
 
 async function runOverview() {
-    createCardPlaceholders();
-    
     const energyUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/ENERGIA!A:BP?key=${API_KEY}`;
     const oltPromises = oltsConfig.map(olt => fetchOltData(olt));
     const energyPromise = fetch(energyUrl).then(res => res.json()).catch(() => null);

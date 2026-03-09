@@ -27,14 +27,30 @@
             
             <div id="backbone-alert-container" style="display: none; width: 100%; margin-bottom: 20px;"></div>
 
-            <div id="global-overview-container" style="width: 100%;"></div>
+            <div id="global-overview-container" style="width: 100%; margin-bottom: 20px;">
+                <div class="global-card" id="card-global">
+                    <div class="card-header" style="background-color: rgba(234, 208, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; color: var(--m3-on-surface);">
+                            <span class="material-symbols-rounded" style="color: #4ade80;">public</span> MONITORAMENTO DA REDE
+                        </h3>
+                        <a href="olt.html" class="card-header-button" title="Ver Status das OLTs">
+                            <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
+                        </a>
+                    </div>
+                    <div class="card-body">
+                         <div class="card-stats">
+                            <p style="color: var(--m3-on-surface-variant);">Analisando saúde da rede e alarmes...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <div id="dashboard-widgets" style="display: flex; flex-direction: column; width: 100%;">
                 
                 <div class="global-card">
                     <div class="card-header" style="background-color: rgba(234, 208, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
                         <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; color: var(--m3-on-surface);">
-                            <span class="material-symbols-rounded" style="color: #f87171;">bolt</span> ALARME DE ENERGIA (DYING GASP)
+                            <span class="material-symbols-rounded" style="color: #f87171;">bolt</span> MONITORAMENTO DE ENERGIA
                         </h3>
                         <a href="energia.html" class="card-header-button" title="Ver Painel Completo">
                             <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
@@ -74,7 +90,7 @@
                 <div class="global-card">
                     <div class="card-header" style="background-color: rgba(234, 208, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
                         <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; color: var(--m3-on-surface);">
-                            <span class="material-symbols-rounded" style="color: #fbbf24;">sensors</span> SAÚDE DO SINAL (POTÊNCIA ÓPTICA)
+                            <span class="material-symbols-rounded" style="color: #fbbf24;">sensors</span> MONITORAMENTO DE POTÊNCIA
                         </h3>
                         <a href="potencia.html" class="card-header-button" title="Ver Painel Completo">
                             <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
