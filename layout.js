@@ -1,27 +1,6 @@
 // ==============================================================================
-// layout.js - Construtor de Layout e Menu Inteligente (Versão 2.7 - Menu Universal e Alinhado)
+// layout.js - Construtor de Layout e Menu Inteligente (Versão 3.0 - Limpa)
 // ==============================================================================
-
-// --- LISTA MESTRA DE PÁGINAS ---
-const OLT_MENU_LIST = [
-    { name: 'HEL-1',  file: 'hel1.html' },
-    { name: 'HEL-2',  file: 'hel2.html' },
-    { name: 'PQA-1',  file: 'pqa1.html' },
-    { name: 'PSV-1',  file: 'psv1.html' },
-    { name: 'MGP',    file: 'mgp.html' },
-    { name: 'LTXV-1', file: 'ltxv1.html' },
-    { name: 'LTXV-2', file: 'ltxv2.html' },
-    { name: 'PQA-2',  file: 'pqa2.html' },
-    { name: 'PQA-3',  file: 'pqa3.html' },
-    { name: 'SB-1',   file: 'sb1.html' },
-    { name: 'SB-2',   file: 'sb2.html' },
-    { name: 'SB-3',   file: 'sb3.html' },
-    { name: 'PSV-7',  file: 'psv7.html' },
-    { name: 'SBO-1',  file: 'sbo1.html' },
-    { name: 'SBO-2',  file: 'sbo2.html' },
-    { name: 'SBO-3',  file: 'sbo3.html' },
-    { name: 'SBO-4',  file: 'sbo4.html' }
-];
 
 // --- AUTO-INJEÇÃO DA FONTE DE ÍCONES ---
 (function loadIconFont() {
@@ -49,11 +28,10 @@ function loadHeader(config) {
     const path = window.location.pathname;
     const currentPage = path.split('/').pop() || 'index.html';
 
-    // O botão MENU agora é universal para todas as páginas
+    // Botão de navegação atualizado: apenas o ícone, sem o texto "MENU"
     let navHtml = `
-        <button class="icon-btn" onclick="toggleSidebar()" title="Abrir Menu" style="border-radius: 8px; width: auto; padding: 0 15px; gap: 8px;">
+        <button class="icon-btn" onclick="toggleSidebar()" title="Abrir Menu" style="border-radius: 8px; width: auto; padding: 8px 12px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; color: var(--m3-on-surface); transition: background 0.2s;">
             <span class="material-symbols-rounded">menu</span>
-            <span style="font-weight: 500; font-size: 0.9rem;">MENU</span>
         </button>
     `;
     
@@ -89,21 +67,7 @@ function loadSidebar(currentPage) {
         document.body.prepend(sidebarContainer);
     }
 
-    let linksHtml = '';
-    
-    OLT_MENU_LIST.forEach(olt => {
-        if (olt.file === currentPage) return; 
-
-        // Alinhamento à esquerda para os itens do grid de OLTs
-        linksHtml += `
-            <a href="${olt.file}" class="sidebar-link" style="justify-content: flex-start; text-align: left; padding-left: 15px;">
-                <span class="material-symbols-rounded" style="margin-right: 8px;">dns</span>
-                ${olt.name}
-            </a>
-        `;
-    });
-
-    // Adicionado o botão "STATUS OLTS" e alinhamento à esquerda em todos
+    // Sidebar limpa, apenas com os módulos principais do sistema
     sidebarContainer.innerHTML = `
         <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
         
@@ -140,13 +104,6 @@ function loadSidebar(currentPage) {
                     <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px;">sensors</span>
                     POTÊNCIA
                 </a>
-                
-                <div class="sidebar-divider"></div>
-                <div class="menu-label">Outras OLTs</div>
-
-                <div class="olt-link-grid">
-                    ${linksHtml}
-                </div>
             </nav>
         </div>
     `;
