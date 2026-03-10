@@ -1,5 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
+// Ajuste: Impacto de Atenção reduzido para 15%
 // ==============================================================================
 
 const ENERGY_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -42,17 +43,16 @@ const HORIZONTAL_ENERGY_MAP = {
 };
 
 window.ENERGY_DATA_STORE = {};
-let energyChartInstance = null; // Instância global do gráfico
+let energyChartInstance = null; 
 
 // ==============================================================================
-// FUNÇÃO EXTRATORA UNIVERSAL DE PORTAS (Corrige o bug de cruzamento)
+// FUNÇÃO EXTRATORA UNIVERSAL DE PORTAS
 // ==============================================================================
 function extractPort(val) {
     if (!val) return null;
     let s = String(val).replace(/gpon/i, '').trim();
     let parts = s.split('/');
     if (parts.length >= 2) {
-        // Ignora prateleiras e zeros soltos, pega sempre os dois últimos números
         let placa = parseInt(parts[parts.length - 2], 10);
         let porta = parseInt(parts[parts.length - 1], 10);
         if (!isNaN(placa) && !isNaN(porta)) {
@@ -82,7 +82,7 @@ function getEnergyCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
 }
 
 // ==============================================================================
-// FUNÇÕES DE CRIAÇÃO DO CARD DA HOME (Injeta dados e estica o gráfico)
+// FUNÇÕES GRÁFICAS E INTERFACE
 // ==============================================================================
 
 function drawEnergyChart(oltsData) {
@@ -105,7 +105,6 @@ function drawEnergyChart(oltsData) {
     const ctx = document.getElementById('energyChartOlt');
     if (!ctx) return; 
 
-    // Destrói o gráfico antigo para evitar vazamento de memória ao recriar o Canvas
     if (energyChartInstance) {
         energyChartInstance.destroy();
     }
@@ -125,7 +124,7 @@ function drawEnergyChart(oltsData) {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false, // Permite que o gráfico estique livremente
+                maintainAspectRatio: false, 
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -156,14 +155,13 @@ function updateGlobalEnergyCard() {
     const globalData = window.ENERGY_DATA_STORE.global;
     const oltsData = window.ENERGY_DATA_STORE.olts;
 
-    // Procura o Card de Energia pela âncora do total ou id do gráfico
     let cardBody = document.getElementById('global-poweroff-total')?.closest('.card-body');
     if (!cardBody) {
         const chartCanvas = document.getElementById('energyChartOlt');
         if (chartCanvas) cardBody = chartCanvas.closest('.card-body');
     }
     
-    if (!cardBody) return; // Não está na Home, aborta.
+    if (!cardBody) return; 
 
     let impactoPerc = "0%";
     if (globalData.totalClients > 0) impactoPerc = ((globalData.powerOff / globalData.totalClients) * 100).toFixed(1) + '%';
@@ -171,10 +169,8 @@ function updateGlobalEnergyCard() {
     let relativoPerc = "0%";
     if (globalData.totalOffline > 0) relativoPerc = ((globalData.powerOff / globalData.totalOffline) * 100).toFixed(1) + '%';
 
-    // Injeta a estrutura corrigida para esticar o gráfico perfeitamente
     cardBody.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 20px; height: 100%;">
-            
             <div class="card-stats global-stat" style="padding-right: 0; min-width: 200px; display: flex; flex-direction: column; justify-content: center;">
                 <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 5px; gap: 8px;">
                     <span class="material-symbols-rounded" style="font-size: 24px; color: #f87171; opacity: 0.9;">power_off</span>
@@ -187,7 +183,6 @@ function updateGlobalEnergyCard() {
                     <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">pie_chart</span> Relativo OFF: <strong id="global-offline-relativo-perc" style="color: #f87171;">${relativoPerc}</strong>
                 </div>
             </div>
-
             <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; flex-direction: column; min-width: 300px; justify-content: stretch;">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
                     <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">bar_chart</span>
@@ -197,7 +192,6 @@ function updateGlobalEnergyCard() {
                     <canvas id="energyChartOlt" style="flex: 1;"></canvas>
                 </div>
             </div>
-
         </div>
     `;
 
@@ -232,7 +226,6 @@ window.startEnergyMonitoring = async function() {
 
         const rowsCircuitos = dataBatch.valueRanges[1].values || [];
 
-        // LÊ AS ABAS DE OLTS PARA CONTAR TOTAL DE CLIENTES UP E DOWN
         ENERGY_OLT_LIST.forEach((olt, index) => {
             const vrIndex = index + 2;
             const rows = dataBatch.valueRanges[vrIndex].values ? dataBatch.valueRanges[vrIndex].values.slice(1) : [];
@@ -250,7 +243,6 @@ window.startEnergyMonitoring = async function() {
                     isOnline = status.trim().toLowerCase() === 'active';
                 }
 
-                // APLICA EXTRATOR UNIVERSAL AQUI TAMBÉM
                 let p = extractPort(val0);
                 if (p) {
                     let placa = p.placa;
@@ -279,7 +271,6 @@ window.startEnergyMonitoring = async function() {
             });
         });
 
-        // LÊ A ABA DE ENERGIA PARA CRUZAR OS DADOS
         const rowsEnergia = dataBatch.valueRanges[0].values ? dataBatch.valueRanges[0].values.slice(1) : [];
         
         for (const [oltId, colIndex] of Object.entries(HORIZONTAL_ENERGY_MAP)) {
@@ -296,7 +287,6 @@ window.startEnergyMonitoring = async function() {
                     const qtd = parseInt(row[colIndex + 2]) || 0;
 
                     if (portaFull && qtd > 0) {
-                        // APLICA EXTRATOR UNIVERSAL AQUI
                         let p = extractPort(portaFull);
                         if (p) {
                             const placa = p.placa;
@@ -324,14 +314,8 @@ window.startEnergyMonitoring = async function() {
             if (oData.powerOff > 0) window.ENERGY_DATA_STORE.global.oltsAffected++;
         });
 
-        // ============================================
-        // 1. Atualiza a Home (Se estiver nela)
-        // ============================================
         updateGlobalEnergyCard();
 
-        // ============================================
-        // 2. Atualiza os Cards (Se estiver na página de Energia)
-        // ============================================
         const gridEl = document.getElementById('energy-olt-grid');
         const isEnergyPage = window.location.pathname.includes('energia.html');
 
@@ -418,8 +402,15 @@ window.openEnergyPlacaDetails = function(oltId, placa) {
         if (pData.total > 0) {
             const perc = pData.powerOff / pData.total;
             let statusBadge = `<span class="impact-badge impact-low">Mínimo</span>`; 
-            if ((perc >= 0.5 && pData.powerOff >= 10) || (perc === 1 && pData.total >= 5)) statusBadge = `<span class="impact-badge impact-high">Crítico</span>`; 
-            else if (perc >= 0.2 && pData.powerOff >= 5) statusBadge = `<span class="impact-badge impact-med">Atenção</span>`; 
+            
+            // --- NOVA REGRA DE EXIBIÇÃO: 15% ---
+            if ((perc >= 0.5 && pData.powerOff >= 10) || (perc === 1 && pData.total >= 5)) {
+                statusBadge = `<span class="impact-badge impact-high">Crítico</span>`; 
+            } else if (perc >= 0.15 && pData.powerOff >= 5) {
+                statusBadge = `<span class="impact-badge impact-med">Atenção</span>`; 
+            }
+            // ------------------------------------
+
             tbody.innerHTML += `
                 <tr>
                     <td style="font-weight: bold;">${placa}/${pt}</td>
@@ -433,9 +424,6 @@ window.openEnergyPlacaDetails = function(oltId, placa) {
     });
 };
 
-// ==============================================================================
-// INICIALIZADOR AUTÔNOMO
-// ==============================================================================
 document.addEventListener('DOMContentLoaded', () => {
     const isEnergyPage = window.location.pathname.includes('energia.html');
     const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');

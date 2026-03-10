@@ -1,16 +1,16 @@
 /* ==========================================================================
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
+   Ajuste: Porcentagem de Energia reduzida para 15%
    ========================================================================== */
 
 let lastNotifiedState = ""; // Memória unificada para não spammar os alarmes
 
 function watchHomeAlarms() {
     // Busca os dados dos cofres de rede que o olt-engine.js guardou
-    // Usamos 'new Set()' clonando o original para podermos filtrar sem quebrar a memória original
     let networkProblems = new Set(window.NETWORK_PROBLEMS_STORE || []);
     let backboneProblems = new Set(window.NETWORK_BACKBONE_STORE || []);
     let energyProblems = new Set();
-    let energyGroups = {}; // Elevado para o escopo principal para ser usado no filtro
+    let energyGroups = {}; 
 
     // ============================================================
     // 1. VIGILANTE DE ENERGIA (Atualiza Card da Home e Toasts)
@@ -48,7 +48,6 @@ function watchHomeAlarms() {
         // ============================================================
         // 1.2 PREPARAÇÃO DOS TOASTS DE EMERGÊNCIA (ENERGIA)
         // ============================================================
-        // Varre o cofre de energia procurando portas acima do limite aceitável
         for (const oltId in window.ENERGY_DATA_STORE.olts) {
             const oltData = window.ENERGY_DATA_STORE.olts[oltId];
             for (const placa in oltData.ports) {
@@ -58,10 +57,13 @@ function watchHomeAlarms() {
                         const perc = pData.powerOff / pData.total;
                         let severity = null;
                         
-                        // Regra de Negócio: O que é considerado uma queda de energia grave?
+                        // --- NOVA REGRA DE NEGÓCIO: ENERGIA ---
+                        // CRIT: 50% de queda e min 10 clientes OU 100% de queda (min 5 clientes)
                         if ((perc >= 0.5 && pData.powerOff >= 10) || (perc === 1 && pData.total >= 5)) {
                             severity = 'CRIT';
-                        } else if (perc >= 0.2 && pData.powerOff >= 5) {
+                        } 
+                        // WARN: Ajustado para 15% de queda e mínimo de 5 clientes
+                        else if (perc >= 0.15 && pData.powerOff >= 5) {
                             severity = 'WARN';
                         }
                         
@@ -76,7 +78,7 @@ function watchHomeAlarms() {
             }
         }
 
-        // Constrói as etiquetas de alerta que o notifications.js entende
+        // Constrói as etiquetas de alerta
         for (const olt in energyGroups) {
             const tag = `[${olt}] ENERGIA::${energyGroups[olt].crit > 0 ? 'CRIT' : 'WARN'}::${energyGroups[olt].clientsOff}::${energyGroups[olt].portsCount}`;
             energyProblems.add(tag);
@@ -86,7 +88,6 @@ function watchHomeAlarms() {
     // ============================================================
     // 1.3 FILTRO DE PREVALÊNCIA (ENERGIA > REDE)
     // ============================================================
-    // Se a OLT possui alerta de energia (Dying Gasp), o sintoma de rede é silenciado.
     let filteredNetworkProblems = new Set();
     for (const netProb of networkProblems) {
         const match = netProb.match(/^\[(.*?)\] STATUS::/);
@@ -97,34 +98,29 @@ function watchHomeAlarms() {
                 filteredNetworkProblems.add(netProb);
             }
         } else {
-            // Caso seja outro formato de string, mantém por segurança
             filteredNetworkProblems.add(netProb);
         }
     }
-    networkProblems = filteredNetworkProblems; // Substitui pela lista limpa
+    networkProblems = filteredNetworkProblems; 
 
     // ============================================================
     // 2. DISPARO CENTRALIZADO DE TODOS OS ALARMES
     // ============================================================
-    // Constrói uma assinatura única baseada nos 3 cofres (Rede, Backbone, Energia)
     const currentStateStr = 
         Array.from(networkProblems).sort().join('|') + "||" + 
         Array.from(backboneProblems).sort().join('|') + "||" + 
         Array.from(energyProblems).sort().join('|');
 
-    // Dispara o alerta no notifications.js APENAS se houver alguma mudança de estado em qualquer um dos cofres
     if (currentStateStr !== lastNotifiedState) {
         lastNotifiedState = currentStateStr;
         
         if (typeof checkAndNotifyForNewProblems === 'function') {
-            // Parâmetro 1: Rede | Parâmetro 2: Backbone | Parâmetro 3: Energia
             checkAndNotifyForNewProblems(networkProblems, backboneProblems, energyProblems);
         }
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Inicializa os componentes de layout globais da Home
     if (typeof loadHeader === 'function') {
         loadHeader({ title: "Dashboard Gerencial", exactTitle: true });
     }
@@ -133,16 +129,13 @@ document.addEventListener('DOMContentLoaded', () => {
         loadFooter();
     }
 
-    // 2. RECUPERAÇÃO DO RELÓGIO NO PADRÃO EXATO DO LAYOUT.JS
     setTimeout(() => {
         const timestampEl = document.getElementById('update-timestamp');
         if (timestampEl) {
             const now = new Date();
             const data = now.toLocaleDateString('pt-BR');
-            // ADICIONADO OS SEGUNDOS AQUI:
             const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             
-            // Injeta o HTML exatamente no mesmo formato e na mesma caixa que o layout.js usa nas outras páginas!
             timestampEl.innerHTML = `
                 <span class="material-symbols-rounded">calendar_today</span> ${data}
                 <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
@@ -150,13 +143,11 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             timestampEl.style.color = 'var(--m3-on-surface-variant)';
         }
-    }, 500); // Aguarda meio segundo para garantir que o loadHeader terminou de desenhar o cabeçalho
+    }, 500);
 
-    // 3. Inicia o Vigilante de Alarmes apenas na página Home
     const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
     
     if (isHomePage) {
-        // Checa os cofres de dados a cada 2 segundos e dispara alarmes de rede e energia simultaneamente
         setInterval(watchHomeAlarms, 2000); 
     }
 });
