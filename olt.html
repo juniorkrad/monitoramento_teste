@@ -27,29 +27,44 @@
         </main>
     </div>
 
+    <div id="super-modal" class="modal-overlay" style="z-index: 2900;">
+        <div class="modal-content" style="max-width: 95vw; height: 90vh; max-height: 90vh;">
+            <div class="modal-header">
+                <h3 id="super-modal-title"><span class="material-symbols-rounded">dns</span> Detalhes da OLT</h3>
+                <button class="close-modal" onclick="closeSuperModal()">&times;</button>
+            </div>
+            <div class="modal-body custom-scroll" style="background-color: var(--m3-surface); padding: 20px;">
+                <div id="super-modal-grid" class="grid-container">
+                    </div>
+            </div>
+        </div>
+    </div>
+
     <div id="footer-placeholder"></div>
 
     <script src="layout.js"></script>
+    <script src="olt-engine.js"></script>
 
     <script>
+        // Mapeamento atualizado com a quantidade exata de placas de cada OLT
         const oltsConfig = [
-            { id: 'HEL-1', sheetTab: 'HEL1', type: 'nokia' },
-            { id: 'HEL-2', sheetTab: 'HEL2', type: 'nokia' },
-            { id: 'PQA-1', sheetTab: 'PQA1', type: 'nokia' },
-            { id: 'PSV-1', sheetTab: 'PSV1', type: 'nokia' },
-            { id: 'MGP',   sheetTab: 'MGP',  type: 'nokia' },
-            { id: 'LTXV-1', sheetTab: 'LTXV1', type: 'furukawa-10' }, 
-            { id: 'LTXV-2', sheetTab: 'LTXV2', type: 'furukawa-2' },
-            { id: 'PQA-2',  sheetTab: 'PQA2',  type: 'furukawa-2' },
-            { id: 'PQA-3',  sheetTab: 'PQA3',  type: 'furukawa-2' },
-            { id: 'SB-1',   sheetTab: 'SB1',   type: 'furukawa-2' },
-            { id: 'SB-2',   sheetTab: 'SB2',   type: 'furukawa-2' },
-            { id: 'SB-3',   sheetTab: 'SB3',   type: 'furukawa-2' },
-            { id: 'PSV-7',  sheetTab: 'PSV7',  type: 'furukawa-2' },
-            { id: 'SBO-1',  sheetTab: 'SBO1',  type: 'furukawa-10' },
-            { id: 'SBO-2',  sheetTab: 'SBO2',  type: 'furukawa-2' },
-            { id: 'SBO-3',  sheetTab: 'SBO3',  type: 'furukawa-2' },
-            { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa-2' }
+            { id: 'HEL-1', sheetTab: 'HEL1', type: 'nokia', boards: 8 },
+            { id: 'HEL-2', sheetTab: 'HEL2', type: 'nokia', boards: 8 },
+            { id: 'PQA-1', sheetTab: 'PQA1', type: 'nokia', boards: 8 },
+            { id: 'PSV-1', sheetTab: 'PSV1', type: 'nokia', boards: 8 },
+            { id: 'MGP',   sheetTab: 'MGP',  type: 'nokia', boards: 8 },
+            { id: 'LTXV-1', sheetTab: 'LTXV1', type: 'furukawa-10', boards: 10 }, 
+            { id: 'LTXV-2', sheetTab: 'LTXV2', type: 'furukawa-2', boards: 2 },
+            { id: 'PQA-2',  sheetTab: 'PQA2',  type: 'furukawa-2', boards: 2 },
+            { id: 'PQA-3',  sheetTab: 'PQA3',  type: 'furukawa-2', boards: 2 },
+            { id: 'SB-1',   sheetTab: 'SB1',   type: 'furukawa-2', boards: 2 },
+            { id: 'SB-2',   sheetTab: 'SB2',   type: 'furukawa-2', boards: 2 },
+            { id: 'SB-3',   sheetTab: 'SB3',   type: 'furukawa-2', boards: 2 },
+            { id: 'PSV-7',  sheetTab: 'PSV7',  type: 'furukawa-2', boards: 2 },
+            { id: 'SBO-1',  sheetTab: 'SBO1',  type: 'furukawa-10', boards: 10 },
+            { id: 'SBO-2',  sheetTab: 'SBO2',  type: 'furukawa-2', boards: 2 },
+            { id: 'SBO-3',  sheetTab: 'SBO3',  type: 'furukawa-2', boards: 2 },
+            { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa-2', boards: 2 }
         ];
 
         const API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -61,14 +76,14 @@
             grid.innerHTML = ''; 
             
             oltsConfig.forEach(olt => {
-                const pageUrl = olt.id.toLowerCase().replace('-', '') + '.html';
+                // O botão agora é um gatilho para abrir o Super Modal, enviando todos os dados da OLT
                 grid.innerHTML += `
                     <div class="overview-card" id="card-${olt.id}">
                         <div class="card-header">
                             <h3><span class="material-symbols-rounded">dns</span> ${olt.id}</h3>
-                            <a href="${pageUrl}" class="card-header-button" title="Ver Detalhes">
+                            <button onclick="openSuperModal('${olt.id}', '${olt.sheetTab}', '${olt.type}', ${olt.boards})" class="card-header-button" title="Ver Placas e Portas">
                                 <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
-                            </a>
+                            </button>
                         </div>
                         <div class="card-body">
                              <div class="card-stats">
@@ -185,11 +200,9 @@
                 createCardPlaceholders();
             }
             
-            // Dispara as consultas de todas as OLTs simultaneamente
             const oltPromises = oltsConfig.map(olt => fetchOltData(olt));
             await Promise.all(oltPromises);
             
-            // Atualiza o relógio após concluir tudo
             const now = new Date();
             const dataHoje = now.toLocaleDateString('pt-BR');
             const horaAgora = now.toLocaleTimeString('pt-BR');
@@ -206,13 +219,58 @@
             }
         }
         
+        // ==============================================================================
+        // CONTROLADORES DO SUPER MODAL
+        // ==============================================================================
+        
+        function openSuperModal(id, sheetTab, type, boards) {
+            document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> OLT ${id} - Painel de Placas`;
+            
+            // Adiciona o aviso de carregamento no grid do modal antes do motor agir
+            document.getElementById('super-modal-grid').innerHTML = `
+                <div style="width: 100%; text-align: center; padding: 40px; color: var(--m3-on-surface-variant);">
+                    <span class="material-symbols-rounded" style="font-size: 48px; display: block; margin-bottom: 10px; animation: pulse 1.5s infinite;">hourglass_top</span>
+                    <h2>Estabelecendo conexão com a OLT...</h2>
+                    <p>Buscando status de placas, portas e circuitos.</p>
+                </div>
+            `;
+            
+            document.getElementById('super-modal').style.display = 'flex';
+            
+            // Chama a função do motor (que iremos adaptar no olt-engine.js no próximo passo)
+            if (typeof startOltMonitoring === 'function') {
+                startOltMonitoring({
+                    id: sheetTab,
+                    type: type,
+                    boards: boards,
+                    oltName: id 
+                });
+            }
+        }
+
+        function closeSuperModal() {
+            document.getElementById('super-modal').style.display = 'none';
+            document.getElementById('super-modal-grid').innerHTML = ''; // Limpa para a próxima vez
+            
+            // Pausa a varredura se a função existir no motor
+            if (typeof stopOltMonitoring === 'function') {
+                stopOltMonitoring();
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            // Título atualizado para evitar conflitos com a Home
             loadHeader({ title: "Status das OLTs", exactTitle: true });
             loadFooter();
             runOverview();
             setInterval(runOverview, REFRESH_INTERVAL_SECONDS * 1000);
         });
     </script>
+    
+    <style>
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: var(--m3-outline); border-radius: 4px; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+    </style>
 </body>
 </html>
