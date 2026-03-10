@@ -24,11 +24,11 @@
     <div class="page-container">
         <div id="header-placeholder"></div>
 
-        <main class="main-content" style="flex-direction: column;">
+        <main class="main-content" style="display: flex; flex-direction: column; flex: 1; justify-content: space-between; min-height: 80vh;">
             
-            <div id="backbone-alert-container" style="display: none; width: 100%; margin-bottom: 10px;"></div>
+            <div id="backbone-alert-container" style="display: none; width: 100%;"></div>
 
-            <div id="global-overview-container" style="width: 100%; margin-bottom: 10px;">
+            <div id="global-overview-container" style="width: 100%;">
                 <div class="global-card" id="card-global">
                     <div class="card-header" style="background-color: rgba(234, 208, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
                         <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; color: var(--m3-on-surface);">
@@ -44,7 +44,7 @@
                 </div>
             </div>
             
-            <div id="dashboard-widgets" style="display: flex; flex-direction: column; width: 100%; gap: 10px;">
+            <div id="dashboard-widgets" style="display: flex; flex-direction: column; width: 100%; flex: 1; justify-content: space-evenly;">
                 
                 <div class="global-card">
                     <div class="card-header" style="background-color: rgba(234, 208, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
