@@ -212,7 +212,6 @@ async function renderFabricantesDashboard() {
                 `;
             }
 
-            // --- LÓGICA DE EXIBIÇÃO DO TÍTULO (LOGÓTIPO OU TEXTO) ---
             let marcaVisual = `<span class="material-symbols-rounded" style="margin-right: 5px;">router</span> ${fab.nome}`;
             
             if (fab.nome === 'NOKIA') {
@@ -302,7 +301,8 @@ async function renderFabricantesDashboard() {
     // --- ATUALIZAÇÃO DO HORÁRIO NO CABEÇALHO ---
     const now = new Date();
     const dataHoje = now.toLocaleDateString('pt-BR');
-    const horaAgora = now.toLocaleTimeString('pt-BR');
+    // Força o formato hh:mm:ss
+    const horaAgora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     
     if (timestampEl) {
         timestampEl.innerHTML = `
@@ -359,8 +359,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const isEqpPage = window.location.pathname.includes('equipamentos.html');
     
     if (isEqpPage) {
-        // Renderiza a primeira vez
-        renderFabricantesDashboard();
+        // Atraso de 500ms para garantir que o layout.js injetou o cabeçalho primeiro
+        setTimeout(renderFabricantesDashboard, 500);
         
         // Configura a auto-atualização em background (ex: a cada 5 minutos)
         setInterval(renderFabricantesDashboard, EQP_REFRESH_SECONDS * 1000);

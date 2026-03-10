@@ -119,7 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (timestampEl) {
             const now = new Date();
             const data = now.toLocaleDateString('pt-BR');
-            const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            // ADICIONADO OS SEGUNDOS AQUI:
+            const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             
             // Injeta o HTML exatamente no mesmo formato e na mesma caixa que o layout.js usa nas outras páginas!
             timestampEl.innerHTML = `
