@@ -1,14 +1,11 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 7.0 - CSS Modularizado)
+// notifications.js - Sistema Central de Alertas (Versão 7.0 - CSS Modularizado - SEM ÁUDIO)
 // ==============================================================================
 
 // Memórias de Estado (O "Cérebro" do Vigilante)
 let currentProblems = new Set();
 let currentBackbones = new Set(); 
 let currentEnergyProblems = new Set(); // Guarda o estado de Energia
-
-// Som de Alerta (Beep curto)
-const alertSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"); 
 
 /**
  * Cria e exibe um pop-up (toast) na tela.
@@ -52,16 +49,6 @@ function showToast(message, type = '') {
 
     // Usa prepend para que o novo alarme apareça no topo da lista
     container.prepend(toast);
-    
-    // --- LÓGICA DE SOM ---
-    if (type.includes('problem') || type.includes('warning') || type.includes('super-priority') || type.includes('energy')) {
-        try { 
-            alertSound.play().catch(e => {}); 
-            if (type === 'super-priority' || type === 'toast-energy-crit') {
-                setTimeout(() => { alertSound.play().catch(e => {}) }, 250); // Beep duplo para críticos
-            }
-        } catch(e){} 
-    }
 
     setTimeout(() => toast.classList.add('show'), 50);
 

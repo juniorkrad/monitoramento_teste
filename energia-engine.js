@@ -44,6 +44,24 @@ const HORIZONTAL_ENERGY_MAP = {
 window.ENERGY_DATA_STORE = {};
 let energyChartInstance = null; // Instância global do gráfico
 
+// ==============================================================================
+// FUNÇÃO EXTRATORA UNIVERSAL DE PORTAS (Corrige o bug de cruzamento)
+// ==============================================================================
+function extractPort(val) {
+    if (!val) return null;
+    let s = String(val).replace(/gpon/i, '').trim();
+    let parts = s.split('/');
+    if (parts.length >= 2) {
+        // Ignora prateleiras e zeros soltos, pega sempre os dois últimos números
+        let placa = parseInt(parts[parts.length - 2], 10);
+        let porta = parseInt(parts[parts.length - 1], 10);
+        if (!isNaN(placa) && !isNaN(porta)) {
+            return { placa: placa.toString(), porta: porta.toString() };
+        }
+    }
+    return null;
+}
+
 function getEnergyCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
     const colIndex = ENERGY_OLT_COLUMN_MAP[oltId];
     if (colIndex === undefined) return "-";
@@ -214,6 +232,7 @@ window.startEnergyMonitoring = async function() {
 
         const rowsCircuitos = dataBatch.valueRanges[1].values || [];
 
+        // LÊ AS ABAS DE OLTS PARA CONTAR TOTAL DE CLIENTES UP E DOWN
         ENERGY_OLT_LIST.forEach((olt, index) => {
             const vrIndex = index + 2;
             const rows = dataBatch.valueRanges[vrIndex].values ? dataBatch.valueRanges[vrIndex].values.slice(1) : [];
@@ -223,29 +242,20 @@ window.startEnergyMonitoring = async function() {
                 if(col.length === 0) return;
                 let val0 = col[0];
                 let status = (olt.type === 'nokia' ? col[4] : col[2]) || '';
-                let placa, porta;
                 
                 let isOnline = false;
                 if (olt.type === 'nokia') {
                     isOnline = status.trim().toLowerCase().includes('up');
-                    if (val0 && val0.includes('1/1/')) { 
-                        let parts = val0.split('/');
-                        if(parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
-                    }
                 } else {
                     isOnline = status.trim().toLowerCase() === 'active';
-                    if (val0) {
-                        if (olt.type === 'furukawa-10') {
-                            const parts = val0.split('/');
-                            if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
-                        } else {
-                            let match = val0.match(/GPON(\d+)\/(\d+)/i);
-                            if(match) { placa = match[1]; porta = match[2]; }
-                        }
-                    }
                 }
 
-                if (placa && porta) {
+                // APLICA EXTRATOR UNIVERSAL AQUI TAMBÉM
+                let p = extractPort(val0);
+                if (p) {
+                    let placa = p.placa;
+                    let porta = p.porta;
+                    
                     if (!oltData.ports[placa]) oltData.ports[placa] = {};
                     if (!oltData.ports[placa][porta]) {
                         const sheetAbaName = olt.id.replace('-', '');
@@ -269,6 +279,7 @@ window.startEnergyMonitoring = async function() {
             });
         });
 
+        // LÊ A ABA DE ENERGIA PARA CRUZAR OS DADOS
         const rowsEnergia = dataBatch.valueRanges[0].values ? dataBatch.valueRanges[0].values.slice(1) : [];
         
         for (const [oltId, colIndex] of Object.entries(HORIZONTAL_ENERGY_MAP)) {
@@ -285,20 +296,23 @@ window.startEnergyMonitoring = async function() {
                     const qtd = parseInt(row[colIndex + 2]) || 0;
 
                     if (portaFull && qtd > 0) {
-                        const parts = portaFull.split('/');
-                        const placa = parts[0];
-                        const porta = parts[1];
+                        // APLICA EXTRATOR UNIVERSAL AQUI
+                        let p = extractPort(portaFull);
+                        if (p) {
+                            const placa = p.placa;
+                            const porta = p.porta;
 
-                        if (!oltData.ports[placa]) oltData.ports[placa] = {};
-                        if (!oltData.ports[placa][porta]) {
-                            const sheetAbaName = oltId.replace('-', '');
-                            const circ = getEnergyCircuitInfo(rowsCircuitos, sheetAbaName, placa, porta, oltData.type);
-                            oltData.ports[placa][porta] = { total: qtd, online: 0, offline: qtd, powerOff: 0, circuit: circ };
+                            if (!oltData.ports[placa]) oltData.ports[placa] = {};
+                            if (!oltData.ports[placa][porta]) {
+                                const sheetAbaName = oltId.replace('-', '');
+                                const circ = getEnergyCircuitInfo(rowsCircuitos, sheetAbaName, placa, porta, oltData.type);
+                                oltData.ports[placa][porta] = { total: qtd, online: 0, offline: qtd, powerOff: 0, circuit: circ };
+                            }
+
+                            oltData.ports[placa][porta].powerOff = qtd;
+                            oltData.powerOff += qtd;
+                            window.ENERGY_DATA_STORE.global.powerOff += qtd;
                         }
-
-                        oltData.ports[placa][porta].powerOff = qtd;
-                        oltData.powerOff += qtd;
-                        window.ENERGY_DATA_STORE.global.powerOff += qtd;
                     }
                 }
             });
