@@ -1,11 +1,11 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 7.0 - CSS Modularizado - SEM ÁUDIO)
+// notifications.js - Sistema Central de Alertas (Versão 7.1 - Prioridade Visual Energia)
 // ==============================================================================
 
 // Memórias de Estado (O "Cérebro" do Vigilante)
 let currentProblems = new Set();
 let currentBackbones = new Set(); 
-let currentEnergyProblems = new Set(); // Guarda o estado de Energia
+let currentEnergyProblems = new Set(); 
 
 /**
  * Cria e exibe um pop-up (toast) na tela.
@@ -36,7 +36,7 @@ function showToast(message, type = '') {
     else if (type === 'toast-energy-warn') iconName = 'offline_bolt'; 
     else if (type === 'toast-energy-crit') iconName = 'power_off'; 
 
-    // Monta o HTML do Toast limpo (O CSS externo cuida do layout interno agora)
+    // Monta o HTML do Toast limpo 
     toast.innerHTML = `
         <span class="material-symbols-rounded toast-icon">${iconName}</span>
         <div style="display: flex; flex-direction: column; justify-content: center;">${message}</div>
@@ -47,7 +47,7 @@ function showToast(message, type = '') {
         setTimeout(() => toast.remove(), 500);
     };
 
-    // Usa prepend para que o novo alarme apareça no topo da lista
+    // Usa prepend para que o último alarme processado apareça no topo visual da lista
     container.prepend(toast);
 
     setTimeout(() => toast.classList.add('show'), 50);
@@ -68,7 +68,75 @@ function showToast(message, type = '') {
  */
 function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), newEnergyProblems = new Set()) {
     
-    // 1. PROCESSAR ALARMES DE ENERGIA 
+    // ============================================================
+    // 1. DETECTAR NORMALIZAÇÕES (Processadas primeiro para limpar a tela)
+    // ============================================================
+
+    // 1.1 Reparo de Backbone
+    for (const oldBackbone of currentBackbones) {
+        if (!activeBackbones.has(oldBackbone)) {
+            showToast(`<strong>Reparo de Backbone</strong><span>OLT: ${oldBackbone} normalizada</span>`, 'status-normal');
+        }
+    }
+    currentBackbones = activeBackbones;
+
+    // 1.2 Status de Rede Resolvidos
+    for (const oldProblem of currentProblems) {
+        if (!newProblems.has(oldProblem)) {
+            const match = oldProblem.match(/^\[(.*?)\] STATUS::/);
+            if (match) {
+                const oltId = match[1];
+                const stillHasStatusIssue = Array.from(newProblems).some(p => p.startsWith(`[${oltId}] STATUS::`));
+                
+                if (!stillHasStatusIssue) {
+                    showToast(`<strong>Circuito Normalizado</strong><span>OLT: ${oltId} operante</span>`, 'status-normal'); 
+                }
+            }
+        }
+    }
+    
+    // 1.3 Energia Restabelecida
+    for (const oldEp of currentEnergyProblems) {
+        if (!newEnergyProblems.has(oldEp)) {
+            const match = oldEp.match(/^\[(.*?)\] ENERGIA::/);
+            if (match) {
+                const oltId = match[1];
+                const stillHasEnergyIssue = Array.from(newEnergyProblems).some(p => p.startsWith(`[${oltId}] ENERGIA::`));
+                
+                if (!stillHasEnergyIssue) {
+                    showToast(`<strong>Energia Restabelecida</strong><span>OLT: ${oltId}</span>`, 'status-normal');
+                }
+            }
+        }
+    }
+
+    // ============================================================
+    // 2. DETECTAR NOVOS PROBLEMAS DE REDE
+    // ============================================================
+    for (const problemKey of newProblems) {
+        if (!currentProblems.has(problemKey)) {
+            const match = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)$/);
+            if (!match) continue; 
+            
+            const oltId = match[1];
+            const severity = match[2];
+
+            if (severity === 'SUPER') {
+                showToast(`<strong>FALHA CRÍTICA</strong><span>OLT: ${oltId}</span>`, 'super-priority');
+            } 
+            else if (severity === 'WARN') {
+                showToast(`<strong>ATENÇÃO</strong><span>OLT: ${oltId}</span>`, 'warning');
+            } 
+            else { // CRIT
+                showToast(`<strong>PROBLEMA</strong><span>OLT: ${oltId}</span>`, 'problem');
+            }
+        }
+    }
+    currentProblems = newProblems;
+
+    // ============================================================
+    // 3. DETECTAR NOVOS ALARMES DE ENERGIA (Garante o Topo Visual)
+    // ============================================================
     for (const ep of newEnergyProblems) {
         if (!currentEnergyProblems.has(ep)) {
             // Extrai: [HEL-1] ENERGIA::CRIT::150::4
@@ -95,67 +163,5 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
             }
         }
     }
-
-    // Processar normalização de Energia
-    for (const oldEp of currentEnergyProblems) {
-        if (!newEnergyProblems.has(oldEp)) {
-            const match = oldEp.match(/^\[(.*?)\] ENERGIA::/);
-            if (match) {
-                const oltId = match[1];
-                const stillHasEnergyIssue = Array.from(newEnergyProblems).some(p => p.startsWith(`[${oltId}] ENERGIA::`));
-                
-                if (!stillHasEnergyIssue) {
-                    showToast(`<strong>Energia Restabelecida</strong><span>OLT: ${oltId}</span>`, 'status-normal');
-                }
-            }
-        }
-    }
     currentEnergyProblems = newEnergyProblems;
-
-    // 2. DETECTAR NOVOS PROBLEMAS DE REDE
-    for (const problemKey of newProblems) {
-        if (!currentProblems.has(problemKey)) {
-            const match = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)$/);
-            if (!match) continue; 
-            
-            const oltId = match[1];
-            const severity = match[2];
-
-            if (severity === 'SUPER') {
-                showToast(`<strong>FALHA CRÍTICA</strong><span>OLT: ${oltId}</span>`, 'super-priority');
-            } 
-            else if (severity === 'WARN') {
-                showToast(`<strong>ATENÇÃO</strong><span>OLT: ${oltId}</span>`, 'warning');
-            } 
-            else { // CRIT
-                showToast(`<strong>PROBLEMA</strong><span>OLT: ${oltId}</span>`, 'problem');
-            }
-        }
-    }
-
-    // 3. DETECTAR PROBLEMAS DE STATUS RESOLVIDOS 
-    for (const oldProblem of currentProblems) {
-        if (!newProblems.has(oldProblem)) {
-            const match = oldProblem.match(/^\[(.*?)\] STATUS::/);
-            if (match) {
-                const oltId = match[1];
-                const stillHasStatusIssue = Array.from(newProblems).some(p => p.startsWith(`[${oltId}] STATUS::`));
-                
-                if (!stillHasStatusIssue) {
-                    showToast(`<strong>Circuito Normalizado</strong><span>OLT: ${oltId} operante</span>`, 'status-normal'); 
-                }
-            }
-        }
-    }
-    
-    currentProblems = newProblems;
-
-    // 4. DETECTAR REPARO DE BACKBONE 
-    for (const oldBackbone of currentBackbones) {
-        if (!activeBackbones.has(oldBackbone)) {
-            showToast(`<strong>Reparo de Backbone</strong><span>OLT: ${oldBackbone} normalizada</span>`, 'status-normal');
-        }
-    }
-    
-    currentBackbones = activeBackbones;
 }

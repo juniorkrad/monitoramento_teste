@@ -6,9 +6,11 @@ let lastNotifiedState = ""; // Memória unificada para não spammar os alarmes
 
 function watchHomeAlarms() {
     // Busca os dados dos cofres de rede que o olt-engine.js guardou
-    let networkProblems = window.NETWORK_PROBLEMS_STORE || new Set();
-    let backboneProblems = window.NETWORK_BACKBONE_STORE || new Set();
+    // Usamos 'new Set()' clonando o original para podermos filtrar sem quebrar a memória original
+    let networkProblems = new Set(window.NETWORK_PROBLEMS_STORE || []);
+    let backboneProblems = new Set(window.NETWORK_BACKBONE_STORE || []);
     let energyProblems = new Set();
+    let energyGroups = {}; // Elevado para o escopo principal para ser usado no filtro
 
     // ============================================================
     // 1. VIGILANTE DE ENERGIA (Atualiza Card da Home e Toasts)
@@ -46,8 +48,6 @@ function watchHomeAlarms() {
         // ============================================================
         // 1.2 PREPARAÇÃO DOS TOASTS DE EMERGÊNCIA (ENERGIA)
         // ============================================================
-        let energyGroups = {};
-
         // Varre o cofre de energia procurando portas acima do limite aceitável
         for (const oltId in window.ENERGY_DATA_STORE.olts) {
             const oltData = window.ENERGY_DATA_STORE.olts[oltId];
@@ -82,6 +82,26 @@ function watchHomeAlarms() {
             energyProblems.add(tag);
         }
     }
+
+    // ============================================================
+    // 1.3 FILTRO DE PREVALÊNCIA (ENERGIA > REDE)
+    // ============================================================
+    // Se a OLT possui alerta de energia (Dying Gasp), o sintoma de rede é silenciado.
+    let filteredNetworkProblems = new Set();
+    for (const netProb of networkProblems) {
+        const match = netProb.match(/^\[(.*?)\] STATUS::/);
+        if (match) {
+            const oltId = match[1];
+            // Se NÃO tem problema de energia nessa OLT, mantém o alarme de rede
+            if (!energyGroups[oltId]) {
+                filteredNetworkProblems.add(netProb);
+            }
+        } else {
+            // Caso seja outro formato de string, mantém por segurança
+            filteredNetworkProblems.add(netProb);
+        }
+    }
+    networkProblems = filteredNetworkProblems; // Substitui pela lista limpa
 
     // ============================================================
     // 2. DISPARO CENTRALIZADO DE TODOS OS ALARMES
