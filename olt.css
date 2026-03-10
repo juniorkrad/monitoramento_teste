@@ -134,3 +134,93 @@
 .chart-text .stat-number { 
     font-size: 1.2em; text-align: center; 
 }
+
+/* ==========================================================================
+   ESTILIZAÇÃO DO MODAL DE OLTs (MD3 Drill-Down)
+   ========================================================================== */
+
+/* Grid de Placas */
+.placas-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+/* Botão da Placa */
+.placa-btn {
+    background: var(--m3-surface-container-high);
+    border: 1px solid var(--m3-outline-variant);
+    color: var(--m3-on-surface);
+    padding: 20px;
+    border-radius: 20px; /* MD3 Style */
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.placa-btn:hover {
+    background: rgba(208, 188, 255, 0.08);
+    border-color: var(--m3-primary);
+}
+
+/* Variações de Alarme para as Placas (Status Geral) */
+.placa-btn.has-alarm {
+    border: 2px solid #f87171;
+    background: rgba(248, 113, 113, 0.05);
+}
+
+.placa-btn.has-warning {
+    border: 2px solid var(--m3-color-warning);
+    background: rgba(230, 162, 60, 0.05);
+}
+
+/* Contadorzinho de alarme dentro do botão */
+.alarm-count {
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 12px;
+    margin-top: 5px;
+    font-family: var(--font-family-mono);
+}
+
+.alarm-count.critico { background: #f87171; color: #000; }
+.alarm-count.atencao { background: var(--m3-color-warning); color: #000; }
+
+/* Botão Voltar no Modal */
+.btn-voltar-placas {
+    background: transparent;
+    border: 1px solid var(--m3-outline);
+    color: var(--m3-on-surface);
+    padding: 10px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    transition: background 0.2s ease;
+}
+
+.btn-voltar-placas:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Responsividade do Grid de Placas */
+@media (max-width: 900px) {
+    .placas-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 500px) {
+    .placas-grid {
+        grid-template-columns: 1fr;
+    }
+}

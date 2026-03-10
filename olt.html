@@ -28,14 +28,41 @@
     </div>
 
     <div id="super-modal" class="modal-overlay" style="z-index: 2900;">
-        <div class="modal-content" style="max-width: 95vw; height: 90vh; max-height: 90vh;">
+        <div class="modal-content modal-large" style="height: 90vh; max-height: 90vh;">
             <div class="modal-header">
                 <h3 id="super-modal-title"><span class="material-symbols-rounded">dns</span> Detalhes da OLT</h3>
                 <button class="close-modal" onclick="closeSuperModal()">&times;</button>
             </div>
             <div class="modal-body custom-scroll" style="background-color: var(--m3-surface); padding: 20px;">
-                <div id="super-modal-grid" class="grid-container">
+                
+                <div id="olt-view-placas">
+                    <p style="margin-bottom: 15px; color: var(--m3-on-surface-variant);">Selecione uma placa para ver os detalhes das portas:</p>
+                    <div id="olt-placas-list" class="placas-grid">
+                        </div>
+                </div>
+
+                <div id="olt-view-detalhes" style="display: none;">
+                    <button class="btn-voltar-placas" onclick="backToOltPlacas()">
+                        <span class="material-symbols-rounded">arrow_back</span> Voltar para Placas
+                    </button>
+                    
+                    <h4 id="olt-placa-subtitle" style="margin-bottom: 15px; color: var(--m3-on-surface); font-size: 1.1rem;">Detalhes - Placa X</h4>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr class="table-header-row">
+                                    <th>Porta</th>
+                                    <th>Circuitos</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="olt-detalhes-tbody">
+                                </tbody>
+                        </table>
                     </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -46,7 +73,6 @@
     <script src="olt-engine.js"></script>
 
     <script>
-        // Mapeamento atualizado com a quantidade exata de placas de cada OLT
         const oltsConfig = [
             { id: 'HEL-1', sheetTab: 'HEL1', type: 'nokia', boards: 8 },
             { id: 'HEL-2', sheetTab: 'HEL2', type: 'nokia', boards: 8 },
@@ -76,7 +102,6 @@
             grid.innerHTML = ''; 
             
             oltsConfig.forEach(olt => {
-                // O botão agora é um gatilho para abrir o Super Modal, enviando todos os dados da OLT
                 grid.innerHTML += `
                     <div class="overview-card" id="card-${olt.id}">
                         <div class="card-header">
@@ -205,7 +230,7 @@
             
             const now = new Date();
             const dataHoje = now.toLocaleDateString('pt-BR');
-            const horaAgora = now.toLocaleTimeString('pt-BR');
+            const horaAgora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             
             if(timestampEl) {
                 timestampEl.innerHTML = `
@@ -220,15 +245,19 @@
         }
         
         // ==============================================================================
-        // CONTROLADORES DO SUPER MODAL
+        // CONTROLADORES DO SUPER MODAL (NOVO FLUXO MD3)
         // ==============================================================================
         
         function openSuperModal(id, sheetTab, type, boards) {
-            document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> OLT ${id} - Painel de Placas`;
+            document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> OLT ${id}`;
             
-            // Adiciona o aviso de carregamento no grid do modal antes do motor agir
-            document.getElementById('super-modal-grid').innerHTML = `
-                <div style="width: 100%; text-align: center; padding: 40px; color: var(--m3-on-surface-variant);">
+            // Força a tela inicial (Placas) e esconde a tabela (Portas)
+            document.getElementById('olt-view-detalhes').style.display = 'none';
+            document.getElementById('olt-view-placas').style.display = 'block';
+            
+            // Aviso de carregamento no grid de placas
+            document.getElementById('olt-placas-list').innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--m3-on-surface-variant);">
                     <span class="material-symbols-rounded" style="font-size: 48px; display: block; margin-bottom: 10px; animation: pulse 1.5s infinite;">hourglass_top</span>
                     <h2>Estabelecendo conexão com a OLT...</h2>
                     <p>Buscando status de placas, portas e circuitos.</p>
@@ -237,7 +266,7 @@
             
             document.getElementById('super-modal').style.display = 'flex';
             
-            // Chama a função do motor (que iremos adaptar no olt-engine.js no próximo passo)
+            // Chama o motor para buscar e injetar as placas
             if (typeof startOltMonitoring === 'function') {
                 startOltMonitoring({
                     id: sheetTab,
@@ -248,11 +277,16 @@
             }
         }
 
+        // Função para o botão "Voltar" dentro do Modal
+        function backToOltPlacas() {
+            document.getElementById('olt-view-detalhes').style.display = 'none';
+            document.getElementById('olt-view-placas').style.display = 'block';
+        }
+
         function closeSuperModal() {
             document.getElementById('super-modal').style.display = 'none';
-            document.getElementById('super-modal-grid').innerHTML = ''; // Limpa para a próxima vez
+            document.getElementById('olt-placas-list').innerHTML = ''; 
             
-            // Pausa a varredura se a função existir no motor
             if (typeof stopOltMonitoring === 'function') {
                 stopOltMonitoring();
             }

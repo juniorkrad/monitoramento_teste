@@ -36,9 +36,10 @@ const GLOBAL_OLT_LIST = [
 ];
 
 window.OLT_CLIENTS_DATA = {};
+window.CURRENT_OLT_PORT_DATA = {}; // Cofre de dados estruturado por placa -> porta
 window.NETWORK_PROBLEMS_STORE = new Set();
 window.NETWORK_BACKBONE_STORE = new Set();
-window.currentOltInterval = null; // Gerenciador de loop para o Super Modal
+window.currentOltInterval = null; 
 
 // ==============================================================================
 // FUNÇÕES DE VARREDURA DE REDE GLOBAL (PARA A HOME)
@@ -234,7 +235,7 @@ async function runGlobalNetworkOverview() {
 }
 
 // ==============================================================================
-// MOTOR DE OLT (SUPER MODAL - SOB DEMANDA)
+// MOTOR DE OLT (SUPER MODAL - FLUXO MD3: PLACAS -> PORTAS)
 // ==============================================================================
 
 window.stopOltMonitoring = function() {
@@ -276,10 +277,7 @@ function getCircuitInfo(rowsCircuitos, sheetTab, placa, porta, type) {
 window.startOltMonitoring = function(config) {
     window.stopOltMonitoring(); 
 
-    const container = document.getElementById('super-modal-grid');
-    if (!container) return;
-
-    // Constrói o modal interno de detalhes se ele não existir
+    // Cria o Modal de Detalhes (Clientes/Status) flutuante por cima de tudo
     if (!document.getElementById('detail-modal')) {
         const modalStyles = `
             <style>
@@ -306,7 +304,6 @@ window.startOltMonitoring = function(config) {
                 .modal-view-stats { display: flex; }
                 .modal-view-clients { display: none; }
                 
-                /* Garante que o status crítico exista no CSS injetado */
                 .status-critico { background-color: #000; color: #FF1744; border: 1px solid #FF1744; animation: pulseRed 1s infinite; }
                 @keyframes pulseRed { 0% { box-shadow: 0 0 0 rgba(255,23,68,0); } 50% { box-shadow: 0 0 10px rgba(255,23,68,0.8); } 100% { box-shadow: 0 0 0 rgba(255,23,68,0); } }
             </style>
@@ -358,24 +355,8 @@ window.startOltMonitoring = function(config) {
         document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
 
-    // Prepara as tabelas dentro do Super Modal
-    container.innerHTML = ''; 
-    for (let i = 1; i <= config.boards; i++) {
-        const placaId = i.toString().padStart(2, '0');
-        container.innerHTML += `
-            <table style="margin-bottom: 20px;">
-                <thead>
-                    <tr class="table-title-row"><th colspan="3">PLACA ${placaId}</th></tr>
-                    <tr class="table-header-row"><th>Porta</th><th>${TABLE_HEADER_NAME}</th><th>Status</th></tr>
-                </thead>
-                <tbody id="tbody-placa-${i}">
-                    <tr><td colspan="3" style="text-align: center; color: var(--m3-on-surface-variant);">Carregando portas...</td></tr>
-                </tbody>
-            </table>
-        `;
-    }
-
     async function populateTables() {
+        window.CURRENT_OLT_PORT_DATA = {}; 
         window.OLT_CLIENTS_DATA = {}; 
 
         const rangeOlt = `${config.id}!A:I`; 
@@ -386,8 +367,6 @@ window.startOltMonitoring = function(config) {
             if (!responseOlt.ok) throw new Error('Falha API OLT');
             const dataOlt = await responseOlt.json();
             const rowsOlt = (dataOlt.values || []).slice(1);
-            
-            const portData = {};
 
             rowsOlt.forEach(columns => {
                 if (columns.length === 0) return;
@@ -417,19 +396,22 @@ window.startOltMonitoring = function(config) {
 
                 if (!placa || !porta) return;
                 
-                // Normaliza as chaves para ordenação perfeita
                 const placaNum = parseInt(placa);
                 const portaNum = parseInt(porta);
                 const portKey = `${placaNum}/${portaNum}`;
                 
-                if (!portData[portKey]) {
+                if (!window.CURRENT_OLT_PORT_DATA[placaNum]) {
+                    window.CURRENT_OLT_PORT_DATA[placaNum] = {};
+                }
+
+                if (!window.CURRENT_OLT_PORT_DATA[placaNum][portaNum]) {
                     const infoExtra = getCircuitInfo(rowsCircuitos, config.id, placa, porta, config.type);
-                    portData[portKey] = { online: 0, offline: 0, info: infoExtra, placa: placaNum, porta: portaNum };
+                    window.CURRENT_OLT_PORT_DATA[placaNum][portaNum] = { online: 0, offline: 0, info: infoExtra };
                     window.OLT_CLIENTS_DATA[portKey] = [];
                 }
 
-                if (isOnline) portData[portKey].online++;
-                else portData[portKey].offline++;
+                if (isOnline) window.CURRENT_OLT_PORT_DATA[placaNum][portaNum].online++;
+                else window.CURRENT_OLT_PORT_DATA[placaNum][portaNum].offline++;
                 
                 let clientData = {};
                 if (config.type === 'nokia') {
@@ -441,71 +423,72 @@ window.startOltMonitoring = function(config) {
                 window.OLT_CLIENTS_DATA[portKey].push(clientData);
             });
 
-            // Limpa as tabelas antes de injetar
+            // ==========================================
+            // RENDERIZA A TELA A (GRID DE PLACAS)
+            // ==========================================
+            const placasList = document.getElementById('olt-placas-list');
+            if (placasList) placasList.innerHTML = '';
+
             for (let i = 1; i <= config.boards; i++) {
-                const tbody = document.getElementById(`tbody-placa-${i}`);
-                if (tbody) tbody.innerHTML = '';
-            }
-
-            // Ordena as portas sequencialmente
-            const sortedKeys = Object.keys(portData).sort((a, b) => {
-                const [placaA, portaA] = a.split('/').map(Number);
-                const [placaB, portaB] = b.split('/').map(Number);
-                if (placaA !== placaB) return placaA - placaB;
-                return portaA - portaB;
-            });
-
-            sortedKeys.forEach(portKey => {
-                const { placa, porta, online, offline, info } = portData[portKey];
-                const total = online + offline;
+                const placaNum = i;
+                const ports = window.CURRENT_OLT_PORT_DATA[placaNum] || {};
                 
-                let statusClass = 'status-normal';
-                let statusText = 'Normal';
+                let hasCritical = false;
+                let hasWarning = false;
+                let alarmCount = 0;
 
-                const percOffline = total > 0 ? (offline / total) : 0;
-
-                if (total >= 5) {
-                    if (percOffline === 1) {
-                        statusClass = 'status-critico'; 
-                        statusText = 'Crítico';
-                    } else if (percOffline >= 0.5 || offline >= 32) {
-                        statusClass = 'status-problema'; 
-                        statusText = 'Problema';
-                    } else if (offline >= 16) {
-                        statusClass = 'status-atencao';
-                        statusText = 'Atenção';
+                for (const pt in ports) {
+                    const p = ports[pt];
+                    const total = p.online + p.offline;
+                    const percOffline = total > 0 ? (p.offline / total) : 0;
+                    
+                    if (total >= 5) {
+                        if (percOffline === 1 || percOffline >= 0.5 || p.offline >= 32) {
+                            hasCritical = true;
+                            alarmCount++;
+                        } else if (p.offline >= 16) {
+                            hasWarning = true;
+                        }
                     }
                 }
 
-                // Evita quebra de aspas simples no clique
-                const safeInfo = info.replace(/'/g, "\\'");
+                let btnClass = 'placa-btn';
+                let badgeHtml = '';
+                if (hasCritical) {
+                    btnClass += ' has-alarm';
+                    badgeHtml = `<span class="alarm-count critico">${alarmCount} crítico(s)</span>`;
+                } else if (hasWarning) {
+                    btnClass += ' has-warning';
+                    badgeHtml = `<span class="alarm-count atencao">Atenção</span>`;
+                }
 
-                const htmlRow = `
-                    <tr>
-                        <td>Porta ${String(porta).padStart(2, '0')}</td>
-                        <td>
-                            <span class="circuit-badge circuit-clickable" 
-                                  onclick="openCircuitClients('${placa}', '${porta}', '${safeInfo}', '${config.type}')"
-                                  title="Ver clientes deste circuito">
-                                ${info}
-                            </span>
-                        </td>
-                        <td>
-                            <button class="status ${statusClass} status-btn" style="border: none; cursor: pointer;"
-                                onclick="openPortDetails('${placa}', '${porta}', '${safeInfo}', ${online}, ${offline}, ${total})">
-                                ${statusText}
-                            </button>
-                        </td>
-                    </tr>
-                `;
+                if (placasList) {
+                    placasList.innerHTML += `
+                        <button class="${btnClass}" onclick="openOltPlacaDetails('${placaNum}', '${config.type}')">
+                            <span class="material-symbols-rounded" style="font-size: 32px;">developer_board</span>
+                            Placa ${placaNum}
+                            ${badgeHtml}
+                        </button>
+                    `;
+                }
+            }
 
-                const targetTbody = document.getElementById(`tbody-placa-${placa}`);
-                if (targetTbody) targetTbody.innerHTML += htmlRow;
-            });
+            // ==========================================
+            // ATUALIZA A TELA B (SE ESTIVER ABERTA)
+            // ==========================================
+            const detalhesView = document.getElementById('olt-view-detalhes');
+            if (detalhesView && detalhesView.style.display === 'block') {
+                const subtitle = document.getElementById('olt-placa-subtitle').innerText;
+                const match = subtitle.match(/Placa (\d+)/);
+                if (match) {
+                    window.openOltPlacaDetails(match[1], config.type);
+                }
+            }
 
         } catch (error) { 
             console.error('Erro na engine (populateTables):', error); 
-            container.innerHTML = `<p style="color: #f87171; text-align: center; padding: 20px;">Erro ao carregar os dados da OLT. Verifique a conexão.</p>`;
+            const placasList = document.getElementById('olt-placas-list');
+            if (placasList) placasList.innerHTML = `<p style="color: #f87171; text-align: center; padding: 20px; grid-column: 1 / -1;">Erro ao carregar os dados da OLT. Verifique a conexão.</p>`;
         }
     }
 
@@ -515,11 +498,67 @@ window.startOltMonitoring = function(config) {
 }
 
 // ==============================================================================
+// GERAÇÃO DINÂMICA DA TELA B (TABELA DE PORTAS DA PLACA)
+// ==============================================================================
+
+window.openOltPlacaDetails = function(placa, oltType) {
+    document.getElementById('olt-view-placas').style.display = 'none';
+    document.getElementById('olt-view-detalhes').style.display = 'block';
+    document.getElementById('olt-placa-subtitle').innerText = `Detalhes - Placa ${placa}`;
+    
+    const tbody = document.getElementById('olt-detalhes-tbody');
+    tbody.innerHTML = '';
+    
+    const ports = window.CURRENT_OLT_PORT_DATA[placa] || {};
+    const sortedPorts = Object.keys(ports).sort((a, b) => parseInt(a) - parseInt(b));
+    
+    if (sortedPorts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 20px; color: var(--m3-on-surface-variant);">Nenhuma porta ativa com clientes encontrada nesta placa.</td></tr>`;
+        return;
+    }
+
+    sortedPorts.forEach(pt => {
+        const { online, offline, info } = ports[pt];
+        const total = online + offline;
+        
+        let statusClass = 'status-normal';
+        let statusText = 'Normal';
+        const percOffline = total > 0 ? (offline / total) : 0;
+
+        if (total >= 5) {
+            if (percOffline === 1) { statusClass = 'status-critico'; statusText = 'Crítico'; }
+            else if (percOffline >= 0.5 || offline >= 32) { statusClass = 'status-problema'; statusText = 'Problema'; }
+            else if (offline >= 16) { statusClass = 'status-atencao'; statusText = 'Atenção'; }
+        }
+
+        const safeInfo = info.replace(/'/g, "\\'");
+
+        tbody.innerHTML += `
+            <tr>
+                <td>Porta ${String(pt).padStart(2, '0')}</td>
+                <td>
+                    <span class="circuit-badge circuit-clickable" 
+                          onclick="openCircuitClients('${placa}', '${pt}', '${safeInfo}', '${oltType}')"
+                          title="Ver clientes deste circuito">
+                        ${info}
+                    </span>
+                </td>
+                <td>
+                    <button class="status ${statusClass} status-btn" style="border: none; cursor: pointer;"
+                        onclick="openPortDetails('${placa}', '${pt}', '${safeInfo}', ${online}, ${offline}, ${total})">
+                        ${statusText}
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+};
+
+// ==============================================================================
 // CONTROLE DO MODAL INTERNO (CLIENTES E ESTATÍSTICAS)
 // ==============================================================================
 
 window.closeModal = function(event) {
-    // Só fecha se clicou no fundo escuro ou no botão (X)
     if (event && event.target.id !== 'detail-modal' && !event.target.classList.contains('close-modal')) return;
     const modal = document.getElementById('detail-modal');
     if (modal) modal.style.display = 'none';
@@ -567,7 +606,6 @@ window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
     const thead = document.getElementById('clients-thead');
     const tbody = document.getElementById('clients-tbody');
     
-    // CORREÇÃO: Injeta os títulos corretos de acordo com a OLT
     if (oltType === 'nokia') {
         thead.innerHTML = `<tr><th>Posição/Serial</th><th>Tipo/Perfil</th><th>Status</th><th>Descrição 1</th><th>Descrição 2</th></tr>`;
     } else {
