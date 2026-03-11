@@ -1,5 +1,5 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 8.3 - Minimalista)
+// notifications.js - Sistema Central de Alertas (Versão 8.4 - Minimalista)
 // Reformulação: Textos enxutos, Foco na OLT/Porta e Interface Limpa
 // ==============================================================================
 
@@ -217,7 +217,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
 
                 showToast(
                     'Falha Múltipla de Rede', 
-                    `${oltId} - Portas: ${descLimpa}`, // Visual super limpo
+                    `${oltId} - ${descLimpa}`, // Visual super limpo sem o texto "Portas:"
                     'energia-crit', 
                     'error',        
                     'right' 
@@ -248,7 +248,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
 
                 showToast(
                     title, 
-                    `${oltId} - Porta ${porta}`, // Removida a contagem de clientes
+                    `${oltId} - Porta ${porta}`, 
                     typeClass, 
                     icon, 
                     'right' 
