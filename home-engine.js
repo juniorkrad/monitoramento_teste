@@ -1,6 +1,6 @@
 /* ==========================================================================
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
-   Ajuste: Porcentagem de Energia reduzida para 15%
+   Reformulação: Alarme Híbrido, Fim do Silenciador e Etiquetas por Porta
    ========================================================================== */
 
 let lastNotifiedState = ""; // Memória unificada para não spammar os alarmes
@@ -10,7 +10,7 @@ function watchHomeAlarms() {
     let networkProblems = new Set(window.NETWORK_PROBLEMS_STORE || []);
     let backboneProblems = new Set(window.NETWORK_BACKBONE_STORE || []);
     let energyProblems = new Set();
-    let energyGroups = {}; 
+    let hybridProblems = new Set(); // NOVO: Cofre do Alarme Híbrido
 
     // ============================================================
     // 1. VIGILANTE DE ENERGIA (Atualiza Card da Home e Toasts)
@@ -46,62 +46,53 @@ function watchHomeAlarms() {
         }
 
         // ============================================================
-        // 1.2 PREPARAÇÃO DOS TOASTS DE EMERGÊNCIA (ENERGIA)
+        // 1.2 PREPARAÇÃO DOS TOASTS (ENERGIA E HÍBRIDO POR PORTA)
         // ============================================================
         for (const oltId in window.ENERGY_DATA_STORE.olts) {
             const oltData = window.ENERGY_DATA_STORE.olts[oltId];
             for (const placa in oltData.ports) {
                 for (const porta in oltData.ports[placa]) {
                     const pData = oltData.ports[placa][porta];
+                    const pt = `${placa}/${porta}`;
+
+                    // --- NOVA REGRA: ALARME HÍBRIDO ---
+                    // Gatilho: Mínimo de 16 offline E Energia representa >= 70% do problema
+                    if (pData.offline >= 16 && pData.powerOff > 0) {
+                        const overlap = pData.powerOff / pData.offline;
+                        if (overlap >= 0.70) {
+                            // Formato esperado pelo notifications.js
+                            hybridProblems.add(`[${oltId}] HIBRIDO::${pt}::${pData.offline}::${pData.powerOff}`);
+                        }
+                    }
+
+                    // --- NOVA REGRA: ENERGIA POR PORTA ---
                     if (pData.powerOff > 0 && pData.total > 0) {
                         const perc = pData.powerOff / pData.total;
                         let severity = null;
                         
-                        // --- NOVA REGRA DE NEGÓCIO: ENERGIA ---
                         // CRIT: 50% de queda e min 10 clientes OU 100% de queda (min 5 clientes)
                         if ((perc >= 0.5 && pData.powerOff >= 10) || (perc === 1 && pData.total >= 5)) {
                             severity = 'CRIT';
                         } 
-                        // WARN: Ajustado para 15% de queda e mínimo de 5 clientes
+                        // WARN: 15% de queda e mínimo de 5 clientes
                         else if (perc >= 0.15 && pData.powerOff >= 5) {
                             severity = 'WARN';
                         }
                         
                         if (severity) {
-                            if (!energyGroups[oltId]) energyGroups[oltId] = { crit: 0, warn: 0, clientsOff: 0, portsCount: 0 };
-                            energyGroups[oltId].clientsOff += pData.powerOff;
-                            energyGroups[oltId].portsCount++;
-                            if (severity === 'CRIT') energyGroups[oltId].crit++; else energyGroups[oltId].warn++;
+                            // Envia a tag específica da porta (E não mais da OLT inteira)
+                            energyProblems.add(`[${oltId}] ENERGIA::${severity}_${pt}::${pData.powerOff}`);
                         }
                     }
                 }
             }
         }
-
-        // Constrói as etiquetas de alerta
-        for (const olt in energyGroups) {
-            const tag = `[${olt}] ENERGIA::${energyGroups[olt].crit > 0 ? 'CRIT' : 'WARN'}::${energyGroups[olt].clientsOff}::${energyGroups[olt].portsCount}`;
-            energyProblems.add(tag);
-        }
     }
 
     // ============================================================
-    // 1.3 FILTRO DE PREVALÊNCIA (ENERGIA > REDE)
+    // OBSERVAÇÃO: O antigo "Filtro de Prevalência" que silenciava a 
+    // rede foi completamente REMOVIDO aqui para permitir alarmes simultâneos.
     // ============================================================
-    let filteredNetworkProblems = new Set();
-    for (const netProb of networkProblems) {
-        const match = netProb.match(/^\[(.*?)\] STATUS::/);
-        if (match) {
-            const oltId = match[1];
-            // Se NÃO tem problema de energia nessa OLT, mantém o alarme de rede
-            if (!energyGroups[oltId]) {
-                filteredNetworkProblems.add(netProb);
-            }
-        } else {
-            filteredNetworkProblems.add(netProb);
-        }
-    }
-    networkProblems = filteredNetworkProblems; 
 
     // ============================================================
     // 2. DISPARO CENTRALIZADO DE TODOS OS ALARMES
@@ -109,13 +100,14 @@ function watchHomeAlarms() {
     const currentStateStr = 
         Array.from(networkProblems).sort().join('|') + "||" + 
         Array.from(backboneProblems).sort().join('|') + "||" + 
-        Array.from(energyProblems).sort().join('|');
+        Array.from(energyProblems).sort().join('|') + "||" + 
+        Array.from(hybridProblems).sort().join('|');
 
     if (currentStateStr !== lastNotifiedState) {
         lastNotifiedState = currentStateStr;
         
         if (typeof checkAndNotifyForNewProblems === 'function') {
-            checkAndNotifyForNewProblems(networkProblems, backboneProblems, energyProblems);
+            checkAndNotifyForNewProblems(networkProblems, backboneProblems, energyProblems, hybridProblems);
         }
     }
 }

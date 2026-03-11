@@ -1,95 +1,102 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 7.1 - Prioridade Visual Energia)
+// notifications.js - Sistema Central de Alertas (Versão 8.0 - Novo Padrão)
+// Reformulação: Tamanho Único, Entrada Bilateral e Suporte Híbrido
 // ==============================================================================
 
-// Memórias de Estado (O "Cérebro" do Vigilante)
+// Memórias de Estado
 let currentProblems = new Set();
 let currentBackbones = new Set(); 
 let currentEnergyProblems = new Set(); 
+let currentHybridProblems = new Set(); // Nova memória para os alarmes híbridos
 
 /**
- * Cria e exibe um pop-up (toast) na tela.
+ * Cria e exibe um pop-up (toast) na tela com tamanho único.
+ * @param {string} title - O título em negrito
+ * @param {string} description - O texto menor
+ * @param {string} typeClass - Classe de estilo (rede, energia, hibrido, etc)
+ * @param {string} icon - Nome do ícone do Google Fonts
+ * @param {string} position - 'left' ou 'right'
  */
-function showToast(message, type = '') {
+function showToast(title, description, typeClass, icon, position = 'right') {
     // --- TRAVA DE SEGURANÇA ---
     const path = window.location.pathname;
     const pageName = path.split('/').pop(); 
 
-    // Garante que os Toasts só apareçam na Home (index.html)
     if (pageName && pageName !== 'index.html' && pageName !== '') {
         return; 
     }
     // ----------------------------------
 
-    const container = document.getElementById('toast-container');
-    if (!container) return;
+    // Determina o container baseado na posição desejada (Esquerda ou Direita)
+    let containerId = position === 'left' ? 'toast-container-left' : 'toast-container-right';
+    let container = document.getElementById(containerId);
+    
+    // Se o container ainda não existir no HTML, cria dinamicamente
+    if (!container) {
+        container = document.createElement('div');
+        container.id = containerId;
+        document.body.appendChild(container);
+    }
 
     const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
+    // Aplica a classe base universal 'toast', a classe visual e a animação correta
+    const slideClass = position === 'left' ? 'slide-left' : 'slide-right';
+    toast.className = `toast ${typeClass} ${slideClass}`;
     
-    // --- SELEÇÃO DE ÍCONES (Material Symbols) ---
-    let iconName = 'info'; 
-    if (type === 'super-priority') iconName = 'fmd_bad';
-    else if (type === 'problem') iconName = 'error';
-    else if (type === 'warning') iconName = 'warning';
-    else if (type === 'status-normal' || type === 'success') iconName = 'check_circle';
-    else if (type === 'toast-energy-warn') iconName = 'offline_bolt'; 
-    else if (type === 'toast-energy-crit') iconName = 'power_off'; 
-
-    // Monta o HTML do Toast limpo 
+    // Monta o HTML interno no novo formato padronizado
     toast.innerHTML = `
-        <span class="material-symbols-rounded toast-icon">${iconName}</span>
-        <div style="display: flex; flex-direction: column; justify-content: center;">${message}</div>
+        <span class="material-symbols-rounded toast-icon">${icon}</span>
+        <div class="toast-content">
+            <strong>${title}</strong>
+            <span>${description}</span>
+        </div>
     `;
     
     toast.onclick = () => {
         toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 500);
+        setTimeout(() => toast.remove(), 400); // Tempo da animação de saída
     };
 
-    // Usa prepend para que o último alarme processado apareça no topo visual da lista
-    container.prepend(toast);
+    container.prepend(toast); // Adiciona no topo da lista
 
     setTimeout(() => toast.classList.add('show'), 50);
 
-    // --- TEMPO DE EXIBIÇÃO ---
-    const duration = (type === 'super-priority' || type === 'toast-energy-crit') ? 10000 : 8000;
-
+    // Tempo de exibição universal (10 segundos)
     setTimeout(() => {
         if (toast.parentElement) {
             toast.classList.remove('show');
-            toast.addEventListener('transitionend', () => toast.remove());
+            setTimeout(() => {
+                if (toast.parentElement) toast.remove();
+            }, 400);
         }
-    }, duration); 
+    }, 10000); 
 }
 
 /**
- * Lógica Inteligente: Detecta Novos Problemas, Normalizações, Reparo de Backbone E ENERGIA
+ * Lógica Inteligente: Detecta Novos Problemas, Normalizações, Rede, Energia e HÍBRIDOS
+ * Recebe as etiquetas do home-engine.js
  */
-function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), newEnergyProblems = new Set()) {
+function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), newEnergyProblems = new Set(), newHybridProblems = new Set()) {
     
     // ============================================================
-    // 1. DETECTAR NORMALIZAÇÕES (Processadas primeiro para limpar a tela)
+    // 1. DETECTAR NORMALIZAÇÕES (Limpeza de tela)
     // ============================================================
 
-    // 1.1 Reparo de Backbone
-    for (const oldBackbone of currentBackbones) {
-        if (!activeBackbones.has(oldBackbone)) {
-            showToast(`<strong>Reparo de Backbone</strong><span>OLT: ${oldBackbone} normalizada</span>`, 'status-normal');
-        }
-    }
+    // 1.1 Reparo de Backbone (Apenas limpa a memória, não envia mais toast de cura por enquanto)
     currentBackbones = activeBackbones;
 
     // 1.2 Status de Rede Resolvidos
     for (const oldProblem of currentProblems) {
         if (!newProblems.has(oldProblem)) {
-            const match = oldProblem.match(/^\[(.*?)\] STATUS::/);
+            const match = oldProblem.match(/^\[(.*?)\] STATUS::(.*?)_(\d+)\/(\d+)/);
             if (match) {
                 const oltId = match[1];
-                const stillHasStatusIssue = Array.from(newProblems).some(p => p.startsWith(`[${oltId}] STATUS::`));
+                const placa = match[3];
+                const porta = match[4];
+                const stillHasIssue = Array.from(newProblems).some(p => p.startsWith(`[${oltId}] STATUS::`) && p.includes(`_${placa}/${porta}`));
                 
-                if (!stillHasStatusIssue) {
-                    showToast(`<strong>Circuito Normalizado</strong><span>OLT: ${oltId} operante</span>`, 'status-normal'); 
+                if (!stillHasIssue) {
+                    showToast('Sinal Normalizado', `${oltId} - Porta ${placa}/${porta}`, 'status-normal', 'check_circle', 'right'); 
                 }
             }
         }
@@ -98,70 +105,112 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     // 1.3 Energia Restabelecida
     for (const oldEp of currentEnergyProblems) {
         if (!newEnergyProblems.has(oldEp)) {
-            const match = oldEp.match(/^\[(.*?)\] ENERGIA::/);
+            const match = oldEp.match(/^\[(.*?)\] ENERGIA::(.*?)_(\d+)\/(\d+)/);
             if (match) {
                 const oltId = match[1];
-                const stillHasEnergyIssue = Array.from(newEnergyProblems).some(p => p.startsWith(`[${oltId}] ENERGIA::`));
+                const placa = match[3];
+                const porta = match[4];
+                const stillHasIssue = Array.from(newEnergyProblems).some(p => p.startsWith(`[${oltId}] ENERGIA::`) && p.includes(`_${placa}/${porta}`));
                 
-                if (!stillHasEnergyIssue) {
-                    showToast(`<strong>Energia Restabelecida</strong><span>OLT: ${oltId}</span>`, 'status-normal');
+                if (!stillHasIssue) {
+                    showToast('Energia Retornou', `${oltId} - Porta ${placa}/${porta}`, 'status-normal', 'check_circle', 'left');
                 }
             }
         }
     }
 
     // ============================================================
-    // 2. DETECTAR NOVOS PROBLEMAS DE REDE
+    // 2. DISPAROS: HÍBRIDO (Vem da Esquerda)
     // ============================================================
-    for (const problemKey of newProblems) {
-        if (!currentProblems.has(problemKey)) {
-            const match = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)$/);
-            if (!match) continue; 
-            
-            const oltId = match[1];
-            const severity = match[2];
-
-            if (severity === 'SUPER') {
-                showToast(`<strong>FALHA CRÍTICA</strong><span>OLT: ${oltId}</span>`, 'super-priority');
-            } 
-            else if (severity === 'WARN') {
-                showToast(`<strong>ATENÇÃO</strong><span>OLT: ${oltId}</span>`, 'warning');
-            } 
-            else { // CRIT
-                showToast(`<strong>PROBLEMA</strong><span>OLT: ${oltId}</span>`, 'problem');
+    // O Híbrido é checado antes da rede isolada, pois ele tem prioridade de contexto
+    for (const hb of newHybridProblems) {
+        if (!currentHybridProblems.has(hb)) {
+            // Espera receber: [HEL-1] HIBRIDO::1/1::45::40
+            // Onde 45 é Rede OFF e 40 é Energia OFF
+            const match = hb.match(/^\[(.*?)\] HIBRIDO::(\d+\/\d+)::(\d+)::(\d+)$/);
+            if (match) {
+                const oltId = match[1];
+                const porta = match[2];
+                const offRede = match[3];
+                const offEnergia = match[4];
+                
+                showToast(
+                    'Possível Queda de Energia', 
+                    `${oltId} (${porta}): ${offRede} OFF / ${offEnergia} S.LUZ`, 
+                    'hibrido', 
+                    'offline_bolt', 
+                    'left' // Entra pela esquerda
+                );
             }
         }
     }
-    currentProblems = newProblems;
+    currentHybridProblems = newHybridProblems;
 
     // ============================================================
-    // 3. DETECTAR NOVOS ALARMES DE ENERGIA (Garante o Topo Visual)
+    // 3. DISPAROS: ENERGIA PURA (Vem da Esquerda)
     // ============================================================
     for (const ep of newEnergyProblems) {
         if (!currentEnergyProblems.has(ep)) {
-            // Extrai: [HEL-1] ENERGIA::CRIT::150::4
-            const match = ep.match(/^\[(.*?)\] ENERGIA::(CRIT|WARN)::(\d+)::(\d+)$/);
+            // Novo formato de etiqueta esperado: [HEL-1] ENERGIA::CRIT_1/1::35
+            const match = ep.match(/^\[(.*?)\] ENERGIA::(CRIT|WARN)_(\d+\/\d+)::(\d+)$/);
             if (match) {
                 const oltId = match[1];
                 const severity = match[2];
-                const ports = parseInt(match[4]);
+                const porta = match[3];
+                const powerOff = match[4];
                 
-                const severityClass = severity === 'CRIT' ? 'toast-energy-crit' : 'toast-energy-warn';
+                const typeClass = severity === 'CRIT' ? 'energia-crit' : 'energia-warn';
+                const title = severity === 'CRIT' ? 'Alarme de Energia' : 'Atenção de Energia';
+                const icon = severity === 'CRIT' ? 'power_off' : 'warning';
                 
-                let title = '';
-                if (ports > 1) {
-                    title = 'Alerta de Energia';   // Nível 3: Múltiplas Portas
-                } else if (severity === 'CRIT') {
-                    title = 'Alarme de Energia';   // Nível 2: Queda (Power off)
-                } else {
-                    title = 'Atenção de Energia';  // Nível 1: Instabilidade
-                }
-
-                const desc = `OLT: ${oltId}`;
-                
-                showToast(`<strong>${title}</strong><span>${desc}</span>`, severityClass);
+                showToast(
+                    title, 
+                    `${oltId} (${porta}) - ${powerOff} s/ luz`, 
+                    typeClass, 
+                    icon, 
+                    'left' // Entra pela esquerda
+                );
             }
         }
     }
     currentEnergyProblems = newEnergyProblems;
+
+    // ============================================================
+    // 4. DISPAROS: REDE PURA (Vem da Direita)
+    // ============================================================
+    for (const problemKey of newProblems) {
+        if (!currentProblems.has(problemKey)) {
+            // Novo formato de etiqueta esperado: [HEL-1] STATUS::CRIT_1/1::45
+            const match = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)_(\d+\/\d+)::(\d+)$/);
+            if (match) {
+                const oltId = match[1];
+                const severity = match[2];
+                const porta = match[3];
+                const offline = match[4];
+
+                let title = 'Problema de Rede';
+                let typeClass = 'rede-problem';
+                let icon = 'error';
+
+                if (severity === 'SUPER') {
+                    title = 'FALHA CRÍTICA';
+                    typeClass = 'rede-super';
+                    icon = 'fmd_bad';
+                } else if (severity === 'WARN') {
+                    title = 'Atenção na Rede';
+                    typeClass = 'rede-warn';
+                    icon = 'warning';
+                }
+
+                showToast(
+                    title, 
+                    `${oltId} (${porta}) - ${offline} clientes off`, 
+                    typeClass, 
+                    icon, 
+                    'right' // Entra pela direita
+                );
+            }
+        }
+    }
+    currentProblems = newProblems;
 }
