@@ -1,13 +1,13 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 8.0 - Novo Padrão)
-// Reformulação: Tamanho Único, Entrada Bilateral e Suporte Híbrido
+// notifications.js - Sistema Central de Alertas (Versão 8.1 - Novo Padrão)
+// Reformulação: Tamanho Único, Entrada Bilateral, Suporte Híbrido e Backbone
 // ==============================================================================
 
 // Memórias de Estado
 let currentProblems = new Set();
 let currentBackbones = new Set(); 
 let currentEnergyProblems = new Set(); 
-let currentHybridProblems = new Set(); // Nova memória para os alarmes híbridos
+let currentHybridProblems = new Set(); 
 
 /**
  * Cria e exibe um pop-up (toast) na tela com tamanho único.
@@ -39,7 +39,6 @@ function showToast(title, description, typeClass, icon, position = 'right') {
     }
 
     const toast = document.createElement('div');
-    // Aplica a classe base universal 'toast', a classe visual e a animação correta
     const slideClass = position === 'left' ? 'slide-left' : 'slide-right';
     toast.className = `toast ${typeClass} ${slideClass}`;
     
@@ -54,10 +53,10 @@ function showToast(title, description, typeClass, icon, position = 'right') {
     
     toast.onclick = () => {
         toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 400); // Tempo da animação de saída
+        setTimeout(() => toast.remove(), 400); 
     };
 
-    container.prepend(toast); // Adiciona no topo da lista
+    container.prepend(toast); 
 
     setTimeout(() => toast.classList.add('show'), 50);
 
@@ -73,8 +72,7 @@ function showToast(title, description, typeClass, icon, position = 'right') {
 }
 
 /**
- * Lógica Inteligente: Detecta Novos Problemas, Normalizações, Rede, Energia e HÍBRIDOS
- * Recebe as etiquetas do home-engine.js
+ * Lógica Inteligente: Detecta Novos Problemas, Normalizações, Rede, Energia, HÍBRIDOS e BACKBONE
  */
 function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), newEnergyProblems = new Set(), newHybridProblems = new Set()) {
     
@@ -82,8 +80,12 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     // 1. DETECTAR NORMALIZAÇÕES (Limpeza de tela)
     // ============================================================
 
-    // 1.1 Reparo de Backbone (Apenas limpa a memória, não envia mais toast de cura por enquanto)
-    currentBackbones = activeBackbones;
+    // 1.1 Reparo de Backbone
+    for (const oldBb of currentBackbones) {
+        if (!activeBackbones.has(oldBb)) {
+            showToast('Backbone Normalizado', `OLT: ${oldBb}`, 'status-normal', 'check_circle', 'right');
+        }
+    }
 
     // 1.2 Status de Rede Resolvidos
     for (const oldProblem of currentProblems) {
@@ -120,13 +122,26 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     }
 
     // ============================================================
-    // 2. DISPAROS: HÍBRIDO (Vem da Esquerda)
+    // 2. DISPAROS: BACKBONE (Vem da Direita - Prioridade Máxima)
     // ============================================================
-    // O Híbrido é checado antes da rede isolada, pois ele tem prioridade de contexto
+    for (const bb of activeBackbones) {
+        if (!currentBackbones.has(bb)) {
+            showToast(
+                'ROMPIMENTO DE BACKBONE', 
+                `Múltiplas portas OFF na ${bb}`, 
+                'rede-super', 
+                'sos', 
+                'right'
+            );
+        }
+    }
+    currentBackbones = activeBackbones;
+
+    // ============================================================
+    // 3. DISPAROS: HÍBRIDO (Vem da Esquerda)
+    // ============================================================
     for (const hb of newHybridProblems) {
         if (!currentHybridProblems.has(hb)) {
-            // Espera receber: [HEL-1] HIBRIDO::1/1::45::40
-            // Onde 45 é Rede OFF e 40 é Energia OFF
             const match = hb.match(/^\[(.*?)\] HIBRIDO::(\d+\/\d+)::(\d+)::(\d+)$/);
             if (match) {
                 const oltId = match[1];
@@ -139,7 +154,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                     `${oltId} (${porta}): ${offRede} OFF / ${offEnergia} S.LUZ`, 
                     'hibrido', 
                     'offline_bolt', 
-                    'left' // Entra pela esquerda
+                    'left' 
                 );
             }
         }
@@ -147,11 +162,10 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     currentHybridProblems = newHybridProblems;
 
     // ============================================================
-    // 3. DISPAROS: ENERGIA PURA (Vem da Esquerda)
+    // 4. DISPAROS: ENERGIA PURA (Vem da Esquerda)
     // ============================================================
     for (const ep of newEnergyProblems) {
         if (!currentEnergyProblems.has(ep)) {
-            // Novo formato de etiqueta esperado: [HEL-1] ENERGIA::CRIT_1/1::35
             const match = ep.match(/^\[(.*?)\] ENERGIA::(CRIT|WARN)_(\d+\/\d+)::(\d+)$/);
             if (match) {
                 const oltId = match[1];
@@ -168,7 +182,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                     `${oltId} (${porta}) - ${powerOff} s/ luz`, 
                     typeClass, 
                     icon, 
-                    'left' // Entra pela esquerda
+                    'left' 
                 );
             }
         }
@@ -176,11 +190,10 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     currentEnergyProblems = newEnergyProblems;
 
     // ============================================================
-    // 4. DISPAROS: REDE PURA (Vem da Direita)
+    // 5. DISPAROS: REDE PURA (Vem da Direita)
     // ============================================================
     for (const problemKey of newProblems) {
         if (!currentProblems.has(problemKey)) {
-            // Novo formato de etiqueta esperado: [HEL-1] STATUS::CRIT_1/1::45
             const match = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)_(\d+\/\d+)::(\d+)$/);
             if (match) {
                 const oltId = match[1];
@@ -207,7 +220,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                     `${oltId} (${porta}) - ${offline} clientes off`, 
                     typeClass, 
                     icon, 
-                    'right' // Entra pela direita
+                    'right' 
                 );
             }
         }

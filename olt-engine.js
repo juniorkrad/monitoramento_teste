@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Etiquetas detalhadas por Porta para suporte ao Alarme Híbrido e Novo Toast
+// Atualização: Silenciador de Portas para Backbone e Fim do HTML Injetado
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -188,7 +188,7 @@ async function runGlobalNetworkOverview() {
     
     let globalOnline = 0, globalOffline = 0;
     let nokiaOnline = 0, nokiaTotal = 0, furukawaOnline = 0, furukawaTotal = 0;
-    let oltStatsList = [], activeBackboneDetails = [], currentBackbones = new Set();
+    let oltStatsList = [], currentBackbones = new Set();
     let allProblems = new Set();
 
     results.forEach(result => {
@@ -202,15 +202,14 @@ async function runGlobalNetworkOverview() {
         oltStatsList.push({ id: result.id, offline: result.offlineCount, total });
 
         let ports100Down = 0;
+        let localProblems = []; // Guarda os problemas desta OLT temporariamente
         
-        // --- NOVA LÓGICA DE GERAÇÃO DE ETIQUETAS POR PORTA ---
         for (const key in result.portData) {
             const { off, total: pTotal } = result.portData[key];
             if (pTotal >= 5) {
                 let severity = null;
                 const percOffline = off / pTotal;
 
-                // Regras de Rede Unificadas
                 if (percOffline === 1) { 
                     ports100Down++; 
                     severity = 'SUPER'; 
@@ -220,32 +219,29 @@ async function runGlobalNetworkOverview() {
                     severity = 'WARN'; 
                 }
 
-                // Cria a etiqueta exata que o novo notifications.js espera ler
                 if (severity) {
-                    allProblems.add(`[${result.id}] STATUS::${severity}_${key}::${off}`);
+                    localProblems.push(`[${result.id}] STATUS::${severity}_${key}::${off}`);
                 }
             }
         }
         
-        // Manutenção da regra do Backbone (Agrupamento Global da OLT)
+        // --- LÓGICA DO SILENCIADOR DE BACKBONE ---
         if (ports100Down >= 2) { 
-            activeBackboneDetails.push(`OLT: ${result.id}`); 
             currentBackbones.add(result.id); 
+            // Se for Backbone, transferimos apenas os avisos menores para a tela (ignorando as portas 100% down para não poluir)
+            localProblems.forEach(p => {
+                if (!p.includes('STATUS::SUPER')) {
+                    allProblems.add(p);
+                }
+            });
+        } else {
+            // Se NÃO for backbone, transfere tudo normalmente
+            localProblems.forEach(p => allProblems.add(p));
         }
     });
 
     oltStatsList.sort((a, b) => b.offline - a.offline);
     updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, oltStatsList.slice(0, 3));
-
-    const backboneContainer = document.getElementById('backbone-alert-container');
-    if (backboneContainer) {
-        if (activeBackboneDetails.length > 0) {
-            backboneContainer.innerHTML = `<div class="backbone-alert"><span class="material-symbols-rounded">sos</span><div class="backbone-text-container"><p class="backbone-title">Rompimento de Backbone?!</p><p class="backbone-details">${activeBackboneDetails.join('<br>')}</p></div></div>`;
-            backboneContainer.style.display = 'block';
-        } else {
-            backboneContainer.style.display = 'none';
-        }
-    }
 
     window.NETWORK_PROBLEMS_STORE = allProblems;
     window.NETWORK_BACKBONE_STORE = currentBackbones;
