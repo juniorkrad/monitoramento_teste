@@ -1,6 +1,6 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 8.7 - Unificado de Energia)
-// Reformulação: Híbrido Supremo e Alertas Múltiplos de Energia Minimalistas
+// notifications.js - Sistema Central de Alertas (Versão 8.8 - Refinamento Visual)
+// Reformulação: Uso de ícones no Híbrido e formatação de listas com vírgula
 // ==============================================================================
 
 // Memórias de Estado
@@ -12,7 +12,7 @@ let currentHybridProblems = new Set();
 /**
  * Cria e exibe um pop-up (toast) na tela com tamanho único.
  * @param {string} title - O título em negrito
- * @param {string} description - O texto menor
+ * @param {string} description - O texto menor (aceita HTML para ícones)
  * @param {string} typeClass - Classe de estilo (rede, energia, hibrido, etc)
  * @param {string} icon - Nome do ícone do Google Fonts
  * @param {string} position - 'left' ou 'right'
@@ -168,9 +168,10 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
             activeHybridPorts.add(`${oltId}_${porta}`);
             
             if (!currentHybridProblems.has(hb)) {
+                // Descrição Híbrida Minimalista com Ícones
                 showToast(
                     'Possível Queda de Energia', 
-                    `${oltId} (${porta}): ${offRede} OFF / ${offEnergia} S.LUZ`, 
+                    `${oltId} (${porta}): ${offRede} <span class="material-symbols-rounded" style="font-size: 15px; vertical-align: bottom;">router</span> / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 15px; vertical-align: bottom;">power_off</span>`, 
                     'hibrido', 
                     'offline_bolt', 
                     'left' 
@@ -200,7 +201,8 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                 if (portsArray.length === 0) continue;
                 // ------------------------------------
 
-                const descLimpa = portsArray.join(' e ');
+                // Formatação limpa com vírgula
+                const descLimpa = portsArray.join(', ');
 
                 showToast(
                     'Falha Múltipla de Energia', 
@@ -257,7 +259,8 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                 
                 if (portsArray.length === 0) continue;
 
-                const descLimpa = portsArray.join(' e ');
+                // Formatação limpa com vírgula
+                const descLimpa = portsArray.join(', ');
 
                 showToast(
                     'Falha Múltipla de Rede', 
