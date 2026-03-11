@@ -1,6 +1,6 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 8.5 - Minimalista Extremo)
-// Reformulação: Textos enxutos, Foco na OLT/Porta e Interface Limpa
+// notifications.js - Sistema Central de Alertas (Versão 8.6 - Silenciador Híbrido)
+// Reformulação: Textos enxutos e Trava inteligente de sobreposição de alarmes
 // ==============================================================================
 
 // Memórias de Estado
@@ -76,18 +76,14 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     // 1. DETECTAR NORMALIZAÇÕES (Limpeza de tela)
     // ============================================================
 
-    // 1.1 Reparo de Backbone
     for (const oldBb of currentBackbones) {
         if (!activeBackbones.has(oldBb)) {
             showToast('Backbone Normalizado', `${oldBb}`, 'status-normal', 'check_circle', 'right');
         }
     }
 
-    // 1.2 Status de Rede Resolvidos (Singular e Multi)
     for (const oldProblem of currentProblems) {
         if (!newProblems.has(oldProblem)) {
-            
-            // Checa se era um alarme MULTI que foi resolvido
             if (oldProblem.includes("STATUS::MULTI::")) {
                 const matchMulti = oldProblem.match(/^\[(.*?)\] STATUS::MULTI::/);
                 if (matchMulti) {
@@ -97,9 +93,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                         showToast('Rede Normalizada', `${oltId} operando normalmente`, 'status-normal', 'check_circle', 'right');
                     }
                 }
-            } 
-            // Checa se era um alarme Singular que foi resolvido
-            else {
+            } else {
                 const matchSingle = oldProblem.match(/^\[(.*?)\] STATUS::(.*?)_(\d+\/\d+)/);
                 if (matchSingle) {
                     const oltId = matchSingle[1];
@@ -114,7 +108,6 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
         }
     }
     
-    // 1.3 Energia Restabelecida
     for (const oldEp of currentEnergyProblems) {
         if (!newEnergyProblems.has(oldEp)) {
             const match = oldEp.match(/^\[(.*?)\] ENERGIA::(.*?)_(\d+\/\d+)/);
@@ -137,7 +130,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
         if (!currentBackbones.has(bb)) {
             showToast(
                 'ROMPIMENTO DE BACKBONE', 
-                `${bb}`, // Mantido APENAS o nome da OLT, super limpo
+                `${bb}`, 
                 'rede-super', 
                 'sos', 
                 'right'
@@ -147,17 +140,22 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     currentBackbones = activeBackbones;
 
     // ============================================================
-    // 3. DISPAROS: HÍBRIDO (Vem da Esquerda)
+    // 3. DISPAROS: HÍBRIDO (Vem da Esquerda) & CRIAÇÃO DO SILENCIADOR
     // ============================================================
+    const activeHybridPorts = new Set(); // Cofre do silenciador
+
     for (const hb of newHybridProblems) {
-        if (!currentHybridProblems.has(hb)) {
-            const match = hb.match(/^\[(.*?)\] HIBRIDO::(\d+\/\d+)::(\d+)::(\d+)$/);
-            if (match) {
-                const oltId = match[1];
-                const porta = match[2];
-                const offRede = match[3];
-                const offEnergia = match[4];
-                
+        const match = hb.match(/^\[(.*?)\] HIBRIDO::(\d+\/\d+)::(\d+)::(\d+)$/);
+        if (match) {
+            const oltId = match[1];
+            const porta = match[2];
+            const offRede = match[3];
+            const offEnergia = match[4];
+            
+            // Adiciona a porta híbrida no cofre do silenciador
+            activeHybridPorts.add(`${oltId}_${porta}`);
+            
+            if (!currentHybridProblems.has(hb)) {
                 showToast(
                     'Possível Queda de Energia', 
                     `${oltId} (${porta}): ${offRede} OFF / ${offEnergia} S.LUZ`, 
@@ -182,6 +180,10 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                 const porta = match[3];
                 const powerOff = match[4];
                 
+                // --- SILENCIADOR HÍBRIDO ATIVADO ---
+                if (activeHybridPorts.has(`${oltId}_${porta}`)) continue; 
+                // -----------------------------------
+
                 const typeClass = severity === 'CRIT' ? 'energia-crit' : 'energia-warn';
                 const title = severity === 'CRIT' ? 'Alarme de Energia' : 'Atenção de Energia';
                 const icon = severity === 'CRIT' ? 'power_off' : 'warning';
@@ -208,16 +210,23 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
             const matchMulti = problemKey.match(/^\[(.*?)\] STATUS::MULTI::(.*)$/);
             if (matchMulti) {
                 const oltId = matchMulti[1];
-                const multiString = matchMulti[2]; // ex: "1/1(CRIT),1/2(WARN)"
+                const multiString = matchMulti[2]; 
                 
-                // Limpeza Mágica: Remove os (textos) e troca a vírgula por "e"
-                const descLimpa = multiString
-                    .replace(/\([^)]+\)/g, '') // Apaga qualquer coisa entre parênteses
-                    .replace(/,/g, ' e ');
+                let portsArray = multiString.split(',');
+
+                // --- SILENCIADOR HÍBRIDO NO MULTI ---
+                // Filtra as portas, removendo as que já estão no Híbrido
+                portsArray = portsArray.filter(p => !activeHybridPorts.has(`${oltId}_${p}`));
+                
+                // Se todas as portas do alerta múltiplo foram anuladas pelo Híbrido, pula o alerta!
+                if (portsArray.length === 0) continue;
+                // ------------------------------------
+
+                const descLimpa = portsArray.join(' e ');
 
                 showToast(
                     'Falha Múltipla de Rede', 
-                    `${oltId} - ${descLimpa}`, // Visual super limpo sem o texto "Portas:"
+                    `${oltId} - ${descLimpa}`, 
                     'energia-crit', 
                     'error',        
                     'right' 
@@ -231,6 +240,10 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                 const oltId = matchSingle[1];
                 const severity = matchSingle[2];
                 const porta = matchSingle[3];
+
+                // --- SILENCIADOR HÍBRIDO ATIVADO ---
+                if (activeHybridPorts.has(`${oltId}_${porta}`)) continue;
+                // -----------------------------------
 
                 let title = 'Problema de Rede';
                 let typeClass = 'rede-problem';
@@ -248,7 +261,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
 
                 showToast(
                     title, 
-                    `${oltId} - ${porta}`, // Visual super limpo sem o texto "Porta"
+                    `${oltId} - ${porta}`, 
                     typeClass, 
                     icon, 
                     'right' 
