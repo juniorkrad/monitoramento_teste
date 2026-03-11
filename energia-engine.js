@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Ajuste: Impacto de Atenção reduzido para 15%
+// Ajuste: Inteligência de Agrupamento MULTI-PORTAS para Energia
 // ==============================================================================
 
 const ENERGY_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -43,6 +43,7 @@ const HORIZONTAL_ENERGY_MAP = {
 };
 
 window.ENERGY_DATA_STORE = {};
+window.NETWORK_ENERGY_STORE = new Set(); // Cofre de alarmes de energia
 let energyChartInstance = null; 
 
 // ==============================================================================
@@ -315,6 +316,49 @@ window.startEnergyMonitoring = async function() {
         });
 
         updateGlobalEnergyCard();
+
+        // ==============================================================================
+        // --- GERAÇÃO DOS ALARMES GLOBAIS DE ENERGIA (SINGULAR E MULTI) ---
+        // ==============================================================================
+        let allEnergyProblems = new Set();
+
+        ENERGY_OLT_LIST.forEach(oltDef => {
+            const oData = window.ENERGY_DATA_STORE.olts[oltDef.id];
+            let localEnergyProblems = [];
+
+            for (const placa in oData.ports) {
+                for (const porta in oData.ports[placa]) {
+                    const pData = oData.ports[placa][porta];
+                    if (pData.total > 0) {
+                        const perc = pData.powerOff / pData.total;
+                        let severity = null;
+
+                        // Regra visual de impacto
+                        if ((perc >= 0.5 && pData.powerOff >= 10) || (perc === 1 && pData.total >= 5)) {
+                            severity = 'CRIT';
+                        } else if (perc >= 0.15 && pData.powerOff >= 5) {
+                            severity = 'WARN';
+                        }
+
+                        if (severity) {
+                            localEnergyProblems.push({ porta: `${placa}/${porta}`, severity: severity, off: pData.powerOff });
+                        }
+                    }
+                }
+            }
+
+            // AQUI ESTÁ A INTELIGÊNCIA DE AGRUPAMENTO
+            if (localEnergyProblems.length >= 2) {
+                const multiStr = localEnergyProblems.map(p => p.porta).join(',');
+                allEnergyProblems.add(`[${oData.id}] ENERGIA::MULTI::${multiStr}`);
+            } else if (localEnergyProblems.length === 1) {
+                const p = localEnergyProblems[0];
+                allEnergyProblems.add(`[${oData.id}] ENERGIA::${p.severity}_${p.porta}::${p.off}`);
+            }
+        });
+
+        window.NETWORK_ENERGY_STORE = allEnergyProblems;
+        // ==============================================================================
 
         const gridEl = document.getElementById('energy-olt-grid');
         const isEnergyPage = window.location.pathname.includes('energia.html');
