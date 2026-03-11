@@ -79,7 +79,8 @@
     overflow: hidden;
 }
 
-.toast span:not(.toast-icon) {
+/* Aplica a fonte de texto apenas no span de descrição principal */
+.toast .toast-content > span {
     font-size: 13px;
     font-family: var(--font-family-mono);
     color: #cccccc;
@@ -87,6 +88,15 @@
     text-overflow: ellipsis;
     overflow: hidden;
     margin-top: 3px;
+}
+
+/* Proteção absoluta para os Ícones renderizarem corretamente dentro do texto */
+.toast .toast-content span.material-symbols-rounded {
+    font-family: 'Material Symbols Rounded' !important;
+    font-size: 16px !important;
+    vertical-align: middle;
+    color: inherit; /* Puxa a cor do texto pai */
+    margin: 0 2px;
 }
 
 /* ==========================================================================
