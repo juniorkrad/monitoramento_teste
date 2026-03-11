@@ -1,5 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
+// Atualização: Etiquetas detalhadas por Porta para suporte ao Alarme Híbrido e Novo Toast
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -36,7 +37,7 @@ const GLOBAL_OLT_LIST = [
 ];
 
 window.OLT_CLIENTS_DATA = {};
-window.CURRENT_OLT_PORT_DATA = {}; // Cofre de dados estruturado por placa -> porta
+window.CURRENT_OLT_PORT_DATA = {}; 
 window.NETWORK_PROBLEMS_STORE = new Set();
 window.NETWORK_BACKBONE_STORE = new Set();
 window.currentOltInterval = null; 
@@ -200,21 +201,37 @@ async function runGlobalNetworkOverview() {
         
         oltStatsList.push({ id: result.id, offline: result.offlineCount, total });
 
-        let isMicroSuper = false, isCritical = false, isWarning = false, ports100Down = 0;
+        let ports100Down = 0;
+        
+        // --- NOVA LÓGICA DE GERAÇÃO DE ETIQUETAS POR PORTA ---
         for (const key in result.portData) {
             const { off, total: pTotal } = result.portData[key];
             if (pTotal >= 5) {
-                if (off / pTotal === 1) { ports100Down++; isMicroSuper = true; }
-                else if (off / pTotal >= 0.5) isMicroSuper = true;
-                else if (off >= 32) isCritical = true;
-                else if (off >= 16) isWarning = true;
+                let severity = null;
+                const percOffline = off / pTotal;
+
+                // Regras de Rede Unificadas
+                if (percOffline === 1) { 
+                    ports100Down++; 
+                    severity = 'SUPER'; 
+                } else if (percOffline >= 0.5 || off >= 32) { 
+                    severity = 'CRIT'; 
+                } else if (off >= 16) { 
+                    severity = 'WARN'; 
+                }
+
+                // Cria a etiqueta exata que o novo notifications.js espera ler
+                if (severity) {
+                    allProblems.add(`[${result.id}] STATUS::${severity}_${key}::${off}`);
+                }
             }
         }
         
-        if (ports100Down >= 2) { activeBackboneDetails.push(`OLT: ${result.id}`); currentBackbones.add(result.id); }
-        else if (isMicroSuper) allProblems.add(`[${result.id}] STATUS::SUPER`);
-        else if (isCritical) allProblems.add(`[${result.id}] STATUS::CRIT`);
-        else if (isWarning) allProblems.add(`[${result.id}] STATUS::WARN`);
+        // Manutenção da regra do Backbone (Agrupamento Global da OLT)
+        if (ports100Down >= 2) { 
+            activeBackboneDetails.push(`OLT: ${result.id}`); 
+            currentBackbones.add(result.id); 
+        }
     });
 
     oltStatsList.sort((a, b) => b.offline - a.offline);
@@ -277,7 +294,6 @@ function getCircuitInfo(rowsCircuitos, sheetTab, placa, porta, type) {
 window.startOltMonitoring = function(config) {
     window.stopOltMonitoring(); 
 
-    // Cria o Modal de Detalhes (Clientes/Status) flutuante por cima de tudo
     if (!document.getElementById('detail-modal')) {
         const modalStyles = `
             <style>
@@ -423,9 +439,7 @@ window.startOltMonitoring = function(config) {
                 window.OLT_CLIENTS_DATA[portKey].push(clientData);
             });
 
-            // ==========================================
-            // RENDERIZA A TELA A (GRID DE PLACAS)
-            // ==========================================
+            // Renderização Tela A
             const placasList = document.getElementById('olt-placas-list');
             if (placasList) placasList.innerHTML = '';
 
@@ -473,9 +487,7 @@ window.startOltMonitoring = function(config) {
                 }
             }
 
-            // ==========================================
-            // ATUALIZA A TELA B (SE ESTIVER ABERTA)
-            // ==========================================
+            // Atualização Tela B
             const detalhesView = document.getElementById('olt-view-detalhes');
             if (detalhesView && detalhesView.style.display === 'block') {
                 const subtitle = document.getElementById('olt-placa-subtitle').innerText;
@@ -496,10 +508,6 @@ window.startOltMonitoring = function(config) {
     runUpdate(); 
     window.currentOltInterval = setInterval(runUpdate, ENGINE_REFRESH_SECONDS * 1000); 
 }
-
-// ==============================================================================
-// GERAÇÃO DINÂMICA DA TELA B (TABELA DE PORTAS DA PLACA)
-// ==============================================================================
 
 window.openOltPlacaDetails = function(placa, oltType) {
     document.getElementById('olt-view-placas').style.display = 'none';
@@ -553,10 +561,6 @@ window.openOltPlacaDetails = function(placa, oltType) {
         `;
     });
 };
-
-// ==============================================================================
-// CONTROLE DO MODAL INTERNO (CLIENTES E ESTATÍSTICAS)
-// ==============================================================================
 
 window.closeModal = function(event) {
     if (event && event.target.id !== 'detail-modal' && !event.target.classList.contains('close-modal')) return;
@@ -660,7 +664,6 @@ window.filterClients = function() {
     });
 }
 
-// Inicializador Automático para a Home
 document.addEventListener('DOMContentLoaded', () => {
     const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
     if (isHomePage) {
