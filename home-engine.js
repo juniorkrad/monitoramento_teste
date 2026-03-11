@@ -1,15 +1,14 @@
 /* ==========================================================================
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
-   Atualização: Motor Híbrido Porta a Porta + Cofre Global de Híbridos
+   Atualização: Remoção de Alarmes Puros de Energia, Foco em Rede e Híbrido
    ========================================================================== */
 
 let lastNotifiedState = ""; // Memória unificada para não spammar os alarmes
 
 function watchHomeAlarms() {
-    // Busca os dados dos cofres de rede e energia gerados pelos motores
+    // Busca os dados dos cofres de rede gerados pelos motores
     let networkProblems = new Set(window.NETWORK_PROBLEMS_STORE || []);
     let backboneProblems = new Set(window.NETWORK_BACKBONE_STORE || []);
-    let energyProblems = new Set(window.NETWORK_ENERGY_STORE || []); 
     let hybridProblems = new Set(); 
 
     // ============================================================
@@ -67,7 +66,7 @@ function watchHomeAlarms() {
         }
     }
 
-    // Exporta os híbridos encontrados para que o energia-engine.js possa ler na próxima varredura
+    // Exporta os híbridos encontrados
     window.NETWORK_HYBRID_STORE = hybridProblems;
 
     // ============================================================
@@ -76,14 +75,14 @@ function watchHomeAlarms() {
     const currentStateStr = 
         Array.from(networkProblems).sort().join('|') + "||" + 
         Array.from(backboneProblems).sort().join('|') + "||" + 
-        Array.from(energyProblems).sort().join('|') + "||" + 
         Array.from(hybridProblems).sort().join('|');
 
     if (currentStateStr !== lastNotifiedState) {
         lastNotifiedState = currentStateStr;
         
         if (typeof checkAndNotifyForNewProblems === 'function') {
-            checkAndNotifyForNewProblems(networkProblems, backboneProblems, energyProblems, hybridProblems);
+            // Passa um Set vazio no local dos problemas de energia puros
+            checkAndNotifyForNewProblems(networkProblems, backboneProblems, new Set(), hybridProblems);
         }
     }
 }

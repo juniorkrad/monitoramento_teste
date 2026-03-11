@@ -1,12 +1,11 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 8.8 - Refinamento Visual)
-// Reformulação: Uso de ícones no Híbrido e formatação de listas com vírgula
+// notifications.js - Sistema Central de Alertas (Versão 8.9 - Sem Energia Pura)
+// Reformulação: Foco total em Rede e Híbrido, remoção de alertas puros de energia
 // ==============================================================================
 
 // Memórias de Estado
 let currentProblems = new Set();
 let currentBackbones = new Set(); 
-let currentEnergyProblems = new Set(); 
 let currentHybridProblems = new Set(); 
 
 /**
@@ -68,7 +67,7 @@ function showToast(title, description, typeClass, icon, position = 'right') {
 }
 
 /**
- * Lógica Inteligente: Detecta Novos Problemas, Normalizações, Rede, Energia, HÍBRIDOS e BACKBONE
+ * Lógica Inteligente: Detecta Novos Problemas, Normalizações, Rede, HÍBRIDOS e BACKBONE
  */
 function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), newEnergyProblems = new Set(), newHybridProblems = new Set()) {
     
@@ -102,33 +101,6 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                     
                     if (!stillHasIssue) {
                         showToast('Sinal Normalizado', `${oltId} - ${porta}`, 'status-normal', 'check_circle', 'right'); 
-                    }
-                }
-            }
-        }
-    }
-    
-    for (const oldEp of currentEnergyProblems) {
-        if (!newEnergyProblems.has(oldEp)) {
-            // Checa se era um alarme MULTI de energia que foi resolvido
-            if (oldEp.includes("ENERGIA::MULTI::")) {
-                const matchMulti = oldEp.match(/^\[(.*?)\] ENERGIA::MULTI::/);
-                if (matchMulti) {
-                    const oltId = matchMulti[1];
-                    const stillHasIssue = Array.from(newEnergyProblems).some(p => p.startsWith(`[${oltId}] ENERGIA::`));
-                    if (!stillHasIssue) {
-                        showToast('Energia Retornou', `${oltId} 100% com luz`, 'status-normal', 'check_circle', 'left');
-                    }
-                }
-            } else {
-                const matchSingle = oldEp.match(/^\[(.*?)\] ENERGIA::(.*?)_(\d+\/\d+)/);
-                if (matchSingle) {
-                    const oltId = matchSingle[1];
-                    const porta = matchSingle[3];
-                    const stillHasIssue = Array.from(newEnergyProblems).some(p => p.startsWith(`[${oltId}] ENERGIA::`) && p.includes(`_${porta}`));
-                    
-                    if (!stillHasIssue) {
-                        showToast('Energia Retornou', `${oltId} - ${porta}`, 'status-normal', 'check_circle', 'left');
                     }
                 }
             }
@@ -182,68 +154,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     currentHybridProblems = newHybridProblems;
 
     // ============================================================
-    // 4. DISPAROS: ENERGIA PURA (Vem da Esquerda)
-    // ============================================================
-    for (const ep of newEnergyProblems) {
-        if (!currentEnergyProblems.has(ep)) {
-
-            // --- CAPTURA DO ALARME MULTI-PORTAS ENERGIA ---
-            const matchMulti = ep.match(/^\[(.*?)\] ENERGIA::MULTI::(.*)$/);
-            if (matchMulti) {
-                const oltId = matchMulti[1];
-                const multiString = matchMulti[2]; 
-                
-                let portsArray = multiString.split(',');
-
-                // --- SILENCIADOR HÍBRIDO NO MULTI DE ENERGIA ---
-                portsArray = portsArray.filter(p => !activeHybridPorts.has(`${oltId}_${p}`));
-                
-                if (portsArray.length === 0) continue;
-                // ------------------------------------
-
-                // Formatação limpa com vírgula
-                const descLimpa = portsArray.join(', ');
-
-                showToast(
-                    'Falha Múltipla de Energia', 
-                    `${oltId} - ${descLimpa}`, 
-                    'energia-crit', 
-                    'power_off',        
-                    'left' 
-                );
-                continue; 
-            }
-
-            // --- CAPTURA DO ALARME SINGULAR DE ENERGIA ---
-            const matchSingle = ep.match(/^\[(.*?)\] ENERGIA::(CRIT|WARN)_(\d+\/\d+)::(\d+)$/);
-            if (matchSingle) {
-                const oltId = matchSingle[1];
-                const severity = matchSingle[2];
-                const porta = matchSingle[3];
-                
-                // --- SILENCIADOR HÍBRIDO ATIVADO ---
-                if (activeHybridPorts.has(`${oltId}_${porta}`)) continue; 
-                // -----------------------------------
-
-                const typeClass = severity === 'CRIT' ? 'energia-crit' : 'energia-warn';
-                const title = severity === 'CRIT' ? 'Alarme de Energia' : 'Atenção de Energia';
-                const icon = severity === 'CRIT' ? 'power_off' : 'warning';
-                
-                // Formato Minimalista: OLT - Porta (sem quantidade de clientes)
-                showToast(
-                    title, 
-                    `${oltId} - ${porta}`, 
-                    typeClass, 
-                    icon, 
-                    'left' 
-                );
-            }
-        }
-    }
-    currentEnergyProblems = newEnergyProblems;
-
-    // ============================================================
-    // 5. DISPAROS: REDE PURA (Vem da Direita)
+    // 4. DISPAROS: REDE PURA (Vem da Direita)
     // ============================================================
     for (const problemKey of newProblems) {
         if (!currentProblems.has(problemKey)) {
@@ -265,7 +176,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                 showToast(
                     'Falha Múltipla de Rede', 
                     `${oltId} - ${descLimpa}`, 
-                    'energia-crit', 
+                    'rede-problem', 
                     'error',        
                     'right' 
                 );

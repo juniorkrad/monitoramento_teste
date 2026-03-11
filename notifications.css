@@ -124,15 +124,7 @@
 .toast.rede-super .toast-icon { color: #FF1744; animation: shakeIcon 0.5s infinite; }
 .toast.rede-super strong { color: #FF1744; }
 
-/* 5. Energia: Atenção (Laranja Claro) */
-.toast.energia-warn { border-left: 5px solid #f59e0b; }
-.toast.energia-warn .toast-icon { color: #f59e0b; }
-
-/* 6. Energia: Crítico (Laranja Forte/Escuro) */
-.toast.energia-crit { border-left: 5px solid #f97316; background-color: #2a1100; }
-.toast.energia-crit .toast-icon { color: #f97316; }
-
-/* 7. HÍBRIDO: Possível Queda de Energia (Dourado/Amarelo) */
+/* 5. HÍBRIDO: Possível Queda de Energia (Dourado/Amarelo) */
 .toast.hibrido { 
     border-left: 5px solid #fbbf24; 
     background-color: #2b2510; 
