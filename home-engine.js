@@ -1,19 +1,30 @@
 /* ==========================================================================
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
-   Reformulação: Alarme Híbrido, Fim do Silenciador e Etiquetas por Porta
+   Atualização: Hierarquia de Força (Múltiplo de Energia anula o Híbrido)
    ========================================================================== */
 
 let lastNotifiedState = ""; // Memória unificada para não spammar os alarmes
 
 function watchHomeAlarms() {
-    // Busca os dados dos cofres de rede que o olt-engine.js guardou
+    // Busca os dados dos cofres de rede e energia gerados pelos motores
     let networkProblems = new Set(window.NETWORK_PROBLEMS_STORE || []);
     let backboneProblems = new Set(window.NETWORK_BACKBONE_STORE || []);
-    let energyProblems = new Set();
-    let hybridProblems = new Set(); // NOVO: Cofre do Alarme Híbrido
+    let energyProblems = new Set(window.NETWORK_ENERGY_STORE || []); // Lê a energia unificada
+    let hybridProblems = new Set(); 
 
     // ============================================================
-    // 1. VIGILANTE DE ENERGIA (Atualiza Card da Home e Toasts)
+    // 1. IDENTIFICAR OLTS COM ALARME MÚLTIPLO DE ENERGIA
+    // ============================================================
+    let multiEnergyOlts = new Set();
+    for (const ep of energyProblems) {
+        const match = ep.match(/^\[(.*?)\] ENERGIA::MULTI::/);
+        if (match) {
+            multiEnergyOlts.add(match[1]); // Guarda o nome da OLT que tem 2+ portas sem luz
+        }
+    }
+
+    // ============================================================
+    // 2. VIGILANTE DE ENERGIA E MOTOR HÍBRIDO
     // ============================================================
     if (window.ENERGY_DATA_STORE && window.ENERGY_DATA_STORE.global) {
         const globalData = window.ENERGY_DATA_STORE.global;
@@ -46,42 +57,23 @@ function watchHomeAlarms() {
         }
 
         // ============================================================
-        // 1.2 PREPARAÇÃO DOS TOASTS (ENERGIA E HÍBRIDO POR PORTA)
+        // 2.2 CRIAÇÃO DO ALARME HÍBRIDO (COM TRAVA DE HIERARQUIA)
         // ============================================================
         for (const oltId in window.ENERGY_DATA_STORE.olts) {
+            // TRAVA DE OURO: Se a OLT já tem um Alarme Múltiplo de Energia, aborta o Híbrido para ela!
+            if (multiEnergyOlts.has(oltId)) continue; 
+
             const oltData = window.ENERGY_DATA_STORE.olts[oltId];
             for (const placa in oltData.ports) {
                 for (const porta in oltData.ports[placa]) {
                     const pData = oltData.ports[placa][porta];
                     const pt = `${placa}/${porta}`;
 
-                    // --- NOVA REGRA: ALARME HÍBRIDO ---
                     // Gatilho: Mínimo de 16 offline E Energia representa >= 70% do problema
                     if (pData.offline >= 16 && pData.powerOff > 0) {
                         const overlap = pData.powerOff / pData.offline;
                         if (overlap >= 0.70) {
-                            // Formato esperado pelo notifications.js
                             hybridProblems.add(`[${oltId}] HIBRIDO::${pt}::${pData.offline}::${pData.powerOff}`);
-                        }
-                    }
-
-                    // --- NOVA REGRA: ENERGIA POR PORTA ---
-                    if (pData.powerOff > 0 && pData.total > 0) {
-                        const perc = pData.powerOff / pData.total;
-                        let severity = null;
-                        
-                        // CRIT: 50% de queda e min 10 clientes OU 100% de queda (min 5 clientes)
-                        if ((perc >= 0.5 && pData.powerOff >= 10) || (perc === 1 && pData.total >= 5)) {
-                            severity = 'CRIT';
-                        } 
-                        // WARN: 15% de queda e mínimo de 5 clientes
-                        else if (perc >= 0.15 && pData.powerOff >= 5) {
-                            severity = 'WARN';
-                        }
-                        
-                        if (severity) {
-                            // Envia a tag específica da porta (E não mais da OLT inteira)
-                            energyProblems.add(`[${oltId}] ENERGIA::${severity}_${pt}::${pData.powerOff}`);
                         }
                     }
                 }
@@ -90,12 +82,7 @@ function watchHomeAlarms() {
     }
 
     // ============================================================
-    // OBSERVAÇÃO: O antigo "Filtro de Prevalência" que silenciava a 
-    // rede foi completamente REMOVIDO aqui para permitir alarmes simultâneos.
-    // ============================================================
-
-    // ============================================================
-    // 2. DISPARO CENTRALIZADO DE TODOS OS ALARMES
+    // 3. DISPARO CENTRALIZADO DE TODOS OS ALARMES
     // ============================================================
     const currentStateStr = 
         Array.from(networkProblems).sort().join('|') + "||" + 
