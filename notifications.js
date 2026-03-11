@@ -1,6 +1,6 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 8.2 - Novo Padrão)
-// Reformulação: Tamanho Único, Bilateral, Híbrido, Backbone e Agrupador MULTI
+// notifications.js - Sistema Central de Alertas (Versão 8.3 - Minimalista)
+// Reformulação: Textos enxutos, Foco na OLT/Porta e Interface Limpa
 // ==============================================================================
 
 // Memórias de Estado
@@ -79,7 +79,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     // 1.1 Reparo de Backbone
     for (const oldBb of currentBackbones) {
         if (!activeBackbones.has(oldBb)) {
-            showToast('Backbone Normalizado', `OLT: ${oldBb}`, 'status-normal', 'check_circle', 'right');
+            showToast('Backbone Normalizado', `${oldBb}`, 'status-normal', 'check_circle', 'right');
         }
     }
 
@@ -92,7 +92,6 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                 const matchMulti = oldProblem.match(/^\[(.*?)\] STATUS::MULTI::/);
                 if (matchMulti) {
                     const oltId = matchMulti[1];
-                    // Só avisa que normalizou se não sobrou NENHUM problema nessa OLT
                     const stillHasIssue = Array.from(newProblems).some(p => p.startsWith(`[${oltId}] STATUS::`));
                     if (!stillHasIssue) {
                         showToast('Rede Normalizada', `${oltId} operando normalmente`, 'status-normal', 'check_circle', 'right');
@@ -138,7 +137,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
         if (!currentBackbones.has(bb)) {
             showToast(
                 'ROMPIMENTO DE BACKBONE', 
-                `Múltiplas portas OFF na ${bb}`, 
+                `${bb}`, // Mantido APENAS o nome da OLT, super limpo
                 'rede-super', 
                 'sos', 
                 'right'
@@ -205,27 +204,25 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     for (const problemKey of newProblems) {
         if (!currentProblems.has(problemKey)) {
 
-            // --- NOVO: CAPTURA DO ALARME MULTI-PORTAS ---
+            // --- CAPTURA DO ALARME MULTI-PORTAS ---
             const matchMulti = problemKey.match(/^\[(.*?)\] STATUS::MULTI::(.*)$/);
             if (matchMulti) {
                 const oltId = matchMulti[1];
                 const multiString = matchMulti[2]; // ex: "1/1(CRIT),1/2(WARN)"
                 
-                // Traduz os termos para a visualização Opção B e troca a vírgula por "e"
-                const descTraduzida = multiString
-                    .replace(/CRIT/g, 'Crítico')
-                    .replace(/WARN/g, 'Atenção')
-                    .replace(/SUPER/g, 'Crítico')
+                // Limpeza Mágica: Remove os (textos) e troca a vírgula por "e"
+                const descLimpa = multiString
+                    .replace(/\([^)]+\)/g, '') // Apaga qualquer coisa entre parênteses
                     .replace(/,/g, ' e ');
 
                 showToast(
                     'Falha Múltipla de Rede', 
-                    `${oltId}: ${descTraduzida}`, 
-                    'energia-crit', // Laranja Escuro reaproveitado
-                    'error',        // Mesmo ícone de rede crítica
+                    `${oltId} - Portas: ${descLimpa}`, // Visual super limpo
+                    'energia-crit', 
+                    'error',        
                     'right' 
                 );
-                continue; // Pula a leitura do alarme singular
+                continue; 
             }
 
             // --- CAPTURA DO ALARME SINGULAR PADRÃO ---
@@ -234,7 +231,6 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                 const oltId = matchSingle[1];
                 const severity = matchSingle[2];
                 const porta = matchSingle[3];
-                const offline = matchSingle[4];
 
                 let title = 'Problema de Rede';
                 let typeClass = 'rede-problem';
@@ -252,7 +248,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
 
                 showToast(
                     title, 
-                    `${oltId} (${porta}) - ${offline} clientes off`, 
+                    `${oltId} - Porta ${porta}`, // Removida a contagem de clientes
                     typeClass, 
                     icon, 
                     'right' 

@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Silenciador de Portas para Backbone, Agrupador MULTI e Fim do HTML Injetado
+// Atualização: Fonte de dados limpa para Múltiplas Portas (Minimalista)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -202,7 +202,7 @@ async function runGlobalNetworkOverview() {
         oltStatsList.push({ id: result.id, offline: result.offlineCount, total });
 
         let ports100Down = 0;
-        let localProblems = []; // Guarda os problemas individuais da OLT
+        let localProblems = []; 
         
         for (const key in result.portData) {
             const { off, total: pTotal } = result.portData[key];
@@ -236,7 +236,8 @@ async function runGlobalNetworkOverview() {
 
         // Se houver 2 ou mais portas restantes com problema (Atenção/Problema), unifica tudo num só card
         if (filteredProblems.length >= 2) {
-            const multiStr = filteredProblems.map(p => `${p.porta}(${p.severity})`).join(',');
+            // AQUI ESTÁ A MUDANÇA: Envia apenas as portas limpas, sem as severidades ao lado
+            const multiStr = filteredProblems.map(p => p.porta).join(',');
             allProblems.add(`[${result.id}] STATUS::MULTI::${multiStr}`);
         } 
         // Se houver apenas 1 porta com problema, mantém o alarme individual
