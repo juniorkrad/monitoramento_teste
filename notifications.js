@@ -1,6 +1,6 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 9.0 - Layout Ampliado)
-// Atualização: Redimensionamento de 25% para melhor legibilidade e ícones adaptados
+// notifications.js - Sistema Central de Alertas (Versão 9.1 - Híbrido Ampliado)
+// Atualização: Ícones internos do Híbrido redimensionados para o novo layout
 // ==============================================================================
 
 // Memórias de Estado
@@ -140,10 +140,10 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
             activeHybridPorts.add(`${oltId}_${porta}`);
             
             if (!currentHybridProblems.has(hb)) {
-                // Descrição Híbrida Minimalista com Ícones (Ajustado para o novo tamanho do card)
+                // HÍBRIDO EXCLUSIVO: Ícones aumentados proporcionalmente para 22px
                 showToast(
                     'Possível Queda de Energia', 
-                    `${oltId} (${porta}): ${offRede} <span class="material-symbols-rounded" style="font-size: 18px; vertical-align: middle;">router</span> / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 18px; vertical-align: middle;">power_off</span>`, 
+                    `${oltId} (${porta}): ${offRede} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">router</span> / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">power_off</span>`, 
                     'hibrido', 
                     'offline_bolt', 
                     'left' 
