@@ -1,6 +1,6 @@
 /* ==========================================================================
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
-   Atualização: Hierarquia de Força (Múltiplo de Energia anula o Híbrido)
+   Atualização: Motor Híbrido Porta a Porta + Cofre Global de Híbridos
    ========================================================================== */
 
 let lastNotifiedState = ""; // Memória unificada para não spammar os alarmes
@@ -9,22 +9,11 @@ function watchHomeAlarms() {
     // Busca os dados dos cofres de rede e energia gerados pelos motores
     let networkProblems = new Set(window.NETWORK_PROBLEMS_STORE || []);
     let backboneProblems = new Set(window.NETWORK_BACKBONE_STORE || []);
-    let energyProblems = new Set(window.NETWORK_ENERGY_STORE || []); // Lê a energia unificada
+    let energyProblems = new Set(window.NETWORK_ENERGY_STORE || []); 
     let hybridProblems = new Set(); 
 
     // ============================================================
-    // 1. IDENTIFICAR OLTS COM ALARME MÚLTIPLO DE ENERGIA
-    // ============================================================
-    let multiEnergyOlts = new Set();
-    for (const ep of energyProblems) {
-        const match = ep.match(/^\[(.*?)\] ENERGIA::MULTI::/);
-        if (match) {
-            multiEnergyOlts.add(match[1]); // Guarda o nome da OLT que tem 2+ portas sem luz
-        }
-    }
-
-    // ============================================================
-    // 2. VIGILANTE DE ENERGIA E MOTOR HÍBRIDO
+    // 1. VIGILANTE DE ENERGIA E MOTOR HÍBRIDO
     // ============================================================
     if (window.ENERGY_DATA_STORE && window.ENERGY_DATA_STORE.global) {
         const globalData = window.ENERGY_DATA_STORE.global;
@@ -57,12 +46,9 @@ function watchHomeAlarms() {
         }
 
         // ============================================================
-        // 2.2 CRIAÇÃO DO ALARME HÍBRIDO (COM TRAVA DE HIERARQUIA)
+        // 1.2 CRIAÇÃO DO ALARME HÍBRIDO (PORTA A PORTA)
         // ============================================================
         for (const oltId in window.ENERGY_DATA_STORE.olts) {
-            // TRAVA DE OURO: Se a OLT já tem um Alarme Múltiplo de Energia, aborta o Híbrido para ela!
-            if (multiEnergyOlts.has(oltId)) continue; 
-
             const oltData = window.ENERGY_DATA_STORE.olts[oltId];
             for (const placa in oltData.ports) {
                 for (const porta in oltData.ports[placa]) {
@@ -81,8 +67,11 @@ function watchHomeAlarms() {
         }
     }
 
+    // Exporta os híbridos encontrados para que o energia-engine.js possa ler na próxima varredura
+    window.NETWORK_HYBRID_STORE = hybridProblems;
+
     // ============================================================
-    // 3. DISPARO CENTRALIZADO DE TODOS OS ALARMES
+    // 2. DISPARO CENTRALIZADO DE TODOS OS ALARMES
     // ============================================================
     const currentStateStr = 
         Array.from(networkProblems).sort().join('|') + "||" + 

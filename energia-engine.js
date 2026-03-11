@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Ajuste: Inteligência de Agrupamento MULTI-PORTAS para Energia
+// Ajuste: Inteligência de Agrupamento MULTI-PORTAS com Sequestro Híbrido
 // ==============================================================================
 
 const ENERGY_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -318,9 +318,10 @@ window.startEnergyMonitoring = async function() {
         updateGlobalEnergyCard();
 
         // ==============================================================================
-        // --- GERAÇÃO DOS ALARMES GLOBAIS DE ENERGIA (SINGULAR E MULTI) ---
+        // --- GERAÇÃO DOS ALARMES GLOBAIS DE ENERGIA (SEQUESTRO HÍBRIDO) ---
         // ==============================================================================
         let allEnergyProblems = new Set();
+        let hybridStore = window.NETWORK_HYBRID_STORE || new Set(); // Lê o cofre de Híbridos gerado pelo home-engine
 
         ENERGY_OLT_LIST.forEach(oltDef => {
             const oData = window.ENERGY_DATA_STORE.olts[oltDef.id];
@@ -329,6 +330,11 @@ window.startEnergyMonitoring = async function() {
             for (const placa in oData.ports) {
                 for (const porta in oData.ports[placa]) {
                     const pData = oData.ports[placa][porta];
+                    const pt = `${placa}/${porta}`;
+
+                    // SEQUESTRO: Verifica se essa porta já virou Híbrida no outro motor
+                    const isHybrid = Array.from(hybridStore).some(h => h.startsWith(`[${oData.id}] HIBRIDO::${pt}::`));
+
                     if (pData.total > 0) {
                         const perc = pData.powerOff / pData.total;
                         let severity = null;
@@ -341,13 +347,16 @@ window.startEnergyMonitoring = async function() {
                         }
 
                         if (severity) {
-                            localEnergyProblems.push({ porta: `${placa}/${porta}`, severity: severity, off: pData.powerOff });
+                            // Só adiciona ao alarme de energia SE a porta NÃO for Híbrida!
+                            if (!isHybrid) {
+                                localEnergyProblems.push({ porta: pt, severity: severity, off: pData.powerOff });
+                            }
                         }
                     }
                 }
             }
 
-            // AQUI ESTÁ A INTELIGÊNCIA DE AGRUPAMENTO
+            // AQUI ESTÁ A INTELIGÊNCIA DE AGRUPAMENTO (Somente com as portas puras de energia)
             if (localEnergyProblems.length >= 2) {
                 const multiStr = localEnergyProblems.map(p => p.porta).join(',');
                 allEnergyProblems.add(`[${oData.id}] ENERGIA::MULTI::${multiStr}`);
