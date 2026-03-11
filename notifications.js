@@ -1,6 +1,6 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 8.9 - Sem Energia Pura)
-// Reformulação: Foco total em Rede e Híbrido, remoção de alertas puros de energia
+// notifications.js - Sistema Central de Alertas (Versão 9.0 - Layout Ampliado)
+// Atualização: Redimensionamento de 25% para melhor legibilidade e ícones adaptados
 // ==============================================================================
 
 // Memórias de Estado
@@ -140,10 +140,10 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
             activeHybridPorts.add(`${oltId}_${porta}`);
             
             if (!currentHybridProblems.has(hb)) {
-                // Descrição Híbrida Minimalista com Ícones
+                // Descrição Híbrida Minimalista com Ícones (Ajustado para o novo tamanho do card)
                 showToast(
                     'Possível Queda de Energia', 
-                    `${oltId} (${porta}): ${offRede} <span class="material-symbols-rounded" style="font-size: 15px; vertical-align: bottom;">router</span> / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 15px; vertical-align: bottom;">power_off</span>`, 
+                    `${oltId} (${porta}): ${offRede} <span class="material-symbols-rounded" style="font-size: 18px; vertical-align: middle;">router</span> / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 18px; vertical-align: middle;">power_off</span>`, 
                     'hibrido', 
                     'offline_bolt', 
                     'left' 
