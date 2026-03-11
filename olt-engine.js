@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Silenciador de Portas para Backbone e Fim do HTML Injetado
+// Atualização: Silenciador de Portas para Backbone, Agrupador MULTI e Fim do HTML Injetado
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -202,7 +202,7 @@ async function runGlobalNetworkOverview() {
         oltStatsList.push({ id: result.id, offline: result.offlineCount, total });
 
         let ports100Down = 0;
-        let localProblems = []; // Guarda os problemas desta OLT temporariamente
+        let localProblems = []; // Guarda os problemas individuais da OLT
         
         for (const key in result.portData) {
             const { off, total: pTotal } = result.portData[key];
@@ -220,23 +220,29 @@ async function runGlobalNetworkOverview() {
                 }
 
                 if (severity) {
-                    localProblems.push(`[${result.id}] STATUS::${severity}_${key}::${off}`);
+                    localProblems.push({ porta: key, severity: severity, off: off });
                 }
             }
         }
         
-        // --- LÓGICA DO SILENCIADOR DE BACKBONE ---
+        // --- LÓGICA DO SILENCIADOR DE BACKBONE E AGRUPADOR MULTI-PORTAS ---
+        let filteredProblems = localProblems;
+        
         if (ports100Down >= 2) { 
             currentBackbones.add(result.id); 
-            // Se for Backbone, transferimos apenas os avisos menores para a tela (ignorando as portas 100% down para não poluir)
-            localProblems.forEach(p => {
-                if (!p.includes('STATUS::SUPER')) {
-                    allProblems.add(p);
-                }
-            });
-        } else {
-            // Se NÃO for backbone, transfere tudo normalmente
-            localProblems.forEach(p => allProblems.add(p));
+            // Se for Backbone, silencia os críticos absolutos (SUPER) para não poluir
+            filteredProblems = localProblems.filter(p => p.severity !== 'SUPER');
+        } 
+
+        // Se houver 2 ou mais portas restantes com problema (Atenção/Problema), unifica tudo num só card
+        if (filteredProblems.length >= 2) {
+            const multiStr = filteredProblems.map(p => `${p.porta}(${p.severity})`).join(',');
+            allProblems.add(`[${result.id}] STATUS::MULTI::${multiStr}`);
+        } 
+        // Se houver apenas 1 porta com problema, mantém o alarme individual
+        else if (filteredProblems.length === 1) {
+            const p = filteredProblems[0];
+            allProblems.add(`[${result.id}] STATUS::${p.severity}_${p.porta}::${p.off}`);
         }
     });
 

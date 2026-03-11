@@ -1,6 +1,6 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 8.1 - Novo Padrão)
-// Reformulação: Tamanho Único, Entrada Bilateral, Suporte Híbrido e Backbone
+// notifications.js - Sistema Central de Alertas (Versão 8.2 - Novo Padrão)
+// Reformulação: Tamanho Único, Bilateral, Híbrido, Backbone e Agrupador MULTI
 // ==============================================================================
 
 // Memórias de Estado
@@ -27,11 +27,9 @@ function showToast(title, description, typeClass, icon, position = 'right') {
     }
     // ----------------------------------
 
-    // Determina o container baseado na posição desejada (Esquerda ou Direita)
     let containerId = position === 'left' ? 'toast-container-left' : 'toast-container-right';
     let container = document.getElementById(containerId);
     
-    // Se o container ainda não existir no HTML, cria dinamicamente
     if (!container) {
         container = document.createElement('div');
         container.id = containerId;
@@ -42,7 +40,6 @@ function showToast(title, description, typeClass, icon, position = 'right') {
     const slideClass = position === 'left' ? 'slide-left' : 'slide-right';
     toast.className = `toast ${typeClass} ${slideClass}`;
     
-    // Monta o HTML interno no novo formato padronizado
     toast.innerHTML = `
         <span class="material-symbols-rounded toast-icon">${icon}</span>
         <div class="toast-content">
@@ -60,7 +57,6 @@ function showToast(title, description, typeClass, icon, position = 'right') {
 
     setTimeout(() => toast.classList.add('show'), 50);
 
-    // Tempo de exibição universal (10 segundos)
     setTimeout(() => {
         if (toast.parentElement) {
             toast.classList.remove('show');
@@ -87,18 +83,33 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
         }
     }
 
-    // 1.2 Status de Rede Resolvidos
+    // 1.2 Status de Rede Resolvidos (Singular e Multi)
     for (const oldProblem of currentProblems) {
         if (!newProblems.has(oldProblem)) {
-            const match = oldProblem.match(/^\[(.*?)\] STATUS::(.*?)_(\d+)\/(\d+)/);
-            if (match) {
-                const oltId = match[1];
-                const placa = match[3];
-                const porta = match[4];
-                const stillHasIssue = Array.from(newProblems).some(p => p.startsWith(`[${oltId}] STATUS::`) && p.includes(`_${placa}/${porta}`));
-                
-                if (!stillHasIssue) {
-                    showToast('Sinal Normalizado', `${oltId} - Porta ${placa}/${porta}`, 'status-normal', 'check_circle', 'right'); 
+            
+            // Checa se era um alarme MULTI que foi resolvido
+            if (oldProblem.includes("STATUS::MULTI::")) {
+                const matchMulti = oldProblem.match(/^\[(.*?)\] STATUS::MULTI::/);
+                if (matchMulti) {
+                    const oltId = matchMulti[1];
+                    // Só avisa que normalizou se não sobrou NENHUM problema nessa OLT
+                    const stillHasIssue = Array.from(newProblems).some(p => p.startsWith(`[${oltId}] STATUS::`));
+                    if (!stillHasIssue) {
+                        showToast('Rede Normalizada', `${oltId} operando normalmente`, 'status-normal', 'check_circle', 'right');
+                    }
+                }
+            } 
+            // Checa se era um alarme Singular que foi resolvido
+            else {
+                const matchSingle = oldProblem.match(/^\[(.*?)\] STATUS::(.*?)_(\d+\/\d+)/);
+                if (matchSingle) {
+                    const oltId = matchSingle[1];
+                    const porta = matchSingle[3];
+                    const stillHasIssue = Array.from(newProblems).some(p => p.startsWith(`[${oltId}] STATUS::`) && p.includes(porta));
+                    
+                    if (!stillHasIssue) {
+                        showToast('Sinal Normalizado', `${oltId} - Porta ${porta}`, 'status-normal', 'check_circle', 'right'); 
+                    }
                 }
             }
         }
@@ -107,15 +118,14 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     // 1.3 Energia Restabelecida
     for (const oldEp of currentEnergyProblems) {
         if (!newEnergyProblems.has(oldEp)) {
-            const match = oldEp.match(/^\[(.*?)\] ENERGIA::(.*?)_(\d+)\/(\d+)/);
+            const match = oldEp.match(/^\[(.*?)\] ENERGIA::(.*?)_(\d+\/\d+)/);
             if (match) {
                 const oltId = match[1];
-                const placa = match[3];
-                const porta = match[4];
-                const stillHasIssue = Array.from(newEnergyProblems).some(p => p.startsWith(`[${oltId}] ENERGIA::`) && p.includes(`_${placa}/${porta}`));
+                const porta = match[3];
+                const stillHasIssue = Array.from(newEnergyProblems).some(p => p.startsWith(`[${oltId}] ENERGIA::`) && p.includes(`_${porta}`));
                 
                 if (!stillHasIssue) {
-                    showToast('Energia Retornou', `${oltId} - Porta ${placa}/${porta}`, 'status-normal', 'check_circle', 'left');
+                    showToast('Energia Retornou', `${oltId} - Porta ${porta}`, 'status-normal', 'check_circle', 'left');
                 }
             }
         }
@@ -194,12 +204,37 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     // ============================================================
     for (const problemKey of newProblems) {
         if (!currentProblems.has(problemKey)) {
-            const match = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)_(\d+\/\d+)::(\d+)$/);
-            if (match) {
-                const oltId = match[1];
-                const severity = match[2];
-                const porta = match[3];
-                const offline = match[4];
+
+            // --- NOVO: CAPTURA DO ALARME MULTI-PORTAS ---
+            const matchMulti = problemKey.match(/^\[(.*?)\] STATUS::MULTI::(.*)$/);
+            if (matchMulti) {
+                const oltId = matchMulti[1];
+                const multiString = matchMulti[2]; // ex: "1/1(CRIT),1/2(WARN)"
+                
+                // Traduz os termos para a visualização Opção B e troca a vírgula por "e"
+                const descTraduzida = multiString
+                    .replace(/CRIT/g, 'Crítico')
+                    .replace(/WARN/g, 'Atenção')
+                    .replace(/SUPER/g, 'Crítico')
+                    .replace(/,/g, ' e ');
+
+                showToast(
+                    'Falha Múltipla de Rede', 
+                    `${oltId}: ${descTraduzida}`, 
+                    'energia-crit', // Laranja Escuro reaproveitado
+                    'error',        // Mesmo ícone de rede crítica
+                    'right' 
+                );
+                continue; // Pula a leitura do alarme singular
+            }
+
+            // --- CAPTURA DO ALARME SINGULAR PADRÃO ---
+            const matchSingle = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)_(\d+\/\d+)::(\d+)$/);
+            if (matchSingle) {
+                const oltId = matchSingle[1];
+                const severity = matchSingle[2];
+                const porta = matchSingle[3];
+                const offline = matchSingle[4];
 
                 let title = 'Problema de Rede';
                 let typeClass = 'rede-problem';
