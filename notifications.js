@@ -1,5 +1,5 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 8.4 - Minimalista)
+// notifications.js - Sistema Central de Alertas (Versão 8.5 - Minimalista Extremo)
 // Reformulação: Textos enxutos, Foco na OLT/Porta e Interface Limpa
 // ==============================================================================
 
@@ -107,7 +107,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                     const stillHasIssue = Array.from(newProblems).some(p => p.startsWith(`[${oltId}] STATUS::`) && p.includes(porta));
                     
                     if (!stillHasIssue) {
-                        showToast('Sinal Normalizado', `${oltId} - Porta ${porta}`, 'status-normal', 'check_circle', 'right'); 
+                        showToast('Sinal Normalizado', `${oltId} - ${porta}`, 'status-normal', 'check_circle', 'right'); 
                     }
                 }
             }
@@ -124,7 +124,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                 const stillHasIssue = Array.from(newEnergyProblems).some(p => p.startsWith(`[${oltId}] ENERGIA::`) && p.includes(`_${porta}`));
                 
                 if (!stillHasIssue) {
-                    showToast('Energia Retornou', `${oltId} - Porta ${porta}`, 'status-normal', 'check_circle', 'left');
+                    showToast('Energia Retornou', `${oltId} - ${porta}`, 'status-normal', 'check_circle', 'left');
                 }
             }
         }
@@ -248,7 +248,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
 
                 showToast(
                     title, 
-                    `${oltId} - Porta ${porta}`, 
+                    `${oltId} - ${porta}`, // Visual super limpo sem o texto "Porta"
                     typeClass, 
                     icon, 
                     'right' 
