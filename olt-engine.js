@@ -1,5 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
+// Atualização: Fonte de dados limpa para Múltiplas Portas (Minimalista)
 // ==============================================================================
 
 const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
@@ -235,6 +236,7 @@ async function runGlobalNetworkOverview() {
 
         // Se houver 2 ou mais portas restantes com problema (Atenção/Problema), unifica tudo num só card
         if (filteredProblems.length >= 2) {
+            // AQUI ESTÁ A MUDANÇA: Envia apenas as portas limpas, sem as severidades ao lado
             const multiStr = filteredProblems.map(p => p.porta).join(',');
             allProblems.add(`[${result.id}] STATUS::MULTI::${multiStr}`);
         } 
@@ -376,39 +378,13 @@ window.startOltMonitoring = function(config) {
         window.CURRENT_OLT_PORT_DATA = {}; 
         window.OLT_CLIENTS_DATA = {}; 
 
-        const rangeOlt = `${config.id}!A:K`; 
+        const rangeOlt = `${config.id}!A:I`; 
         const urlOlt = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${rangeOlt}?key=${ENGINE_API_KEY}`;
 
         try {
             const [responseOlt, rowsCircuitos] = await Promise.all([fetch(urlOlt), fetchCircuitosData()]);
             if (!responseOlt.ok) throw new Error('Falha API OLT');
             const dataOlt = await responseOlt.json();
-            
-            // --- INÍCIO DA CAPTURA DE DATA E HORA DA CÉLULA K1 ---
-            let datePart = '--/--/----';
-            let timePart = '--:--:--';
-            
-            if (dataOlt.values && dataOlt.values.length > 0) {
-                const cellK1 = dataOlt.values[0][10]; 
-                
-                if (cellK1) {
-                    const parts = cellK1.toString().trim().split(' ');
-                    if (parts.length >= 2) {
-                        datePart = parts[0]; 
-                        timePart = parts[1]; 
-                    } else {
-                        datePart = cellK1;
-                        timePart = '';
-                    }
-                }
-            }
-            
-            const elDate = document.getElementById('olt-update-date');
-            const elTime = document.getElementById('olt-update-time');
-            if (elDate) elDate.textContent = datePart;
-            if (elTime) elTime.textContent = timePart;
-            // --- FIM DA CAPTURA ---
-
             const rowsOlt = (dataOlt.values || []).slice(1);
 
             rowsOlt.forEach(columns => {

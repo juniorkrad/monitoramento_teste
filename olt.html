@@ -27,24 +27,13 @@
         </main>
     </div>
 
-    <div id="super-modal" class="modal-overlay" style="z-index: 2900;" onclick="closeSuperModal(event)">
-        <div class="modal-content modal-large" style="height: 90vh; max-height: 90vh; display: flex; flex-direction: column; background-color: var(--m3-surface-container); border: 1px solid var(--m3-outline-variant);">
-            
-            <div class="modal-header" style="border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 15px; margin-bottom: 15px;">
-                <div>
-                    <h3 id="super-modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                        <span class="material-symbols-rounded">dns</span> Detalhes da OLT
-                    </h3>
-                    <p id="olt-last-update" style="margin: 5px 0 0 0; font-size: 0.85rem; color: var(--m3-on-surface); font-family: var(--font-family-mono); display: flex; align-items: center; gap: 5px;">
-                        <span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span> <span id="olt-update-date">--/--/--</span>
-                        <span style="color: rgba(255,255,255,0.3); margin: 0 4px;">|</span>
-                        <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span> <span id="olt-update-time">--:--:--</span>
-                    </p>
-                </div>
-                <button class="close-modal" onclick="closeSuperModal()" style="color: var(--m3-on-surface);">&times;</button>
+    <div id="super-modal" class="modal-overlay" style="z-index: 2900;">
+        <div class="modal-content modal-large" style="height: 90vh; max-height: 90vh;">
+            <div class="modal-header">
+                <h3 id="super-modal-title"><span class="material-symbols-rounded">dns</span> Detalhes da OLT</h3>
+                <button class="close-modal" onclick="closeSuperModal()">&times;</button>
             </div>
-            
-            <div class="modal-body custom-scroll" style="background-color: var(--m3-surface); padding: 20px; overflow-y: auto; flex-grow: 1;">
+            <div class="modal-body custom-scroll" style="background-color: var(--m3-surface); padding: 20px;">
                 
                 <div id="olt-view-placas">
                     <p style="margin-bottom: 15px; color: var(--m3-on-surface-variant);">Selecione uma placa para ver os detalhes das portas:</p>
@@ -266,10 +255,6 @@
             document.getElementById('olt-view-detalhes').style.display = 'none';
             document.getElementById('olt-view-placas').style.display = 'block';
             
-            // Reseta a data/hora enquanto carrega
-            document.getElementById('olt-update-date').textContent = '--/--/--';
-            document.getElementById('olt-update-time').textContent = '--:--:--';
-            
             // Aviso de carregamento no grid de placas
             document.getElementById('olt-placas-list').innerHTML = `
                 <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--m3-on-surface-variant);">
@@ -298,8 +283,7 @@
             document.getElementById('olt-view-placas').style.display = 'block';
         }
 
-        function closeSuperModal(event) {
-            if (event && event.target.id !== 'super-modal' && !event.target.classList.contains('close-modal')) return;
+        function closeSuperModal() {
             document.getElementById('super-modal').style.display = 'none';
             document.getElementById('olt-placas-list').innerHTML = ''; 
             
