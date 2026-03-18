@@ -260,7 +260,8 @@
         // ==============================================================================
         
         function openSuperModal(id, sheetTab, type, boards) {
-            document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> OLT ${id}`;
+            // Alterado para remover a palavra "OLT " e exibir apenas o ID
+            document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${id}`;
             
             // Força a tela inicial (Placas) e esconde a tabela (Portas)
             document.getElementById('olt-view-detalhes').style.display = 'none';
