@@ -372,7 +372,6 @@ window.startOltMonitoring = function(config) {
         window.CURRENT_OLT_PORT_DATA = {}; 
         window.OLT_CLIENTS_DATA = {}; 
 
-        // Ampliando para A:Z para garantir que nenhuma coluna fique de fora
         const rangeOlt = `${config.id}!A:Z`; 
         const urlOlt = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${rangeOlt}?key=${ENGINE_API_KEY}`;
 
@@ -381,37 +380,32 @@ window.startOltMonitoring = function(config) {
             if (!responseOlt.ok) throw new Error('Falha API OLT');
             const dataOlt = await responseOlt.json();
 
-            // --- INÍCIO DA CAPTURA INTELIGENTE DE DATA/HORA ---
+            // --- INÍCIO DA CAPTURA BLINDADA COM REGEX ---
             let datePart = '--/--/----';
             let timePart = '--:--:--';
             
             if (dataOlt.values && dataOlt.values.length > 0) {
                 const firstRow = dataOlt.values[0];
-                let cellDateStr = null;
+                let cellData = firstRow[10] ? String(firstRow[10]) : '';
                 
-                // Varre a primeira linha inteira procurando o padrão de Data e Hora
-                for (let i = firstRow.length - 1; i >= 0; i--) {
-                    let val = firstRow[i] ? String(firstRow[i]).trim() : '';
-                    if (val.includes('/') && val.includes(':') && val.length >= 10) {
-                        cellDateStr = val;
-                        break;
+                // Se K1 estiver vazio, procura na linha inteira
+                if (!cellData) {
+                    for (let i = firstRow.length - 1; i >= 0; i--) {
+                        let val = firstRow[i] ? String(firstRow[i]) : '';
+                        if (val.match(/\d{2}\/\d{2}/) && val.match(/\d{2}:\d{2}/)) {
+                            cellData = val;
+                            break;
+                        }
                     }
                 }
                 
-                // Se o padrão não for achado, força leitura no índice 10 (K1)
-                if (!cellDateStr) {
-                    cellDateStr = firstRow[10] || firstRow[firstRow.length - 1];
-                }
-                
-                if (cellDateStr) {
-                    const parts = cellDateStr.toString().trim().split(' ');
-                    if (parts.length >= 2) {
-                        datePart = parts[0]; 
-                        timePart = parts[1]; 
-                    } else {
-                        datePart = cellDateStr;
-                        timePart = '';
-                    }
+                if (cellData) {
+                    // Ignora qualquer texto e suga apenas os formatos numéricos puros
+                    const dateMatch = cellData.match(/\d{2}\/\d{2}\/\d{2,4}/);
+                    const timeMatch = cellData.match(/\d{2}:\d{2}(:\d{2})?/);
+                    
+                    if (dateMatch) datePart = dateMatch[0];
+                    if (timeMatch) timePart = timeMatch[0];
                 }
             }
             
@@ -419,7 +413,7 @@ window.startOltMonitoring = function(config) {
             const elTime = document.getElementById('olt-update-time');
             if (elDate) elDate.textContent = datePart;
             if (elTime) elTime.textContent = timePart;
-            // --- FIM DA CAPTURA INTELIGENTE ---
+            // --- FIM DA CAPTURA BLINDADA ---
 
             const rowsOlt = (dataOlt.values || []).slice(1);
 
