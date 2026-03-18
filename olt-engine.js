@@ -385,7 +385,7 @@ window.startOltMonitoring = function(config) {
             
             if (dataOlt.values && dataOlt.values.length > 0) {
                 const firstRow = dataOlt.values[0];
-                const cellK1 = firstRow[firstRow.length - 1]; 
+                const cellK1 = firstRow[10]; // Garante a busca EXATA na Coluna K (Índice 10)
                 
                 if (cellK1) {
                     const parts = cellK1.toString().trim().split(' ');
