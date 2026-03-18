@@ -28,12 +28,22 @@
     </div>
 
     <div id="super-modal" class="modal-overlay" style="z-index: 2900;">
-        <div class="modal-content modal-large" style="height: 90vh; max-height: 90vh;">
+        <div class="modal-content modal-large" style="height: 90vh; max-height: 90vh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <h3 id="super-modal-title"><span class="material-symbols-rounded">dns</span> Detalhes da OLT</h3>
                 <button class="close-modal" onclick="closeSuperModal()">&times;</button>
             </div>
-            <div class="modal-body custom-scroll" style="background-color: var(--m3-surface); padding: 20px;">
+            
+            <div style="background-color: var(--m3-surface); padding: 0 20px 15px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); flex-shrink: 0;">
+                <div id="olt-last-update" style="font-family: 'Roboto Mono', monospace; font-size: 0.95rem; color: var(--m3-on-surface-variant); display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-rounded" style="font-size: 18px;">calendar_today</span>
+                    <span id="olt-update-date">--/--/--</span>
+                    <span style="color: rgba(255,255,255,0.3); margin: 0 4px;">|</span>
+                    <span class="material-symbols-rounded" style="font-size: 18px;">schedule</span>
+                    <span id="olt-update-time">--:--:--</span>
+                </div>
+            </div>
+            <div class="modal-body custom-scroll" style="background-color: var(--m3-surface); padding: 20px; overflow-y: auto; flex-grow: 1;">
                 
                 <div id="olt-view-placas">
                     <p style="margin-bottom: 15px; color: var(--m3-on-surface-variant);">Selecione uma placa para ver os detalhes das portas:</p>
@@ -254,6 +264,10 @@
             // Força a tela inicial (Placas) e esconde a tabela (Portas)
             document.getElementById('olt-view-detalhes').style.display = 'none';
             document.getElementById('olt-view-placas').style.display = 'block';
+            
+            // Reseta a data/hora enquanto carrega
+            document.getElementById('olt-update-date').textContent = '--/--/--';
+            document.getElementById('olt-update-time').textContent = '--:--:--';
             
             // Aviso de carregamento no grid de placas
             document.getElementById('olt-placas-list').innerHTML = `

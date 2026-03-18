@@ -139,6 +139,21 @@
    ESTILIZAÇÃO DO MODAL DE OLTs (MD3 Drill-Down)
    ========================================================================== */
 
+/* --- INFORMAÇÃO FIXA: DATA E HORA DE ATUALIZAÇÃO --- */
+#olt-last-update {
+    font-family: 'Roboto Mono', monospace !important;
+    font-size: 0.95rem;
+    color: var(--m3-on-surface-variant);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#olt-last-update .material-symbols-rounded {
+    font-size: 18px !important;
+    color: var(--m3-on-surface-variant);
+}
+
 /* Grid de Placas */
 .placas-grid {
     display: grid;
