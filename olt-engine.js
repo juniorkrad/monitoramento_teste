@@ -372,7 +372,8 @@ window.startOltMonitoring = function(config) {
         window.CURRENT_OLT_PORT_DATA = {}; 
         window.OLT_CLIENTS_DATA = {}; 
 
-        const rangeOlt = `${config.id}!A:K`; 
+        // Ampliando para A:Z para garantir que nenhuma coluna fique de fora
+        const rangeOlt = `${config.id}!A:Z`; 
         const urlOlt = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${rangeOlt}?key=${ENGINE_API_KEY}`;
 
         try {
@@ -380,20 +381,35 @@ window.startOltMonitoring = function(config) {
             if (!responseOlt.ok) throw new Error('Falha API OLT');
             const dataOlt = await responseOlt.json();
 
+            // --- INÍCIO DA CAPTURA INTELIGENTE DE DATA/HORA ---
             let datePart = '--/--/----';
             let timePart = '--:--:--';
             
             if (dataOlt.values && dataOlt.values.length > 0) {
                 const firstRow = dataOlt.values[0];
-                const cellK1 = firstRow[10]; // Garante a busca EXATA na Coluna K (Índice 10)
+                let cellDateStr = null;
                 
-                if (cellK1) {
-                    const parts = cellK1.toString().trim().split(' ');
+                // Varre a primeira linha inteira procurando o padrão de Data e Hora
+                for (let i = firstRow.length - 1; i >= 0; i--) {
+                    let val = firstRow[i] ? String(firstRow[i]).trim() : '';
+                    if (val.includes('/') && val.includes(':') && val.length >= 10) {
+                        cellDateStr = val;
+                        break;
+                    }
+                }
+                
+                // Se o padrão não for achado, força leitura no índice 10 (K1)
+                if (!cellDateStr) {
+                    cellDateStr = firstRow[10] || firstRow[firstRow.length - 1];
+                }
+                
+                if (cellDateStr) {
+                    const parts = cellDateStr.toString().trim().split(' ');
                     if (parts.length >= 2) {
                         datePart = parts[0]; 
                         timePart = parts[1]; 
                     } else {
-                        datePart = cellK1;
+                        datePart = cellDateStr;
                         timePart = '';
                     }
                 }
@@ -403,6 +419,7 @@ window.startOltMonitoring = function(config) {
             const elTime = document.getElementById('olt-update-time');
             if (elDate) elDate.textContent = datePart;
             if (elTime) elTime.textContent = timePart;
+            // --- FIM DA CAPTURA INTELIGENTE ---
 
             const rowsOlt = (dataOlt.values || []).slice(1);
 
