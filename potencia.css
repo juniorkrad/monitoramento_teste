@@ -2,60 +2,6 @@
    ESTILOS ESPECÍFICOS - PAINEL DE POTÊNCIA ÓPTICA (potencia.html)
    ========================================================================== */
 
-/* --- AJUSTE DOS CARDS DE OLT (Grid de Potência) - Padrão MD3 --- */
-.potencia-olt-card {
-    background-color: var(--m3-surface-container);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    border-radius: 24px !important; /* Padronização MD3 */
-    overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.potencia-olt-card:hover {
-    transform: translateY(-4px); 
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3); 
-}
-
-/* Correção do Cabeçalho: Título e Botão na mesma linha */
-.potencia-olt-card-header {
-    padding: 12px 20px !important; 
-    border-bottom: 1px solid var(--m3-outline-variant); 
-    background: rgba(234, 208, 255, 0.05);
-    display: flex !important;
-    justify-content: space-between !important; 
-    align-items: center !important; 
-}
-
-.potencia-olt-card-header h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* Estilo minimalista do botão (Ícone Circular) */
-.btn-potencia-details {
-    background-color: rgba(0, 0, 0, 0.2); 
-    color: var(--m3-on-surface-variant);
-    border: none !important; 
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    border-radius: 50%; /* Botão perfeitamente circular */
-    cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn-potencia-details:hover {
-    background-color: rgba(0, 0, 0, 0.4); 
-    color: var(--m3-on-surface); 
-    transform: scale(1.1);
-}
-
 /* --- TABELAS E COMPONENTES DO MODAL --- */
 
 /* Container da Tabela no Modal */
@@ -63,7 +9,7 @@
     max-height: 500px; 
     overflow-y: auto; 
     margin-top: 15px; 
-    border-radius: 16px; /* Arredondamento MD3 */
+    border-radius: 16px; 
     border: 1px solid var(--m3-outline); 
 }
 
@@ -78,7 +24,7 @@
 .potencia-table th { 
     background-color: var(--m3-surface-container-high); 
     color: var(--m3-on-surface); 
-    padding: 15px 12px; /* Espaçamento mais confortável */
+    padding: 15px 12px; 
     position: sticky; 
     top: 0; 
     z-index: 10; 
@@ -87,7 +33,7 @@
 }
 
 .potencia-table td { 
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Linha divisória sutil */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
     padding: 12px 10px; 
     color: var(--m3-on-surface); 
     font-family: var(--font-family-mono); 
@@ -98,14 +44,14 @@
 }
 
 .potencia-table tr:hover { 
-    background-color: rgba(208, 188, 255, 0.08); /* Efeito hover mais vivo MD3 */
+    background-color: rgba(208, 188, 255, 0.08); 
 }
 
 /* Badges de Alerta de Sinal Específicos */
 .sinal-critico { 
     color: #f87171 !important; 
     font-weight: 700; 
-    background: rgba(248, 113, 113, 0.15); /* Badge style */
+    background: rgba(248, 113, 113, 0.15); 
     padding: 4px 10px;
     border-radius: 12px;
 }
@@ -113,7 +59,7 @@
 .sinal-atencao { 
     color: #fbbf24 !important; 
     font-weight: 700; 
-    background: rgba(251, 191, 36, 0.15); /* Badge style */
+    background: rgba(251, 191, 36, 0.15); 
     padding: 4px 10px;
     border-radius: 12px;
 }
@@ -127,10 +73,10 @@
 
 .search-input { 
     flex: 1; 
-    padding: 12px 20px; /* Mais área de clique/toque */
-    border-radius: 24px; /* Pílula MD3 */
+    padding: 12px 20px; 
+    border-radius: 24px; 
     border: 1px solid var(--m3-outline-variant); 
-    background-color: var(--m3-surface-container-high); /* Fundo mais destacado */
+    background-color: var(--m3-surface-container-high); 
     color: var(--m3-on-surface); 
     font-family: 'Montserrat', sans-serif; 
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -139,7 +85,7 @@
 .search-input:focus {
     outline: none;
     border-color: var(--m3-primary);
-    box-shadow: 0 0 0 2px rgba(103, 7, 159, 0.3); /* Efeito de foco MD3 */
+    box-shadow: 0 0 0 2px rgba(103, 7, 159, 0.3); 
 }
 
 /* Animação do Ícone de Carregamento (Sync) */

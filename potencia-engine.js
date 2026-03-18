@@ -261,10 +261,10 @@ async function runPotenciaEngine() {
                 let statusColor = olt.criticos > 0 ? '#f87171' : 'var(--m3-color-success)';
 
                 gridEl.innerHTML += `
-                    <div class="potencia-olt-card overview-card" style="display: flex; flex-direction: column;">
-                        <div class="potencia-olt-card-header">
+                    <div class="overview-card" style="display: flex; flex-direction: column;">
+                        <div class="card-header">
                             <h3><span class="material-symbols-rounded">dns</span> ${olt.id}</h3>
-                            <button class="btn-potencia-details" onclick="window.abrirModalPotencia('${olt.id}')" title="Ver Detalhes">
+                            <button class="card-header-button" onclick="window.abrirModalPotencia('${olt.id}')" title="Ver Detalhes">
                                 <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
                             </button>
                         </div>

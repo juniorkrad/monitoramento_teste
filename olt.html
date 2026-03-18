@@ -27,8 +27,8 @@
         </main>
     </div>
 
-    <div id="super-modal" class="modal-overlay" style="z-index: 2900;" onclick="closeSuperModal(event)">
-        <div class="modal-content modal-large" style="height: 90vh; max-height: 90vh; background-color: var(--m3-surface-container); border: 1px solid var(--m3-outline-variant);">
+    <div id="super-modal" class="modal-overlay" onclick="closeSuperModal(event)">
+        <div class="modal-content modal-large">
             
             <div class="modal-header">
                 <div>
@@ -41,10 +41,10 @@
                         <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span> <span id="olt-update-time">--:--:--</span>
                     </p>
                 </div>
-                <button class="close-modal" onclick="closeSuperModal()" style="color: var(--m3-on-surface);">&times;</button>
+                <button class="close-modal" onclick="closeSuperModal()" title="Fechar">&times;</button>
             </div>
 
-            <div class="modal-body custom-scroll" style="background-color: var(--m3-surface); padding: 20px;">
+            <div class="modal-body">
                 
                 <div id="olt-view-placas">
                     <p style="margin-bottom: 15px; color: var(--m3-on-surface-variant);">Selecione uma placa para ver os detalhes das portas:</p>
@@ -260,18 +260,13 @@
         // ==============================================================================
         
         function openSuperModal(id, sheetTab, type, boards) {
-            // Alterado para remover a palavra "OLT " e exibir apenas o ID
             document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${id}`;
-            
-            // Força a tela inicial (Placas) e esconde a tabela (Portas)
             document.getElementById('olt-view-detalhes').style.display = 'none';
             document.getElementById('olt-view-placas').style.display = 'block';
             
-            // Reseta a data e hora enquanto carrega
             document.getElementById('olt-update-date').textContent = '--/--/----';
             document.getElementById('olt-update-time').textContent = '--:--:--';
             
-            // Aviso de carregamento no grid de placas
             document.getElementById('olt-placas-list').innerHTML = `
                 <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--m3-on-surface-variant);">
                     <span class="material-symbols-rounded" style="font-size: 48px; display: block; margin-bottom: 10px; animation: pulse 1.5s infinite;">hourglass_top</span>
@@ -282,7 +277,6 @@
             
             document.getElementById('super-modal').style.display = 'flex';
             
-            // Chama o motor para buscar e injetar as placas
             if (typeof startOltMonitoring === 'function') {
                 startOltMonitoring({
                     id: sheetTab,
@@ -293,7 +287,6 @@
             }
         }
 
-        // Função para o botão "Voltar" dentro do Modal
         function backToOltPlacas() {
             document.getElementById('olt-view-detalhes').style.display = 'none';
             document.getElementById('olt-view-placas').style.display = 'block';
@@ -318,9 +311,6 @@
     </script>
     
     <style>
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: var(--m3-outline); border-radius: 4px; }
         @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
     </style>
 </body>

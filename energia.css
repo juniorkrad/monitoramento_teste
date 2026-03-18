@@ -34,60 +34,6 @@
     flex-direction: column;
 }
 
-/* --- AJUSTE DOS CARDS DE OLT (Grid inferior) --- */
-.energy-olt-card {
-    background-color: var(--m3-surface-container); /* Restaura a cor de fundo */
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15); /* Restaura a sombra para destacar da página */
-    border-radius: 24px !important; /* Padronização MD3 */
-    overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.energy-olt-card:hover {
-    transform: translateY(-4px); 
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3); 
-}
-
-/* Correção do Cabeçalho: Título e Botão na mesma linha */
-.energy-olt-card-header {
-    padding: 12px 20px !important; 
-    border-bottom: 1px solid var(--m3-outline-variant); 
-    background: rgba(234, 208, 255, 0.05);
-    display: flex !important;
-    justify-content: space-between !important; 
-    align-items: center !important; 
-}
-
-.energy-olt-card-header h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* Restauração do estilo minimalista do botão (Ícone Circular) */
-.btn-energy-details {
-    background-color: rgba(0, 0, 0, 0.2); 
-    color: var(--m3-on-surface-variant);
-    border: none !important; 
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    border-radius: 50%; /* Botão perfeitamente circular */
-    cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn-energy-details:hover {
-    background-color: rgba(0, 0, 0, 0.4); 
-    color: var(--m3-on-surface); 
-    transform: scale(1.1);
-}
-
 /* Barra de Progresso Tríplice */
 .triple-progress-bar {
     height: 10px; 
@@ -101,55 +47,6 @@
 .bar-online { background-color: var(--m3-on-surface-variant); } 
 .bar-poweroff { background-color: #f87171; } 
 .bar-offline { background-color: var(--m3-color-warning); }
-
-/* ==========================================================================
-   ESTILIZAÇÃO DO MODAL DE ENERGIA (MD3)
-   ========================================================================== */
-.placas-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr); 
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.placa-btn {
-    background: var(--m3-surface-container-high);
-    border: 1px solid var(--m3-outline-variant);
-    color: var(--m3-on-surface);
-    padding: 20px;
-    border-radius: 20px; /* MD3 Style */
-    cursor: pointer;
-    font-weight: 600;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    transition: all 0.2s ease;
-}
-
-.placa-btn:hover {
-    background: rgba(208, 188, 255, 0.08);
-    border-color: var(--m3-primary);
-}
-
-.placa-btn.has-alarm {
-    border: 2px solid #f87171;
-    background: rgba(248, 113, 113, 0.05);
-}
-
-/* Botão Voltar no Modal */
-.btn-voltar-placas {
-    background: transparent;
-    border: 1px solid var(--m3-outline);
-    color: var(--m3-on-surface);
-    padding: 10px 20px;
-    border-radius: 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 20px;
-}
 
 /* Status Badges */
 .impact-badge {
@@ -176,8 +73,5 @@
         border-right: none;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         padding: 20px;
-    }
-    .placas-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
     }
 }

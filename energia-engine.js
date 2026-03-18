@@ -319,9 +319,6 @@ window.startEnergyMonitoring = async function() {
 
         // ==============================================================================
         // --- OS ALARMES SINGULARES E MÚLTIPLOS DE ENERGIA FORAM DESATIVADOS ---
-        // O motor agora funciona apenas como um "Agente Secreto", baixando e 
-        // processando os dados brutos (window.ENERGY_DATA_STORE) para que o 
-        // home-engine.js possa calcular os Alarmes Híbridos em silêncio.
         // ==============================================================================
         window.NETWORK_ENERGY_STORE = new Set();
         // ==============================================================================
@@ -338,10 +335,10 @@ window.startEnergyMonitoring = async function() {
                 const pctOfflineOther = oData.totalClients ? (oData.offlineOther / oData.totalClients * 100) : 0;
                 
                 gridEl.innerHTML += `
-                    <div class="energy-olt-card overview-card" style="display: flex; flex-direction: column;">
-                        <div class="energy-olt-card-header">
+                    <div class="overview-card" style="display: flex; flex-direction: column;">
+                        <div class="card-header">
                             <h3><span class="material-symbols-rounded">dns</span> ${oData.id}</h3>
-                            <button class="btn-energy-details" onclick="window.openEnergyModal('${oData.id}')" title="Ver Detalhes">
+                            <button class="card-header-button" onclick="window.openEnergyModal('${oData.id}')" title="Ver Detalhes">
                                 <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
                             </button>
                         </div>
@@ -382,7 +379,7 @@ window.openEnergyModal = function(oltId) {
     // Título padronizado: Ícone DNS e apenas o nome da OLT
     document.getElementById('energy-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${oltId}`;
     
-    // Data e Hora padronizadas com filtro regex (igual ao olt-engine.js)
+    // Data e Hora padronizadas com filtro regex
     let datePart = '--/--/----';
     let timePart = '--:--:--';
     let cellData = oData.lastUpdate ? String(oData.lastUpdate) : '';

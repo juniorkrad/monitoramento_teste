@@ -294,41 +294,25 @@ window.startOltMonitoring = function(config) {
     if (!document.getElementById('detail-modal')) {
         const modalStyles = `
             <style>
-                .circuit-clickable { cursor: pointer; text-decoration: underline; color: #fff; font-weight: bold; }
-                .circuit-clickable:hover { color: #ffd700; }
-                .client-table-container { max-height: 400px; overflow-y: auto; margin-top: 10px; }
-                .client-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; color: #333; }
-                .client-table th { background-color: #007bff; color: white; padding: 8px; text-align: left; position: sticky; top: 0; z-index: 10; }
-                .client-table td { border-bottom: 1px solid #ddd; padding: 6px 8px; color: #333; }
-                .client-table tr:nth-child(even) { background-color: #f9f9f9; }
-                .client-table tr:hover { background-color: #f1f1f1; }
-                .modal-section-title { font-size: 1.1rem; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
-                
-                #detail-modal .modal-content { background-color: #2f0e51; color: #EADDFF; border: 1px solid #5c4e72; }
-                .client-table th { background-color: #3a1c63; color: #fff; }
-                .client-table td { color: #EADDFF; border-bottom: 1px solid #5c4e72; }
-                .client-table tr:nth-child(even) { background-color: rgba(0,0,0,0.2); }
-                .client-table tr:hover { background-color: rgba(255,255,255,0.1); }
-                
-                .filter-bar { display: flex; gap: 10px; margin-bottom: 10px; }
-                .filter-input { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #5c4e72; background-color: rgba(0,0,0,0.2); color: #fff; }
-                .filter-select { padding: 8px; border-radius: 4px; border: 1px solid #5c4e72; background-color: #3a1c63; color: #fff; cursor: pointer; }
-                
+                .circuit-clickable { cursor: pointer; text-decoration: underline; font-weight: 600; transition: color 0.2s; }
+                .circuit-clickable:hover { color: var(--m3-primary); }
+                .client-table-container { max-height: 400px; overflow-y: auto; margin-top: 10px; border-radius: 10px; border: 1px solid var(--m3-outline); }
+                .modal-section-title { font-size: 1.1rem; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px; color: var(--m3-on-surface); font-weight: 600; }
+                .filter-bar { display: flex; gap: 10px; margin-bottom: 15px; }
+                .filter-input { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid var(--m3-outline); background-color: var(--m3-surface-container-high); color: var(--m3-on-surface); font-family: var(--font-family); }
+                .filter-select { padding: 10px 15px; border-radius: 20px; border: 1px solid var(--m3-outline); background-color: var(--m3-surface-container-high); color: var(--m3-on-surface); cursor: pointer; font-family: var(--font-family); }
                 .modal-view-stats { display: flex; }
                 .modal-view-clients { display: none; }
-                
-                .status-critico { background-color: #000; color: #FF1744; border: 1px solid #FF1744; animation: pulseRed 1s infinite; }
-                @keyframes pulseRed { 0% { box-shadow: 0 0 0 rgba(255,23,68,0); } 50% { box-shadow: 0 0 10px rgba(255,23,68,0.8); } 100% { box-shadow: 0 0 0 rgba(255,23,68,0); } }
             </style>
         `;
 
         const modalHTML = `
             ${modalStyles}
-            <div id="detail-modal" class="modal-overlay" style="z-index: 3000;" onclick="closeModal(event)">
-                <div class="modal-content">
+            <div id="detail-modal" class="modal-overlay" onclick="closeModal(event)">
+                <div class="modal-content modal-large">
                     <div class="modal-header">
-                        <h3 id="modal-title">Detalhes</h3>
-                        <button class="close-modal" onclick="closeModal()">×</button>
+                        <h3 id="modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">Detalhes</h3>
+                        <button class="close-modal" onclick="closeModal()" title="Fechar">&times;</button>
                     </div>
                     <div class="modal-body">
                         <div id="view-stats" class="modal-stats-grid">
@@ -354,9 +338,9 @@ window.startOltMonitoring = function(config) {
                                 <input type="text" id="search-input" class="filter-input" placeholder="Buscar (Nome, Serial...)" onkeyup="filterClients()">
                                 <select id="status-filter" class="filter-select" onchange="filterClients()"></select>
                             </div>
-                            <div class="client-table-container custom-scroll">
-                                <table class="client-table" id="table-clients">
-                                    <thead id="clients-thead"></thead>
+                            <div class="client-table-container">
+                                <table id="table-clients">
+                                    <thead id="clients-thead" class="table-header-row"></thead>
                                     <tbody id="clients-tbody"></tbody>
                                 </table>
                             </div>
@@ -567,7 +551,7 @@ window.openOltPlacaDetails = function(placa, oltType) {
         const percOffline = total > 0 ? (offline / total) : 0;
 
         if (total >= 5) {
-            if (percOffline === 1) { statusClass = 'status-critico'; statusText = 'Crítico'; }
+            if (percOffline === 1) { statusClass = 'status-problema'; statusText = 'Crítico'; }
             else if (percOffline >= 0.5 || offline >= 32) { statusClass = 'status-problema'; statusText = 'Problema'; }
             else if (offline >= 16) { statusClass = 'status-atencao'; statusText = 'Atenção'; }
         }
@@ -605,7 +589,6 @@ window.openPortDetails = function(placa, porta, circuito, online, offline, total
     const modal = document.getElementById('detail-modal');
     const modalContent = document.querySelector('#detail-modal .modal-content');
     modalContent.classList.remove('modal-large'); 
-    modalContent.classList.add('modal-status');   
 
     const textoCircuito = (circuito && circuito !== "-") ? ` - Circuito: ${circuito}` : "";
     document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta}${textoCircuito}`;
@@ -620,11 +603,7 @@ window.openPortDetails = function(placa, porta, circuito, online, offline, total
 window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.querySelector('#detail-modal .modal-content');
-    modalContent.classList.remove('modal-status'); 
     modalContent.classList.add('modal-large');     
-
-    const tableObj = document.getElementById('table-clients');
-    tableObj.className = 'client-table ' + (oltType === 'nokia' ? 'mode-nokia' : 'mode-furukawa');
 
     document.getElementById('circuit-title-text').textContent = `Circuito: ${circuitoNome} (Placa ${placa}/Porta ${porta})`;
     document.getElementById('view-stats').style.display = 'none';
