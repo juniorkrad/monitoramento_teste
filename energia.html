@@ -42,10 +42,12 @@
             <div class="modal-header" style="border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 15px; margin-bottom: 15px;">
                 <div>
                     <h3 id="energy-modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                        <span class="material-symbols-rounded">router</span> OLT Selecionada
+                        <span class="material-symbols-rounded">dns</span> OLT Selecionada
                     </h3>
                     <p id="energy-modal-last-update" style="margin: 5px 0 0 0; font-size: 0.85rem; color: var(--m3-on-surface); font-family: var(--font-family-mono); display: flex; align-items: center; gap: 5px;">
-                        <span class="material-symbols-rounded" style="font-size: 14px;">history</span> Última Varredura: --/-- --:--
+                        <span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span> <span id="energy-update-date">--/--/----</span>
+                        <span style="color: rgba(255,255,255,0.3); margin: 0 4px;">|</span>
+                        <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span> <span id="energy-update-time">--:--:--</span>
                     </p>
                 </div>
                 <button class="close-modal" onclick="closeEnergyModal()" style="color: var(--m3-on-surface);">&times;</button>
@@ -54,7 +56,7 @@
             <div class="modal-body">
                 
                 <div id="energy-view-placas">
-                    <p style="margin-bottom: 15px; color: var(--m3-on-surface-variant);">Selecione uma placa para ver os detalhes das portas afetadas:</p>
+                    <p style="margin-bottom: 15px; color: var(--m3-on-surface-variant);">Selecione uma placa para ver os detalhes das portas:</p>
                     <div id="energy-placas-list" class="placas-grid">
                     </div>
                 </div>

@@ -378,8 +378,28 @@ window.openEnergyModal = function(oltId) {
     const modal = document.getElementById('energy-detail-modal');
     if (!modal) return;
     const oData = window.ENERGY_DATA_STORE.olts[oltId];
-    document.getElementById('energy-modal-title').innerHTML = `<span class="material-symbols-rounded">router</span> Detalhes - ${oltId}`;
-    document.getElementById('energy-modal-last-update').innerHTML = `<span class="material-symbols-rounded" style="font-size: 14px;">history</span> Última Varredura: ${oData.lastUpdate}`;
+    
+    // Título padronizado: Ícone DNS e apenas o nome da OLT
+    document.getElementById('energy-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${oltId}`;
+    
+    // Data e Hora padronizadas com filtro regex (igual ao olt-engine.js)
+    let datePart = '--/--/----';
+    let timePart = '--:--:--';
+    let cellData = oData.lastUpdate ? String(oData.lastUpdate) : '';
+
+    if (cellData && cellData !== '--/-- --:--') {
+        const dateMatch = cellData.match(/\d{2}\/\d{2}\/\d{2,4}/);
+        const timeMatch = cellData.match(/\d{2}:\d{2}(:\d{2})?/);
+
+        if (dateMatch) datePart = dateMatch[0];
+        if (timeMatch) timePart = timeMatch[0];
+    }
+
+    const elDate = document.getElementById('energy-update-date');
+    const elTime = document.getElementById('energy-update-time');
+    if (elDate) elDate.textContent = datePart;
+    if (elTime) elTime.textContent = timePart;
+
     const placasGrid = document.getElementById('energy-placas-list');
     placasGrid.innerHTML = '';
     const placas = Object.keys(oData.ports).sort((a, b) => parseInt(a) - parseInt(b));
