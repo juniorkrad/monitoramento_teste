@@ -213,14 +213,115 @@
     background: rgba(255, 255, 255, 0.05);
 }
 
-/* Responsividade do Grid de Placas */
+/* ==========================================================================
+   ESTILIZAÇÃO DOS CARDS DE STATUS (UP/DOWN/TOTAL) - MODAL TERCIÁRIO
+   ========================================================================== */
+
+/* Grid de alinhamento dos 3 blocos */
+.modal-stats-grid {
+    display: flex;
+    gap: 15px;
+    justify-content: space-between;
+    margin-bottom: 25px;
+    margin-top: 10px;
+}
+
+/* Base do Card */
+.modal-stat-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 15px;
+    border-radius: 20px;
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+.modal-stat-box:hover {
+    transform: translateY(-2px);
+}
+
+/* Estilo dos Valores Numéricos */
+.modal-stat-value {
+    font-family: var(--font-family-mono, 'Roboto Mono', monospace);
+    font-size: 2.8rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+/* Estilo dos Textos (UP/DOWN/TOTAL) */
+.modal-stat-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* --- Variação 1: ONLINE (UP / ACTIVE) --- */
+.modal-stat-box:nth-child(1) {
+    background-color: rgba(74, 222, 128, 0.1); /* Fundo verde translúcido */
+    border: 1px solid rgba(74, 222, 128, 0.25);
+}
+
+.modal-stat-box:nth-child(1) .modal-stat-value {
+    color: #4ade80; /* Verde MD3 */
+}
+
+.modal-stat-box:nth-child(1) .modal-stat-label {
+    color: #4ade80;
+    opacity: 0.9;
+}
+
+/* --- Variação 2: OFFLINE (DOWN / INACTIVE) --- */
+.modal-stat-box:nth-child(2) {
+    background-color: rgba(248, 113, 113, 0.1); /* Fundo vermelho translúcido */
+    border: 1px solid rgba(248, 113, 113, 0.25);
+}
+
+.modal-stat-box:nth-child(2) .modal-stat-value {
+    color: #f87171; /* Vermelho MD3 */
+}
+
+.modal-stat-box:nth-child(2) .modal-stat-label {
+    color: #f87171;
+    opacity: 0.9;
+}
+
+/* --- Variação 3: TOTAL --- */
+.modal-stat-box:nth-child(3) {
+    background-color: var(--m3-surface-container-high); /* Neutro */
+    border: 1px solid var(--m3-outline-variant);
+}
+
+.modal-stat-box:nth-child(3) .modal-stat-value {
+    color: var(--m3-on-surface);
+}
+
+.modal-stat-box:nth-child(3) .modal-stat-label {
+    color: var(--m3-on-surface-variant);
+}
+
+/* Responsividade do Grid de Placas e do Modal Terciário */
 @media (max-width: 900px) {
     .placas-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
 @media (max-width: 500px) {
     .placas-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .modal-stats-grid {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .modal-stat-box {
+        padding: 15px;
     }
 }
