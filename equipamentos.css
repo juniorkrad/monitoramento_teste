@@ -2,46 +2,10 @@
    ESTILOS ESPECÍFICOS - CARDS DE EQUIPAMENTOS (equipamentos.html)
    ========================================================================== */
 
-/* --- GRÁFICO DE ROSCA (DONUT CHART) --- */
-.donut-chart-container { 
-    position: absolute; 
-    right: 15px; 
-    top: 50%; 
-    transform: translateY(-50%); 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    width: 100px; 
-    height: 100px; 
-}
-
-.donut-chart { 
-    transform: rotate(-90deg); 
-}
-
-.donut-chart circle { 
-    fill: none; 
-    stroke-width: 10; 
-}
-
-.donut-chart .donut-bg { 
-    stroke: var(--m3-surface-container-high); 
-}
-
-.donut-chart .donut-fg { 
-    stroke: var(--m3-color-success); 
-    stroke-linecap: round; 
-    transition: stroke-dashoffset 1s ease-out; 
-}
-
-.chart-text { 
-    position: absolute; 
-    font-size: 1.4em; 
-    font-weight: 700; 
-    color: var(--m3-on-surface); 
-}
-
-.chart-text .stat-number { 
-    font-size: 1.2em; 
-    text-align: center; 
-}
+/* Aviso: Todas as classes estruturais (cards, modais, botões) 
+   e o gráfico de rosca (donut-chart) foram centralizados no styles.css 
+   para garantir a padronização global do Material Design 3.
+   
+   Utilize este arquivo apenas para estilizações estritamente exclusivas
+   da página equipamentos.html que não devem afetar outras páginas.
+*/

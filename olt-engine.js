@@ -292,22 +292,7 @@ window.startOltMonitoring = function(config) {
     window.stopOltMonitoring(); 
 
     if (!document.getElementById('detail-modal')) {
-        const modalStyles = `
-            <style>
-                .circuit-clickable { cursor: pointer; text-decoration: underline; font-weight: 600; transition: color 0.2s; }
-                .circuit-clickable:hover { color: var(--m3-primary); }
-                .client-table-container { max-height: 400px; overflow-y: auto; margin-top: 10px; border-radius: 10px; border: 1px solid var(--m3-outline); }
-                .modal-section-title { font-size: 1.1rem; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px; color: var(--m3-on-surface); font-weight: 600; }
-                .filter-bar { display: flex; gap: 10px; margin-bottom: 15px; }
-                .filter-input { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid var(--m3-outline); background-color: var(--m3-surface-container-high); color: var(--m3-on-surface); font-family: var(--font-family); }
-                .filter-select { padding: 10px 15px; border-radius: 20px; border: 1px solid var(--m3-outline); background-color: var(--m3-surface-container-high); color: var(--m3-on-surface); cursor: pointer; font-family: var(--font-family); }
-                .modal-view-stats { display: flex; }
-                .modal-view-clients { display: none; }
-            </style>
-        `;
-
         const modalHTML = `
-            ${modalStyles}
             <div id="detail-modal" class="modal-overlay" onclick="closeModal(event)">
                 <div class="modal-content modal-large">
                     <div class="modal-header">

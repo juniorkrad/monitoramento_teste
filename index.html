@@ -30,15 +30,15 @@
 
             <div id="global-overview-container" style="width: 100%;">
                 <div class="global-card" id="card-global">
-                    <div class="card-header" style="background-color: rgba(234, 208, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; color: var(--m3-on-surface);">
+                    <div class="card-header">
+                        <h3>
                             <span class="material-symbols-rounded" style="color: #4ade80;">public</span> MONITORAMENTO DA REDE
                         </h3>
                         <a href="olt.html" class="card-header-button" title="Ver Status das OLTs">
                             <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
                         </a>
                     </div>
-                    <div class="card-body" style="padding: 25px 30px;">
+                    <div class="card-body">
                         <p style="color: var(--m3-on-surface-variant);">Processando saúde da rede e alarmes...</p>
                     </div>
                 </div>
@@ -47,32 +47,30 @@
             <div id="dashboard-widgets" style="display: flex; flex-direction: column; width: 100%; flex: 1; justify-content: space-evenly;">
                 
                 <div class="global-card">
-                    <div class="card-header" style="background-color: rgba(234, 208, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; color: var(--m3-on-surface);">
+                    <div class="card-header">
+                        <h3>
                             <span class="material-symbols-rounded" style="color: #f87171;">bolt</span> MONITORAMENTO DE ENERGIA
                         </h3>
                         <a href="energia.html" class="card-header-button" title="Ver Painel Completo">
                             <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
                         </a>
                     </div>
-                    
-                    <div class="card-body" style="padding: 25px 30px;">
+                    <div class="card-body">
                         <span id="global-poweroff-total" style="display: none;"></span>
                         <p style="color: var(--m3-on-surface-variant);">Processando dados de falha de energia (Dying Gasp)...</p>
                     </div>
                 </div>
 
                 <div class="global-card">
-                    <div class="card-header" style="background-color: rgba(234, 208, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; color: var(--m3-on-surface);">
+                    <div class="card-header">
+                        <h3>
                             <span class="material-symbols-rounded" style="color: #fbbf24;">sensors</span> MONITORAMENTO DE POTÊNCIA
                         </h3>
                         <a href="potencia.html" class="card-header-button" title="Ver Painel Completo">
                             <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
                         </a>
                     </div>
-                    
-                    <div class="card-body" id="global-potencia-body" style="padding: 25px 30px;">
+                    <div class="card-body" id="global-potencia-body">
                         <p style="color: var(--m3-on-surface-variant);">Processando dados de sinais e potência óptica...</p>
                     </div>
                 </div>

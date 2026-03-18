@@ -2,9 +2,9 @@
    ESTILOS ESPECÍFICOS - DASHBOARD HOME (index.html)
    ========================================================================== */
 
-/* Padronização forçada dos cards na Home */
+/* Padronização forçada dos cards na Home com as novas bordas */
 .global-card .card-body {
-    padding: 25px 30px !important;
+    padding: 30px !important; /* Aumentado ligeiramente para "respirar" com as bordas */
     box-sizing: border-box !important;
     display: flex !important;
     justify-content: space-between !important;
@@ -78,7 +78,7 @@
 
 /* Barras do Gráfico de Energia (Ranking de OLTs) */
 .triple-progress-bar { 
-    height: 8px; width: 100%; background: rgba(255,255,255,0.05); 
+    height: 8px; width: 100%; background: var(--m3-surface-container-high); 
     border-radius: 4px; display: flex; overflow: hidden; margin-top: 12px; 
 }
 .bar-online { background-color: var(--m3-on-surface); } 
@@ -92,6 +92,7 @@
     .global-card .card-body {
         flex-direction: column !important;
         align-items: stretch !important;
+        padding: 20px !important; /* Ajustado para telas menores */
     }
 
     .global-card .card-stats,
@@ -101,14 +102,15 @@
         border-left: none !important;
         padding-left: 0 !important; 
         padding-right: 0 !important;
-        padding-top: 20px !important; 
-        padding-bottom: 20px !important;
+        padding-top: 25px !important; 
+        padding-bottom: 25px !important;
         align-items: flex-start !important;
         text-align: left !important;
     }
 
     .global-card div[style*="flex: 1"] {
-        border-top: 1px solid rgba(255,255,255,0.05) !important;
+        /* Atualizado para a mesma cor da borda externa */
+        border-top: 1px solid var(--m3-outline-variant) !important; 
     }
 
     .global-card .card-stats { padding-top: 0 !important; }

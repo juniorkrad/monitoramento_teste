@@ -93,10 +93,15 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
    ========================================================================== */
 .global-card {
     width: 100%; margin: 0 0 24px 0; background-color: var(--m3-surface-container);
-    border-radius: 24px; border: none; box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    border-radius: 24px; 
+    border: 1px solid var(--m3-outline-variant); 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
     display: flex; flex-direction: column; overflow: hidden; transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.global-card:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(0,0,0,0.3); }
+.global-card:hover { 
+    transform: translateY(-4px); 
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3); 
+}
 
 .global-card .card-header {
     padding: 16px 25px; background-color: rgba(234, 208, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -109,7 +114,7 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
    ========================================================================== */
 .overview-card { 
     background-color: var(--m3-surface-container); 
-    border-radius: 24px; /* Arredondamento MD3 Atualizado */
+    border-radius: 24px; 
     border: none; 
     overflow: hidden; 
     display: flex; flex-direction: column; 
@@ -135,14 +140,14 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     display: flex; align-items: center; gap: 8px; 
 }
 
-/* Cores de Status no Cabeçalho do Card (Genérico para todas as páginas) */
+/* Cores de Status no Cabeçalho do Card */
 .card-header.status-normal { background-color: var(--m3-color-success); }
 .card-header.status-atencao { background-color: var(--m3-color-warning); }
 .card-header.status-problema { background-color: var(--m3-color-error); }
 .card-header.status-normal h3, .card-header.status-problema h3 { color: #fff; }
 .card-header.status-atencao h3 { color: #000; }
 
-/* Botões de Cabeçalho (Minimalista/Circular Padrão MD3) */
+/* Botões de Cabeçalho */
 .card-header-button { 
     background-color: rgba(0, 0, 0, 0.2); color: var(--m3-on-surface-variant); 
     padding: 6px 12px; border-radius: 20px; text-decoration: none; 
@@ -151,7 +156,6 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     display: flex; align-items: center; justify-content: center; gap: 4px;
 }
 
-/* Variação circular para botões contendo apenas ícone */
 .card-header-button:not(:has(span:nth-child(2))) {
     width: 36px; height: 36px; padding: 0; border-radius: 50%;
 }
@@ -213,6 +217,42 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 }
 
 /* ==========================================================================
+   GRÁFICO DE ROSCA GLOBAL (DONUT CHART)
+   ========================================================================== */
+.donut-chart-container { 
+    position: absolute; right: 15px; top: 50%; 
+    transform: translateY(-50%); display: flex; 
+    justify-content: center; align-items: center; 
+    width: 100px; height: 100px; 
+}
+
+.donut-chart { 
+    transform: rotate(-90deg); 
+}
+
+.donut-chart circle { 
+    fill: none; stroke-width: 10; 
+}
+
+.donut-chart .donut-bg { 
+    stroke: var(--m3-surface-container-high); 
+}
+
+.donut-chart .donut-fg { 
+    stroke: var(--m3-color-success); stroke-linecap: round; 
+    transition: stroke-dashoffset 1s ease-out; 
+}
+
+.chart-text { 
+    position: absolute; font-size: 1.4em; 
+    font-weight: 700; color: var(--m3-on-surface); 
+}
+
+.chart-text .stat-number { 
+    font-size: 1.2em; text-align: center; 
+}
+
+/* ==========================================================================
    MODAIS / POPUPS (SISTEMA GERAL)
    ========================================================================== */
 .modal-overlay {
@@ -227,7 +267,6 @@ tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
     box-shadow: 0 10px 40px rgba(0,0,0,0.5); animation: modalSlideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); overflow: hidden;
 }
 
-/* Classe unificada e de altura fixa para todos os painéis */
 .modal-large { width: 100%; max-width: 1000px; height: 90vh; max-height: 90vh; }
 
 .modal-header {

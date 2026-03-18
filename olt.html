@@ -32,13 +32,13 @@
             
             <div class="modal-header">
                 <div>
-                    <h3 id="super-modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <h3 id="super-modal-title">
                         <span class="material-symbols-rounded">dns</span> Detalhes da OLT
                     </h3>
-                    <p id="olt-modal-last-update" style="margin: 5px 0 0 0; font-size: 0.85rem; color: var(--m3-on-surface); font-family: var(--font-family-mono); display: flex; align-items: center; gap: 5px;">
-                        <span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span> <span id="olt-update-date">--/--/----</span>
-                        <span style="color: rgba(255,255,255,0.3); margin: 0 4px;">|</span>
-                        <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span> <span id="olt-update-time">--:--:--</span>
+                    <p id="olt-modal-last-update">
+                        <span class="material-symbols-rounded">calendar_today</span> <span id="olt-update-date">--/--/----</span>
+                        <span>|</span>
+                        <span class="material-symbols-rounded">schedule</span> <span id="olt-update-time">--:--:--</span>
                     </p>
                 </div>
                 <button class="close-modal" onclick="closeSuperModal()" title="Fechar">&times;</button>
@@ -47,7 +47,7 @@
             <div class="modal-body">
                 
                 <div id="olt-view-placas">
-                    <p style="margin-bottom: 15px; color: var(--m3-on-surface-variant);">Selecione uma placa para ver os detalhes das portas:</p>
+                    <p>Selecione uma placa para ver os detalhes das portas:</p>
                     <div id="olt-placas-list" class="placas-grid">
                         </div>
                 </div>
@@ -57,7 +57,7 @@
                         <span class="material-symbols-rounded">arrow_back</span> Voltar para Placas
                     </button>
                     
-                    <h4 id="olt-placa-subtitle" style="margin-bottom: 15px; color: var(--m3-on-surface); font-size: 1.1rem;">Detalhes - Placa X</h4>
+                    <h4 id="olt-placa-subtitle">Detalhes - Placa X</h4>
                     
                     <div class="table-container">
                         <table>
@@ -118,7 +118,7 @@
                         <div class="card-header">
                             <h3><span class="material-symbols-rounded">dns</span> ${olt.id}</h3>
                             <button onclick="openSuperModal('${olt.id}', '${olt.sheetTab}', '${olt.type}', ${olt.boards})" class="card-header-button" title="Ver Placas e Portas">
-                                <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
+                                <span class="material-symbols-rounded">manage_search</span>
                             </button>
                         </div>
                         <div class="card-body">
@@ -246,7 +246,7 @@
             if(timestampEl) {
                 timestampEl.innerHTML = `
                     <span class="material-symbols-rounded">calendar_today</span> ${dataHoje}
-                    <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
+                    <span>|</span>
                     <span class="material-symbols-rounded">schedule</span> ${horaAgora}
                 `;
                 timestampEl.classList.remove('updated-anim');
@@ -268,8 +268,8 @@
             document.getElementById('olt-update-time').textContent = '--:--:--';
             
             document.getElementById('olt-placas-list').innerHTML = `
-                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--m3-on-surface-variant);">
-                    <span class="material-symbols-rounded" style="font-size: 48px; display: block; margin-bottom: 10px; animation: pulse 1.5s infinite;">hourglass_top</span>
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                    <span class="material-symbols-rounded" style="font-size: 48px; display: block; margin-bottom: 10px;">hourglass_top</span>
                     <h2>Estabelecendo conexão com a OLT...</h2>
                     <p>Buscando status de placas, portas e circuitos.</p>
                 </div>
@@ -309,9 +309,5 @@
             setInterval(runOverview, REFRESH_INTERVAL_SECONDS * 1000);
         });
     </script>
-    
-    <style>
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-    </style>
 </body>
 </html>
