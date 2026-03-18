@@ -383,8 +383,9 @@ window.startOltMonitoring = function(config) {
             let datePart = '--/--/----';
             let timePart = '--:--:--';
             
-            if (dataOlt.values && dataOlt.values.length > 0 && dataOlt.values[0].length > 10) {
-                const cellK1 = dataOlt.values[0][10]; 
+            if (dataOlt.values && dataOlt.values.length > 0) {
+                const firstRow = dataOlt.values[0];
+                const cellK1 = firstRow[firstRow.length - 1]; 
                 
                 if (cellK1) {
                     const parts = cellK1.toString().trim().split(' ');
