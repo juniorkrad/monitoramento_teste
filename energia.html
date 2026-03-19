@@ -90,6 +90,7 @@
         </div>
     </div>
 
+    <script src="config.js"></script>
     <script src="layout.js"></script>
     <script src="notifications.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -99,12 +100,9 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadHeader({ title: "Alarmes de Energia", exactTitle: true });
             loadFooter();
-
-            // Injeta a data/hora logo após o cabeçalho ser criado
             setPageOpenTime();
         });
 
-        // Função formatada com o padrão visual do layout.js (com segundos)
         function setPageOpenTime() {
             let timestampEl = document.getElementById('update-timestamp');
             

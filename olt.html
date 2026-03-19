@@ -80,42 +80,21 @@
 
     <div id="footer-placeholder"></div>
 
+    <script src="config.js"></script>
     <script src="layout.js"></script>
     <script src="olt-engine.js"></script>
 
     <script>
-        const oltsConfig = [
-            { id: 'HEL-1', sheetTab: 'HEL1', type: 'nokia', boards: 8 },
-            { id: 'HEL-2', sheetTab: 'HEL2', type: 'nokia', boards: 8 },
-            { id: 'PQA-1', sheetTab: 'PQA1', type: 'nokia', boards: 8 },
-            { id: 'PSV-1', sheetTab: 'PSV1', type: 'nokia', boards: 8 },
-            { id: 'MGP',   sheetTab: 'MGP',  type: 'nokia', boards: 8 },
-            { id: 'LTXV-1', sheetTab: 'LTXV1', type: 'furukawa-10', boards: 10 }, 
-            { id: 'LTXV-2', sheetTab: 'LTXV2', type: 'furukawa-2', boards: 2 },
-            { id: 'PQA-2',  sheetTab: 'PQA2',  type: 'furukawa-2', boards: 2 },
-            { id: 'PQA-3',  sheetTab: 'PQA3',  type: 'furukawa-2', boards: 2 },
-            { id: 'SB-1',   sheetTab: 'SB1',   type: 'furukawa-2', boards: 2 },
-            { id: 'SB-2',   sheetTab: 'SB2',   type: 'furukawa-2', boards: 2 },
-            { id: 'SB-3',   sheetTab: 'SB3',   type: 'furukawa-2', boards: 2 },
-            { id: 'PSV-7',  sheetTab: 'PSV7',  type: 'furukawa-2', boards: 2 },
-            { id: 'SBO-1',  sheetTab: 'SBO1',  type: 'furukawa-10', boards: 10 },
-            { id: 'SBO-2',  sheetTab: 'SBO2',  type: 'furukawa-2', boards: 2 },
-            { id: 'SBO-3',  sheetTab: 'SBO3',  type: 'furukawa-2', boards: 2 },
-            { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa-2', boards: 2 }
-        ];
-
-        const API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
-        const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
-        const REFRESH_INTERVAL_SECONDS = 300;
+        // OLTs e Chaves da API antigas foram deletadas daqui!
         
-        // Objeto global para armazenar as datas em memória
         window.OLT_LAST_UPDATES = {};
         
         function createCardPlaceholders() {
             const grid = document.getElementById('overview-grid');
             grid.innerHTML = ''; 
             
-            oltsConfig.forEach(olt => {
+            // Puxando do Cérebro
+            GLOBAL_MASTER_OLT_LIST.forEach(olt => {
                 grid.innerHTML += `
                     <div class="overview-card" id="card-${olt.id}">
                         <div class="card-header">
@@ -135,16 +114,15 @@
         }
         
         async function fetchOltData(olt) {
-            // Alterado para buscar sempre até a coluna K (onde fica o timestamp)
             const range = `${olt.sheetTab}!A:K`;
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
+            // Puxando Chaves do Cérebro
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values/${range}?key=${GLOBAL_API_KEY}`;
             
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`Falha ao buscar dados da aba ${olt.sheetTab}`);
                 const data = await response.json();
                 
-                // ---- CAPTURA DA DATA E HORA PARA A MEMÓRIA GLOBAL ----
                 let datePart = '--/--/----';
                 let timePart = '--:--:--';
                 if (data.values && data.values.length > 0) {
@@ -170,7 +148,6 @@
                 }
                 
                 window.OLT_LAST_UPDATES[olt.id] = { date: datePart, time: timePart };
-                // --------------------------------------------------------
 
                 const rows = (data.values || []).slice(1);
                 
@@ -269,7 +246,7 @@
                 createCardPlaceholders();
             }
             
-            const oltPromises = oltsConfig.map(olt => fetchOltData(olt));
+            const oltPromises = GLOBAL_MASTER_OLT_LIST.map(olt => fetchOltData(olt));
             await Promise.all(oltPromises);
             
             const now = new Date();
@@ -288,16 +265,11 @@
             }
         }
         
-        // ==============================================================================
-        // CONTROLADORES DO SUPER MODAL (NOVO FLUXO MD3)
-        // ==============================================================================
-        
         function openSuperModal(id, sheetTab, type, boards) {
             document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${id}`;
             document.getElementById('olt-view-detalhes').style.display = 'none';
             document.getElementById('olt-view-placas').style.display = 'block';
             
-            // Injeção instantânea da data e hora armazenadas na memória!
             let dateVal = '--/--/----';
             let timeVal = '--:--:--';
             if (window.OLT_LAST_UPDATES && window.OLT_LAST_UPDATES[id]) {
@@ -347,7 +319,7 @@
             loadHeader({ title: "Status das OLTs", exactTitle: true });
             loadFooter();
             runOverview();
-            setInterval(runOverview, REFRESH_INTERVAL_SECONDS * 1000);
+            setInterval(runOverview, GLOBAL_REFRESH_SECONDS * 1000);
         });
     </script>
 </body>

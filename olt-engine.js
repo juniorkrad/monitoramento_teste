@@ -2,10 +2,6 @@
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
 // ==============================================================================
 
-const ENGINE_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
-const ENGINE_SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
-const ENGINE_REFRESH_SECONDS = 300;
-
 const TAB_CIRCUITOS = 'CIRCUITO'; 
 const TABLE_HEADER_NAME = 'Circuitos'; 
 
@@ -15,39 +11,15 @@ const OLT_COLUMN_MAP = {
     'PQA2':  25, 'PQA3':  27, 'LTXV2': 29, 'LTXV1': 31, 'SBO1':  33
 };
 
-const GLOBAL_OLT_LIST = [
-    { id: 'HEL-1', sheetTab: 'HEL1', type: 'nokia' },
-    { id: 'HEL-2', sheetTab: 'HEL2', type: 'nokia' },
-    { id: 'PQA-1', sheetTab: 'PQA1', type: 'nokia' },
-    { id: 'PSV-1', sheetTab: 'PSV1', type: 'nokia' },
-    { id: 'MGP',   sheetTab: 'MGP',  type: 'nokia' },
-    { id: 'LTXV-1', sheetTab: 'LTXV1', type: 'furukawa-10' }, 
-    { id: 'LTXV-2', sheetTab: 'LTXV2', type: 'furukawa-2' },
-    { id: 'PQA-2',  sheetTab: 'PQA2',  type: 'furukawa-2' },
-    { id: 'PQA-3',  sheetTab: 'PQA3',  type: 'furukawa-2' },
-    { id: 'SB-1',   sheetTab: 'SB1',   type: 'furukawa-2' },
-    { id: 'SB-2',   sheetTab: 'SB2',   type: 'furukawa-2' },
-    { id: 'SB-3',   sheetTab: 'SB3',   type: 'furukawa-2' },
-    { id: 'PSV-7',  sheetTab: 'PSV7',  type: 'furukawa-2' },
-    { id: 'SBO-1',  sheetTab: 'SBO1',  type: 'furukawa-10' },
-    { id: 'SBO-2',  sheetTab: 'SBO2',  type: 'furukawa-2' },
-    { id: 'SBO-3',  sheetTab: 'SBO3',  type: 'furukawa-2' },
-    { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa-2' }
-];
-
 window.OLT_CLIENTS_DATA = {};
 window.CURRENT_OLT_PORT_DATA = {}; 
 window.NETWORK_PROBLEMS_STORE = new Set();
 window.NETWORK_BACKBONE_STORE = new Set();
 window.currentOltInterval = null; 
 
-// ==============================================================================
-// FUNÇÕES DE VARREDURA DE REDE GLOBAL (PARA A HOME)
-// ==============================================================================
-
 async function fetchGlobalOltData(olt) {
     const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:C`;
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${range}?key=${ENGINE_API_KEY}`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values/${range}?key=${GLOBAL_API_KEY}`;
     
     try {
         const response = await fetch(url);
@@ -182,7 +154,7 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
 }
 
 async function runGlobalNetworkOverview() {
-    const oltPromises = GLOBAL_OLT_LIST.map(olt => fetchGlobalOltData(olt));
+    const oltPromises = GLOBAL_MASTER_OLT_LIST.map(olt => fetchGlobalOltData(olt));
     const results = await Promise.all(oltPromises);
     
     let globalOnline = 0, globalOffline = 0;
@@ -248,10 +220,6 @@ async function runGlobalNetworkOverview() {
     window.NETWORK_BACKBONE_STORE = currentBackbones;
 }
 
-// ==============================================================================
-// MOTOR DE OLT (SUPER MODAL - FLUXO MD3: PLACAS -> PORTAS)
-// ==============================================================================
-
 window.stopOltMonitoring = function() {
     if (window.currentOltInterval) {
         clearInterval(window.currentOltInterval);
@@ -260,7 +228,7 @@ window.stopOltMonitoring = function() {
 };
 
 async function fetchCircuitosData() {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${TAB_CIRCUITOS}!A:AK?key=${ENGINE_API_KEY}`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values/${TAB_CIRCUITOS}!A:AK?key=${GLOBAL_API_KEY}`;
     try {
         const response = await fetch(url);
         if (!response.ok) return [];
@@ -342,14 +310,13 @@ window.startOltMonitoring = function(config) {
         window.OLT_CLIENTS_DATA = {}; 
 
         const rangeOlt = `${config.id}!A:Z`; 
-        const urlOlt = `https://sheets.googleapis.com/v4/spreadsheets/${ENGINE_SHEET_ID}/values/${rangeOlt}?key=${ENGINE_API_KEY}`;
+        const urlOlt = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values/${rangeOlt}?key=${GLOBAL_API_KEY}`;
 
         try {
             const [responseOlt, rowsCircuitos] = await Promise.all([fetch(urlOlt), fetchCircuitosData()]);
             if (!responseOlt.ok) throw new Error('Falha API OLT');
             const dataOlt = await responseOlt.json();
 
-            // --- INÍCIO DA CAPTURA BLINDADA COM REGEX ---
             let datePart = '--/--/----';
             let timePart = '--:--:--';
             
@@ -357,7 +324,6 @@ window.startOltMonitoring = function(config) {
                 const firstRow = dataOlt.values[0];
                 let cellData = firstRow[10] ? String(firstRow[10]) : '';
                 
-                // Se K1 estiver vazio, procura na linha inteira
                 if (!cellData) {
                     for (let i = firstRow.length - 1; i >= 0; i--) {
                         let val = firstRow[i] ? String(firstRow[i]) : '';
@@ -369,7 +335,6 @@ window.startOltMonitoring = function(config) {
                 }
                 
                 if (cellData) {
-                    // Ignora qualquer texto e suga apenas os formatos numéricos puros
                     const dateMatch = cellData.match(/\d{2}\/\d{2}\/\d{2,4}/);
                     const timeMatch = cellData.match(/\d{2}:\d{2}(:\d{2})?/);
                     
@@ -382,7 +347,6 @@ window.startOltMonitoring = function(config) {
             const elTime = document.getElementById('olt-update-time');
             if (elDate) elDate.textContent = datePart;
             if (elTime) elTime.textContent = timePart;
-            // --- FIM DA CAPTURA BLINDADA ---
 
             const rowsOlt = (dataOlt.values || []).slice(1);
 
@@ -441,7 +405,6 @@ window.startOltMonitoring = function(config) {
                 window.OLT_CLIENTS_DATA[portKey].push(clientData);
             });
 
-            // Renderização Tela A
             const placasList = document.getElementById('olt-placas-list');
             if (placasList) placasList.innerHTML = '';
 
@@ -489,7 +452,6 @@ window.startOltMonitoring = function(config) {
                 }
             }
 
-            // Atualização Tela B
             const detalhesView = document.getElementById('olt-view-detalhes');
             if (detalhesView && detalhesView.style.display === 'block') {
                 const subtitle = document.getElementById('olt-placa-subtitle').innerText;
@@ -508,7 +470,7 @@ window.startOltMonitoring = function(config) {
 
     const runUpdate = async () => { await populateTables(); };
     runUpdate(); 
-    window.currentOltInterval = setInterval(runUpdate, ENGINE_REFRESH_SECONDS * 1000); 
+    window.currentOltInterval = setInterval(runUpdate, GLOBAL_REFRESH_SECONDS * 1000); 
 }
 
 window.openOltPlacaDetails = function(placa, oltType) {
@@ -665,6 +627,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
     if (isHomePage) {
         runGlobalNetworkOverview();
-        setInterval(runGlobalNetworkOverview, ENGINE_REFRESH_SECONDS * 1000);
+        setInterval(runGlobalNetworkOverview, GLOBAL_REFRESH_SECONDS * 1000);
     }
 });

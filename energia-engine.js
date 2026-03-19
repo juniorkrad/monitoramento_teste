@@ -1,11 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Modo "Agente Secreto" (Alarmes puros de energia desativados)
 // ==============================================================================
-
-const ENERGY_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
-const ENERGY_SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
-const ENERGY_REFRESH_SECONDS = 300;
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
 
@@ -15,26 +10,6 @@ const ENERGY_OLT_COLUMN_MAP = {
     'PQA2':  25, 'PQA3':  27, 'LTXV2': 29, 'LTXV1': 31, 'SBO1':  33
 };
 
-const ENERGY_OLT_LIST = [
-    { id: 'HEL-1', sheetTab: 'HEL1', type: 'nokia' },
-    { id: 'HEL-2', sheetTab: 'HEL2', type: 'nokia' },
-    { id: 'PQA-1', sheetTab: 'PQA1', type: 'nokia' },
-    { id: 'PSV-1', sheetTab: 'PSV1', type: 'nokia' },
-    { id: 'MGP',   sheetTab: 'MGP',  type: 'nokia' },
-    { id: 'LTXV-1', sheetTab: 'LTXV1', type: 'furukawa-10' }, 
-    { id: 'LTXV-2', sheetTab: 'LTXV2', type: 'furukawa-2' },
-    { id: 'PQA-2',  sheetTab: 'PQA2',  type: 'furukawa-2' },
-    { id: 'PQA-3',  sheetTab: 'PQA3',  type: 'furukawa-2' },
-    { id: 'SB-1',   sheetTab: 'SB1',   type: 'furukawa-2' },
-    { id: 'SB-2',   sheetTab: 'SB2',   type: 'furukawa-2' },
-    { id: 'SB-3',   sheetTab: 'SB3',   type: 'furukawa-2' },
-    { id: 'PSV-7',  sheetTab: 'PSV7',  type: 'furukawa-2' },
-    { id: 'SBO-1',  sheetTab: 'SBO1',  type: 'furukawa-10' },
-    { id: 'SBO-2',  sheetTab: 'SBO2',  type: 'furukawa-2' },
-    { id: 'SBO-3',  sheetTab: 'SBO3',  type: 'furukawa-2' },
-    { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa-2' }
-];
-
 const HORIZONTAL_ENERGY_MAP = {
     'HEL-1': 0, 'HEL-2': 4, 'PQA-1': 8, 'PSV-1': 12, 'MGP': 16,
     'LTXV-1': 20, 'SBO-1': 24, 'LTXV-2': 28, 'PQA-2': 32, 'PQA-3': 36,
@@ -43,12 +18,9 @@ const HORIZONTAL_ENERGY_MAP = {
 };
 
 window.ENERGY_DATA_STORE = {};
-window.NETWORK_ENERGY_STORE = new Set(); // Mantido vazio para não dar erro em outras chamadas
+window.NETWORK_ENERGY_STORE = new Set(); 
 let energyChartInstance = null; 
 
-// ==============================================================================
-// FUNÇÃO EXTRATORA UNIVERSAL DE PORTAS
-// ==============================================================================
 function extractPort(val) {
     if (!val) return null;
     let s = String(val).replace(/gpon/i, '').trim();
@@ -81,10 +53,6 @@ function getEnergyCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
     }
     return "-";
 }
-
-// ==============================================================================
-// FUNÇÕES GRÁFICAS E INTERFACE
-// ==============================================================================
 
 function drawEnergyChart(oltsData) {
     let chartData = [];
@@ -199,10 +167,6 @@ function updateGlobalEnergyCard() {
     drawEnergyChart(oltsData);
 }
 
-// ==============================================================================
-// MOTOR DE VARREDURA
-// ==============================================================================
-
 window.startEnergyMonitoring = async function() {
     try {
         window.ENERGY_DATA_STORE = {
@@ -210,15 +174,16 @@ window.startEnergyMonitoring = async function() {
             olts: {} 
         };
 
-        ENERGY_OLT_LIST.forEach(olt => {
+        // Utilizando os dados do cérebro
+        GLOBAL_MASTER_OLT_LIST.forEach(olt => {
             window.ENERGY_DATA_STORE.olts[olt.id] = {
                 id: olt.id, type: olt.type, totalClients: 0, online: 0, offline: 0, powerOff: 0, offlineOther: 0, lastUpdate: '--/-- --:--',
                 ports: {}
             };
         });
 
-        const ranges = ['ENERGIA!A:BP', `${TAB_CIRCUITOS_ENERGIA}!A:AK`].concat(ENERGY_OLT_LIST.map(o => o.type === 'nokia' ? `${o.sheetTab}!A:E` : `${o.sheetTab}!A:C`));
-        const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${ENERGY_SHEET_ID}/values:batchGet?key=${ENERGY_API_KEY}&ranges=${ranges.join('&ranges=')}`;
+        const ranges = ['ENERGIA!A:BP', `${TAB_CIRCUITOS_ENERGIA}!A:AK`].concat(GLOBAL_MASTER_OLT_LIST.map(o => o.type === 'nokia' ? `${o.sheetTab}!A:E` : `${o.sheetTab}!A:C`));
+        const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values:batchGet?key=${GLOBAL_API_KEY}&ranges=${ranges.join('&ranges=')}`;
         
         const resBatch = await fetch(batchUrl);
         const dataBatch = await resBatch.json();
@@ -227,7 +192,7 @@ window.startEnergyMonitoring = async function() {
 
         const rowsCircuitos = dataBatch.valueRanges[1].values || [];
 
-        ENERGY_OLT_LIST.forEach((olt, index) => {
+        GLOBAL_MASTER_OLT_LIST.forEach((olt, index) => {
             const vrIndex = index + 2;
             const rows = dataBatch.valueRanges[vrIndex].values ? dataBatch.valueRanges[vrIndex].values.slice(1) : [];
             const oltData = window.ENERGY_DATA_STORE.olts[olt.id];
@@ -309,7 +274,7 @@ window.startEnergyMonitoring = async function() {
             });
         }
 
-        ENERGY_OLT_LIST.forEach(olt => {
+        GLOBAL_MASTER_OLT_LIST.forEach(olt => {
             const oData = window.ENERGY_DATA_STORE.olts[olt.id];
             oData.offlineOther = Math.max(0, oData.offline - oData.powerOff);
             if (oData.powerOff > 0) window.ENERGY_DATA_STORE.global.oltsAffected++;
@@ -317,18 +282,14 @@ window.startEnergyMonitoring = async function() {
 
         updateGlobalEnergyCard();
 
-        // ==============================================================================
-        // --- OS ALARMES SINGULARES E MÚLTIPLOS DE ENERGIA FORAM DESATIVADOS ---
-        // ==============================================================================
         window.NETWORK_ENERGY_STORE = new Set();
-        // ==============================================================================
 
         const gridEl = document.getElementById('energy-olt-grid');
         const isEnergyPage = window.location.pathname.includes('energia.html');
 
         if (isEnergyPage && gridEl) {
             gridEl.innerHTML = '';
-            ENERGY_OLT_LIST.forEach(oltDef => {
+            GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {
                 const oData = window.ENERGY_DATA_STORE.olts[oltDef.id];
                 const pctOnline = oData.totalClients ? (oData.online / oData.totalClients * 100) : 0;
                 const pctPowerOff = oData.totalClients ? (oData.powerOff / oData.totalClients * 100) : 0;
@@ -376,10 +337,8 @@ window.openEnergyModal = function(oltId) {
     if (!modal) return;
     const oData = window.ENERGY_DATA_STORE.olts[oltId];
     
-    // Título padronizado: Ícone DNS e apenas o nome da OLT
     document.getElementById('energy-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${oltId}`;
     
-    // Data e Hora padronizadas com filtro regex
     let datePart = '--/--/----';
     let timePart = '--:--:--';
     let cellData = oData.lastUpdate ? String(oData.lastUpdate) : '';
@@ -430,13 +389,11 @@ window.openEnergyPlacaDetails = function(oltId, placa) {
             const perc = pData.powerOff / pData.total;
             let statusBadge = `<span class="impact-badge impact-low">Mínimo</span>`; 
             
-            // --- NOVA REGRA DE EXIBIÇÃO: 15% ---
             if ((perc >= 0.5 && pData.powerOff >= 10) || (perc === 1 && pData.total >= 5)) {
                 statusBadge = `<span class="impact-badge impact-high">Crítico</span>`; 
             } else if (perc >= 0.15 && pData.powerOff >= 5) {
                 statusBadge = `<span class="impact-badge impact-med">Atenção</span>`; 
             }
-            // ------------------------------------
 
             tbody.innerHTML += `
                 <tr>
@@ -457,6 +414,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isEnergyPage || isHomePage) {
         startEnergyMonitoring();
-        setInterval(startEnergyMonitoring, ENERGY_REFRESH_SECONDS * 1000);
+        setInterval(startEnergyMonitoring, GLOBAL_REFRESH_SECONDS * 1000);
     }
 });

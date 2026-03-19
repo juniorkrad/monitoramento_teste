@@ -22,23 +22,26 @@
         <div id="header-placeholder"></div>
 
         <main class="main-content" style="flex-direction: column;">
-            <div id="fabricantes-grid" class="grid-container" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
-                <p style="padding: 20px;">Carregando dados reais da rede e agrupando seriais...</p>
+            <div id="fabricantes-grid" class="grid-container">
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                    <span class="material-symbols-rounded rotate-anim" style="font-size: 40px; color: var(--m3-on-surface-variant);">sync</span>
+                    <p style="color: var(--m3-on-surface-variant);">Processando relatórios de fabricantes...</p>
+                </div>
             </div>
         </main>
     </div>
 
-    <div id="modal-desconhecidos" class="modal-overlay">
+    <div id="modal-desconhecidos" class="modal-overlay" onclick="closeUnknownModal(event)">
         <div class="modal-content modal-large">
-            <div class="modal-header">
-                <h3><span class="material-symbols-rounded">troubleshoot</span> Equipamentos Desconhecidos</h3>
+            <div class="modal-header" style="background: rgba(248, 113, 113, 0.05); border-bottom: 1px solid rgba(248, 113, 113, 0.2);">
+                <h3 style="color: #f87171;"><span class="material-symbols-rounded">warning</span> Seriais Desconhecidos</h3>
                 <button class="close-modal" onclick="closeUnknownModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <p style="margin-top: 0; color: var(--m3-on-surface-variant); font-size: 0.9rem;">
-                    Lista de equipamentos cujos seriais não correspondem aos fabricantes homologados. Identifique a OLT e a Porta para localizá-los nas planilhas.
+                <p style="color: var(--m3-on-surface-variant); margin-bottom: 20px; line-height: 1.5;">
+                    Estes são os equipamentos cujos seriais não correspondem aos fabricantes homologados. Identifique a OLT e a Porta para localizá-los nas planilhas.
                 </p>
-                <div class="client-table-container">
+                <div class="table-container">
                     <table id="tabela-desconhecidos">
                         <thead>
                             <tr class="table-header-row">
@@ -58,6 +61,7 @@
 
     <div id="footer-placeholder"></div>
 
+    <script src="config.js"></script>
     <script src="layout.js"></script>
     <script src="equipamentos-engine.js"></script>
 
@@ -67,11 +71,5 @@
             if (typeof loadFooter === 'function') loadFooter();
         });
     </script>
-
-    <style>
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: var(--m3-outline); border-radius: 4px; }
-    </style>
 </body>
 </html>

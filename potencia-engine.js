@@ -2,35 +2,9 @@
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
 // ==============================================================================
 
-const POTENCIA_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
-const POTENCIA_SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
-const POTENCIA_REFRESH_SECONDS = 300; // 5 minutos
-
-const POTENCIA_OLT_LIST = [
-    { id: 'HEL-1', sheetTab: 'HEL1', type: 'nokia' },
-    { id: 'HEL-2', sheetTab: 'HEL2', type: 'nokia' },
-    { id: 'PQA-1', sheetTab: 'PQA1', type: 'nokia' },
-    { id: 'PSV-1', sheetTab: 'PSV1', type: 'nokia' },
-    { id: 'MGP',   sheetTab: 'MGP',  type: 'nokia' },
-    { id: 'LTXV-1', sheetTab: 'LTXV1', type: 'furukawa-10' }, 
-    { id: 'LTXV-2', sheetTab: 'LTXV2', type: 'furukawa-2' },
-    { id: 'PQA-2',  sheetTab: 'PQA2',  type: 'furukawa-2' },
-    { id: 'PQA-3',  sheetTab: 'PQA3',  type: 'furukawa-2' },
-    { id: 'SB-1',   sheetTab: 'SB1',   type: 'furukawa-2' },
-    { id: 'SB-2',   sheetTab: 'SB2',   type: 'furukawa-2' },
-    { id: 'SB-3',   sheetTab: 'SB3',   type: 'furukawa-2' },
-    { id: 'PSV-7',  sheetTab: 'PSV7',  type: 'furukawa-2' },
-    { id: 'SBO-1',  sheetTab: 'SBO1',  type: 'furukawa-10' },
-    { id: 'SBO-2',  sheetTab: 'SBO2',  type: 'furukawa-2' },
-    { id: 'SBO-3',  sheetTab: 'SBO3',  type: 'furukawa-2' },
-    { id: 'SBO-4',  sheetTab: 'SBO4',  type: 'furukawa-2' }
-];
-
-// Memória global
 window.POTENCIA_CLIENTS_DATA = {};
-window.POTENCIA_LAST_UPDATES = {}; // Cofre para guardar as datas de cada OLT
+window.POTENCIA_LAST_UPDATES = {}; 
 
-// Função para limpar e converter a string de potência num número real
 function parsePowerValue(powerStr) {
     if (!powerStr) return null;
     const cleaned = powerStr.replace(/[^\d.-]/g, '');
@@ -43,10 +17,9 @@ async function runPotenciaEngine() {
     const globalBody = document.getElementById('global-potencia-body');
     const timestampEl = document.getElementById('update-timestamp');
     
-    // Identifica se está rodando na página oficial de Potência
     const isPotenciaPage = window.location.pathname.includes('potencia.html');
     
-    if (!globalBody && !gridEl) return; // Trava básica se nenhum elemento for encontrado
+    if (!globalBody && !gridEl) return; 
 
     if (timestampEl && timestampEl.textContent.includes('Aguardando')) {
         timestampEl.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Buscando dados...';
@@ -61,19 +34,18 @@ async function runPotenciaEngine() {
         window.POTENCIA_CLIENTS_DATA = {};
         window.POTENCIA_LAST_UPDATES = {};
 
-        // Busca agora vai de A até K (para alcançar a coluna do Timestamp na Planilha)
-        const ranges = POTENCIA_OLT_LIST.map(o => `${o.sheetTab}!A:K`);
-        const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${POTENCIA_SHEET_ID}/values:batchGet?key=${POTENCIA_API_KEY}&ranges=${ranges.join('&ranges=')}`;
+        // Utilizando os dados do cérebro
+        const ranges = GLOBAL_MASTER_OLT_LIST.map(o => `${o.sheetTab}!A:K`);
+        const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values:batchGet?key=${GLOBAL_API_KEY}&ranges=${ranges.join('&ranges=')}`;
         
         const response = await fetch(batchUrl);
         const dataBatch = await response.json();
 
         if (!dataBatch.valueRanges) throw new Error("Falha ao carregar dados da API.");
 
-        POTENCIA_OLT_LIST.forEach((olt, index) => {
+        GLOBAL_MASTER_OLT_LIST.forEach((olt, index) => {
             const rawValues = dataBatch.valueRanges[index].values;
             
-            // 1. EXTRAÇÃO CIRÚRGICA DO TIMESTAMP (Na Célula K1 - Coluna índice 10)
             let timestamp = '--/-- --:--';
             if (rawValues && rawValues.length > 0) {
                 timestamp = rawValues[0][10] || '--/-- --:--';
@@ -81,7 +53,6 @@ async function runPotenciaEngine() {
             }
             window.POTENCIA_LAST_UPDATES[olt.id] = timestamp;
             
-            // 2. CORTA A LINHA 1 PARA O LOOP DE DADOS
             const rows = rawValues && rawValues.length > 1 ? rawValues.slice(1) : [];
             
             let criticosNestaOlt = 0;
@@ -152,18 +123,12 @@ async function runPotenciaEngine() {
             oltStats.push({ id: olt.id, criticos: criticosNestaOlt, total: totalNestaOlt });
         });
 
-        // =========================================================
-        // ATUALIZAÇÃO DA INTERFACE VISUAL DA HOME (Se a div existir)
-        // =========================================================
         if (globalBody) {
-            
-            // PROCESSAMENTO DOS 5 PIORES DA REDE
             todosClientesCriticos.sort((a, b) => a.potencia - b.potencia);
             const piores5 = todosClientesCriticos.slice(0, 5);
 
             let piores5Html = '';
             if (piores5.length > 0) {
-                // Cabeçalho da Tabela Estrita e Alinhada à Esquerda
                 piores5Html = `
                     <div style="display: grid; grid-template-columns: 1.5fr 2fr 1fr 1fr; gap: 10px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 8px; color: var(--m3-on-surface-variant); font-weight: 700; text-align: left;">
                         <div>OLT / Porta</div>
@@ -172,7 +137,6 @@ async function runPotenciaEngine() {
                         <div style="text-align: right;">Sinal</div>
                     </div>
                 `;
-                // Linhas da Tabela Estritas
                 piores5.forEach(c => {
                     piores5Html += `
                         <div style="display: grid; grid-template-columns: 1.5fr 2fr 1fr 1fr; gap: 10px; font-size: 0.85rem; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); padding: 6px 0; text-align: left;">
@@ -187,7 +151,6 @@ async function runPotenciaEngine() {
                 piores5Html = `<div style="text-align: center; color: var(--m3-color-success); font-weight: bold; margin-top: 20px;"><span class="material-symbols-rounded" style="vertical-align: middle;">verified</span> Nenhum sinal crítico na rede!</div>`;
             }
 
-            // RANKING (Esticado em barras)
             oltStats.sort((a, b) => b.criticos - a.criticos);
             const pioresOlts = oltStats.filter(o => o.criticos > 0).slice(0, 3);
             
@@ -211,7 +174,6 @@ async function runPotenciaEngine() {
                 rankingHtml = `<span style="color: var(--m3-color-success); font-weight: bold;"><span class="material-symbols-rounded" style="vertical-align: middle;">check_circle</span> Rede 100% no padrão!</span>`;
             }
 
-            // INJEÇÃO DA HOME (Aplicando as correções de layout solicitadas)
             globalBody.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 20px; height: 100%;">
                     
@@ -251,9 +213,6 @@ async function runPotenciaEngine() {
             `;
         }
 
-        // =========================================================
-        // ATUALIZAÇÃO DA INTERFACE INDIVIDUAL (Apenas na página de Potência)
-        // =========================================================
         if (isPotenciaPage && gridEl) {
             gridEl.innerHTML = '';
             oltStats.forEach(olt => {
@@ -283,9 +242,6 @@ async function runPotenciaEngine() {
             });
         }
 
-        // =========================================================
-        // ATUALIZAÇÃO DO RELÓGIO (Se o elemento existir)
-        // =========================================================
         if (timestampEl) {
             const now = new Date();
             timestampEl.innerHTML = `
@@ -306,10 +262,6 @@ async function runPotenciaEngine() {
     }
 }
 
-// ==============================================================================
-// CONTROLE DO MODAL DE CLIENTES (OTIMIZADO E PADRONIZADO)
-// ==============================================================================
-
 window.abrirModalPotencia = function(oltId) {
     const modal = document.getElementById('potencia-modal');
     if (!modal) return; 
@@ -320,10 +272,8 @@ window.abrirModalPotencia = function(oltId) {
     
     if (searchInput) searchInput.value = '';
     
-    // Título padronizado: Ícone DNS e apenas o nome da OLT
     if (title) title.innerHTML = `<span class="material-symbols-rounded">dns</span> ${oltId}`;
     
-    // Injeta a data e hora padronizadas com filtro regex
     let datePart = '--/--/----';
     let timePart = '--:--:--';
     let cellData = window.POTENCIA_LAST_UPDATES[oltId] ? String(window.POTENCIA_LAST_UPDATES[oltId]) : '';
@@ -366,15 +316,12 @@ window.abrirModalPotencia = function(oltId) {
     modal.style.display = 'flex';
 };
 
-// ==============================================================================
-// INICIALIZADOR AUTÔNOMO
-// ==============================================================================
 document.addEventListener('DOMContentLoaded', () => {
     const isPotenciaPage = window.location.pathname.includes('potencia.html');
     const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
 
     if (isPotenciaPage || isHomePage) {
         runPotenciaEngine();
-        setInterval(runPotenciaEngine, POTENCIA_REFRESH_SECONDS * 1000);
+        setInterval(runPotenciaEngine, GLOBAL_REFRESH_SECONDS * 1000);
     }
 });

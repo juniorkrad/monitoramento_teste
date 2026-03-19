@@ -78,6 +78,7 @@
         </div>
     </div>
 
+    <script src="config.js"></script>
     <script src="layout.js"></script>
     <script src="notifications.js"></script>
     
@@ -87,7 +88,6 @@
             loadFooter();
         });
 
-        // Funções de controle do Modal
         function fecharModalPotencia(event) {
             if (event && event.target.id !== 'potencia-modal' && !event.target.classList.contains('close-modal')) return;
             document.getElementById('potencia-modal').style.display = 'none';

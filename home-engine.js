@@ -1,29 +1,23 @@
 /* ==========================================================================
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
-   Atualização: Remoção de Alarmes Puros de Energia, Foco em Rede e Híbrido
+   Atualização: Integração Perfeita com o config.js
    ========================================================================== */
 
-let lastNotifiedState = ""; // Memória unificada para não spammar os alarmes
+let lastNotifiedState = ""; 
 
 function watchHomeAlarms() {
-    // Busca os dados dos cofres de rede gerados pelos motores
     let networkProblems = new Set(window.NETWORK_PROBLEMS_STORE || []);
     let backboneProblems = new Set(window.NETWORK_BACKBONE_STORE || []);
     let hybridProblems = new Set(); 
 
-    // ============================================================
-    // 1. VIGILANTE DE ENERGIA E MOTOR HÍBRIDO
-    // ============================================================
     if (window.ENERGY_DATA_STORE && window.ENERGY_DATA_STORE.global) {
         const globalData = window.ENERGY_DATA_STORE.global;
 
-        // Atualiza o número total de clientes sem energia na Home
         const totalPowerOffEl = document.getElementById('global-poweroff-total');
         if (totalPowerOffEl) {
             totalPowerOffEl.innerText = globalData.powerOff;
         }
 
-        // Atualiza o contexto (OLTs afetadas e Impacto) na Home
         const contextEl = document.getElementById('global-poweroff-context');
         if (contextEl) {
             const impacto = globalData.totalClients > 0 
@@ -44,21 +38,40 @@ function watchHomeAlarms() {
             `;
         }
 
-        // ============================================================
-        // 1.2 CRIAÇÃO DO ALARME HÍBRIDO (PORTA A PORTA)
-        // ============================================================
         for (const oltId in window.ENERGY_DATA_STORE.olts) {
             const oltData = window.ENERGY_DATA_STORE.olts[oltId];
             for (const placa in oltData.ports) {
                 for (const porta in oltData.ports[placa]) {
                     const pData = oltData.ports[placa][porta];
                     const pt = `${placa}/${porta}`;
+                    
+                    if (pData.powerOff > 0) {
+                        const portRef = `[${oltId}] STATUS::CRIT_${pt}`;
+                        const portRefWarn = `[${oltId}] STATUS::WARN_${pt}`;
+                        const portRefSuper = `[${oltId}] STATUS::SUPER_${pt}`;
+                        
+                        let handled = false;
 
-                    // Gatilho: Mínimo de 16 offline E Energia representa >= 70% do problema
-                    if (pData.offline >= 16 && pData.powerOff > 0) {
-                        const overlap = pData.powerOff / pData.offline;
-                        if (overlap >= 0.70) {
-                            hybridProblems.add(`[${oltId}] HIBRIDO::${pt}::${pData.offline}::${pData.powerOff}`);
+                        for (const netProb of networkProblems) {
+                            if (netProb.includes(`[${oltId}] STATUS::MULTI::`)) {
+                                const affectedPortsStr = netProb.split('STATUS::MULTI::')[1];
+                                const affectedPorts = affectedPortsStr.split(',');
+                                
+                                if (affectedPorts.includes(pt)) {
+                                    hybridProblems.add(`[${oltId}] HÍBRIDO::${pt}::${pData.powerOff}`);
+                                    handled = true;
+                                }
+                            }
+                        }
+
+                        if (!handled) {
+                            for (const netProb of networkProblems) {
+                                if (netProb.startsWith(portRef) || netProb.startsWith(portRefWarn) || netProb.startsWith(portRefSuper)) {
+                                    hybridProblems.add(`[${oltId}] HÍBRIDO::${pt}::${pData.powerOff}`);
+                                    networkProblems.delete(netProb); 
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
@@ -66,22 +79,9 @@ function watchHomeAlarms() {
         }
     }
 
-    // Exporta os híbridos encontrados
-    window.NETWORK_HYBRID_STORE = hybridProblems;
-
-    // ============================================================
-    // 2. DISPARO CENTRALIZADO DE TODOS OS ALARMES
-    // ============================================================
-    const currentStateStr = 
-        Array.from(networkProblems).sort().join('|') + "||" + 
-        Array.from(backboneProblems).sort().join('|') + "||" + 
-        Array.from(hybridProblems).sort().join('|');
-
-    if (currentStateStr !== lastNotifiedState) {
-        lastNotifiedState = currentStateStr;
-        
-        if (typeof checkAndNotifyForNewProblems === 'function') {
-            // Passa um Set vazio no local dos problemas de energia puros
+    if (typeof checkAndNotifyForNewProblems === 'function') {
+        const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
+        if (isHomePage) {
             checkAndNotifyForNewProblems(networkProblems, backboneProblems, new Set(), hybridProblems);
         }
     }
@@ -113,8 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 500);
 
     const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
-    
     if (isHomePage) {
-        setInterval(watchHomeAlarms, 2000); 
+        setInterval(watchHomeAlarms, 60000); 
     }
 });
