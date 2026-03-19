@@ -85,15 +85,12 @@
     <script src="olt-engine.js"></script>
 
     <script>
-        // OLTs e Chaves da API antigas foram deletadas daqui!
-        
         window.OLT_LAST_UPDATES = {};
         
         function createCardPlaceholders() {
             const grid = document.getElementById('overview-grid');
             grid.innerHTML = ''; 
             
-            // Puxando do Cérebro
             GLOBAL_MASTER_OLT_LIST.forEach(olt => {
                 grid.innerHTML += `
                     <div class="overview-card" id="card-${olt.id}">
@@ -115,7 +112,6 @@
         
         async function fetchOltData(olt) {
             const range = `${olt.sheetTab}!A:K`;
-            // Puxando Chaves do Cérebro
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values/${range}?key=${GLOBAL_API_KEY}`;
             
             try {
@@ -249,20 +245,8 @@
             const oltPromises = GLOBAL_MASTER_OLT_LIST.map(olt => fetchOltData(olt));
             await Promise.all(oltPromises);
             
-            const now = new Date();
-            const dataHoje = now.toLocaleDateString('pt-BR');
-            const horaAgora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            
-            if(timestampEl) {
-                timestampEl.innerHTML = `
-                    <span class="material-symbols-rounded">calendar_today</span> ${dataHoje}
-                    <span style="color: rgba(255,255,255,0.3); margin: 0 4px;">|</span>
-                    <span class="material-symbols-rounded">schedule</span> ${horaAgora}
-                `;
-                timestampEl.classList.remove('updated-anim');
-                void timestampEl.offsetWidth; 
-                timestampEl.classList.add('updated-anim');
-            }
+            // Usando a nova função global em vez daquelas dezenas de linhas!
+            updateGlobalTimestamp();
         }
         
         function openSuperModal(id, sheetTab, type, boards) {

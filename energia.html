@@ -100,25 +100,9 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadHeader({ title: "Alarmes de Energia", exactTitle: true });
             loadFooter();
-            setPageOpenTime();
+            // Chamando a nova função global em vez daquela repetida!
+            updateGlobalTimestamp();
         });
-
-        function setPageOpenTime() {
-            let timestampEl = document.getElementById('update-timestamp');
-            
-            if (timestampEl) {
-                const now = new Date();
-                const dataFormatada = now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                const horaFormatada = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                
-                timestampEl.innerHTML = `
-                    <span class="material-symbols-rounded">calendar_today</span> ${dataFormatada}
-                    <span style="display: inline-block; width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
-                    <span class="material-symbols-rounded">schedule</span> ${horaFormatada}
-                `;
-                timestampEl.style.color = 'var(--m3-on-surface-variant)';
-            }
-        }
 
         function closeEnergyModal(event) {
             if (event && event.target.id !== 'energy-detail-modal' && !event.target.classList.contains('close-modal')) return;

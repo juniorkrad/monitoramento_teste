@@ -139,52 +139,38 @@ function loadFooter() {
     `;
 }
 
+// ==============================================================================
+// UTILITÁRIOS GLOBAIS (FASE 2)
+// ==============================================================================
+
 /**
- * Timestamp
+ * Verifica se a página atual é a Home (Dashboard Principal)
+ * @returns {boolean}
  */
-async function loadTimestamp(sheetTab, apiKey, sheetId) {
+function checkIsHomePage() {
+    const path = window.location.pathname;
+    return path.includes('index.html') || path === '/' || !path.endsWith('.html');
+}
+
+/**
+ * Atualiza o relógio/timestamp do cabeçalho de forma padronizada em todo o sistema
+ */
+function updateGlobalTimestamp() {
     const timestampEl = document.getElementById('update-timestamp');
     if (!timestampEl) return;
 
-    const range = `${sheetTab}!K1`; 
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+    const now = new Date();
+    const dataFormatada = now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const horaFormatada = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-    try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Falha timestamp');
-        const data = await response.json();
-        
-        if (data.values && data.values.length > 0 && data.values[0][0]) {
-            const rawText = data.values[0][0];
-            const cleanText = rawText.replace('Atualizado em:', '').trim();
-            const parts = cleanText.split(' ');
-            
-            let htmlFormatado = '';
-            if (parts.length >= 2) {
-                htmlFormatado = `
-                    <span class="material-symbols-rounded">calendar_today</span> ${parts[0]}
-                    <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
-                    <span class="material-symbols-rounded">schedule</span> ${parts[1]}
-                `;
-            } else {
-                htmlFormatado = `<span class="material-symbols-rounded">schedule</span> ${cleanText}`;
-            }
-            
-            if (timestampEl.getAttribute('data-val') !== cleanText) {
-                timestampEl.innerHTML = htmlFormatado;
-                timestampEl.setAttribute('data-val', cleanText);
-                timestampEl.style.color = 'var(--m3-on-surface-variant)';
-                timestampEl.classList.remove('updated-anim');
-                void timestampEl.offsetWidth; 
-                timestampEl.classList.add('updated-anim');
-            }
-        } else {
-            timestampEl.innerHTML = `<span class="material-symbols-rounded">error</span> S/ Dados`;
-        }
-    } catch (error) {
-        if (timestampEl.textContent.includes('Aguardando')) {
-             timestampEl.innerHTML = `<span class="material-symbols-rounded">wifi_off</span> Erro`;
-             timestampEl.style.color = 'var(--m3-color-error)';
-        }
-    }
+    timestampEl.innerHTML = `
+        <span class="material-symbols-rounded">calendar_today</span> ${dataFormatada}
+        <span style="display: inline-block; width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
+        <span class="material-symbols-rounded">schedule</span> ${horaFormatada}
+    `;
+    timestampEl.style.color = 'var(--m3-on-surface-variant)';
+    
+    timestampEl.classList.remove('updated-anim');
+    void timestampEl.offsetWidth; 
+    timestampEl.classList.add('updated-anim');
 }
