@@ -34,7 +34,6 @@ async function runPotenciaEngine() {
         window.POTENCIA_CLIENTS_DATA = {};
         window.POTENCIA_LAST_UPDATES = {};
 
-        // Utilizando os dados do cérebro
         const ranges = GLOBAL_MASTER_OLT_LIST.map(o => `${o.sheetTab}!A:K`);
         const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values:batchGet?key=${GLOBAL_API_KEY}&ranges=${ranges.join('&ranges=')}`;
         
@@ -242,17 +241,7 @@ async function runPotenciaEngine() {
             });
         }
 
-        if (timestampEl) {
-            const now = new Date();
-            timestampEl.innerHTML = `
-                <span class="material-symbols-rounded">calendar_today</span> ${now.toLocaleDateString('pt-BR')}
-                <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
-                <span class="material-symbols-rounded">schedule</span> ${now.toLocaleTimeString('pt-BR')}
-            `;
-            timestampEl.classList.remove('updated-anim');
-            void timestampEl.offsetWidth; 
-            timestampEl.classList.add('updated-anim');
-        }
+        updateGlobalTimestamp();
 
     } catch (e) {
         console.error("Erro no Motor de Potência:", e);
@@ -318,9 +307,7 @@ window.abrirModalPotencia = function(oltId) {
 
 document.addEventListener('DOMContentLoaded', () => {
     const isPotenciaPage = window.location.pathname.includes('potencia.html');
-    const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
-
-    if (isPotenciaPage || isHomePage) {
+    if (isPotenciaPage || checkIsHomePage()) {
         runPotenciaEngine();
         setInterval(runPotenciaEngine, GLOBAL_REFRESH_SECONDS * 1000);
     }

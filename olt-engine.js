@@ -624,8 +624,7 @@ window.filterClients = function() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
-    if (isHomePage) {
+    if (checkIsHomePage()) {
         runGlobalNetworkOverview();
         setInterval(runGlobalNetworkOverview, GLOBAL_REFRESH_SECONDS * 1000);
     }

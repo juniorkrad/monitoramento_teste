@@ -174,7 +174,6 @@ window.startEnergyMonitoring = async function() {
             olts: {} 
         };
 
-        // Utilizando os dados do cérebro
         GLOBAL_MASTER_OLT_LIST.forEach(olt => {
             window.ENERGY_DATA_STORE.olts[olt.id] = {
                 id: olt.id, type: olt.type, totalClients: 0, online: 0, offline: 0, powerOff: 0, offlineOther: 0, lastUpdate: '--/-- --:--',
@@ -410,9 +409,7 @@ window.openEnergyPlacaDetails = function(oltId, placa) {
 
 document.addEventListener('DOMContentLoaded', () => {
     const isEnergyPage = window.location.pathname.includes('energia.html');
-    const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
-
-    if (isEnergyPage || isHomePage) {
+    if (isEnergyPage || checkIsHomePage()) {
         startEnergyMonitoring();
         setInterval(startEnergyMonitoring, GLOBAL_REFRESH_SECONDS * 1000);
     }

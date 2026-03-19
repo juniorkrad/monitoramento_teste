@@ -80,8 +80,7 @@ function watchHomeAlarms() {
     }
 
     if (typeof checkAndNotifyForNewProblems === 'function') {
-        const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
-        if (isHomePage) {
+        if (checkIsHomePage()) {
             checkAndNotifyForNewProblems(networkProblems, backboneProblems, new Set(), hybridProblems);
         }
     }
@@ -96,24 +95,9 @@ document.addEventListener('DOMContentLoaded', () => {
         loadFooter();
     }
 
-    setTimeout(() => {
-        const timestampEl = document.getElementById('update-timestamp');
-        if (timestampEl) {
-            const now = new Date();
-            const data = now.toLocaleDateString('pt-BR');
-            const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            
-            timestampEl.innerHTML = `
-                <span class="material-symbols-rounded">calendar_today</span> ${data}
-                <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
-                <span class="material-symbols-rounded">schedule</span> ${hora}
-            `;
-            timestampEl.style.color = 'var(--m3-on-surface-variant)';
-        }
-    }, 500);
+    setTimeout(updateGlobalTimestamp, 500);
 
-    const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
-    if (isHomePage) {
+    if (checkIsHomePage()) {
         setInterval(watchHomeAlarms, 60000); 
     }
 });

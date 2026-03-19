@@ -27,7 +27,6 @@ window.listaDesconhecidos = [];
 
 async function fetchEqpOltData(olt) {
     const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:D`;
-    // Utilizando as chaves globais do Cérebro
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values/${range}?key=${GLOBAL_API_KEY}`;
     
     try {
@@ -86,7 +85,6 @@ async function renderFabricantesDashboard() {
 
     window.listaDesconhecidos = []; 
     
-    // Utilizando a lista do Cérebro
     const promises = GLOBAL_MASTER_OLT_LIST.map(olt => fetchEqpOltData(olt));
     const oltsData = await Promise.all(promises);
 
@@ -232,14 +230,7 @@ async function renderFabricantesDashboard() {
         });
     }
 
-    if (timestampEl) {
-        const now = new Date();
-        timestampEl.innerHTML = `
-            <span class="material-symbols-rounded">calendar_today</span> ${now.toLocaleDateString('pt-BR')}
-            <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.3); margin: 0 5px;"></span>
-            <span class="material-symbols-rounded">schedule</span> ${now.toLocaleTimeString('pt-BR')}
-        `;
-    }
+    updateGlobalTimestamp();
 }
 
 window.openUnknownModal = function() {
