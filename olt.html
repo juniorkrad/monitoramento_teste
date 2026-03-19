@@ -108,6 +108,9 @@
         const SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
         const REFRESH_INTERVAL_SECONDS = 300;
         
+        // Objeto global para armazenar as datas em memória
+        window.OLT_LAST_UPDATES = {};
+        
         function createCardPlaceholders() {
             const grid = document.getElementById('overview-grid');
             grid.innerHTML = ''; 
@@ -132,13 +135,43 @@
         }
         
         async function fetchOltData(olt) {
-            const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:C`;
+            // Alterado para buscar sempre até a coluna K (onde fica o timestamp)
+            const range = `${olt.sheetTab}!A:K`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
             
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`Falha ao buscar dados da aba ${olt.sheetTab}`);
                 const data = await response.json();
+                
+                // ---- CAPTURA DA DATA E HORA PARA A MEMÓRIA GLOBAL ----
+                let datePart = '--/--/----';
+                let timePart = '--:--:--';
+                if (data.values && data.values.length > 0) {
+                    const firstRow = data.values[0];
+                    let cellData = firstRow[10] ? String(firstRow[10]) : '';
+                    
+                    if (!cellData) {
+                        for (let i = firstRow.length - 1; i >= 0; i--) {
+                            let val = firstRow[i] ? String(firstRow[i]) : '';
+                            if (val.match(/\d{2}\/\d{2}/) && val.match(/\d{2}:\d{2}/)) {
+                                cellData = val;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (cellData) {
+                        const dateMatch = cellData.match(/\d{2}\/\d{2}\/\d{2,4}/);
+                        const timeMatch = cellData.match(/\d{2}:\d{2}(:\d{2})?/);
+                        if (dateMatch) datePart = dateMatch[0];
+                        if (timeMatch) timePart = timeMatch[0];
+                    }
+                }
+                
+                window.OLT_LAST_UPDATES[olt.id] = { date: datePart, time: timePart };
+                // --------------------------------------------------------
+
                 const rows = (data.values || []).slice(1);
                 
                 let totalOnline = 0;
@@ -264,8 +297,16 @@
             document.getElementById('olt-view-detalhes').style.display = 'none';
             document.getElementById('olt-view-placas').style.display = 'block';
             
-            document.getElementById('olt-update-date').textContent = '--/--/----';
-            document.getElementById('olt-update-time').textContent = '--:--:--';
+            // Injeção instantânea da data e hora armazenadas na memória!
+            let dateVal = '--/--/----';
+            let timeVal = '--:--:--';
+            if (window.OLT_LAST_UPDATES && window.OLT_LAST_UPDATES[id]) {
+                dateVal = window.OLT_LAST_UPDATES[id].date;
+                timeVal = window.OLT_LAST_UPDATES[id].time;
+            }
+            
+            document.getElementById('olt-update-date').textContent = dateVal;
+            document.getElementById('olt-update-time').textContent = timeVal;
             
             document.getElementById('olt-placas-list').innerHTML = `
                 <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
