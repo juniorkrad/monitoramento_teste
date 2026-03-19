@@ -1,6 +1,6 @@
 /* ==========================================================================
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
-   Atualização: Integração Perfeita com o config.js
+   Atualização: Integração Perfeita com o config.js e loadHeader dinâmico
    ========================================================================== */
 
 let lastNotifiedState = ""; 
@@ -86,18 +86,13 @@ function watchHomeAlarms() {
     }
 }
 
+// Inicialização Unificada
 document.addEventListener('DOMContentLoaded', () => {
-    if (typeof loadHeader === 'function') {
-        loadHeader({ title: "Dashboard Gerencial", exactTitle: true });
-    }
-    
-    if (typeof loadFooter === 'function') {
-        loadFooter();
-    }
-
-    setTimeout(updateGlobalTimestamp, 500);
-
     if (checkIsHomePage()) {
+        if (typeof loadHeader === 'function') loadHeader({ title: "Dashboard Gerencial", exactTitle: true });
+        if (typeof loadFooter === 'function') loadFooter();
+        
+        setTimeout(updateGlobalTimestamp, 500);
         setInterval(watchHomeAlarms, 60000); 
     }
 });

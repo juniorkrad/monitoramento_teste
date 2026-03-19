@@ -4,13 +4,6 @@
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
 
-const HORIZONTAL_ENERGY_MAP = {
-    'HEL-1': 0, 'HEL-2': 4, 'PQA-1': 8, 'PSV-1': 12, 'MGP': 16,
-    'LTXV-1': 20, 'SBO-1': 24, 'LTXV-2': 28, 'PQA-2': 32, 'PQA-3': 36,
-    'SB-1': 40, 'SB-2': 44, 'SB-3': 48, 'SBO-2': 52, 'SBO-3': 56,
-    'SBO-4': 60, 'PSV-7': 64
-};
-
 window.ENERGY_DATA_STORE = {};
 window.NETWORK_ENERGY_STORE = new Set(); 
 let energyChartInstance = null; 
@@ -190,7 +183,6 @@ window.startEnergyMonitoring = async function() {
                     
                     if (!oltData.ports[placa]) oltData.ports[placa] = {};
                     if (!oltData.ports[placa][porta]) {
-                        // Nova lógica consumindo o utilitário global!
                         const circ = getGlobalCircuitInfo(rowsCircuitos, olt.id, placa, porta, olt.type);
                         oltData.ports[placa][porta] = { total: 0, online: 0, offline: 0, powerOff: 0, circuit: circ };
                     }
@@ -213,9 +205,12 @@ window.startEnergyMonitoring = async function() {
 
         const rowsEnergia = dataBatch.valueRanges[0].values ? dataBatch.valueRanges[0].values.slice(1) : [];
         
-        for (const [oltId, colIndex] of Object.entries(HORIZONTAL_ENERGY_MAP)) {
+        GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {
+            if (oltDef.energyCol === undefined) return;
+            const oltId = oltDef.id;
+            const colIndex = oltDef.energyCol;
             const oltData = window.ENERGY_DATA_STORE.olts[oltId];
-            if (!oltData) continue;
+            if (!oltData) return;
 
             if (rowsEnergia.length > 0 && rowsEnergia[0][colIndex + 3]) {
                 oltData.lastUpdate = rowsEnergia[0][colIndex + 3];
@@ -234,7 +229,6 @@ window.startEnergyMonitoring = async function() {
 
                             if (!oltData.ports[placa]) oltData.ports[placa] = {};
                             if (!oltData.ports[placa][porta]) {
-                                // Nova lógica consumindo o utilitário global!
                                 const circ = getGlobalCircuitInfo(rowsCircuitos, oltId, placa, porta, oltData.type);
                                 oltData.ports[placa][porta] = { total: qtd, online: 0, offline: qtd, powerOff: 0, circuit: circ };
                             }
@@ -246,7 +240,7 @@ window.startEnergyMonitoring = async function() {
                     }
                 }
             });
-        }
+        });
 
         GLOBAL_MASTER_OLT_LIST.forEach(olt => {
             const oData = window.ENERGY_DATA_STORE.olts[olt.id];
@@ -382,8 +376,27 @@ window.openEnergyPlacaDetails = function(oltId, placa) {
     });
 };
 
+// Lógica de Modais migrada do HTML
+window.closeEnergyModal = function(event) {
+    if (event && event.target.id !== 'energy-detail-modal' && !event.target.classList.contains('close-modal')) return;
+    document.getElementById('energy-detail-modal').style.display = 'none';
+};
+
+window.backToEnergyPlacas = function() {
+    document.getElementById('energy-view-detalhes').style.display = 'none';
+    document.getElementById('energy-view-placas').style.display = 'block';
+};
+
+// Inicialização Unificada
 document.addEventListener('DOMContentLoaded', () => {
     const isEnergyPage = window.location.pathname.includes('energia.html');
+    
+    if (isEnergyPage) {
+        if (typeof loadHeader === 'function') loadHeader({ title: "Alarmes de Energia", exactTitle: true });
+        if (typeof loadFooter === 'function') loadFooter();
+        setTimeout(updateGlobalTimestamp, 500);
+    }
+    
     if (isEnergyPage || checkIsHomePage()) {
         startEnergyMonitoring();
         setInterval(startEnergyMonitoring, GLOBAL_REFRESH_SECONDS * 1000);

@@ -230,7 +230,7 @@ async function renderFabricantesDashboard() {
         });
     }
 
-    updateGlobalTimestamp();
+    if (typeof updateGlobalTimestamp === 'function') updateGlobalTimestamp();
 }
 
 window.openUnknownModal = function() {
@@ -262,10 +262,14 @@ window.closeUnknownModal = function() {
     if (modal) modal.style.display = 'none';
 };
 
+// Inicialização Unificada
 document.addEventListener('DOMContentLoaded', () => {
     const isEqpPage = window.location.pathname.includes('equipamentos.html');
     
     if (isEqpPage) {
+        if (typeof loadHeader === 'function') loadHeader({ title: "Equipamentos", exactTitle: true });
+        if (typeof loadFooter === 'function') loadFooter();
+        
         setTimeout(renderFabricantesDashboard, 500);
         setInterval(renderFabricantesDashboard, GLOBAL_REFRESH_SECONDS * 1000);
     }

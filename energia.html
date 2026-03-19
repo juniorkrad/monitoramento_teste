@@ -95,24 +95,5 @@
     <script src="notifications.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="energia-engine.js"></script> 
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            loadHeader({ title: "Alarmes de Energia", exactTitle: true });
-            loadFooter();
-            // Chamando a nova função global em vez daquela repetida!
-            updateGlobalTimestamp();
-        });
-
-        function closeEnergyModal(event) {
-            if (event && event.target.id !== 'energy-detail-modal' && !event.target.classList.contains('close-modal')) return;
-            document.getElementById('energy-detail-modal').style.display = 'none';
-        }
-
-        function backToEnergyPlacas() {
-            document.getElementById('energy-view-detalhes').style.display = 'none';
-            document.getElementById('energy-view-placas').style.display = 'block';
-        }
-    </script>
 </body>
 </html>

@@ -241,7 +241,7 @@ async function runPotenciaEngine() {
             });
         }
 
-        updateGlobalTimestamp();
+        if (typeof updateGlobalTimestamp === 'function') updateGlobalTimestamp();
 
     } catch (e) {
         console.error("Erro no Motor de Potência:", e);
@@ -305,8 +305,32 @@ window.abrirModalPotencia = function(oltId) {
     modal.style.display = 'flex';
 };
 
+// Lógica de modais migrada do HTML
+window.fecharModalPotencia = function(event) {
+    if (event && event.target.id !== 'potencia-modal' && !event.target.classList.contains('close-modal')) return;
+    document.getElementById('potencia-modal').style.display = 'none';
+};
+
+window.filtrarTabelaPotencia = function() {
+    const termo = document.getElementById('potencia-search').value.toLowerCase();
+    const linhas = document.querySelectorAll('.linha-cliente-potencia');
+    
+    linhas.forEach(linha => {
+        const texto = linha.textContent.toLowerCase();
+        linha.style.display = texto.includes(termo) ? '' : 'none';
+    });
+};
+
+// Inicialização Unificada
 document.addEventListener('DOMContentLoaded', () => {
     const isPotenciaPage = window.location.pathname.includes('potencia.html');
+    
+    if (isPotenciaPage) {
+        if (typeof loadHeader === 'function') loadHeader({ title: "Análise de Potência", exactTitle: true });
+        if (typeof loadFooter === 'function') loadFooter();
+        setTimeout(updateGlobalTimestamp, 500);
+    }
+    
     if (isPotenciaPage || checkIsHomePage()) {
         runPotenciaEngine();
         setInterval(runPotenciaEngine, GLOBAL_REFRESH_SECONDS * 1000);

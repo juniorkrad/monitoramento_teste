@@ -81,30 +81,6 @@
     <script src="config.js"></script>
     <script src="layout.js"></script>
     <script src="notifications.js"></script>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            loadHeader({ title: "Análise de Potência", exactTitle: true });
-            loadFooter();
-        });
-
-        function fecharModalPotencia(event) {
-            if (event && event.target.id !== 'potencia-modal' && !event.target.classList.contains('close-modal')) return;
-            document.getElementById('potencia-modal').style.display = 'none';
-        }
-
-        function filtrarTabelaPotencia() {
-            const termo = document.getElementById('potencia-search').value.toLowerCase();
-            const linhas = document.querySelectorAll('.linha-cliente-potencia');
-            
-            linhas.forEach(linha => {
-                const texto = linha.textContent.toLowerCase();
-                linha.style.display = texto.includes(termo) ? '' : 'none';
-            });
-        }
-    </script>
-
     <script src="potencia-engine.js"></script>
-
 </body>
 </html>
