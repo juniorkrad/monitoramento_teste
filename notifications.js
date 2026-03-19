@@ -1,5 +1,5 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Restaurado)
+// notifications.js - Sistema Central de Alertas (Restaurado para Padrão Original)
 // ==============================================================================
 
 // Memórias de Estado
@@ -8,12 +8,14 @@ let currentBackbones = new Set();
 let currentHybridProblems = new Set(); 
 
 function showToast(title, description, typeClass, icon, position = 'right') {
+    // --- TRAVA DE SEGURANÇA ---
     const path = window.location.pathname;
     const pageName = path.split('/').pop(); 
 
     if (pageName && pageName !== 'index.html' && pageName !== '') {
         return; 
     }
+    // ----------------------------------
 
     let containerId = position === 'left' ? 'toast-container-left' : 'toast-container-right';
     let container = document.getElementById(containerId);
@@ -57,7 +59,9 @@ function showToast(title, description, typeClass, icon, position = 'right') {
 
 function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), newEnergyProblems = new Set(), newHybridProblems = new Set()) {
     
-    // 1. Limpeza de Tela
+    // ============================================================
+    // 1. DETECTAR NORMALIZAÇÕES (Limpeza de tela)
+    // ============================================================
     for (const oldBb of currentBackbones) {
         if (!activeBackbones.has(oldBb)) {
             showToast('Backbone Normalizado', `${oldBb}`, 'status-normal', 'check_circle', 'right');
@@ -76,7 +80,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                     }
                 }
             } else {
-                const matchSingle = oldProblem.match(/^\[(.*?)\] STATUS::(.*?)_(.*?)::(\d+)$/);
+                const matchSingle = oldProblem.match(/^\[(.*?)\] STATUS::(.*?)_(\d+\/\d+)/);
                 if (matchSingle) {
                     const oltId = matchSingle[1];
                     const porta = matchSingle[3];
@@ -90,15 +94,25 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
         }
     }
 
-    // 2. Backbone
+    // ============================================================
+    // 2. DISPAROS: BACKBONE
+    // ============================================================
     for (const bb of activeBackbones) {
         if (!currentBackbones.has(bb)) {
-            showToast('ROMPIMENTO DE BACKBONE', `${bb}`, 'rede-super', 'sos', 'right');
+            showToast(
+                'ROMPIMENTO DE BACKBONE', 
+                `${bb}`, 
+                'rede-super', 
+                'sos', 
+                'right'
+            );
         }
     }
     currentBackbones = new Set(activeBackbones);
 
-    // 3. Híbrido
+    // ============================================================
+    // 3. DISPAROS: HÍBRIDO (Vem da Esquerda) & CRIADOR DE SILENCIADOR
+    // ============================================================
     const activeHybridPorts = new Set(); 
 
     for (const hb of newHybridProblems) {
@@ -111,13 +125,21 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
             activeHybridPorts.add(`${oltId}_${porta}`);
             
             if (!currentHybridProblems.has(hb)) {
-                showToast('Possível Queda de Energia', `${oltId} - Porta ${porta} | OFF: ${offEnergia}`, 'hibrido', 'offline_bolt', 'left');
+                showToast(
+                    'Possível Queda de Energia', 
+                    `${oltId} (${porta}):  OFF Rede / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">power_off</span>`, 
+                    'hibrido', 
+                    'offline_bolt', 
+                    'left' 
+                );
             }
         }
     }
     currentHybridProblems = new Set(newHybridProblems);
 
-    // 4. Rede
+    // ============================================================
+    // 4. DISPAROS: REDE PURA (Vem da Direita)
+    // ============================================================
     for (const problemKey of newProblems) {
         if (!currentProblems.has(problemKey)) {
 
@@ -133,12 +155,17 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
 
                 const descLimpa = portsArray.join(', ');
 
-                showToast('Falha Múltipla de Rede', `${oltId} - Portas: ${descLimpa}`, 'rede-problem', 'error', 'right');
+                showToast(
+                    'Falha Múltipla de Rede', 
+                    `${oltId} - ${descLimpa}`, 
+                    'rede-problem', 
+                    'error',        
+                    'right' 
+                );
                 continue; 
             }
 
-            // Regex corrigido para aceitar portas Nokia (ex: 1/1/1/1) e não apenas portas duplas (1/1)
-            const matchSingle = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)_(.*?)::(\d+)$/);
+            const matchSingle = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)_(\d+\/\d+)::(\d+)$/);
             if (matchSingle) {
                 const oltId = matchSingle[1];
                 const severity = matchSingle[2];
@@ -160,7 +187,13 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                     icon = 'warning';
                 }
 
-                showToast(title, `${oltId} - Porta: ${porta}`, typeClass, icon, 'right');
+                showToast(
+                    title, 
+                    `${oltId} - ${porta}`, 
+                    typeClass, 
+                    icon, 
+                    'right' 
+                );
             }
         }
     }

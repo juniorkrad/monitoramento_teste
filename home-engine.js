@@ -1,5 +1,6 @@
 /* ==========================================================================
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
+   Atualização: Restauração da trava anti-spam e preservação da memória de rede
    ========================================================================== */
 
 let lastNotifiedState = ""; 
@@ -68,6 +69,7 @@ function watchHomeAlarms() {
                             for (const netProb of networkProblems) {
                                 if (netProb.startsWith(portRef) || netProb.startsWith(portRefWarn) || netProb.startsWith(portRefSuper)) {
                                     hybridProblems.add(`[${oltId}] HÍBRIDO::${pt}::${pData.powerOff}`);
+                                    // IMPORTANTE: O networkProblems.delete() foi removido aqui para não destruir a memória visual original
                                     break;
                                 }
                             }
@@ -78,10 +80,20 @@ function watchHomeAlarms() {
         }
     }
 
-    if (typeof checkAndNotifyForNewProblems === 'function') {
-        if (checkIsHomePage()) {
-            checkAndNotifyForNewProblems(networkProblems, backboneProblems, new Set(), hybridProblems);
+    // ============================================================
+    // TRAVA DE ESTADO (Evita spam e renderizações duplas)
+    // ============================================================
+    let currentState = Array.from(networkProblems).sort().join('|') + 
+                       Array.from(backboneProblems).sort().join('|') + 
+                       Array.from(hybridProblems).sort().join('|');
+
+    if (currentState !== lastNotifiedState) {
+        if (typeof checkAndNotifyForNewProblems === 'function') {
+            if (checkIsHomePage()) {
+                checkAndNotifyForNewProblems(networkProblems, backboneProblems, new Set(), hybridProblems);
+            }
         }
+        lastNotifiedState = currentState;
     }
 }
 
@@ -93,10 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         setTimeout(updateGlobalTimestamp, 500);
         
-        // Gatilho rápido: alterado para 2 segundos!
+        // Gatilho inicial rápido de 2 segundos
         setTimeout(watchHomeAlarms, 2000); 
 
-        // Mantém a vigilância rodando
+        // Mantém a vigilância rodando no loop natural
         setInterval(watchHomeAlarms, 60000); 
     }
 });
