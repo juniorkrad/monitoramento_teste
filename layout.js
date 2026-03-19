@@ -140,7 +140,7 @@ function loadFooter() {
 }
 
 // ==============================================================================
-// UTILITÁRIOS GLOBAIS (FASE 2)
+// UTILITÁRIOS GLOBAIS
 // ==============================================================================
 
 /**
@@ -173,4 +173,28 @@ function updateGlobalTimestamp() {
     timestampEl.classList.remove('updated-anim');
     void timestampEl.offsetWidth; 
     timestampEl.classList.add('updated-anim');
+}
+
+/**
+ * Obtém as informações do circuito (Bairro/Cliente) conectando com o Cérebro Global
+ */
+function getGlobalCircuitInfo(rowsCircuitos, oltIdentifier, placa, porta, type) {
+    const oltConfig = GLOBAL_MASTER_OLT_LIST.find(o => o.id === oltIdentifier || o.sheetTab === oltIdentifier);
+    if (!oltConfig || oltConfig.circuitCol === undefined) return "-";
+    
+    const colIndex = oltConfig.circuitCol;
+    if (!rowsCircuitos || !rowsCircuitos.length) return "-";
+
+    let rowIndex = -1;
+    const p = parseInt(porta);
+    const sl = parseInt(placa);
+
+    if (type === 'nokia') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
+    else if (type === 'furukawa-2') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
+    else if (type === 'furukawa-10') rowIndex = ((sl - 1) * 4) + (p - 1) + 1;
+
+    if (rowIndex > 0 && rowIndex < rowsCircuitos.length) {
+        return rowsCircuitos[rowIndex][colIndex] || "-";
+    }
+    return "-";
 }

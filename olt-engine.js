@@ -5,12 +5,6 @@
 const TAB_CIRCUITOS = 'CIRCUITO'; 
 const TABLE_HEADER_NAME = 'Circuitos'; 
 
-const OLT_COLUMN_MAP = {
-    'HEL1':  1,  'HEL2':  3,  'MGP':   5,  'PQA1':  7,  'PSV1':  9,  'PSV7':  11,
-    'SBO2':  13, 'SBO3':  15, 'SBO4':  17, 'SB1':   19, 'SB2':   21, 'SB3':   23,
-    'PQA2':  25, 'PQA3':  27, 'LTXV2': 29, 'LTXV1': 31, 'SBO1':  33
-};
-
 window.OLT_CLIENTS_DATA = {};
 window.CURRENT_OLT_PORT_DATA = {}; 
 window.NETWORK_PROBLEMS_STORE = new Set();
@@ -237,25 +231,6 @@ async function fetchCircuitosData() {
     } catch (e) { return []; }
 }
 
-function getCircuitInfo(rowsCircuitos, sheetTab, placa, porta, type) {
-    const colIndex = OLT_COLUMN_MAP[sheetTab];
-    if (colIndex === undefined) return "-";
-    if (!rowsCircuitos.length) return "-";
-
-    let rowIndex = -1;
-    const p = parseInt(porta);
-    const sl = parseInt(placa);
-
-    if (type === 'nokia') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
-    else if (type === 'furukawa-2') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
-    else if (type === 'furukawa-10') rowIndex = ((sl - 1) * 4) + (p - 1) + 1;
-
-    if (rowIndex > 0 && rowIndex < rowsCircuitos.length) {
-        return rowsCircuitos[rowIndex][colIndex] || "-";
-    }
-    return "-";
-}
-
 window.startOltMonitoring = function(config) {
     window.stopOltMonitoring(); 
 
@@ -387,7 +362,8 @@ window.startOltMonitoring = function(config) {
                 }
 
                 if (!window.CURRENT_OLT_PORT_DATA[placaNum][portaNum]) {
-                    const infoExtra = getCircuitInfo(rowsCircuitos, config.id, placa, porta, config.type);
+                    // Nova lógica consumindo o utilitário global! (Usando oltName ou id)
+                    const infoExtra = getGlobalCircuitInfo(rowsCircuitos, config.oltName || config.id, placa, porta, config.type);
                     window.CURRENT_OLT_PORT_DATA[placaNum][portaNum] = { online: 0, offline: 0, info: infoExtra };
                     window.OLT_CLIENTS_DATA[portKey] = [];
                 }

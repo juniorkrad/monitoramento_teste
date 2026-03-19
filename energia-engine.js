@@ -4,12 +4,6 @@
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
 
-const ENERGY_OLT_COLUMN_MAP = {
-    'HEL1':  1,  'HEL2':  3,  'MGP':   5,  'PQA1':  7,  'PSV1':  9,  'PSV7':  11,
-    'SBO2':  13, 'SBO3':  15, 'SBO4':  17, 'SB1':   19, 'SB2':   21, 'SB3':   23,
-    'PQA2':  25, 'PQA3':  27, 'LTXV2': 29, 'LTXV1': 31, 'SBO1':  33
-};
-
 const HORIZONTAL_ENERGY_MAP = {
     'HEL-1': 0, 'HEL-2': 4, 'PQA-1': 8, 'PSV-1': 12, 'MGP': 16,
     'LTXV-1': 20, 'SBO-1': 24, 'LTXV-2': 28, 'PQA-2': 32, 'PQA-3': 36,
@@ -33,25 +27,6 @@ function extractPort(val) {
         }
     }
     return null;
-}
-
-function getEnergyCircuitInfo(rowsCircuitos, oltId, placa, porta, type) {
-    const colIndex = ENERGY_OLT_COLUMN_MAP[oltId];
-    if (colIndex === undefined) return "-";
-    if (!rowsCircuitos || !rowsCircuitos.length) return "-";
-
-    let rowIndex = -1;
-    const p = parseInt(porta);
-    const sl = parseInt(placa);
-
-    if (type === 'nokia') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
-    else if (type === 'furukawa-2') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
-    else if (type === 'furukawa-10') rowIndex = ((sl - 1) * 4) + (p - 1) + 1;
-
-    if (rowIndex > 0 && rowIndex < rowsCircuitos.length) {
-        return rowsCircuitos[rowIndex][colIndex] || "-";
-    }
-    return "-";
 }
 
 function drawEnergyChart(oltsData) {
@@ -215,8 +190,8 @@ window.startEnergyMonitoring = async function() {
                     
                     if (!oltData.ports[placa]) oltData.ports[placa] = {};
                     if (!oltData.ports[placa][porta]) {
-                        const sheetAbaName = olt.id.replace('-', '');
-                        const circ = getEnergyCircuitInfo(rowsCircuitos, sheetAbaName, placa, porta, olt.type);
+                        // Nova lógica consumindo o utilitário global!
+                        const circ = getGlobalCircuitInfo(rowsCircuitos, olt.id, placa, porta, olt.type);
                         oltData.ports[placa][porta] = { total: 0, online: 0, offline: 0, powerOff: 0, circuit: circ };
                     }
 
@@ -259,8 +234,8 @@ window.startEnergyMonitoring = async function() {
 
                             if (!oltData.ports[placa]) oltData.ports[placa] = {};
                             if (!oltData.ports[placa][porta]) {
-                                const sheetAbaName = oltId.replace('-', '');
-                                const circ = getEnergyCircuitInfo(rowsCircuitos, sheetAbaName, placa, porta, oltData.type);
+                                // Nova lógica consumindo o utilitário global!
+                                const circ = getGlobalCircuitInfo(rowsCircuitos, oltId, placa, porta, oltData.type);
                                 oltData.ports[placa][porta] = { total: qtd, online: 0, offline: qtd, powerOff: 0, circuit: circ };
                             }
 
