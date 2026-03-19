@@ -1,12 +1,10 @@
 /* ==========================================================================
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
-   Atualização: Gatilho imediato e correção do filtro híbrido.
    ========================================================================== */
 
 let lastNotifiedState = ""; 
 
 function watchHomeAlarms() {
-    // Clonando as variáveis globais para não destruí-las
     let networkProblems = new Set(window.NETWORK_PROBLEMS_STORE || []);
     let backboneProblems = new Set(window.NETWORK_BACKBONE_STORE || []);
     let hybridProblems = new Set(); 
@@ -14,7 +12,6 @@ function watchHomeAlarms() {
     if (window.ENERGY_DATA_STORE && window.ENERGY_DATA_STORE.global) {
         const globalData = window.ENERGY_DATA_STORE.global;
 
-        // Atualização visual do card de Energia
         const totalPowerOffEl = document.getElementById('global-poweroff-total');
         if (totalPowerOffEl) {
             totalPowerOffEl.innerText = globalData.powerOff;
@@ -41,7 +38,6 @@ function watchHomeAlarms() {
             `;
         }
 
-        // Lógica de Cruzamento (Híbrido)
         for (const oltId in window.ENERGY_DATA_STORE.olts) {
             const oltData = window.ENERGY_DATA_STORE.olts[oltId];
             for (const placa in oltData.ports) {
@@ -56,7 +52,6 @@ function watchHomeAlarms() {
                         
                         let handled = false;
 
-                        // Verifica se a porta com falta de energia está dentro de um problema Múltiplo de rede
                         for (const netProb of networkProblems) {
                             if (netProb.includes(`[${oltId}] STATUS::MULTI::`)) {
                                 const affectedPortsStr = netProb.split('STATUS::MULTI::')[1];
@@ -69,7 +64,6 @@ function watchHomeAlarms() {
                             }
                         }
 
-                        // Verifica se a porta com falta de energia é um problema isolado de rede
                         if (!handled) {
                             for (const netProb of networkProblems) {
                                 if (netProb.startsWith(portRef) || netProb.startsWith(portRefWarn) || netProb.startsWith(portRefSuper)) {
@@ -84,7 +78,6 @@ function watchHomeAlarms() {
         }
     }
 
-    // Dispara a notificação visual na tela
     if (typeof checkAndNotifyForNewProblems === 'function') {
         if (checkIsHomePage()) {
             checkAndNotifyForNewProblems(networkProblems, backboneProblems, new Set(), hybridProblems);
@@ -100,8 +93,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         setTimeout(updateGlobalTimestamp, 500);
         
-        // Gatilho rápido: espera as Engines carregarem os dados (8 seg) e faz a primeira verificação
-        setTimeout(watchHomeAlarms, 8000); 
+        // Gatilho rápido: alterado para 2 segundos!
+        setTimeout(watchHomeAlarms, 2000); 
 
         // Mantém a vigilância rodando
         setInterval(watchHomeAlarms, 60000); 

@@ -1,5 +1,5 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Versão 9.1 - Híbrido Ampliado)
+// notifications.js - Sistema Central de Alertas (Restaurado)
 // ==============================================================================
 
 // Memórias de Estado
@@ -7,24 +7,13 @@ let currentProblems = new Set();
 let currentBackbones = new Set(); 
 let currentHybridProblems = new Set(); 
 
-/**
- * Cria e exibe um pop-up (toast) na tela com tamanho único.
- * @param {string} title - O título em negrito
- * @param {string} description - O texto menor (aceita HTML para ícones)
- * @param {string} typeClass - Classe de estilo (rede, energia, hibrido, etc)
- * @param {string} icon - Nome do ícone do Google Fonts
- * @param {string} position - 'left' ou 'right'
- */
 function showToast(title, description, typeClass, icon, position = 'right') {
-    // --- TRAVA DE SEGURANÇA ---
     const path = window.location.pathname;
     const pageName = path.split('/').pop(); 
 
-    // Só permite exibir toast na index.html ou na raiz '/'
     if (pageName && pageName !== 'index.html' && pageName !== '') {
         return; 
     }
-    // ----------------------------------
 
     let containerId = position === 'left' ? 'toast-container-left' : 'toast-container-right';
     let container = document.getElementById(containerId);
@@ -66,15 +55,9 @@ function showToast(title, description, typeClass, icon, position = 'right') {
     }, 10000); 
 }
 
-/**
- * Lógica Inteligente: Detecta Novos Problemas, Normalizações, Rede, HÍBRIDOS e BACKBONE
- */
 function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), newEnergyProblems = new Set(), newHybridProblems = new Set()) {
     
-    // ============================================================
-    // 1. DETECTAR NORMALIZAÇÕES (Limpeza de tela)
-    // ============================================================
-
+    // 1. Limpeza de Tela
     for (const oldBb of currentBackbones) {
         if (!activeBackbones.has(oldBb)) {
             showToast('Backbone Normalizado', `${oldBb}`, 'status-normal', 'check_circle', 'right');
@@ -93,7 +76,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                     }
                 }
             } else {
-                const matchSingle = oldProblem.match(/^\[(.*?)\] STATUS::(.*?)_(\d+\/\d+)/);
+                const matchSingle = oldProblem.match(/^\[(.*?)\] STATUS::(.*?)_(.*?)::(\d+)$/);
                 if (matchSingle) {
                     const oltId = matchSingle[1];
                     const porta = matchSingle[3];
@@ -107,55 +90,34 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
         }
     }
 
-    // ============================================================
-    // 2. DISPAROS: BACKBONE (Vem da Direita - Prioridade Máxima)
-    // ============================================================
+    // 2. Backbone
     for (const bb of activeBackbones) {
         if (!currentBackbones.has(bb)) {
-            showToast(
-                'ROMPIMENTO DE BACKBONE', 
-                `${bb}`, 
-                'rede-super', 
-                'sos', 
-                'right'
-            );
+            showToast('ROMPIMENTO DE BACKBONE', `${bb}`, 'rede-super', 'sos', 'right');
         }
     }
     currentBackbones = new Set(activeBackbones);
 
-    // ============================================================
-    // 3. DISPAROS: HÍBRIDO (Vem da Esquerda) & CRIAÇÃO DO SILENCIADOR
-    // ============================================================
+    // 3. Híbrido
     const activeHybridPorts = new Set(); 
 
     for (const hb of newHybridProblems) {
-        // Regex simplificada para casar com o que o home-engine envia
         const match = hb.match(/^\[(.*?)\] HÍBRIDO::(.*?)::(\d+)$/);
         if (match) {
             const oltId = match[1];
             const porta = match[2];
             const offEnergia = match[3];
             
-            // Adiciona a porta híbrida no cofre do silenciador para não apitar como Rede Pura
             activeHybridPorts.add(`${oltId}_${porta}`);
             
             if (!currentHybridProblems.has(hb)) {
-                // HÍBRIDO EXCLUSIVO: Ícones aumentados proporcionalmente para 22px
-                showToast(
-                    'Possível Queda de Energia', 
-                    `${oltId} (${porta}):  OFF Rede / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">power_off</span>`, 
-                    'hibrido', 
-                    'offline_bolt', 
-                    'left' 
-                );
+                showToast('Possível Queda de Energia', `${oltId} - Porta ${porta} | OFF: ${offEnergia}`, 'hibrido', 'offline_bolt', 'left');
             }
         }
     }
     currentHybridProblems = new Set(newHybridProblems);
 
-    // ============================================================
-    // 4. DISPAROS: REDE PURA (Vem da Direita)
-    // ============================================================
+    // 4. Rede
     for (const problemKey of newProblems) {
         if (!currentProblems.has(problemKey)) {
 
@@ -166,30 +128,22 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                 
                 let portsArray = multiString.split(',');
 
-                // Se todas as portas do problema Multi forem híbridas, silencia
                 portsArray = portsArray.filter(p => !activeHybridPorts.has(`${oltId}_${p}`));
                 if (portsArray.length === 0) continue;
 
-                // Formatação limpa com vírgula
                 const descLimpa = portsArray.join(', ');
 
-                showToast(
-                    'Falha Múltipla de Rede', 
-                    `${oltId} - Portas: ${descLimpa}`, 
-                    'rede-problem', 
-                    'error',        
-                    'right' 
-                );
+                showToast('Falha Múltipla de Rede', `${oltId} - Portas: ${descLimpa}`, 'rede-problem', 'error', 'right');
                 continue; 
             }
 
-            const matchSingle = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)_(\d+\/\d+)::(\d+)$/);
+            // Regex corrigido para aceitar portas Nokia (ex: 1/1/1/1) e não apenas portas duplas (1/1)
+            const matchSingle = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)_(.*?)::(\d+)$/);
             if (matchSingle) {
                 const oltId = matchSingle[1];
                 const severity = matchSingle[2];
                 const porta = matchSingle[3];
 
-                // Silenciador: se a porta estiver na lista de híbridos, não toca alarme de rede pura
                 if (activeHybridPorts.has(`${oltId}_${porta}`)) continue;
 
                 let title = 'Problema de Rede';
@@ -206,13 +160,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                     icon = 'warning';
                 }
 
-                showToast(
-                    title, 
-                    `${oltId} - Porta: ${porta}`, 
-                    typeClass, 
-                    icon, 
-                    'right' 
-                );
+                showToast(title, `${oltId} - Porta: ${porta}`, typeClass, icon, 'right');
             }
         }
     }
