@@ -1,6 +1,5 @@
 // ==============================================================================
 // notifications.js - Sistema Central de Alertas (Versão 9.1 - Híbrido Ampliado)
-// Atualização: Ícones internos do Híbrido redimensionados para o novo layout
 // ==============================================================================
 
 // Memórias de Estado
@@ -21,6 +20,7 @@ function showToast(title, description, typeClass, icon, position = 'right') {
     const path = window.location.pathname;
     const pageName = path.split('/').pop(); 
 
+    // Só permite exibir toast na index.html ou na raiz '/'
     if (pageName && pageName !== 'index.html' && pageName !== '') {
         return; 
     }
@@ -121,7 +121,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
             );
         }
     }
-    currentBackbones = activeBackbones;
+    currentBackbones = new Set(activeBackbones);
 
     // ============================================================
     // 3. DISPAROS: HÍBRIDO (Vem da Esquerda) & CRIAÇÃO DO SILENCIADOR
@@ -129,21 +129,21 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     const activeHybridPorts = new Set(); 
 
     for (const hb of newHybridProblems) {
-        const match = hb.match(/^\[(.*?)\] HIBRIDO::(\d+\/\d+)::(\d+)::(\d+)$/);
+        // Regex simplificada para casar com o que o home-engine envia
+        const match = hb.match(/^\[(.*?)\] HÍBRIDO::(.*?)::(\d+)$/);
         if (match) {
             const oltId = match[1];
             const porta = match[2];
-            const offRede = match[3];
-            const offEnergia = match[4];
+            const offEnergia = match[3];
             
-            // Adiciona a porta híbrida no cofre do silenciador
+            // Adiciona a porta híbrida no cofre do silenciador para não apitar como Rede Pura
             activeHybridPorts.add(`${oltId}_${porta}`);
             
             if (!currentHybridProblems.has(hb)) {
                 // HÍBRIDO EXCLUSIVO: Ícones aumentados proporcionalmente para 22px
                 showToast(
                     'Possível Queda de Energia', 
-                    `${oltId} (${porta}): ${offRede} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">router</span> / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">power_off</span>`, 
+                    `${oltId} (${porta}):  OFF Rede / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">power_off</span>`, 
                     'hibrido', 
                     'offline_bolt', 
                     'left' 
@@ -151,7 +151,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
             }
         }
     }
-    currentHybridProblems = newHybridProblems;
+    currentHybridProblems = new Set(newHybridProblems);
 
     // ============================================================
     // 4. DISPAROS: REDE PURA (Vem da Direita)
@@ -166,8 +166,8 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                 
                 let portsArray = multiString.split(',');
 
+                // Se todas as portas do problema Multi forem híbridas, silencia
                 portsArray = portsArray.filter(p => !activeHybridPorts.has(`${oltId}_${p}`));
-                
                 if (portsArray.length === 0) continue;
 
                 // Formatação limpa com vírgula
@@ -175,7 +175,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
 
                 showToast(
                     'Falha Múltipla de Rede', 
-                    `${oltId} - ${descLimpa}`, 
+                    `${oltId} - Portas: ${descLimpa}`, 
                     'rede-problem', 
                     'error',        
                     'right' 
@@ -189,6 +189,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                 const severity = matchSingle[2];
                 const porta = matchSingle[3];
 
+                // Silenciador: se a porta estiver na lista de híbridos, não toca alarme de rede pura
                 if (activeHybridPorts.has(`${oltId}_${porta}`)) continue;
 
                 let title = 'Problema de Rede';
@@ -207,7 +208,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
 
                 showToast(
                     title, 
-                    `${oltId} - ${porta}`, 
+                    `${oltId} - Porta: ${porta}`, 
                     typeClass, 
                     icon, 
                     'right' 
@@ -215,5 +216,5 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
             }
         }
     }
-    currentProblems = newProblems;
+    currentProblems = new Set(newProblems);
 }
