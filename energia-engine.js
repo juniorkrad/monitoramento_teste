@@ -150,10 +150,9 @@ window.startEnergyMonitoring = async function() {
         });
 
         const ranges = ['ENERGIA!A:BP', `${TAB_CIRCUITOS_ENERGIA}!A:AK`].concat(GLOBAL_MASTER_OLT_LIST.map(o => o.type === 'nokia' ? `${o.sheetTab}!A:E` : `${o.sheetTab}!A:C`));
-        const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values:batchGet?key=${GLOBAL_API_KEY}&ranges=${ranges.join('&ranges=')}`;
         
-        const resBatch = await fetch(batchUrl);
-        const dataBatch = await resBatch.json();
+        // Chamada limpa utilizando o API Service!
+        const dataBatch = await API.getBatch(ranges);
 
         if (!dataBatch.valueRanges) throw new Error("Falha na estrutura de retorno da API");
 

@@ -35,10 +35,9 @@ async function runPotenciaEngine() {
         window.POTENCIA_LAST_UPDATES = {};
 
         const ranges = GLOBAL_MASTER_OLT_LIST.map(o => `${o.sheetTab}!A:K`);
-        const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values:batchGet?key=${GLOBAL_API_KEY}&ranges=${ranges.join('&ranges=')}`;
         
-        const response = await fetch(batchUrl);
-        const dataBatch = await response.json();
+        // Chamada limpa utilizando o API Service
+        const dataBatch = await API.getBatch(ranges);
 
         if (!dataBatch.valueRanges) throw new Error("Falha ao carregar dados da API.");
 
@@ -290,7 +289,7 @@ window.abrirModalPotencia = function(oltId) {
         clientes.forEach(c => {
             let colorClass = c.potencia <= -30 ? 'sinal-critico' : 'sinal-atencao';
             htmlBuffer += `
-                <tr class="linha-cliente-potencia">
+                <tr class="linha-cliente-potencia">\r
                     <td style="font-weight: bold;">${c.porta}</td>
                     <td>${c.serial}</td>
                     <td><span class="${colorClass}">${c.potencia} dBm</span></td>
@@ -305,7 +304,6 @@ window.abrirModalPotencia = function(oltId) {
     modal.style.display = 'flex';
 };
 
-// Lógica de modais migrada do HTML
 window.fecharModalPotencia = function(event) {
     if (event && event.target.id !== 'potencia-modal' && !event.target.classList.contains('close-modal')) return;
     document.getElementById('potencia-modal').style.display = 'none';
@@ -321,7 +319,6 @@ window.filtrarTabelaPotencia = function() {
     });
 };
 
-// Inicialização Unificada
 document.addEventListener('DOMContentLoaded', () => {
     const isPotenciaPage = window.location.pathname.includes('potencia.html');
     

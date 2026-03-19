@@ -30,12 +30,10 @@ function createCardPlaceholders() {
 
 async function fetchOltData(olt) {
     const range = `${olt.sheetTab}!A:K`;
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values/${range}?key=${GLOBAL_API_KEY}`;
     
     try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Falha ao buscar dados da aba ${olt.sheetTab}`);
-        const data = await response.json();
+        // Chamada limpa utilizando o API Service
+        const data = await API.get(range);
         
         let datePart = '--/--/----';
         let timePart = '--:--:--';
@@ -219,7 +217,6 @@ function closeSuperModal(event) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Só executa se for a página da OLT
     const isOltPage = window.location.pathname.includes('olt.html');
     if (isOltPage) {
         if (typeof loadHeader === 'function') loadHeader({ title: "Status das OLTs", exactTitle: true });

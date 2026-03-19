@@ -27,12 +27,10 @@ window.listaDesconhecidos = [];
 
 async function fetchEqpOltData(olt) {
     const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:D`;
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values/${range}?key=${GLOBAL_API_KEY}`;
     
     try {
-        const response = await fetch(url);
-        if (!response.ok) return { id: olt.id, prefixCounts: {} };
-        const data = await response.json();
+        // Chamada limpa utilizando o API Service
+        const data = await API.get(range);
         const rows = (data.values || []).slice(1);
         
         const prefixCounts = {};

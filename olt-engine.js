@@ -13,12 +13,10 @@ window.currentOltInterval = null;
 
 async function fetchGlobalOltData(olt) {
     const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:C`;
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values/${range}?key=${GLOBAL_API_KEY}`;
     
     try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Falha aba ${olt.sheetTab}`);
-        const data = await response.json();
+        // Chamada limpa utilizando o API Service
+        const data = await API.get(range);
         const rows = (data.values || []).slice(1);
         
         let totalOnline = 0, totalOffline = 0;
@@ -222,11 +220,9 @@ window.stopOltMonitoring = function() {
 };
 
 async function fetchCircuitosData() {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values/${TAB_CIRCUITOS}!A:AK?key=${GLOBAL_API_KEY}`;
+    const range = `${TAB_CIRCUITOS}!A:AK`;
     try {
-        const response = await fetch(url);
-        if (!response.ok) return [];
-        const data = await response.json();
+        const data = await API.get(range);
         return data.values || [];
     } catch (e) { return []; }
 }
@@ -285,12 +281,10 @@ window.startOltMonitoring = function(config) {
         window.OLT_CLIENTS_DATA = {}; 
 
         const rangeOlt = `${config.id}!A:Z`; 
-        const urlOlt = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values/${rangeOlt}?key=${GLOBAL_API_KEY}`;
 
         try {
-            const [responseOlt, rowsCircuitos] = await Promise.all([fetch(urlOlt), fetchCircuitosData()]);
-            if (!responseOlt.ok) throw new Error('Falha API OLT');
-            const dataOlt = await responseOlt.json();
+            // Chamada limpa utilizando o API Service
+            const [dataOlt, rowsCircuitos] = await Promise.all([API.get(rangeOlt), fetchCircuitosData()]);
 
             let datePart = '--/--/----';
             let timePart = '--:--:--';
@@ -362,7 +356,6 @@ window.startOltMonitoring = function(config) {
                 }
 
                 if (!window.CURRENT_OLT_PORT_DATA[placaNum][portaNum]) {
-                    // Nova lógica consumindo o utilitário global! (Usando oltName ou id)
                     const infoExtra = getGlobalCircuitInfo(rowsCircuitos, config.oltName || config.id, placa, porta, config.type);
                     window.CURRENT_OLT_PORT_DATA[placaNum][portaNum] = { online: 0, offline: 0, info: infoExtra };
                     window.OLT_CLIENTS_DATA[portKey] = [];
