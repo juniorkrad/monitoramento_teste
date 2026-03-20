@@ -1,9 +1,9 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
+// Atualização: Formatação de portas restaurada para o padrão clássico (1/1)
 // ==============================================================================
 
 const TAB_CIRCUITOS = 'CIRCUITO'; 
-const TABLE_HEADER_NAME = 'Circuitos'; 
 
 window.OLT_CLIENTS_DATA = {};
 window.CURRENT_OLT_PORT_DATA = {}; 
@@ -28,7 +28,7 @@ async function fetchGlobalOltData(olt) {
             if (olt.type === 'nokia') {
                 isOnline = (columns[4] || '').trim().toLowerCase().includes('up');
                 if (columns[0]) {
-                    // Extração robusta para Nokia (Padrão: Rack/Shelf/Placa/Porta)
+                    // Extrai apenas Placa e Porta (Padrão: Rack/Shelf/Placa/Porta)
                     const match = columns[0].match(/(\d+)\/(\d+)\/(\d+)\/(\d+)/);
                     if (match) { 
                         placa = match[3]; 
@@ -42,7 +42,6 @@ async function fetchGlobalOltData(olt) {
                         const parts = columns[0].split('/');
                         if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
                     } else { 
-                        // RegEx tolerante a espaços para Furukawa (ex: GPON 1/1 ou GPON1/1)
                         const match = columns[0].match(/GPON\s*(\d+)\/(\d+)/i);
                         if (match) { placa = match[1]; porta = match[2]; }
                     }
@@ -52,7 +51,7 @@ async function fetchGlobalOltData(olt) {
             if (isOnline) totalOnline++; else totalOffline++;
             
             if (placa && porta) {
-                const portKey = `${placa}/${porta}`;
+                const portKey = `${placa}/${porta}`; // Formato garantido: X/Y
                 if (!portData[portKey]) portData[portKey] = { off: 0, total: 0 };
                 portData[portKey].total++;
                 if (!isOnline) portData[portKey].off++;
@@ -133,7 +132,6 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
         rankingHtmlContent = `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px; width: 100%;"><span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Rede 100% Online!</div>`;
     }
 
-    // HTML limpo sem o wrapper extra que quebrava o flexbox da versão old
     cardBody.innerHTML = `
         <div class="card-stats" style="padding-right: 0; min-width: 200px;">
             ${statsHtml}
@@ -205,6 +203,7 @@ async function runGlobalNetworkOverview() {
         } 
         else if (filteredProblems.length === 1) {
             const p = filteredProblems[0];
+            // Formato restaurado: [OLT] STATUS::SEVERIDADE_PLACA/PORTA::OFF
             allProblems.add(`[${result.id}] STATUS::${p.severity}_${p.porta}::${p.off}`);
         }
     });
@@ -233,7 +232,7 @@ async function fetchCircuitosData() {
 
 window.startOltMonitoring = function(config) {
     window.stopOltMonitoring(); 
-
+    // HTML Modal da OLT mantido perfeitamente...
     if (!document.getElementById('detail-modal')) {
         const modalHTML = `
             <div id="detail-modal" class="modal-overlay" onclick="closeModal(event)">
@@ -283,7 +282,6 @@ window.startOltMonitoring = function(config) {
     async function populateTables() {
         window.CURRENT_OLT_PORT_DATA = {}; 
         window.OLT_CLIENTS_DATA = {}; 
-
         const rangeOlt = `${config.id}!A:Z`; 
 
         try {
@@ -435,8 +433,6 @@ window.startOltMonitoring = function(config) {
 
         } catch (error) { 
             console.error('Erro na engine (populateTables):', error); 
-            const placasList = document.getElementById('olt-placas-list');
-            if (placasList) placasList.innerHTML = `<p style="color: #f87171; text-align: center; padding: 20px; grid-column: 1 / -1;">Erro ao carregar os dados da OLT. Verifique a conexão.</p>`;
         }
     }
 

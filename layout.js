@@ -1,8 +1,7 @@
 // ==============================================================================
-// layout.js - Construtor de Layout e Menu Inteligente (Versão 3.1 - Consolidada)
+// layout.js - Construtor de Layout e Menu Inteligente (Versão Final Consolidada)
 // ==============================================================================
 
-// --- AUTO-INJEÇÃO DA FONTE DE ÍCONES ---
 (function loadIconFont() {
     const fontUrl = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200';
     if (!document.querySelector(`link[href="${fontUrl}"]`)) {
@@ -13,9 +12,6 @@
     }
 })();
 
-/**
- * Constrói o cabeçalho da página.
- */
 function loadHeader(config) {
     if (config.title) {
         document.title = config.exactTitle ? config.title : `${config.title} | Monitoramento`;
@@ -24,18 +20,15 @@ function loadHeader(config) {
     const headerPlaceholder = document.getElementById('header-placeholder');
     if (!headerPlaceholder) return;
 
-    // Identifica a página atual
     const path = window.location.pathname;
     const currentPage = path.split('/').pop() || 'index.html';
 
-    // Botão de navegação
     let navHtml = `
         <button class="icon-btn" onclick="toggleSidebar()" title="Abrir Menu" style="border-radius: 8px; width: auto; padding: 8px 12px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; color: var(--m3-on-surface); transition: background 0.2s;">
             <span class="material-symbols-rounded">menu</span>
         </button>
     `;
     
-    // Sempre carrega a sidebar
     loadSidebar(currentPage);
 
     headerPlaceholder.innerHTML = `
@@ -56,9 +49,6 @@ function loadHeader(config) {
     `;
 }
 
-/**
- * Gera o HTML do Menu Lateral (SIDEBAR)
- */
 function loadSidebar(currentPage) {
     let sidebarContainer = document.getElementById('sidebar-container');
     if (!sidebarContainer) {
@@ -108,9 +98,6 @@ function loadSidebar(currentPage) {
     `;
 }
 
-/**
- * Abre/Fecha Sidebar
- */
 function toggleSidebar() {
     const sidebar = document.getElementById('main-sidebar');
     const overlay = document.querySelector('.sidebar-overlay');
@@ -120,9 +107,6 @@ function toggleSidebar() {
     }
 }
 
-/**
- * Rodapé
- */
 function loadFooter() {
     const footerPlaceholder = document.getElementById('footer-placeholder');
     if (!footerPlaceholder) return;
@@ -139,21 +123,14 @@ function loadFooter() {
 }
 
 // ==============================================================================
-// UTILITÁRIOS GLOBAIS
+// UTILITÁRIOS GLOBAIS BLINDADOS
 // ==============================================================================
 
-/**
- * Verifica se a página atual é a Home (Dashboard Principal)
- * @returns {boolean}
- */
 function checkIsHomePage() {
     const path = window.location.pathname;
     return path.includes('index.html') || path === '/' || !path.endsWith('.html');
 }
 
-/**
- * Atualiza o relógio/timestamp do cabeçalho de forma padronizada em todo o sistema
- */
 function updateGlobalTimestamp() {
     const timestampEl = document.getElementById('update-timestamp');
     if (!timestampEl) return;
@@ -174,9 +151,6 @@ function updateGlobalTimestamp() {
     timestampEl.classList.add('updated-anim');
 }
 
-/**
- * Obtém as informações do circuito (Bairro/Cliente) conectando com o Cérebro Global
- */
 function getGlobalCircuitInfo(rowsCircuitos, oltIdentifier, placa, porta, type) {
     const oltConfig = GLOBAL_MASTER_OLT_LIST.find(o => o.id === oltIdentifier || o.sheetTab === oltIdentifier);
     if (!oltConfig || oltConfig.circuitCol === undefined) return "-";
@@ -196,4 +170,9 @@ function getGlobalCircuitInfo(rowsCircuitos, oltIdentifier, placa, porta, type) 
         return rowsCircuitos[rowIndex][colIndex] || "-";
     }
     return "-";
+}
+
+// Mantido apenas por segurança caso algum script antigo procure pela função
+async function loadTimestamp(sheetTab, apiKey, sheetId) {
+    updateGlobalTimestamp();
 }

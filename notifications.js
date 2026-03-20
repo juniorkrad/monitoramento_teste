@@ -108,19 +108,20 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     const activeHybridPorts = new Set(); 
 
     for (const hb of newHybridProblems) {
-        // Formato Exato da versão old
-        const match = hb.match(/^\[(.*?)\] HÍBRIDO::(\d+\/\d+)::(\d+)$/);
+        // Formato Exato da versão old que extrai offline e powerOff
+        const match = hb.match(/^\[(.*?)\] HIBRIDO::(\d+\/\d+)::(\d+)::(\d+)$/);
         if (match) {
             const oltId = match[1];
             const porta = match[2];
-            const offEnergia = match[3];
+            const offRede = match[3];
+            const offEnergia = match[4];
             
             activeHybridPorts.add(`${oltId}_${porta}`);
             
             if (!currentHybridProblems.has(hb)) {
                 showToast(
                     'Possível Queda de Energia', 
-                    `${oltId} (${porta}):  OFF Rede / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">power_off</span>`, 
+                    `${oltId} (${porta}): ${offRede} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">router</span> / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">power_off</span>`, 
                     'hibrido', 
                     'offline_bolt', 
                     'left' 

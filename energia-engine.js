@@ -1,11 +1,12 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
+// Atualização: Coleta Silenciosa para o motor Híbrido restaurada
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
 
 window.ENERGY_DATA_STORE = {};
-window.NETWORK_ENERGY_STORE = new Set(); 
+window.NETWORK_ENERGY_STORE = new Set(); // MANTIDO VAZIO (Agente Secreto)
 let energyChartInstance = null; 
 
 function extractPort(val) {
@@ -151,7 +152,6 @@ window.startEnergyMonitoring = async function() {
 
         const ranges = ['ENERGIA!A:BP', `${TAB_CIRCUITOS_ENERGIA}!A:AK`].concat(GLOBAL_MASTER_OLT_LIST.map(o => o.type === 'nokia' ? `${o.sheetTab}!A:E` : `${o.sheetTab}!A:C`));
         
-        // Chamada limpa utilizando o API Service!
         const dataBatch = await API.getBatch(ranges);
 
         if (!dataBatch.valueRanges) throw new Error("Falha na estrutura de retorno da API");
@@ -249,6 +249,7 @@ window.startEnergyMonitoring = async function() {
 
         updateGlobalEnergyCard();
 
+        // MANTIDO VAZIO - Foco Exclusivo no Híbrido
         window.NETWORK_ENERGY_STORE = new Set();
 
         const gridEl = document.getElementById('energy-olt-grid');
@@ -375,7 +376,6 @@ window.openEnergyPlacaDetails = function(oltId, placa) {
     });
 };
 
-// Lógica de Modais migrada do HTML
 window.closeEnergyModal = function(event) {
     if (event && event.target.id !== 'energy-detail-modal' && !event.target.classList.contains('close-modal')) return;
     document.getElementById('energy-detail-modal').style.display = 'none';
@@ -386,7 +386,6 @@ window.backToEnergyPlacas = function() {
     document.getElementById('energy-view-placas').style.display = 'block';
 };
 
-// Inicialização Unificada
 document.addEventListener('DOMContentLoaded', () => {
     const isEnergyPage = window.location.pathname.includes('energia.html');
     

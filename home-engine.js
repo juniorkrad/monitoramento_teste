@@ -1,7 +1,9 @@
 /* ==========================================================================
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
-   Atualização FINAL: Remoção completa da trava anti-spam. Loop contínuo.
+   Atualização: Restauração da Regra dos 70% e Cérebro Matemático
    ========================================================================== */
+
+let lastNotifiedState = ""; 
 
 function watchHomeAlarms() {
     let networkProblems = new Set(window.NETWORK_PROBLEMS_STORE || []);
@@ -37,39 +39,22 @@ function watchHomeAlarms() {
             `;
         }
 
+        // ============================================================
+        // A REGRA DOS 70% (RESTAURADA)
+        // ============================================================
         for (const oltId in window.ENERGY_DATA_STORE.olts) {
             const oltData = window.ENERGY_DATA_STORE.olts[oltId];
             for (const placa in oltData.ports) {
                 for (const porta in oltData.ports[placa]) {
                     const pData = oltData.ports[placa][porta];
                     const pt = `${placa}/${porta}`;
-                    
-                    if (pData.powerOff > 0) {
-                        const portRef = `[${oltId}] STATUS::CRIT_${pt}`;
-                        const portRefWarn = `[${oltId}] STATUS::WARN_${pt}`;
-                        const portRefSuper = `[${oltId}] STATUS::SUPER_${pt}`;
-                        
-                        let handled = false;
 
-                        for (const netProb of networkProblems) {
-                            if (netProb.includes(`[${oltId}] STATUS::MULTI::`)) {
-                                const affectedPortsStr = netProb.split('STATUS::MULTI::')[1];
-                                const affectedPorts = affectedPortsStr.split(',');
-                                
-                                if (affectedPorts.includes(pt)) {
-                                    hybridProblems.add(`[${oltId}] HÍBRIDO::${pt}::${pData.powerOff}`);
-                                    handled = true;
-                                }
-                            }
-                        }
-
-                        if (!handled) {
-                            for (const netProb of networkProblems) {
-                                if (netProb.startsWith(portRef) || netProb.startsWith(portRefWarn) || netProb.startsWith(portRefSuper)) {
-                                    hybridProblems.add(`[${oltId}] HÍBRIDO::${pt}::${pData.powerOff}`);
-                                    break;
-                                }
-                            }
+                    // Gatilho: Mínimo de 16 offline E Energia representa >= 70% do problema
+                    if (pData.offline >= 16 && pData.powerOff > 0) {
+                        const overlap = pData.powerOff / pData.offline;
+                        if (overlap >= 0.70) {
+                            // O formato exato que a RegEx do notifications-old espera
+                            hybridProblems.add(`[${oltId}] HIBRIDO::${pt}::${pData.offline}::${pData.powerOff}`);
                         }
                     }
                 }
@@ -77,16 +62,24 @@ function watchHomeAlarms() {
         }
     }
 
-    // Sem travas. O fluxo está livre e repassa os dados a cada ciclo.
-    // O notifications.js já possui inteligência interna para não renderizar duplicatas.
-    if (typeof checkAndNotifyForNewProblems === 'function') {
-        if (checkIsHomePage()) {
+    // Exporta os híbridos
+    window.NETWORK_HYBRID_STORE = hybridProblems;
+
+    // Disparo sincronizado com trava protetora original
+    const currentStateStr = 
+        Array.from(networkProblems).sort().join('|') + "||" + 
+        Array.from(backboneProblems).sort().join('|') + "||" + 
+        Array.from(hybridProblems).sort().join('|');
+
+    if (currentStateStr !== lastNotifiedState) {
+        lastNotifiedState = currentStateStr;
+        
+        if (typeof checkAndNotifyForNewProblems === 'function') {
             checkAndNotifyForNewProblems(networkProblems, backboneProblems, new Set(), hybridProblems);
         }
     }
 }
 
-// Inicialização Unificada
 document.addEventListener('DOMContentLoaded', () => {
     if (checkIsHomePage()) {
         if (typeof loadHeader === 'function') loadHeader({ title: "Dashboard Gerencial", exactTitle: true });
@@ -94,7 +87,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         setTimeout(updateGlobalTimestamp, 500);
         
-        // Loop contínuo de 3 segundos (sem a antiga trava limitadora).
-        setInterval(watchHomeAlarms, 3000); 
+        setInterval(watchHomeAlarms, 2000); 
     }
 });
