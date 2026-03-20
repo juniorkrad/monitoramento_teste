@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-page.js - Controlador Exclusivo da Página de Status das OLTs (olt.html)
-// Atualização: Refinamento visual da grade de estatísticas e alinhamento do gráfico
+// Atualização: Correção de overflow para textos longos (Active/Inactive) e fixação do gráfico
 // ==============================================================================
 
 window.OLT_LAST_UPDATES = {};
@@ -114,19 +114,19 @@ function updateCardUI(oltId, data) {
         header.classList.add('status-normal'); 
     }
     
-    // Alinhamento em grade perfeitamente harmonizado à esquerda
+    // Alinhamento mais compacto (50px e gap 10px) para acomodar palavras longas (Inactive)
     const statsHtml = `
-        <div class="stat-item" style="display: grid; grid-template-columns: 60px 1fr; gap: 15px; margin-bottom: 12px; align-items: center;">
+        <div class="stat-item" style="display: grid; grid-template-columns: 50px 1fr; gap: 10px; margin-bottom: 12px; align-items: center;">
             <span class="stat-number" style="font-size: 1.5rem; display: block; text-align: left;">${total}</span>
-            <label style="font-size: 1rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-rounded icon-total" style="font-size: 18px;">router</span> Total</label>
+            <label style="font-size: 0.95rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-rounded icon-total" style="font-size: 18px;">router</span> Total</label>
         </div>
-        <div class="stat-item online" style="display: grid; grid-template-columns: 60px 1fr; gap: 15px; margin-bottom: 8px; align-items: center;">
+        <div class="stat-item online" style="display: grid; grid-template-columns: 50px 1fr; gap: 10px; margin-bottom: 8px; align-items: center;">
             <span class="stat-number" style="font-size: 1.2rem; display: block; text-align: left;">${onlineCount}</span>
-            <label style="font-size: 0.95rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-rounded icon-up" style="font-size: 18px;">check_circle</span> ${type === 'nokia' ? 'Up' : 'Active'}</label>
+            <label style="font-size: 0.9rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-rounded icon-up" style="font-size: 18px;">check_circle</span> ${type === 'nokia' ? 'Up' : 'Active'}</label>
         </div>
-        <div class="stat-item offline" style="display: grid; grid-template-columns: 60px 1fr; gap: 15px; align-items: center;">
+        <div class="stat-item offline" style="display: grid; grid-template-columns: 50px 1fr; gap: 10px; align-items: center;">
             <span class="stat-number" style="font-size: 1.2rem; display: block; text-align: left;">${offlineCount}</span>
-            <label style="font-size: 0.95rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-rounded icon-down" style="font-size: 18px;">error</span> ${type === 'nokia' ? 'Down' : 'Inactive'}</label>
+            <label style="font-size: 0.9rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-rounded icon-down" style="font-size: 18px;">error</span> ${type === 'nokia' ? 'Down' : 'Inactive'}</label>
         </div>
     `;
     
@@ -134,9 +134,9 @@ function updateCardUI(oltId, data) {
     const circumference = 2 * Math.PI * newRadius; 
     const offset = circumference - (onlinePercent / 100) * circumference;
     
-    // Gráfico firmemente posicionado à direita
+    // flex-shrink: 0 e width: 100px garantem que o gráfico não será esmagado nem expulso do card
     const chartHtml = `
-        <div class="donut-chart-container" style="position: relative; right: auto; top: auto; transform: none; margin-left: 15px;">
+        <div class="donut-chart-container" style="position: relative; right: auto; top: auto; transform: none; margin-left: 10px; flex-shrink: 0; width: 100px; height: 100px;">
             <svg class="donut-chart" width="100" height="100" viewBox="0 0 100 100">
                 <circle class="donut-bg" cx="50" cy="50" r="${newRadius}"></circle>
                 <circle class="donut-fg" cx="50" cy="50" r="${newRadius}"
@@ -148,8 +148,8 @@ function updateCardUI(oltId, data) {
         </div>
     `;
 
-    // A injeção ganha o 'flex: 1' no container de stats para empurrar o gráfico e respirar
-    card.querySelector('.card-body').innerHTML = `<div class="card-stats" style="flex: 1;">${statsHtml}</div>${chartHtml}`;
+    // min-width: 0 impede que textos muito longos estourem a caixa do flex: 1
+    card.querySelector('.card-body').innerHTML = `<div class="card-stats" style="flex: 1; min-width: 0;">${statsHtml}</div>${chartHtml}`;
 }
 
 async function runOverview() {
