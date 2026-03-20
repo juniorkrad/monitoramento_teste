@@ -74,22 +74,22 @@ function loadSidebar(currentPage) {
                     HOME
                 </a>
 
-                <a href="olt.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
+                <a href="olt.html" class="sidebar-link home-highlight" style="margin-top: 5px; font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
                     <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px;">dns</span>
                     STATUS OLTS
                 </a>
                 
-                <a href="equipamentos.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
+                <a href="equipamentos.html" class="sidebar-link home-highlight" style="margin-top: 5px; font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
                     <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px;">router</span>
                     EQUIPAMENTOS
                 </a>
 
-                <a href="energia.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
+                <a href="energia.html" class="sidebar-link home-highlight" style="margin-top: 5px; font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
                     <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px;">bolt</span>
                     ENERGIA
                 </a>
 
-                <a href="potencia.html" class="sidebar-link home-highlight" style="margin-top: 5px; background-color: rgba(0,0,0,0.2); font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
+                <a href="potencia.html" class="sidebar-link home-highlight" style="margin-top: 5px; font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
                     <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px;">sensors</span>
                     POTÊNCIA
                 </a>
