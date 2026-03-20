@@ -1,5 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor Dedicado de Monitoramento de Fabricantes
+// Atualização: Restauração do mapeamento de Logos e subtítulo de prefixos
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -29,7 +30,6 @@ async function fetchEqpOltData(olt) {
     const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:D`;
     
     try {
-        // Chamada limpa utilizando o API Service
         const data = await API.get(range);
         const rows = (data.values || []).slice(1);
         
@@ -171,7 +171,6 @@ async function renderFabricantesDashboard() {
                 `;
             });
 
-            let alertIcon = '';
             let btnDetalhes = '';
 
             if (fab.nome === 'OUTROS') {
@@ -182,15 +181,49 @@ async function renderFabricantesDashboard() {
                 `;
             }
 
+            // ==============================================================================
+            // LOGOS RESTAURADAS COM A PASTA CORRETA
+            // ==============================================================================
             let marcaVisual = `<span class="material-symbols-rounded" style="margin-right: 5px; opacity: 0.8;">router</span> ${fab.nome}`;
-            if (fab.nome === 'NOKIA') marcaVisual = `<img src="imagens/nokia.png" alt="Nokia" style="max-height: 18px; margin-right: 8px;"> NOKIA`;
-            else if (fab.nome === 'FURUKAWA') marcaVisual = `<img src="imagens/furukawa.png" alt="Furukawa" style="max-height: 18px; margin-right: 8px;"> FURUKAWA`;
+            
+            if (fab.nome === 'NOKIA') {
+                marcaVisual = `<img src="imagens/logos/nokia.png" alt="Nokia" style="height: 24px; object-fit: contain;">`;
+            } else if (fab.nome === 'FURUKAWA') {
+                marcaVisual = `<img src="imagens/logos/furukawa.png" alt="Furukawa" style="height: 24px; object-fit: contain;">`;
+            } else if (fab.nome === 'CHINA MOBILE') {
+                marcaVisual = `<img src="imagens/logos/china-mobile.png" alt="China Mobile" style="height: 24px; object-fit: contain;">`;
+            } else if (fab.nome === 'ASKEY') {
+                marcaVisual = `<img src="imagens/logos/askey.png" alt="Askey" style="height: 24px; object-fit: contain;">`;
+            } else if (fab.nome === 'EURONET') {
+                marcaVisual = `<img src="imagens/logos/euronet.png" alt="Euronet" style="height: 24px; object-fit: contain;">`;
+            } else if (fab.nome === 'HUAWEI') {
+                marcaVisual = `<img src="imagens/logos/huawei.png" alt="Huawei" style="height: 24px; object-fit: contain;">`;
+            } else if (fab.nome === 'MITRASTAR') {
+                marcaVisual = `<img src="imagens/logos/mitrastar.png" alt="Mitrastar" style="height: 24px; object-fit: contain;">`;
+            } else if (fab.nome === 'PARKS') {
+                marcaVisual = `<img src="imagens/logos/parks.png" alt="Parks" style="height: 24px; object-fit: contain;">`;
+            } else if (fab.nome === 'TENDA') {
+                marcaVisual = `<img src="imagens/logos/tenda.png" alt="Tenda" style="height: 24px; object-fit: contain;">`;
+            } else if (fab.nome === 'SHORELINE') {
+                marcaVisual = `<img src="imagens/logos/shoreline.png" alt="Shoreline" style="height: 24px; object-fit: contain;">`;
+            } else if (fab.nome === 'MAXPRINT / V-SOL') {
+                marcaVisual = `
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <img src="imagens/logos/maxprint.png" alt="Maxprint" style="height: 24px; object-fit: contain;">
+                        <span style="color: var(--m3-outline); font-size: 16px;">+</span>
+                        <img src="imagens/logos/v-sol.png" alt="V-SOL" style="height: 24px; object-fit: contain;">
+                    </div>
+                `;
+            }
 
             grid.innerHTML += `
                 <div class="overview-card" style="display: flex; flex-direction: column;">
-                    <div class="card-header">
-                        <h3 style="display: flex; align-items: center;">${marcaVisual}</h3>
-                        ${btnDetalhes}
+                    <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 5px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <h3 style="display: flex; align-items: center; margin: 0;">${marcaVisual}</h3>
+                            ${btnDetalhes}
+                        </div>
+                        <span style="font-size: 0.75rem; opacity: 0.6; font-family: var(--font-family-mono);">Prefixos: ${fab.prefixos}</span>
                     </div>
                     <div class="card-body" style="flex-direction: column; padding: 20px; align-items: stretch;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
