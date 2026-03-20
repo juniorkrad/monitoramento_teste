@@ -1,5 +1,5 @@
 // ==============================================================================
-// layout.js - Construtor de Layout e Menu Inteligente (Versão 3.0 - Limpa)
+// layout.js - Construtor de Layout e Menu Inteligente (Versão 3.1 - Consolidada)
 // ==============================================================================
 
 // --- AUTO-INJEÇÃO DA FONTE DE ÍCONES ---
@@ -28,7 +28,7 @@ function loadHeader(config) {
     const path = window.location.pathname;
     const currentPage = path.split('/').pop() || 'index.html';
 
-    // Botão de navegação atualizado: apenas o ícone, sem o texto "MENU"
+    // Botão de navegação
     let navHtml = `
         <button class="icon-btn" onclick="toggleSidebar()" title="Abrir Menu" style="border-radius: 8px; width: auto; padding: 8px 12px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; color: var(--m3-on-surface); transition: background 0.2s;">
             <span class="material-symbols-rounded">menu</span>
@@ -67,7 +67,6 @@ function loadSidebar(currentPage) {
         document.body.prepend(sidebarContainer);
     }
 
-    // Sidebar limpa, apenas com os módulos principais do sistema
     sidebarContainer.innerHTML = `
         <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
         
