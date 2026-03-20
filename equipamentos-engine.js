@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor Dedicado de Monitoramento de Fabricantes
-// Atualização: Refinamento visual do alinhamento e espaçamento das estatísticas
+// Atualização: Refinamento visual do alinhamento à esquerda das estatísticas
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -224,20 +224,22 @@ async function renderFabricantesDashboard() {
                     </div>
                     <div class="card-body" style="flex-direction: column; padding: 20px; align-items: stretch;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                            <div class="card-stats" style="flex: 1; padding-left: 10px;">
-                                <div class="stat-item" style="display: grid; grid-template-columns: 50px 1fr; gap: 25px; margin-bottom: 12px; align-items: center;">
-                                    <span class="stat-number" style="font-size: 1.5rem; display: block; text-align: right;">${total}</span>
-                                    <label style="font-size: 1rem; opacity: 0.9;">Total</label>
+                            
+                            <div class="card-stats" style="flex: 1;">
+                                <div class="stat-item" style="display: grid; grid-template-columns: 60px 1fr; gap: 15px; margin-bottom: 12px; align-items: center;">
+                                    <span class="stat-number" style="font-size: 1.5rem; display: block; text-align: left;">${total}</span>
+                                    <label style="font-size: 1rem; opacity: 0.9; margin: 0;">Total</label>
                                 </div>
-                                <div class="stat-item online" style="display: grid; grid-template-columns: 50px 1fr; gap: 25px; margin-bottom: 8px; align-items: center;">
-                                    <span class="stat-number" style="font-size: 1.2rem; display: block; text-align: right;">${fab.online}</span>
-                                    <label style="font-size: 0.95rem; opacity: 0.9;">Online</label>
+                                <div class="stat-item online" style="display: grid; grid-template-columns: 60px 1fr; gap: 15px; margin-bottom: 8px; align-items: center;">
+                                    <span class="stat-number" style="font-size: 1.2rem; display: block; text-align: left;">${fab.online}</span>
+                                    <label style="font-size: 0.95rem; opacity: 0.9; margin: 0;">Online</label>
                                 </div>
-                                <div class="stat-item offline" style="display: grid; grid-template-columns: 50px 1fr; gap: 25px; align-items: center;">
-                                    <span class="stat-number" style="font-size: 1.2rem; display: block; text-align: right;">${fab.offline}</span>
-                                    <label style="font-size: 0.95rem; opacity: 0.9;">Offline</label>
+                                <div class="stat-item offline" style="display: grid; grid-template-columns: 60px 1fr; gap: 15px; align-items: center;">
+                                    <span class="stat-number" style="font-size: 1.2rem; display: block; text-align: left;">${fab.offline}</span>
+                                    <label style="font-size: 0.95rem; opacity: 0.9; margin: 0;">Offline</label>
                                 </div>
                             </div>
+                            
                             <div class="donut-chart-container" style="position: relative; right: auto; top: auto; transform: none;">
                                 <svg class="donut-chart" width="80" height="80" viewBox="0 0 80 80">
                                     <circle class="donut-bg" cx="40" cy="40" r="${newRadius}"></circle>
