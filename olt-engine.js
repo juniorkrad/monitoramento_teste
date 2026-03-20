@@ -15,7 +15,6 @@ async function fetchGlobalOltData(olt) {
     const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:C`;
     
     try {
-        // Chamada limpa utilizando o API Service
         const data = await API.get(range);
         const rows = (data.values || []).slice(1);
         
@@ -28,9 +27,13 @@ async function fetchGlobalOltData(olt) {
 
             if (olt.type === 'nokia') {
                 isOnline = (columns[4] || '').trim().toLowerCase().includes('up');
-                if (columns[0] && columns[0].includes('1/1/')) {
-                    const parts = columns[0].split('/');
-                    if (parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
+                if (columns[0]) {
+                    // Extração robusta para Nokia (Padrão: Rack/Shelf/Placa/Porta)
+                    const match = columns[0].match(/(\d+)\/(\d+)\/(\d+)\/(\d+)/);
+                    if (match) { 
+                        placa = match[3]; 
+                        porta = match[4]; 
+                    }
                 }
             } else { 
                 isOnline = (columns[2] || '').trim().toLowerCase() === 'active';
@@ -39,13 +42,15 @@ async function fetchGlobalOltData(olt) {
                         const parts = columns[0].split('/');
                         if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
                     } else { 
-                        const match = columns[0].match(/GPON(\d+)\/(\d+)/);
+                        // RegEx tolerante a espaços para Furukawa (ex: GPON 1/1 ou GPON1/1)
+                        const match = columns[0].match(/GPON\s*(\d+)\/(\d+)/i);
                         if (match) { placa = match[1]; porta = match[2]; }
                     }
                 }
             }
 
             if (isOnline) totalOnline++; else totalOffline++;
+            
             if (placa && porta) {
                 const portKey = `${placa}/${porta}`;
                 if (!portData[portKey]) portData[portKey] = { off: 0, total: 0 };
@@ -128,18 +133,17 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
         rankingHtmlContent = `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px; width: 100%;"><span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Rede 100% Online!</div>`;
     }
 
+    // HTML limpo sem o wrapper extra que quebrava o flexbox da versão old
     cardBody.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 20px;">
-            <div class="card-stats" style="padding-right: 0; min-width: 200px;">
-                ${statsHtml}
-            </div>
-            <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; flex-direction: column; min-width: 250px;">
-                ${vendorHtml}
-            </div>
-            <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; flex-direction: column; justify-content: center; min-width: 250px;">
-                <div style="display: flex; flex-direction: column; justify-content: center; width: 100%; height: 100%;">
-                    ${rankingHtmlContent}
-                </div>
+        <div class="card-stats" style="padding-right: 0; min-width: 200px;">
+            ${statsHtml}
+        </div>
+        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; flex-direction: column; min-width: 250px;">
+            ${vendorHtml}
+        </div>
+        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; flex-direction: column; justify-content: center; min-width: 250px;">
+            <div style="width: 100%;">
+                ${rankingHtmlContent}
             </div>
         </div>
     `;
@@ -283,7 +287,6 @@ window.startOltMonitoring = function(config) {
         const rangeOlt = `${config.id}!A:Z`; 
 
         try {
-            // Chamada limpa utilizando o API Service
             const [dataOlt, rowsCircuitos] = await Promise.all([API.get(rangeOlt), fetchCircuitosData()]);
 
             let datePart = '--/--/----';
@@ -327,8 +330,8 @@ window.startOltMonitoring = function(config) {
                     const pon = columns[0];
                     const status = columns[4]; 
                     if (!pon || !status) return;
-                    const parts = pon.split('/'); 
-                    if (parts.length >= 4) { placa = parts[2]; porta = parts[3]; }
+                    const match = pon.match(/(\d+)\/(\d+)\/(\d+)\/(\d+)/);
+                    if (match) { placa = match[3]; porta = match[4]; }
                     isOnline = status.trim().toLowerCase().includes('up');
                 } else { 
                     const portStr = columns[0];
@@ -339,7 +342,7 @@ window.startOltMonitoring = function(config) {
                         const parts = portStr.split('/');
                         if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
                     } else {
-                        const match = portStr.match(/GPON(\d+)\/(\d+)/);
+                        const match = portStr.match(/GPON\s*(\d+)\/(\d+)/i);
                         if (match) { placa = match[1]; porta = match[2]; }
                     }
                     isOnline = status.trim().toLowerCase() === 'active';
