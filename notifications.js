@@ -1,5 +1,5 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Corrigido para Nokia e Furukawa)
+// notifications.js - Sistema Central de Alertas (Restauração Completa Base Old)
 // ==============================================================================
 
 // Memórias de Estado
@@ -8,14 +8,12 @@ let currentBackbones = new Set();
 let currentHybridProblems = new Set(); 
 
 function showToast(title, description, typeClass, icon, position = 'right') {
-    // --- TRAVA DE SEGURANÇA ---
     const path = window.location.pathname;
     const pageName = path.split('/').pop(); 
 
     if (pageName && pageName !== 'index.html' && pageName !== '') {
         return; 
     }
-    // ----------------------------------
 
     let containerId = position === 'left' ? 'toast-container-left' : 'toast-container-right';
     let container = document.getElementById(containerId);
@@ -59,9 +57,7 @@ function showToast(title, description, typeClass, icon, position = 'right') {
 
 function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), newEnergyProblems = new Set(), newHybridProblems = new Set()) {
     
-    // ============================================================
-    // 1. DETECTAR NORMALIZAÇÕES (Limpeza de tela)
-    // ============================================================
+    // 1. DETECTAR NORMALIZAÇÕES
     for (const oldBb of currentBackbones) {
         if (!activeBackbones.has(oldBb)) {
             showToast('Backbone Normalizado', `${oldBb}`, 'status-normal', 'check_circle', 'right');
@@ -80,8 +76,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                     }
                 }
             } else {
-                // Lógica de Regex ajustada para abraçar N portões (Nokia e Furukawa)
-                const matchSingle = oldProblem.match(/^\[(.*?)\] STATUS::(.*?)_([\d\/]+)/);
+                const matchSingle = oldProblem.match(/^\[(.*?)\] STATUS::(.*?)_(\d+\/\d+)/);
                 if (matchSingle) {
                     const oltId = matchSingle[1];
                     const porta = matchSingle[3];
@@ -95,9 +90,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
         }
     }
 
-    // ============================================================
     // 2. DISPAROS: BACKBONE
-    // ============================================================
     for (const bb of activeBackbones) {
         if (!currentBackbones.has(bb)) {
             showToast(
@@ -111,14 +104,12 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     }
     currentBackbones = new Set(activeBackbones);
 
-    // ============================================================
-    // 3. DISPAROS: HÍBRIDO (Vem da Esquerda) & CRIADOR DE SILENCIADOR
-    // ============================================================
+    // 3. DISPAROS: HÍBRIDO E SILENCIADOR
     const activeHybridPorts = new Set(); 
 
     for (const hb of newHybridProblems) {
-        // Lógica de Regex ajustada para abraçar N portões (Nokia e Furukawa)
-        const match = hb.match(/^\[(.*?)\] HÍBRIDO::([\d\/]+)::(\d+)$/);
+        // Formato Exato da versão old
+        const match = hb.match(/^\[(.*?)\] HÍBRIDO::(\d+\/\d+)::(\d+)$/);
         if (match) {
             const oltId = match[1];
             const porta = match[2];
@@ -139,9 +130,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     }
     currentHybridProblems = new Set(newHybridProblems);
 
-    // ============================================================
-    // 4. DISPAROS: REDE PURA (Vem da Direita)
-    // ============================================================
+    // 4. DISPAROS: REDE PURA
     for (const problemKey of newProblems) {
         if (!currentProblems.has(problemKey)) {
 
@@ -167,8 +156,8 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                 continue; 
             }
 
-            // Lógica de Regex ajustada para abraçar N portões (Nokia e Furukawa)
-            const matchSingle = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)_([\d\/]+)::(\d+)$/);
+            // Regex Exato da versão old: (\d+\/\d+)
+            const matchSingle = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)_(\d+\/\d+)::(\d+)$/);
             if (matchSingle) {
                 const oltId = matchSingle[1];
                 const severity = matchSingle[2];

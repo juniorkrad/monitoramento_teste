@@ -1,6 +1,6 @@
 /* ==========================================================================
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
-   Atualização: Restauração da trava anti-spam e preservação da memória de rede
+   Atualização: Lógica exata da versão Old restaurada (Trava de estado preservando Set)
    ========================================================================== */
 
 let lastNotifiedState = ""; 
@@ -79,9 +79,7 @@ function watchHomeAlarms() {
         }
     }
 
-    // ============================================================
-    // TRAVA DE ESTADO (Evita spam e renderizações duplas)
-    // ============================================================
+    // Trava de estado e formatação da string idênticos ao Old
     let currentState = Array.from(networkProblems).sort().join('|') + 
                        Array.from(backboneProblems).sort().join('|') + 
                        Array.from(hybridProblems).sort().join('|');
@@ -104,10 +102,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         setTimeout(updateGlobalTimestamp, 500);
         
-        // Gatilho inicial rápido de 2 segundos
+        // Gatilho rápido de 2 segundos (ajustado sem quebrar o loop)
         setTimeout(watchHomeAlarms, 2000); 
 
-        // Mantém a vigilância rodando no loop natural
+        // Loop de verificação
         setInterval(watchHomeAlarms, 60000); 
     }
 });
