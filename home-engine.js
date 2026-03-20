@@ -69,7 +69,6 @@ function watchHomeAlarms() {
                             for (const netProb of networkProblems) {
                                 if (netProb.startsWith(portRef) || netProb.startsWith(portRefWarn) || netProb.startsWith(portRefSuper)) {
                                     hybridProblems.add(`[${oltId}] HÍBRIDO::${pt}::${pData.powerOff}`);
-                                    // IMPORTANTE: O networkProblems.delete() foi removido aqui para não destruir a memória visual original
                                     break;
                                 }
                             }
