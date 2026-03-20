@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Formatação de portas restaurada para o padrão clássico (1/1)
+// Atualização: Refinamento de headers da tabela e remoção de texto redundante
 // ==============================================================================
 
 const TAB_CIRCUITOS = 'CIRCUITO'; 
@@ -28,7 +28,6 @@ async function fetchGlobalOltData(olt) {
             if (olt.type === 'nokia') {
                 isOnline = (columns[4] || '').trim().toLowerCase().includes('up');
                 if (columns[0]) {
-                    // Extrai apenas Placa e Porta (Padrão: Rack/Shelf/Placa/Porta)
                     const match = columns[0].match(/(\d+)\/(\d+)\/(\d+)\/(\d+)/);
                     if (match) { 
                         placa = match[3]; 
@@ -51,7 +50,7 @@ async function fetchGlobalOltData(olt) {
             if (isOnline) totalOnline++; else totalOffline++;
             
             if (placa && porta) {
-                const portKey = `${placa}/${porta}`; // Formato garantido: X/Y
+                const portKey = `${placa}/${porta}`; 
                 if (!portData[portKey]) portData[portKey] = { off: 0, total: 0 };
                 portData[portKey].total++;
                 if (!isOnline) portData[portKey].off++;
@@ -203,7 +202,6 @@ async function runGlobalNetworkOverview() {
         } 
         else if (filteredProblems.length === 1) {
             const p = filteredProblems[0];
-            // Formato restaurado: [OLT] STATUS::SEVERIDADE_PLACA/PORTA::OFF
             allProblems.add(`[${result.id}] STATUS::${p.severity}_${p.porta}::${p.off}`);
         }
     });
@@ -232,7 +230,7 @@ async function fetchCircuitosData() {
 
 window.startOltMonitoring = function(config) {
     window.stopOltMonitoring(); 
-    // HTML Modal da OLT mantido perfeitamente...
+    
     if (!document.getElementById('detail-modal')) {
         const modalHTML = `
             <div id="detail-modal" class="modal-overlay" onclick="closeModal(event)">
@@ -258,9 +256,6 @@ window.startOltMonitoring = function(config) {
                         </div>
 
                         <div id="view-clients" style="display:none;">
-                            <div class="modal-section-title">
-                                <span id="circuit-title-text">Clientes do Circuito</span>
-                            </div>
                             <div class="filter-bar">
                                 <input type="text" id="search-input" class="filter-input" placeholder="Buscar (Nome, Serial...)" onkeyup="filterClients()">
                                 <select id="status-filter" class="filter-select" onchange="filterClients()"></select>
@@ -505,6 +500,7 @@ window.openPortDetails = function(placa, porta, circuito, online, offline, total
     const modalContent = document.querySelector('#detail-modal .modal-content');
     modalContent.classList.remove('modal-large'); 
 
+    // O título se mantém impecável, já contendo Placa, Porta e o Circuito
     const textoCircuito = (circuito && circuito !== "-") ? ` - Circuito: ${circuito}` : "";
     document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta}${textoCircuito}`;
     document.getElementById('view-stats').style.display = 'flex';
@@ -520,7 +516,6 @@ window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
     const modalContent = document.querySelector('#detail-modal .modal-content');
     modalContent.classList.add('modal-large');     
 
-    document.getElementById('circuit-title-text').textContent = `Circuito: ${circuitoNome} (Placa ${placa}/Porta ${porta})`;
     document.getElementById('view-stats').style.display = 'none';
     document.getElementById('view-clients').style.display = 'block';
     document.getElementById('search-input').value = '';
@@ -537,8 +532,9 @@ window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
     const thead = document.getElementById('clients-thead');
     const tbody = document.getElementById('clients-tbody');
     
+    // --- CABEÇALHOS CORRIGIDOS PARA NOKIA ---
     if (oltType === 'nokia') {
-        thead.innerHTML = `<tr><th>Posição/Serial</th><th>Tipo/Perfil</th><th>Status</th><th>Descrição 1</th><th>Descrição 2</th></tr>`;
+        thead.innerHTML = `<tr><th>Posição</th><th>Serial</th><th>Status</th><th>Descrição 1</th><th>Descrição 2</th></tr>`;
     } else {
         thead.innerHTML = `<tr><th>Posição</th><th>Status</th><th>Serial</th><th>Descrição</th></tr>`;
     }
