@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Refinamento de headers da tabela e remoção de texto redundante
+// Atualização: Título dinâmico (Placa/Porta/Circuito) aplicado à lista de clientes
 // ==============================================================================
 
 const TAB_CIRCUITOS = 'CIRCUITO'; 
@@ -500,7 +500,6 @@ window.openPortDetails = function(placa, porta, circuito, online, offline, total
     const modalContent = document.querySelector('#detail-modal .modal-content');
     modalContent.classList.remove('modal-large'); 
 
-    // O título se mantém impecável, já contendo Placa, Porta e o Circuito
     const textoCircuito = (circuito && circuito !== "-") ? ` - Circuito: ${circuito}` : "";
     document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta}${textoCircuito}`;
     document.getElementById('view-stats').style.display = 'flex';
@@ -515,6 +514,10 @@ window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.querySelector('#detail-modal .modal-content');
     modalContent.classList.add('modal-large');     
+
+    // Atualiza dinamicamente o título principal também para a visão de clientes
+    const textoCircuito = (circuitoNome && circuitoNome !== "-") ? ` - Circuito: ${circuitoNome}` : "";
+    document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta}${textoCircuito}`;
 
     document.getElementById('view-stats').style.display = 'none';
     document.getElementById('view-clients').style.display = 'block';
@@ -532,7 +535,6 @@ window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
     const thead = document.getElementById('clients-thead');
     const tbody = document.getElementById('clients-tbody');
     
-    // --- CABEÇALHOS CORRIGIDOS PARA NOKIA ---
     if (oltType === 'nokia') {
         thead.innerHTML = `<tr><th>Posição</th><th>Serial</th><th>Status</th><th>Descrição 1</th><th>Descrição 2</th></tr>`;
     } else {
