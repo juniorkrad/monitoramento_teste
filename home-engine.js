@@ -1,9 +1,7 @@
 /* ==========================================================================
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
-   Atualização: Lógica exata da versão Old restaurada (Trava de estado preservando Set)
+   Atualização FINAL: Remoção completa da trava anti-spam. Loop contínuo.
    ========================================================================== */
-
-let lastNotifiedState = ""; 
 
 function watchHomeAlarms() {
     let networkProblems = new Set(window.NETWORK_PROBLEMS_STORE || []);
@@ -79,18 +77,12 @@ function watchHomeAlarms() {
         }
     }
 
-    // Trava de estado e formatação da string idênticos ao Old
-    let currentState = Array.from(networkProblems).sort().join('|') + 
-                       Array.from(backboneProblems).sort().join('|') + 
-                       Array.from(hybridProblems).sort().join('|');
-
-    if (currentState !== lastNotifiedState) {
-        if (typeof checkAndNotifyForNewProblems === 'function') {
-            if (checkIsHomePage()) {
-                checkAndNotifyForNewProblems(networkProblems, backboneProblems, new Set(), hybridProblems);
-            }
+    // Sem travas. O fluxo está livre e repassa os dados a cada ciclo.
+    // O notifications.js já possui inteligência interna para não renderizar duplicatas.
+    if (typeof checkAndNotifyForNewProblems === 'function') {
+        if (checkIsHomePage()) {
+            checkAndNotifyForNewProblems(networkProblems, backboneProblems, new Set(), hybridProblems);
         }
-        lastNotifiedState = currentState;
     }
 }
 
@@ -102,10 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         setTimeout(updateGlobalTimestamp, 500);
         
-        // Gatilho rápido de 2 segundos (ajustado sem quebrar o loop)
-        setTimeout(watchHomeAlarms, 2000); 
-
-        // Loop de verificação
-        setInterval(watchHomeAlarms, 60000); 
+        // Loop contínuo de 3 segundos (sem a antiga trava limitadora).
+        setInterval(watchHomeAlarms, 3000); 
     }
 });
