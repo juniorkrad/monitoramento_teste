@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor Dedicado de Monitoramento de Fabricantes
-// Atualização: Restauração do mapeamento de Logos e subtítulo de prefixos
+// Atualização: Refinamento visual do alinhamento e espaçamento das estatísticas
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -181,9 +181,6 @@ async function renderFabricantesDashboard() {
                 `;
             }
 
-            // ==============================================================================
-            // LOGOS RESTAURADAS COM A PASTA CORRETA
-            // ==============================================================================
             let marcaVisual = `<span class="material-symbols-rounded" style="margin-right: 5px; opacity: 0.8;">router</span> ${fab.nome}`;
             
             if (fab.nome === 'NOKIA') {
@@ -227,18 +224,18 @@ async function renderFabricantesDashboard() {
                     </div>
                     <div class="card-body" style="flex-direction: column; padding: 20px; align-items: stretch;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                            <div class="card-stats" style="flex: unset;">
-                                <div class="stat-item" style="grid-template-columns: auto 1fr; gap: 8px;">
-                                    <span class="stat-number" style="font-size: 1.5rem;">${total}</span>
-                                    <label>Total</label>
+                            <div class="card-stats" style="flex: 1; padding-left: 10px;">
+                                <div class="stat-item" style="display: grid; grid-template-columns: 50px 1fr; gap: 25px; margin-bottom: 12px; align-items: center;">
+                                    <span class="stat-number" style="font-size: 1.5rem; display: block; text-align: right;">${total}</span>
+                                    <label style="font-size: 1rem; opacity: 0.9;">Total</label>
                                 </div>
-                                <div class="stat-item online" style="grid-template-columns: auto 1fr; gap: 8px;">
-                                    <span class="stat-number" style="font-size: 1.2rem;">${fab.online}</span>
-                                    <label>Online</label>
+                                <div class="stat-item online" style="display: grid; grid-template-columns: 50px 1fr; gap: 25px; margin-bottom: 8px; align-items: center;">
+                                    <span class="stat-number" style="font-size: 1.2rem; display: block; text-align: right;">${fab.online}</span>
+                                    <label style="font-size: 0.95rem; opacity: 0.9;">Online</label>
                                 </div>
-                                <div class="stat-item offline" style="grid-template-columns: auto 1fr; gap: 8px;">
-                                    <span class="stat-number" style="font-size: 1.2rem;">${fab.offline}</span>
-                                    <label>Offline</label>
+                                <div class="stat-item offline" style="display: grid; grid-template-columns: 50px 1fr; gap: 25px; align-items: center;">
+                                    <span class="stat-number" style="font-size: 1.2rem; display: block; text-align: right;">${fab.offline}</span>
+                                    <label style="font-size: 0.95rem; opacity: 0.9;">Offline</label>
                                 </div>
                             </div>
                             <div class="donut-chart-container" style="position: relative; right: auto; top: auto; transform: none;">
