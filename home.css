@@ -55,6 +55,14 @@
     width: 100%;
 }
 
+/* Layout dividido para Equipamentos e Potência */
+.split-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    width: 100%;
+}
+
 .global-card {
     background-color: var(--m3-surface-container);
     border-radius: 24px; /* Raio MD3 puro */
@@ -118,6 +126,10 @@
 
 /* RESPONSIVIDADE EXCLUSIVA DA HOME (MÓVEL & TABLETS) */
 @media (max-width: 900px) {
+    .split-grid {
+        grid-template-columns: 1fr; /* Empilha os cards no celular */
+    }
+
     .global-card .card-body {
         flex-direction: column !important;
         align-items: stretch !important;

@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor Dedicado de Monitoramento de Fabricantes
-// Atualização: Injeção do Card "Top 5" com logos diretamente na Home
+// Atualização: Limpeza da Base Total para manter apenas o Top 5 na Home
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -248,10 +248,8 @@ async function renderFabricantesDashboard() {
     const globalBody = document.getElementById('global-equipamentos-body');
     if (globalBody) {
         let totalEquipamentos = 0;
-        let totalOnlineGeral = 0;
         listaOrdenada.forEach(f => {
             totalEquipamentos += (f.online + f.offline);
-            totalOnlineGeral += f.online;
         });
 
         const top5 = listaOrdenada.slice(0, 5);
@@ -297,26 +295,13 @@ async function renderFabricantesDashboard() {
         });
 
         globalBody.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 20px; height: 100%;">
-                <div class="card-stats global-stat" style="padding-right: 30px; min-width: 200px; display: flex; flex-direction: column; justify-content: center;">
-                    <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 5px; gap: 8px;">
-                        <span class="material-symbols-rounded" style="font-size: 24px; color: #60a5fa; opacity: 0.9;">devices</span>
-                        <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;">BASE TOTAL</span>
-                    </div>
-                    <h2 class="stat-number" style="margin: 0; color: #60a5fa; line-height: 1;">${totalEquipamentos}</h2>
-                    <div style="margin-top: 10px; color: var(--m3-on-surface-variant); font-size: 0.85rem; line-height: 1.4;">
-                        <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">check_circle</span> Online: <strong style="color: var(--m3-color-success);">${totalOnlineGeral}</strong><br>
-                        <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">error</span> Offline: <strong style="color: var(--m3-color-error);">${totalEquipamentos - totalOnlineGeral}</strong>
-                    </div>
+            <div style="width: 100%; display: flex; flex-direction: column; justify-content: stretch; height: 100%;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
+                    <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">emoji_events</span>
+                    <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Top 5 Fabricantes</h3>
                 </div>
-                <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 40px; display: flex; flex-direction: column; min-width: 300px; justify-content: stretch;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
-                        <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">emoji_events</span>
-                        <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Top 5 Fabricantes</h3>
-                    </div>
-                    <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center;">
-                        ${rankingHtml}
-                    </div>
+                <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center;">
+                    ${rankingHtml}
                 </div>
             </div>
         `;

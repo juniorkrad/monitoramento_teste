@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Ranking "Top 5 Piores Sinais" injetado na Home
+// Atualização: Limpeza de Sinais Críticos para manter apenas Top 5 na Home
 // ==============================================================================
 
 window.POTENCIA_CLIENTS_DATA = {};
@@ -126,7 +126,7 @@ async function runPotenciaEngine() {
         });
 
         // ==============================================================================
-        // ATUALIZA O CARD NA HOME: TOP 5 PIORES SINAIS DA REDE
+        // ATUALIZA O CARD NA HOME: APENAS O TOP 5 PIORES SINAIS DA REDE
         // ==============================================================================
         if (globalBody) {
             todosClientesCriticos.sort((a, b) => a.potencia - b.potencia);
@@ -152,25 +152,13 @@ async function runPotenciaEngine() {
             }
 
             globalBody.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 20px; height: 100%;">
-                    <div class="card-stats global-stat" style="padding-right: 30px; min-width: 200px; display: flex; flex-direction: column; justify-content: center;">
-                        <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 5px; gap: 8px;">
-                            <span class="material-symbols-rounded" style="font-size: 24px; color: #f87171; opacity: 0.9;">signal_cellular_alt</span>
-                            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;">SINAIS CRÍTICOS</span>
-                        </div>
-                        <h2 class="stat-number" style="margin: 0; color: #f87171; line-height: 1;">${globalCriticos}</h2>
-                        <div style="margin-top: 10px; color: var(--m3-on-surface-variant); font-size: 0.85rem; line-height: 1.4;">
-                            <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">search</span> Analisados: <strong style="color: var(--m3-on-surface);">${globalAnalisados}</strong> clientes
-                        </div>
+                <div style="width: 100%; display: flex; flex-direction: column; justify-content: stretch; height: 100%;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
+                        <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">warning</span>
+                        <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Top 5 Piores Sinais</h3>
                     </div>
-                    <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 40px; display: flex; flex-direction: column; min-width: 300px; justify-content: stretch;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
-                            <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">warning</span>
-                            <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Top 5 Piores Sinais</h3>
-                        </div>
-                        <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center;">
-                            ${rankingPioresHtml}
-                        </div>
+                    <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center;">
+                        ${rankingPioresHtml}
                     </div>
                 </div>
             `;
