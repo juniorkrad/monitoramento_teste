@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Filtro para ignorar leituras irreais/fantasmas (<= -60 dBm)
+// Atualização: Itens super compactados para a nova grade Justa da Home
 // ==============================================================================
 
 window.POTENCIA_CLIENTS_DATA = {};
@@ -93,7 +93,6 @@ async function runPotenciaEngine() {
 
                 const powerVal = parsePowerValue(pwrStr);
                 
-                // TRAVA DE SINAIS FANTASMAS APLICADA AQUI (> -60.00)
                 if (powerVal !== null && powerVal !== 0 && powerVal < 0 && powerVal > -60.00) {
                     analisados++;
                     dbmSums += powerVal;
@@ -132,9 +131,10 @@ async function runPotenciaEngine() {
 
             let rankingPioresHtml = '';
             top5Piores.forEach((c, index) => {
+                // Padding e margens cortadas para o limite
                 rankingPioresHtml += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); width: 100%;">
-                       <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start; text-align: left;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); width: 100%;">
+                       <div style="display: flex; flex-direction: column; gap: 2px; align-items: flex-start; text-align: left;">
                            <strong style="color: var(--m3-on-surface); font-size: 1rem;">
                                <span style="color: var(--m3-on-surface-variant); margin-right: 5px;">${index + 1}º</span> 
                                ${c.olt} <span style="color:var(--m3-outline); font-weight: normal; margin: 0 3px;">|</span> ${c.porta}
@@ -152,7 +152,7 @@ async function runPotenciaEngine() {
 
             globalBody.innerHTML = `
                 <div style="width: 100%; display: flex; flex-direction: column; justify-content: stretch; height: 100%;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                         <span class="material-symbols-rounded" style="color: #f87171; font-size: 20px;">warning</span>
                         <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Top 5 Piores Sinais</h3>
                     </div>

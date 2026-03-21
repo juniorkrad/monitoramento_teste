@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor Dedicado de Monitoramento de Fabricantes
-// Atualização: Remoção de linha sob o título e ícone azul no Top 5
+// Atualização: Margens e blocos internos compactados para o novo design Justo
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -135,9 +135,6 @@ async function renderFabricantesDashboard() {
         .filter(f => (f.online + f.offline) > 0) 
         .sort((a, b) => (b.online + b.offline) - (a.online + a.offline));
 
-    // ==============================================================================
-    // 1. ATUALIZA A PÁGINA ESPECÍFICA (equipamentos.html)
-    // ==============================================================================
     const grid = document.getElementById('fabricantes-grid');
     if (grid) {
         grid.innerHTML = '';
@@ -242,9 +239,6 @@ async function renderFabricantesDashboard() {
         }
     }
 
-    // ==============================================================================
-    // 2. ATUALIZA A HOME COM O TOP 5 (index.html)
-    // ==============================================================================
     const globalBody = document.getElementById('global-equipamentos-body');
     if (globalBody) {
         let totalEquipamentos = 0;
@@ -278,10 +272,11 @@ async function renderFabricantesDashboard() {
             const totalFab = fab.online + fab.offline;
             const pct = totalEquipamentos > 0 ? (totalFab / totalEquipamentos) * 100 : 0;
 
+            // Margens super reduzidas para não esmagar
             rankingHtml += `
-                <div style="margin-bottom: 12px; width: 100%;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items: center;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="margin-bottom: 8px; width: 100%;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
                             <span style="font-size: 1rem; font-weight: bold; color: var(--m3-on-surface-variant); width: 20px;">${index + 1}º</span>
                             ${marcaVisual}
                         </div>
@@ -294,10 +289,10 @@ async function renderFabricantesDashboard() {
             `;
         });
 
-        // A linha divisória indesejada (border-bottom) foi removida e a cor azul no ícone foi adicionada.
+        // Removida linha divisória extra e ícone em azul
         globalBody.innerHTML = `
             <div style="width: 100%; display: flex; flex-direction: column; justify-content: stretch; height: 100%;">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                     <span class="material-symbols-rounded" style="color: #60a5fa; font-size: 20px;">emoji_events</span>
                     <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Top 5 Fabricantes</h3>
                 </div>
@@ -340,7 +335,6 @@ window.closeUnknownModal = function() {
     if (modal) modal.style.display = 'none';
 };
 
-// Inicialização Unificada (Habilitada para Home e Página Equipamentos)
 document.addEventListener('DOMContentLoaded', () => {
     const isEqpPage = window.location.pathname.includes('equipamentos.html');
     const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');

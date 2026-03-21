@@ -2,9 +2,9 @@
    ESTILOS ESPECÍFICOS - DASHBOARD HOME (index.html)
    ========================================================================== */
 
-/* Padronização forçada dos cards na Home com as novas bordas */
+/* Padronização compacta dos cards na Home */
 .global-card .card-body {
-    padding: 30px !important; 
+    padding: 16px 20px !important; /* Espaço vazio reduzido drasticamente */
     box-sizing: border-box !important;
     display: flex !important;
     justify-content: space-between !important;
@@ -29,10 +29,17 @@
     text-align: left !important;
 }
 
-/* --- FORMATO QUADRADO/ARREDONDADO DOS BOTÕES DO CABEÇALHO --- */
+/* --- FORMATO QUADRADO/ARREDONDADO COMPACTO DOS BOTÕES --- */
 .card-header-button {
-    border-radius: 8px !important; 
-    padding: 8px !important;
+    border-radius: 6px !important; 
+    padding: 4px 6px !important; /* Redução de 50% no tamanho do botão */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-header-button span {
+    font-size: 18px !important; /* Ícone 20% menor para caber no novo botão */
 }
 
 /* --- RESTAURAÇÃO DE CORES DOS INDICADORES --- */
@@ -51,7 +58,7 @@
 .global-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 12px; /* Reduzido de 24px para 12px (Homogêneo) */
     width: 100%;
 }
 
@@ -59,13 +66,13 @@
 .split-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 24px;
+    gap: 12px; /* Reduzido de 24px para 12px (Homogêneo) */
     width: 100%;
 }
 
 .global-card {
     background-color: var(--m3-surface-container);
-    border-radius: 24px; /* Raio MD3 puro */
+    border-radius: 20px; 
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     display: flex;
@@ -74,7 +81,7 @@
 
 .global-card .card-header {
     background-color: var(--m3-surface-container-high);
-    padding: 16px 24px;
+    padding: 10px 20px; /* Título mais estreito (reduzido) */
     border-bottom: 1px solid var(--m3-outline-variant);
     display: flex;
     justify-content: space-between;
@@ -83,7 +90,7 @@
 
 .global-card .card-header h3 {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     color: var(--m3-on-surface);
     display: flex;
     align-items: center;
@@ -94,7 +101,7 @@
 .global-stat {
     display: flex;
     flex-direction: column;
-    margin-bottom: 20px;
+    margin-bottom: 10px; /* Margem reduzida */
 }
 
 .global-stat .stat-number {
@@ -133,7 +140,7 @@
     .global-card .card-body {
         flex-direction: column !important;
         align-items: stretch !important;
-        padding: 20px !important; 
+        padding: 15px !important; 
     }
 
     .global-card .card-stats,
@@ -143,8 +150,8 @@
         border-left: none !important;
         padding-left: 0 !important; 
         padding-right: 0 !important;
-        padding-top: 25px !important; 
-        padding-bottom: 25px !important;
+        padding-top: 15px !important; 
+        padding-bottom: 15px !important;
         align-items: flex-start !important;
         text-align: left !important;
     }
@@ -155,6 +162,6 @@
 
     .donut-chart-container {
         align-self: center !important;
-        margin-top: 20px !important;
+        margin-top: 15px !important;
     }
 }

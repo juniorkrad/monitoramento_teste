@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Correção de cor do ícone e remoção de linha sob o título
+// Atualização: Margens compactadas para acompanhar novo layout da Home
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
@@ -108,25 +108,25 @@ function updateGlobalEnergyCard() {
     if (globalData.totalOffline > 0) relativoPerc = ((globalData.powerOff / globalData.totalOffline) * 100).toFixed(1) + '%';
 
     cardBody.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 20px; height: 100%;">
-            <div class="card-stats global-stat" style="padding-right: 30px; min-width: 200px; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start !important; text-align: left !important;">
+        <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 10px; height: 100%;">
+            <div class="card-stats global-stat" style="padding-right: 15px; min-width: 200px; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start !important; text-align: left !important;">
                 <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 5px; gap: 8px;">
                     <span class="material-symbols-rounded" style="font-size: 24px; color: #fbbf24; opacity: 0.9;">power_off</span>
                     <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;">CLIENTES SEM ENERGIA</span>
                 </div>
                 <h2 id="global-poweroff-total" class="stat-number" style="margin: 0; color: #fbbf24; line-height: 1;">${globalData.powerOff}</h2>
-                <div id="global-poweroff-context" style="margin-top: 10px; color: var(--m3-on-surface-variant); font-size: 0.85rem; line-height: 1.4;">
+                <div id="global-poweroff-context" style="margin-top: 6px; color: var(--m3-on-surface-variant); font-size: 0.85rem; line-height: 1.4;">
                     <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">dns</span> <strong id="global-olts-afetadas" style="color: var(--m3-on-surface);">${globalData.oltsAffected}</strong> de 17 OLTs afetadas.<br>
                     <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">public</span> Impacto rede: <strong id="global-impacto-perc" style="color: var(--m3-on-surface);">${impactoPerc}</strong><br>
                     <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">pie_chart</span> Relativo OFF: <strong id="global-offline-relativo-perc" style="color: #fbbf24;">${relativoPerc}</strong>
                 </div>
             </div>
-            <div style="flex: 3; border-left: 1px solid var(--m3-outline); padding-left: 40px; display: flex; flex-direction: column; min-width: 300px; justify-content: stretch;">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+            <div style="flex: 3; border-left: 1px solid var(--m3-outline); padding-left: 20px; display: flex; flex-direction: column; min-width: 300px; justify-content: stretch;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                     <span class="material-symbols-rounded" style="color: #fbbf24; font-size: 20px;">bar_chart</span>
                     <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Ranking de OLTs Críticas</h3>
                 </div>
-                <div style="flex: 1; width: 100%; position: relative; min-height: 160px; display: flex; flex-direction: column;">
+                <div style="flex: 1; width: 100%; position: relative; min-height: 110px; display: flex; flex-direction: column;">
                     <canvas id="energyChartOlt" style="flex: 1;"></canvas>
                 </div>
             </div>
