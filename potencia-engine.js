@@ -34,177 +34,147 @@ async function runPotenciaEngine() {
         window.POTENCIA_CLIENTS_DATA = {};
         window.POTENCIA_LAST_UPDATES = {};
 
-        const ranges = GLOBAL_MASTER_OLT_LIST.map(o => `${o.sheetTab}!A:K`);
-        
-        // Chamada limpa utilizando o API Service
+        const ranges = GLOBAL_MASTER_OLT_LIST.map(o => o.type === 'nokia' ? `${o.sheetTab}!A:L` : `${o.sheetTab}!A:F`);
         const dataBatch = await API.getBatch(ranges);
 
-        if (!dataBatch.valueRanges) throw new Error("Falha ao carregar dados da API.");
+        if (!dataBatch.valueRanges) throw new Error("Falha na estrutura de retorno da API de Potência");
 
         GLOBAL_MASTER_OLT_LIST.forEach((olt, index) => {
-            const rawValues = dataBatch.valueRanges[index].values;
+            const rows = dataBatch.valueRanges[index].values ? dataBatch.valueRanges[index].values.slice(1) : [];
             
-            let timestamp = '--/-- --:--';
-            if (rawValues && rawValues.length > 0) {
-                timestamp = rawValues[0][10] || '--/-- --:--';
-                timestamp = timestamp.replace('Atualizado em:', '').trim();
-            }
-            window.POTENCIA_LAST_UPDATES[olt.id] = timestamp;
-            
-            const rows = rawValues && rawValues.length > 1 ? rawValues.slice(1) : [];
-            
-            let criticosNestaOlt = 0;
-            let totalNestaOlt = 0;
-            let clientesCriticos = [];
+            let analisados = 0;
+            let criticos = 0;
+            let dbmSums = 0;
+            let lastUpdateStr = '--/-- --:--';
 
-            rows.forEach(col => {
-                if(col.length === 0) return;
-                
-                let portaFinal = '';
-                let serial = '';
-                let potenciaStr = '';
-                let codigoCliente = '';
-                let isCritical = false;
-                let potenciaValue = null;
+            window.POTENCIA_CLIENTS_DATA[olt.id] = [];
 
-                if (olt.type === 'nokia') {
-                    let portaRaw = col[0] || '';
-                    if (portaRaw.includes('1/1/')) {
-                        let parts = portaRaw.split('/');
-                        if(parts.length >= 4) portaFinal = `${parts[2]}/${parts[3]}`;
-                    }
-                    serial = col[2] || '-';
-                    potenciaStr = col[5] || '';
-                    codigoCliente = col[8] || '-';
-                    
-                    potenciaValue = parsePowerValue(potenciaStr);
-                    if (potenciaValue !== null && potenciaValue <= -25) {
-                        isCritical = true;
-                    }
-                } else {
-                    let portaRaw = col[0] || '';
-                    if (olt.type === 'furukawa-10') {
-                        portaFinal = portaRaw;
-                    } else {
-                        let match = portaRaw.match(/GPON(\d+\/\d+)/i);
-                        if (match) portaFinal = match[1];
-                        else portaFinal = portaRaw;
-                    }
-
-                    serial = col[3] || '-';
-                    potenciaStr = col[5] || '';
-                    codigoCliente = col[7] || '-';
-
-                    potenciaValue = parsePowerValue(potenciaStr);
-                    if (potenciaValue !== null && potenciaValue <= -23) {
-                        isCritical = true;
+            if (dataBatch.valueRanges[index].values && dataBatch.valueRanges[index].values.length > 0) {
+                const firstRow = dataBatch.valueRanges[index].values[0];
+                let cellData = firstRow[10] ? String(firstRow[10]) : '';
+                if (!cellData) {
+                    for (let i = firstRow.length - 1; i >= 0; i--) {
+                        let val = firstRow[i] ? String(firstRow[i]) : '';
+                        if (val.match(/\d{2}\/\d{2}/) && val.match(/\d{2}:\d{2}/)) {
+                            cellData = val; break;
+                        }
                     }
                 }
+                if (cellData) {
+                    const dateMatch = cellData.match(/\d{2}\/\d{2}\/\d{2,4}/);
+                    const timeMatch = cellData.match(/\d{2}:\d{2}(:\d{2})?/);
+                    if (dateMatch && timeMatch) lastUpdateStr = `${dateMatch[0]} ${timeMatch[0]}`;
+                }
+            }
 
-                if (potenciaValue !== null) {
-                    totalNestaOlt++;
-                    globalAnalisados++;
+            window.POTENCIA_LAST_UPDATES[olt.id] = lastUpdateStr;
+
+            rows.forEach(columns => {
+                if (columns.length === 0) return;
+
+                let isOnline = false, pwrStr = '', porta = '', serial = '', codigo = '';
+
+                if (olt.type === 'nokia') {
+                    isOnline = (columns[4] || '').trim().toLowerCase().includes('up');
+                    if (!isOnline) return;
+                    pwrStr = columns[11];
+                    porta = columns[0] || '';
+                    serial = columns[2] || '';
+                    codigo = columns[7] || '';
+                } else {
+                    isOnline = (columns[2] || '').trim().toLowerCase() === 'active';
+                    if (!isOnline) return;
+                    pwrStr = columns[5];
+                    porta = columns[0] || '';
+                    serial = columns[3] || '';
+                    codigo = columns[4] || '';
+                }
+
+                const powerVal = parsePowerValue(pwrStr);
+                
+                if (powerVal !== null && powerVal !== 0 && powerVal < 0) {
+                    analisados++;
+                    dbmSums += powerVal;
+                    let pLevel = 'normal';
                     
-                    if (isCritical && portaFinal) {
-                        criticosNestaOlt++;
-                        globalCriticos++;
-                        const clientData = { olt: olt.id, porta: portaFinal, serial: serial, potencia: potenciaValue, codigo: codigoCliente };
-                        clientesCriticos.push(clientData);
-                        todosClientesCriticos.push(clientData); 
-                    }
+                    if (powerVal <= -28.00) { 
+                        criticos++; 
+                        pLevel = 'critico'; 
+                        const cData = { olt: olt.id, porta, serial, codigo, potencia: powerVal };
+                        window.POTENCIA_CLIENTS_DATA[olt.id].push(cData);
+                        todosClientesCriticos.push(cData);
+                    } 
+                    else if (powerVal <= -26.00) pLevel = 'atencao';
                 }
             });
 
-            clientesCriticos.sort((a, b) => a.potencia - b.potencia);
-            
-            window.POTENCIA_CLIENTS_DATA[olt.id] = clientesCriticos;
-            oltStats.push({ id: olt.id, criticos: criticosNestaOlt, total: totalNestaOlt });
+            const media = analisados > 0 ? (dbmSums / analisados).toFixed(2) : 0;
+            const health = analisados > 0 ? (((analisados - criticos) / analisados) * 100) : 0;
+
+            oltStats.push({
+                id: olt.id,
+                analisados,
+                criticos,
+                media,
+                health,
+                lastUpdate: lastUpdateStr
+            });
+
+            globalCriticos += criticos;
+            globalAnalisados += analisados;
         });
 
-        if (globalBody) {
-            todosClientesCriticos.sort((a, b) => a.potencia - b.potencia);
-            const piores5 = todosClientesCriticos.slice(0, 5);
+        oltStats.sort((a, b) => b.criticos - a.criticos);
 
-            let piores5Html = '';
-            if (piores5.length > 0) {
-                piores5Html = `
-                    <div style="display: grid; grid-template-columns: 1.5fr 2fr 1fr 1fr; gap: 10px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 8px; color: var(--m3-on-surface-variant); font-weight: 700; text-align: left;">
-                        <div>OLT / Porta</div>
-                        <div>Serial</div>
-                        <div>Código</div>
-                        <div style="text-align: right;">Sinal</div>
+        if (globalBody) {
+            const healthGlobal = globalAnalisados > 0 ? (((globalAnalisados - globalCriticos) / globalAnalisados) * 100) : 0;
+            let iconGlobal = healthGlobal >= 95 ? 'verified' : (healthGlobal >= 90 ? 'warning' : 'dangerous');
+            let colorGlobal = healthGlobal >= 95 ? 'var(--m3-color-success)' : (healthGlobal >= 90 ? 'var(--m3-color-warning)' : 'var(--m3-color-error)');
+
+            let top3Html = '';
+            oltStats.slice(0, 3).forEach((o, i) => {
+                const perc = o.analisados > 0 ? (o.criticos / o.analisados * 100) : 0;
+                top3Html += `
+                    <div style="margin-bottom: 18px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items: baseline;">
+                            <strong style="color: var(--m3-on-surface); font-size: 1.2rem;">${i + 1}º ${o.id}</strong>
+                            <span class="stat-number" style="font-size: 1.3rem; color: #fbbf24; width: auto;">${o.criticos} Sinais</span>
+                        </div>
+                        <div style="height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; overflow: hidden;">
+                            <div style="height: 100%; width: ${perc}%; background: #fbbf24; border-radius: 6px;"></div>
+                        </div>
                     </div>
                 `;
-                piores5.forEach(c => {
-                    piores5Html += `
-                        <div style="display: grid; grid-template-columns: 1.5fr 2fr 1fr 1fr; gap: 10px; font-size: 0.85rem; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); padding: 6px 0; text-align: left;">
-                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><strong style="color: var(--m3-on-surface);">${c.olt}</strong> <span style="opacity: 0.7;">(${c.porta})</span></div>
-                            <div style="font-family: var(--font-family-mono); opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.serial}</div>
-                            <div style="opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.codigo}</div>
-                            <div style="text-align: right; color: #f87171; font-weight: bold; font-family: var(--font-family-mono);">${c.potencia}</div>
-                        </div>
-                    `;
-                });
-            } else {
-                piores5Html = `<div style="text-align: center; color: var(--m3-color-success); font-weight: bold; margin-top: 20px;"><span class="material-symbols-rounded" style="vertical-align: middle;">verified</span> Nenhum sinal crítico na rede!</div>`;
+            });
+
+            if (top3Html === '') {
+                top3Html = `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px; width: 100%;"><span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Sinais 100% OK!</div>`;
             }
 
-            oltStats.sort((a, b) => b.criticos - a.criticos);
-            const pioresOlts = oltStats.filter(o => o.criticos > 0).slice(0, 3);
-            
-            let rankingHtml = '';
-            if (pioresOlts.length > 0) {
-                pioresOlts.forEach((olt, idx) => {
-                    const offlinePct = olt.total > 0 ? (olt.criticos / olt.total) * 100 : 0;
-                    rankingHtml += `
-                        <div style="margin-bottom: 18px; width: 100%;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items: baseline;">
-                                <strong style="color: var(--m3-on-surface); font-size: 1.2rem;">${idx + 1}º ${olt.id}</strong>
-                                <span class="stat-number" style="font-size: 1.3rem; color: #f87171; width: auto;">${olt.criticos} OFF</span>
-                            </div>
-                            <div style="height: 12px; background: var(--m3-surface-container-high); border-radius: 6px; overflow: hidden; width: 100%;">
-                                <div style="height: 100%; width: ${offlinePct}%; background: #f87171; border-radius: 6px;"></div>
-                            </div>
-                        </div>
-                    `;
-                });
-            } else {
-                rankingHtml = `<span style="color: var(--m3-color-success); font-weight: bold;"><span class="material-symbols-rounded" style="vertical-align: middle;">check_circle</span> Rede 100% no padrão!</span>`;
-            }
-
+            // APLICADOS OS PADDINGS (RESPIROS) AQUI: padding-right e padding-left bem ajustados
             globalBody.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 20px; height: 100%;">
-                    
-                    <div class="card-stats" style="flex: 1; min-width: 200px; display: flex; flex-direction: column; justify-content: center;">
-                        <div class="stat-item global-stat" style="display: flex; flex-direction: column; align-items: flex-start; padding: 0;">
-                            <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 5px; gap: 8px;">
-                                <span class="material-symbols-rounded" style="font-size: 24px; color: var(--m3-on-surface-variant); opacity: 0.9;">cable</span>
-                                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Clientes Lidos</span>
-                            </div>
-                            <h2 class="stat-number" style="margin: 0; color: var(--m3-on-surface); line-height: 1; font-size: 2.2rem;">${globalAnalisados}</h2>
+                    <div class="card-stats global-stat" style="padding-right: 30px; min-width: 200px; display: flex; flex-direction: column; justify-content: center;">
+                        <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 5px; gap: 8px;">
+                            <span class="material-symbols-rounded" style="font-size: 24px; color: #fbbf24; opacity: 0.9;">signal_cellular_alt</span>
+                            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;">SINAIS CRÍTICOS</span>
                         </div>
-                        <div class="stat-item offline global-stat" style="display: flex; flex-direction: column; align-items: flex-start; margin-top: 25px; padding: 0;">
-                            <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 5px; gap: 8px;">
-                                <span class="material-symbols-rounded" style="font-size: 24px; color: #f87171; opacity: 0.9;">sensors_off</span>
-                                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Sinal Crítico</span>
-                            </div>
-                            <h2 class="stat-number" style="margin: 0; color: #f87171; line-height: 1; font-size: 2.2rem;">${globalCriticos}</h2>
+                        <h2 class="stat-number" style="margin: 0; color: #fbbf24; line-height: 1;">${globalCriticos}</h2>
+                        <div style="margin-top: 10px; color: var(--m3-on-surface-variant); font-size: 0.85rem; line-height: 1.4;">
+                            <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">search</span> Analisados: <strong style="color: var(--m3-on-surface);">${globalAnalisados}</strong> clientes online.<br>
                         </div>
                     </div>
-                    
-                    <div style="flex: 1.8; border-left: 1px solid var(--m3-outline); padding-left: 30px; min-width: 380px; display: flex; flex-direction: column; justify-content: center;">
-                        <h4 style="margin-top: 0; color: var(--m3-on-surface-variant); margin-bottom: 15px; display: flex; align-items: center; gap: 6px;">
-                            <span class="material-symbols-rounded" style="font-size: 20px; color: #f87171;">warning</span> Top 5 Piores Sinais da Rede
-                        </h4>
-                        <div style="width: 100%;">
-                            ${piores5Html}
+                    <div style="flex: 1; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 40px; padding-right: 30px; display: flex; flex-direction: column; justify-content: center; min-width: 250px;">
+                        <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;">
+                            <span class="material-symbols-rounded" style="font-size: 48px; color: ${colorGlobal};">${iconGlobal}</span>
+                            <span style="font-size: 2.5rem; font-family: var(--font-family-mono); font-weight: bold; color: var(--m3-on-surface);">${healthGlobal.toFixed(1)}%</span>
+                            <span style="font-size: 0.85rem; text-transform: uppercase; color: var(--m3-on-surface-variant); font-weight: 600;">Saúde Óptica Geral</span>
                         </div>
                     </div>
-                    
-                    <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; min-width: 250px; display: flex; flex-direction: column; justify-content: center;">
-                        <h4 style="margin-top: 0; color: var(--m3-on-surface-variant); margin-bottom: 15px;">Equipamentos em Alerta</h4>
+                    <div style="flex: 1; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 40px; display: flex; flex-direction: column; justify-content: center; min-width: 250px;">
                         <div style="width: 100%;">
-                            ${rankingHtml}
+                            <h4 style="margin: 0 0 15px 0; color: var(--m3-on-surface); font-size: 0.9rem; text-transform: uppercase;">Top 3 OLTs (Qtd. Atenção)</h4>
+                            ${top3Html}
                         </div>
                     </div>
                 </div>
@@ -213,83 +183,109 @@ async function runPotenciaEngine() {
 
         if (isPotenciaPage && gridEl) {
             gridEl.innerHTML = '';
-            oltStats.forEach(olt => {
-                const percOlt = olt.total > 0 ? ((olt.criticos / olt.total) * 100).toFixed(1) : 0;
-                let statusColor = olt.criticos > 0 ? '#f87171' : 'var(--m3-color-success)';
+            
+            todosClientesCriticos.sort((a, b) => a.potencia - b.potencia);
+            const pioresRede = todosClientesCriticos.slice(0, 10);
+            
+            let htmlPiores = '';
+            pioresRede.forEach((c, idx) => {
+                htmlPiores += `
+                    <tr>
+                        <td style="font-family: var(--font-family-mono); font-size: 0.8rem;">${idx + 1}º</td>
+                        <td style="font-weight: bold;">${c.olt}</td>
+                        <td style="font-family: var(--font-family-mono);">${c.porta}</td>
+                        <td style="color: #f87171; font-weight: bold; font-family: var(--font-family-mono);">${c.potencia} dBm</td>
+                    </tr>
+                `;
+            });
 
+            gridEl.innerHTML += `
+                <div class="overview-card piores-card" style="grid-column: 1 / -1; display: flex; flex-direction: row; background: rgba(248, 113, 113, 0.05); border: 1px solid rgba(248, 113, 113, 0.2);">
+                    <div style="flex: 0 0 250px; padding: 25px; border-right: 1px solid rgba(248, 113, 113, 0.2); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                        <span class="material-symbols-rounded" style="font-size: 54px; color: #f87171; margin-bottom: 15px;">warning</span>
+                        <h3 style="color: #f87171; margin: 0 0 10px 0; font-size: 1.2rem;">TOP 10 PIORES</h3>
+                        <p style="font-size: 0.85rem; color: var(--m3-on-surface-variant); margin: 0;">Sinais mais críticos detectados em toda a rede no momento.</p>
+                    </div>
+                    <div style="flex: 1; padding: 15px 25px; max-height: 250px; overflow-y: auto;" class="custom-scroll">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--m3-on-surface-variant); font-size: 0.8rem; text-transform: uppercase;">
+                                    <th style="padding: 10px 5px;">Pos</th>
+                                    <th style="padding: 10px 5px;">OLT</th>
+                                    <th style="padding: 10px 5px;">Placa/Porta</th>
+                                    <th style="padding: 10px 5px;">Sinal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${htmlPiores || '<tr><td colspan="4" style="padding: 15px; text-align: center;">Nenhum sinal crítico extremo detectado.</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            oltStats.forEach(o => {
+                const btnHtml = `
+                    <button class="card-header-button" onclick="window.abrirModalPotencia('${o.id}')" title="Ver Clientes">
+                        <span class="material-symbols-rounded" style="font-size: 22px;">list_alt</span>
+                    </button>`;
+                
                 gridEl.innerHTML += `
                     <div class="overview-card" style="display: flex; flex-direction: column;">
-                        <div class="card-header">
-                            <h3><span class="material-symbols-rounded">dns</span> ${olt.id}</h3>
-                            <button class="card-header-button" onclick="window.abrirModalPotencia('${olt.id}')" title="Ver Detalhes">
-                                <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
-                            </button>
+                        <div class="card-header" style="justify-content: space-between;">
+                            <h3><span class="material-symbols-rounded">dns</span> ${o.id}</h3>
+                            ${btnHtml}
                         </div>
-                        <div class="card-body" style="padding: 20px; display: flex; align-items: center; justify-content: space-between;">
-                            <div>
-                                <span style="font-size: 2.2rem; font-weight: 800; color: ${statusColor};">${olt.criticos}</span><br>
-                                <span style="color: var(--m3-on-surface-variant); font-size: 0.8rem; text-transform: uppercase;">Atenção Necessária</span>
+                        <div class="card-body" style="flex-direction: column; padding: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span class="material-symbols-rounded" style="color:var(--m3-on-surface); font-size: 18px;">search</span>
+                                        <span style="font-size: 1.1rem; color:var(--m3-on-surface); font-weight: 500;">${o.analisados}</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 18px;">warning</span>
+                                        <span style="font-size: 1.1rem; color:#fbbf24; font-weight: bold;">${o.criticos}</span>
+                                    </div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="font-size: 2rem; font-family: var(--font-family-mono); font-weight: bold; color: ${o.health >= 90 ? 'var(--m3-color-success)' : 'var(--m3-color-error)'};">${o.health.toFixed(1)}%</span><br>
+                                    <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); text-transform: uppercase;">Saúde</span>
+                                </div>
                             </div>
-                            <div style="text-align: right;">
-                                <span style="font-size: 1.2rem; font-weight: bold; color: var(--m3-on-surface);">${percOlt}%</span><br>
-                                <span style="color: var(--m3-on-surface-variant); font-size: 0.8rem;">do equipamento</span>
+                            <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; font-size: 0.85rem; color: var(--m3-on-surface-variant); display: flex; justify-content: space-between;">
+                                <span>Média: <strong style="color: var(--m3-on-surface);">${o.media} dBm</strong></span>
+                                <span style="font-size: 0.75rem;">${o.lastUpdate}</span>
                             </div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
         }
 
-        if (typeof updateGlobalTimestamp === 'function') updateGlobalTimestamp();
-
     } catch (e) {
-        console.error("Erro no Motor de Potência:", e);
-        if (globalBody) {
-            globalBody.innerHTML = `<p style="color: #f87171;">❌ Falha ao processar os dados da rede. Verifique a conexão.</p>`;
-        }
+        console.error("Erro no motor de potência:", e);
     }
 }
 
 window.abrirModalPotencia = function(oltId) {
     const modal = document.getElementById('potencia-modal');
-    if (!modal) return; 
-
-    const tbody = document.getElementById('potencia-tbody');
-    const title = document.getElementById('modal-potencia-title');
-    const searchInput = document.getElementById('potencia-search');
+    if (!modal) return;
     
-    if (searchInput) searchInput.value = '';
+    document.getElementById('potencia-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${oltId} - Sinais Críticos`;
     
-    if (title) title.innerHTML = `<span class="material-symbols-rounded">dns</span> ${oltId}`;
-    
-    let datePart = '--/--/----';
-    let timePart = '--:--:--';
-    let cellData = window.POTENCIA_LAST_UPDATES[oltId] ? String(window.POTENCIA_LAST_UPDATES[oltId]) : '';
-
-    if (cellData && cellData !== '--/-- --:--') {
-        const dateMatch = cellData.match(/\d{2}\/\d{2}\/\d{2,4}/);
-        const timeMatch = cellData.match(/\d{2}:\d{2}(:\d{2})?/);
-
-        if (dateMatch) datePart = dateMatch[0];
-        if (timeMatch) timePart = timeMatch[0];
-    }
-
-    const elDate = document.getElementById('potencia-update-date');
-    const elTime = document.getElementById('potencia-update-time');
-    if (elDate) elDate.textContent = datePart;
-    if (elTime) elTime.textContent = timePart;
-    
+    const tbody = document.getElementById('potencia-detalhes-tbody');
     const clientes = window.POTENCIA_CLIENTS_DATA[oltId] || [];
-
+    
     if (clientes.length === 0) {
-        if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--m3-color-success); font-weight: bold;">Nenhum cliente fora do padrão nesta OLT. Parabéns!</td></tr>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px;">Nenhum cliente com sinal crítico (<= -28 dBm) encontrado.</td></tr>`;
     } else {
-        let htmlBuffer = '';
+        clientes.sort((a, b) => a.potencia - b.potencia);
         
+        let htmlBuffer = '';
         clientes.forEach(c => {
-            let colorClass = c.potencia <= -30 ? 'sinal-critico' : 'sinal-atencao';
+            const colorClass = c.potencia <= -30.00 ? 'status-problema' : 'status-atencao';
             htmlBuffer += `
-                <tr class="linha-cliente-potencia">\r
+                <tr class="linha-cliente-potencia">
                     <td style="font-weight: bold;">${c.porta}</td>
                     <td>${c.serial}</td>
                     <td><span class="${colorClass}">${c.potencia} dBm</span></td>
@@ -329,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     if (isPotenciaPage || checkIsHomePage()) {
-        runPotenciaEngine();
+        setTimeout(runPotenciaEngine, 1000);
         setInterval(runPotenciaEngine, GLOBAL_REFRESH_SECONDS * 1000);
     }
 });

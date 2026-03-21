@@ -1,6 +1,5 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Título dinâmico (Placa/Porta/Circuito) aplicado à lista de clientes
 // ==============================================================================
 
 const TAB_CIRCUITOS = 'CIRCUITO'; 
@@ -91,7 +90,7 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
         <div style="display: flex; flex-direction: column; justify-content: center; gap: 25px; width: 100%; height: 100%;">
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <img src="imagens/nokia.png" alt="Nokia" style="max-height: 28px; width: auto; object-fit: contain;">
+                    <img src="imagens/logos/nokia.png" alt="Nokia" style="max-height: 28px; width: auto; object-fit: contain;">
                     <span class="stat-number" style="font-size: 1.4rem; width: auto;">${Math.round(nokiaPct)}%</span>
                 </div>
                 <div style="height: 14px; background: var(--m3-surface-container-high); border-radius: 7px; overflow: hidden;">
@@ -100,7 +99,7 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
             </div>
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <img src="imagens/furukawa.png" alt="Furukawa" style="max-height: 28px; width: auto; object-fit: contain;">
+                    <img src="imagens/logos/furukawa.png" alt="Furukawa" style="max-height: 28px; width: auto; object-fit: contain;">
                     <span class="stat-number" style="font-size: 1.4rem; width: auto;">${Math.round(furukawaPct)}%</span>
                 </div>
                 <div style="height: 14px; background: var(--m3-surface-container-high); border-radius: 7px; overflow: hidden;">
@@ -131,14 +130,15 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
         rankingHtmlContent = `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px; width: 100%;"><span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Rede 100% Online!</div>`;
     }
 
+    // APLICADOS OS PADDINGS (RESPIROS) AQUI: padding-right e padding-left maiores para afastar das bordas
     cardBody.innerHTML = `
-        <div class="card-stats" style="padding-right: 0; min-width: 200px;">
+        <div class="card-stats" style="padding-right: 30px; min-width: 200px;">
             ${statsHtml}
         </div>
-        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; flex-direction: column; min-width: 250px;">
+        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 40px; padding-right: 30px; display: flex; flex-direction: column; min-width: 250px;">
             ${vendorHtml}
         </div>
-        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 30px; display: flex; flex-direction: column; justify-content: center; min-width: 250px;">
+        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 40px; display: flex; flex-direction: column; justify-content: center; min-width: 250px;">
             <div style="width: 100%;">
                 ${rankingHtmlContent}
             </div>
@@ -515,7 +515,6 @@ window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
     const modalContent = document.querySelector('#detail-modal .modal-content');
     modalContent.classList.add('modal-large');     
 
-    // Atualiza dinamicamente o título principal também para a visão de clientes
     const textoCircuito = (circuitoNome && circuitoNome !== "-") ? ` - Circuito: ${circuitoNome}` : "";
     document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta}${textoCircuito}`;
 
