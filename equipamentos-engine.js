@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor Dedicado de Monitoramento de Fabricantes
-// Atualização: Limpeza da Base Total para manter apenas o Top 5 na Home
+// Atualização: Remoção de linha sob o título e ícone azul no Top 5
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -294,10 +294,11 @@ async function renderFabricantesDashboard() {
             `;
         });
 
+        // A linha divisória indesejada (border-bottom) foi removida e a cor azul no ícone foi adicionada.
         globalBody.innerHTML = `
             <div style="width: 100%; display: flex; flex-direction: column; justify-content: stretch; height: 100%;">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
-                    <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">emoji_events</span>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                    <span class="material-symbols-rounded" style="color: #60a5fa; font-size: 20px;">emoji_events</span>
                     <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Top 5 Fabricantes</h3>
                 </div>
                 <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center;">
