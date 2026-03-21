@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Refinamento de cores, linhas divisórias e alinhamento à esquerda
+// Atualização: Filtro para ignorar leituras irreais/fantasmas (<= -60 dBm)
 // ==============================================================================
 
 window.POTENCIA_CLIENTS_DATA = {};
@@ -93,7 +93,8 @@ async function runPotenciaEngine() {
 
                 const powerVal = parsePowerValue(pwrStr);
                 
-                if (powerVal !== null && powerVal !== 0 && powerVal < 0) {
+                // TRAVA DE SINAIS FANTASMAS APLICADA AQUI (> -60.00)
+                if (powerVal !== null && powerVal !== 0 && powerVal < 0 && powerVal > -60.00) {
                     analisados++;
                     dbmSums += powerVal;
                     let pLevel = 'normal';
@@ -131,7 +132,6 @@ async function runPotenciaEngine() {
 
             let rankingPioresHtml = '';
             top5Piores.forEach((c, index) => {
-                // Aqui garantimos que o container interno alinhe tudo RIGIDAMENTE à esquerda
                 rankingPioresHtml += `
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); width: 100%;">
                        <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start; text-align: left;">
