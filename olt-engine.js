@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Refinamento de títulos, alinhamentos (grid) e nomenclaturas
+// Atualização: Fontes aumentadas (50%), alinhamento à esquerda forçado e Top 3 distribuído
 // ==============================================================================
 
 const TAB_CIRCUITOS = 'CIRCUITO'; 
@@ -69,64 +69,64 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
     
     const total = globalOnline + globalOffline;
     
-    // VISÃO GERAL: Alinhamento Grid + Título
+    // VISÃO GERAL: Fontes aumentadas em ~50% e alinhamento à esquerda
     const statsHtml = `
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px; width: 100%;">
             <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">analytics</span>
             <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Visão Geral</h3>
         </div>
-        <div class="stat-item" style="display: grid; grid-template-columns: 60px 1fr; gap: 15px; margin-bottom: 12px; align-items: center;">
-            <span class="stat-number" style="font-size: 1.5rem; display: block; text-align: left;">${total}</span>
-            <label style="font-size: 1rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-rounded icon-total" style="font-size: 18px;">router</span> Total Geral</label>
+        <div class="stat-item" style="display: grid; grid-template-columns: 90px 1fr; gap: 15px; margin-bottom: 20px; align-items: center;">
+            <span class="stat-number" style="font-size: 2.3rem; display: block; text-align: left;">${total}</span>
+            <label style="font-size: 1.4rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-rounded icon-total" style="font-size: 24px;">router</span> Total Geral</label>
         </div>
-        <div class="stat-item online" style="display: grid; grid-template-columns: 60px 1fr; gap: 15px; margin-bottom: 8px; align-items: center;">
-            <span class="stat-number" style="font-size: 1.2rem; display: block; text-align: left; color: var(--m3-color-success);">${globalOnline}</span>
-            <label style="font-size: 0.95rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px; color: var(--m3-color-success);"><span class="material-symbols-rounded icon-up" style="font-size: 18px;">check_circle</span> Total Online</label>
+        <div class="stat-item online" style="display: grid; grid-template-columns: 90px 1fr; gap: 15px; margin-bottom: 15px; align-items: center;">
+            <span class="stat-number" style="font-size: 1.8rem; display: block; text-align: left; color: var(--m3-color-success);">${globalOnline}</span>
+            <label style="font-size: 1.3rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px; color: var(--m3-color-success);"><span class="material-symbols-rounded icon-up" style="font-size: 22px;">check_circle</span> Total Online</label>
         </div>
-        <div class="stat-item offline" style="display: grid; grid-template-columns: 60px 1fr; gap: 15px; align-items: center;">
-            <span class="stat-number" style="font-size: 1.2rem; display: block; text-align: left; color: var(--m3-color-error);">${globalOffline}</span>
-            <label style="font-size: 0.95rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px; color: var(--m3-color-error);"><span class="material-symbols-rounded icon-down" style="font-size: 18px;">error</span> Total Offline</label>
+        <div class="stat-item offline" style="display: grid; grid-template-columns: 90px 1fr; gap: 15px; align-items: center;">
+            <span class="stat-number" style="font-size: 1.8rem; display: block; text-align: left; color: var(--m3-color-error);">${globalOffline}</span>
+            <label style="font-size: 1.3rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px; color: var(--m3-color-error);"><span class="material-symbols-rounded icon-down" style="font-size: 22px;">error</span> Total Offline</label>
         </div>
     `;
 
     const nokiaPct = nokiaTotal > 0 ? (nokiaOnline / nokiaTotal) * 100 : 0;
     const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
     
-    // POR FABRICANTE: Título Adicionado
+    // POR FABRICANTE: Alinhamento garantido à esquerda
     const vendorHtml = `
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px; width: 100%;">
             <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">precision_manufacturing</span>
             <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Por Fabricante</h3>
         </div>
-        <div style="display: flex; flex-direction: column; justify-content: center; gap: 25px; width: 100%; height: 100%;">
-            <div>
+        <div style="display: flex; flex-direction: column; justify-content: center; gap: 30px; width: 100%; flex: 1;">
+            <div style="width: 100%;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <img src="imagens/logos/nokia.png" alt="Nokia" style="max-height: 28px; width: auto; object-fit: contain;">
                     <span class="stat-number" style="font-size: 1.4rem; width: auto;">${Math.round(nokiaPct)}%</span>
                 </div>
-                <div style="height: 14px; background: var(--m3-surface-container-high); border-radius: 7px; overflow: hidden;">
+                <div style="height: 14px; background: var(--m3-surface-container-high); border-radius: 7px; overflow: hidden; width: 100%;">
                     <div style="height: 100%; width: ${nokiaPct}%; background: var(--m3-color-success); border-radius: 7px;"></div>
                 </div>
             </div>
-            <div>
+            <div style="width: 100%;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <img src="imagens/logos/furukawa.png" alt="Furukawa" style="max-height: 28px; width: auto; object-fit: contain;">
                     <span class="stat-number" style="font-size: 1.4rem; width: auto;">${Math.round(furukawaPct)}%</span>
                 </div>
-                <div style="height: 14px; background: var(--m3-surface-container-high); border-radius: 7px; overflow: hidden;">
+                <div style="height: 14px; background: var(--m3-surface-container-high); border-radius: 7px; overflow: hidden; width: 100%;">
                     <div style="height: 100%; width: ${furukawaPct}%; background: var(--m3-color-success); border-radius: 7px;"></div>
                 </div>
             </div>
         </div>
     `;
 
-    // RANKING OLTS: Título Adicionado
+    // RANKING OLTS: "justify-content: space-between" para preencher bem o espaço
     let rankingHtmlContent = `
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px; width: 100%;">
             <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">warning</span>
             <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Top 3 OLTs Críticas</h3>
         </div>
-        <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center;">
+        <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: space-between;">
     `;
     
     if (top3Olts.some(olt => olt.offline > 0)) {
@@ -134,12 +134,12 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
             if (olt.offline === 0) return;
             const offlinePct = olt.total > 0 ? (olt.offline / olt.total) * 100 : 0;
             rankingHtmlContent += `
-                <div style="margin-bottom: 18px;">
+                <div style="width: 100%;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items: baseline;">
                         <strong style="color: var(--m3-on-surface); font-size: 1.2rem;">${index + 1}º ${olt.id}</strong>
                         <span class="stat-number" style="font-size: 1.3rem; color: var(--m3-color-error); width: auto;">${olt.offline} OFF</span>
                     </div>
-                    <div style="height: 12px; background: var(--m3-surface-container-high); border-radius: 6px; overflow: hidden;">
+                    <div style="height: 12px; background: var(--m3-surface-container-high); border-radius: 6px; overflow: hidden; width: 100%;">
                         <div style="height: 100%; width: ${offlinePct}%; background: var(--m3-color-error); border-radius: 6px;"></div>
                     </div>
                 </div>
@@ -148,16 +148,16 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
     } else {
         rankingHtmlContent += `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px; width: 100%;"><span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Rede 100% Online!</div>`;
     }
-    rankingHtmlContent += `</div>`; // Fechamento da div de container
+    rankingHtmlContent += `</div>`; 
 
     cardBody.innerHTML = `
-        <div class="card-stats" style="padding-right: 30px; min-width: 200px;">
+        <div class="card-stats" style="padding-right: 30px; min-width: 250px; align-items: flex-start !important; text-align: left !important;">
             ${statsHtml}
         </div>
-        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 40px; padding-right: 30px; display: flex; flex-direction: column; min-width: 250px;">
+        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 40px; padding-right: 30px; display: flex; flex-direction: column; align-items: flex-start !important; text-align: left !important; min-width: 250px;">
             ${vendorHtml}
         </div>
-        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 40px; display: flex; flex-direction: column; min-width: 250px;">
+        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 40px; display: flex; flex-direction: column; align-items: flex-start !important; text-align: left !important; min-width: 250px;">
             ${rankingHtmlContent}
         </div>
     `;

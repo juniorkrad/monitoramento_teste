@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Limpeza de Sinais Críticos para manter apenas Top 5 na Home
+// Atualização: Extração de Serial/Código nas colunas (Nokia = I, Furukawa = H)
 // ==============================================================================
 
 window.POTENCIA_CLIENTS_DATA = {};
@@ -35,7 +35,8 @@ async function runPotenciaEngine() {
         window.POTENCIA_CLIENTS_DATA = {};
         window.POTENCIA_LAST_UPDATES = {};
 
-        const ranges = GLOBAL_MASTER_OLT_LIST.map(o => o.type === 'nokia' ? `${o.sheetTab}!A:L` : `${o.sheetTab}!A:F`);
+        // ALCANCE AMPLIADO para A:H para alcançar a coluna de Código nas Furukawa (Col H = index 7)
+        const ranges = GLOBAL_MASTER_OLT_LIST.map(o => o.type === 'nokia' ? `${o.sheetTab}!A:L` : `${o.sheetTab}!A:H`);
         const dataBatch = await API.getBatch(ranges);
 
         if (!dataBatch.valueRanges) throw new Error("Falha na estrutura de retorno da API de Potência");
@@ -81,14 +82,14 @@ async function runPotenciaEngine() {
                     pwrStr = columns[11];
                     porta = columns[0] || '';
                     serial = columns[2] || '';
-                    codigo = columns[7] || '';
+                    codigo = columns[8] || ''; // Coluna I (índice 8)
                 } else {
                     isOnline = (columns[2] || '').trim().toLowerCase() === 'active';
                     if (!isOnline) return;
                     pwrStr = columns[5];
                     porta = columns[0] || '';
                     serial = columns[3] || '';
-                    codigo = columns[4] || '';
+                    codigo = columns[7] || ''; // Coluna H (índice 7)
                 }
 
                 const powerVal = parsePowerValue(pwrStr);
@@ -126,7 +127,7 @@ async function runPotenciaEngine() {
         });
 
         // ==============================================================================
-        // ATUALIZA O CARD NA HOME: APENAS O TOP 5 PIORES SINAIS DA REDE
+        // ATUALIZA O CARD NA HOME: TOP 5 PIORES SINAIS COM DADOS COMPLETOS
         // ==============================================================================
         if (globalBody) {
             todosClientesCriticos.sort((a, b) => a.potencia - b.potencia);
@@ -135,14 +136,15 @@ async function runPotenciaEngine() {
             let rankingPioresHtml = '';
             top5Piores.forEach((c, index) => {
                 rankingPioresHtml += `
-                    <div style="margin-bottom: 12px; width: 100%;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <span style="font-size: 1rem; font-weight: bold; color: var(--m3-on-surface-variant); width: 20px;">${index + 1}º</span>
-                                <span style="font-size: 0.95rem; font-weight: bold; color: var(--m3-on-surface);">${c.olt} <span style="color:var(--m3-outline);">|</span> ${c.porta}</span>
-                            </div>
-                            <span style="font-family: var(--font-family-mono); font-weight: bold; color: #f87171;">${c.potencia} dBm</span>
-                        </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); width: 100%;">
+                       <div style="display: flex; flex-direction: column; gap: 4px;">
+                           <strong style="color: var(--m3-on-surface); font-size: 1rem;">
+                               <span style="color: var(--m3-on-surface-variant); margin-right: 5px;">${index + 1}º</span> 
+                               ${c.olt} <span style="color:var(--m3-outline); font-weight: normal; margin: 0 3px;">|</span> ${c.porta}
+                           </strong>
+                           <span style="color: var(--m3-on-surface-variant); font-family: var(--font-family-mono); font-size: 0.75rem;">SN: ${c.serial} <span style="color:var(--m3-outline); font-weight: normal; margin: 0 3px;">|</span> Cód: ${c.codigo}</span>
+                       </div>
+                       <span style="font-family: var(--font-family-mono); font-weight: bold; color: #f87171; font-size: 1.1rem; align-self: center;">${c.potencia} dBm</span>
                     </div>
                 `;
             });

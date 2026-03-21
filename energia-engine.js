@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Ampliação do gráfico de OLTs Críticas em +25% do espaço
+// Atualização: Alinhamento à esquerda garantido no bloco de Clientes
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
@@ -107,10 +107,9 @@ function updateGlobalEnergyCard() {
     let relativoPerc = "0%";
     if (globalData.totalOffline > 0) relativoPerc = ((globalData.powerOff / globalData.totalOffline) * 100).toFixed(1) + '%';
 
-    // FLEX 1 E FLEX 3 (25% / 75%) APLICADOS PARA O GRÁFICO RESPIRAR
     cardBody.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 20px; height: 100%;">
-            <div class="card-stats global-stat" style="padding-right: 30px; min-width: 200px; flex: 1; display: flex; flex-direction: column; justify-content: center;">
+            <div class="card-stats global-stat" style="padding-right: 30px; min-width: 200px; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start !important; text-align: left !important;">
                 <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 5px; gap: 8px;">
                     <span class="material-symbols-rounded" style="font-size: 24px; color: #fbbf24; opacity: 0.9;">power_off</span>
                     <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;">CLIENTES SEM ENERGIA</span>
