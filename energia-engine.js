@@ -1,5 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
+// Atualização: Ampliação do gráfico de OLTs Críticas em +25% do espaço
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
@@ -54,7 +55,7 @@ function drawEnergyChart(oltsData) {
                 datasets: [{
                     label: 'Clientes Offline (Energia)',
                     data: data,
-                    backgroundColor: '#fbbf24', // Cor amarela harmonizando com o raio
+                    backgroundColor: '#fbbf24', 
                     borderRadius: 6,
                     borderSkipped: false
                 }]
@@ -92,7 +93,6 @@ function updateGlobalEnergyCard() {
     const globalData = window.ENERGY_DATA_STORE.global;
     const oltsData = window.ENERGY_DATA_STORE.olts;
 
-    // CORREÇÃO: Agora o motor procura especificamente pelo ID da Home
     let cardBody = document.getElementById('global-energia-body');
     if (!cardBody) {
         const chartCanvas = document.getElementById('energyChartOlt');
@@ -107,9 +107,10 @@ function updateGlobalEnergyCard() {
     let relativoPerc = "0%";
     if (globalData.totalOffline > 0) relativoPerc = ((globalData.powerOff / globalData.totalOffline) * 100).toFixed(1) + '%';
 
+    // FLEX 1 E FLEX 3 (25% / 75%) APLICADOS PARA O GRÁFICO RESPIRAR
     cardBody.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 20px; height: 100%;">
-            <div class="card-stats global-stat" style="padding-right: 30px; min-width: 200px; display: flex; flex-direction: column; justify-content: center;">
+            <div class="card-stats global-stat" style="padding-right: 30px; min-width: 200px; flex: 1; display: flex; flex-direction: column; justify-content: center;">
                 <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 5px; gap: 8px;">
                     <span class="material-symbols-rounded" style="font-size: 24px; color: #fbbf24; opacity: 0.9;">power_off</span>
                     <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;">CLIENTES SEM ENERGIA</span>
@@ -121,7 +122,7 @@ function updateGlobalEnergyCard() {
                     <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">pie_chart</span> Relativo OFF: <strong id="global-offline-relativo-perc" style="color: #fbbf24;">${relativoPerc}</strong>
                 </div>
             </div>
-            <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 40px; display: flex; flex-direction: column; min-width: 300px; justify-content: stretch;">
+            <div style="flex: 3; border-left: 1px solid var(--m3-outline); padding-left: 40px; display: flex; flex-direction: column; min-width: 300px; justify-content: stretch;">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
                     <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">bar_chart</span>
                     <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Ranking de OLTs Críticas</h3>

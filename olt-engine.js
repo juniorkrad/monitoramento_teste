@@ -1,5 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
+// Atualização: Refinamento de títulos, alinhamentos (grid) e nomenclaturas
 // ==============================================================================
 
 const TAB_CIRCUITOS = 'CIRCUITO'; 
@@ -68,25 +69,35 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
     
     const total = globalOnline + globalOffline;
     
+    // VISÃO GERAL: Alinhamento Grid + Título
     const statsHtml = `
-        <div class="stat-item global-stat">
-            <span class="stat-number">${total}</span>
-            <label><span class="material-symbols-rounded icon-total">router</span> Total Geral</label>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
+            <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">analytics</span>
+            <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Visão Geral</h3>
         </div>
-        <div class="stat-item online global-stat">
-            <span class="stat-number">${globalOnline}</span>
-            <label><span class="material-symbols-rounded icon-up">check_circle</span> Equipamentos Online</label>
+        <div class="stat-item" style="display: grid; grid-template-columns: 60px 1fr; gap: 15px; margin-bottom: 12px; align-items: center;">
+            <span class="stat-number" style="font-size: 1.5rem; display: block; text-align: left;">${total}</span>
+            <label style="font-size: 1rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-rounded icon-total" style="font-size: 18px;">router</span> Total Geral</label>
         </div>
-        <div class="stat-item offline global-stat">
-            <span class="stat-number">${globalOffline}</span>
-            <label><span class="material-symbols-rounded icon-down">error</span> Equipamentos Offline</label>
+        <div class="stat-item online" style="display: grid; grid-template-columns: 60px 1fr; gap: 15px; margin-bottom: 8px; align-items: center;">
+            <span class="stat-number" style="font-size: 1.2rem; display: block; text-align: left; color: var(--m3-color-success);">${globalOnline}</span>
+            <label style="font-size: 0.95rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px; color: var(--m3-color-success);"><span class="material-symbols-rounded icon-up" style="font-size: 18px;">check_circle</span> Total Online</label>
+        </div>
+        <div class="stat-item offline" style="display: grid; grid-template-columns: 60px 1fr; gap: 15px; align-items: center;">
+            <span class="stat-number" style="font-size: 1.2rem; display: block; text-align: left; color: var(--m3-color-error);">${globalOffline}</span>
+            <label style="font-size: 0.95rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px; color: var(--m3-color-error);"><span class="material-symbols-rounded icon-down" style="font-size: 18px;">error</span> Total Offline</label>
         </div>
     `;
 
     const nokiaPct = nokiaTotal > 0 ? (nokiaOnline / nokiaTotal) * 100 : 0;
     const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
     
+    // POR FABRICANTE: Título Adicionado
     const vendorHtml = `
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
+            <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">precision_manufacturing</span>
+            <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Por Fabricante</h3>
+        </div>
         <div style="display: flex; flex-direction: column; justify-content: center; gap: 25px; width: 100%; height: 100%;">
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -109,7 +120,15 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
         </div>
     `;
 
-    let rankingHtmlContent = '';
+    // RANKING OLTS: Título Adicionado
+    let rankingHtmlContent = `
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
+            <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">warning</span>
+            <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Top 3 OLTs Críticas</h3>
+        </div>
+        <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center;">
+    `;
+    
     if (top3Olts.some(olt => olt.offline > 0)) {
         top3Olts.forEach((olt, index) => {
             if (olt.offline === 0) return;
@@ -127,10 +146,10 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
             `;
         });
     } else {
-        rankingHtmlContent = `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px; width: 100%;"><span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Rede 100% Online!</div>`;
+        rankingHtmlContent += `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px; width: 100%;"><span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Rede 100% Online!</div>`;
     }
+    rankingHtmlContent += `</div>`; // Fechamento da div de container
 
-    // APLICADOS OS PADDINGS (RESPIROS) AQUI: padding-right e padding-left maiores para afastar das bordas
     cardBody.innerHTML = `
         <div class="card-stats" style="padding-right: 30px; min-width: 200px;">
             ${statsHtml}
@@ -138,10 +157,8 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
         <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 40px; padding-right: 30px; display: flex; flex-direction: column; min-width: 250px;">
             ${vendorHtml}
         </div>
-        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 40px; display: flex; flex-direction: column; justify-content: center; min-width: 250px;">
-            <div style="width: 100%;">
-                ${rankingHtmlContent}
-            </div>
+        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 40px; display: flex; flex-direction: column; min-width: 250px;">
+            ${rankingHtmlContent}
         </div>
     `;
 }
