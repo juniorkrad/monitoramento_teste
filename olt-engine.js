@@ -69,21 +69,21 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
     
     const total = globalOnline + globalOffline;
     
-    // VISÃO GERAL: Fontes aumentadas em ~50% e alinhamento à esquerda
+    // VISÃO GERAL: Fontes aumentadas, alinhamento à esquerda, espaço (120px) para não encostar
     const statsHtml = `
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; width: 100%;">
             <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">analytics</span>
             <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Visão Geral</h3>
         </div>
-        <div class="stat-item" style="display: grid; grid-template-columns: 90px 1fr; gap: 15px; margin-bottom: 20px; align-items: center;">
+        <div class="stat-item" style="display: grid; grid-template-columns: 120px 1fr; gap: 20px; margin-bottom: 20px; align-items: center;">
             <span class="stat-number" style="font-size: 2.3rem; display: block; text-align: left;">${total}</span>
             <label style="font-size: 1.4rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-rounded icon-total" style="font-size: 24px;">router</span> Total Geral</label>
         </div>
-        <div class="stat-item online" style="display: grid; grid-template-columns: 90px 1fr; gap: 15px; margin-bottom: 15px; align-items: center;">
+        <div class="stat-item online" style="display: grid; grid-template-columns: 120px 1fr; gap: 20px; margin-bottom: 15px; align-items: center;">
             <span class="stat-number" style="font-size: 1.8rem; display: block; text-align: left; color: var(--m3-color-success);">${globalOnline}</span>
             <label style="font-size: 1.3rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px; color: var(--m3-color-success);"><span class="material-symbols-rounded icon-up" style="font-size: 22px;">check_circle</span> Total Online</label>
         </div>
-        <div class="stat-item offline" style="display: grid; grid-template-columns: 90px 1fr; gap: 15px; align-items: center;">
+        <div class="stat-item offline" style="display: grid; grid-template-columns: 120px 1fr; gap: 20px; align-items: center;">
             <span class="stat-number" style="font-size: 1.8rem; display: block; text-align: left; color: var(--m3-color-error);">${globalOffline}</span>
             <label style="font-size: 1.3rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px; color: var(--m3-color-error);"><span class="material-symbols-rounded icon-down" style="font-size: 22px;">error</span> Total Offline</label>
         </div>
@@ -92,9 +92,9 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
     const nokiaPct = nokiaTotal > 0 ? (nokiaOnline / nokiaTotal) * 100 : 0;
     const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
     
-    // POR FABRICANTE: Alinhamento garantido à esquerda
+    // POR FABRICANTE: Sem borda inferior no título
     const vendorHtml = `
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; width: 100%;">
             <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">precision_manufacturing</span>
             <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Por Fabricante</h3>
         </div>
@@ -120,9 +120,9 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
         </div>
     `;
 
-    // RANKING OLTS: "justify-content: space-between" para preencher bem o espaço
+    // RANKING OLTS: Sem borda inferior no título
     let rankingHtmlContent = `
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; width: 100%;">
             <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">warning</span>
             <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Top 3 OLTs Críticas</h3>
         </div>

@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Extração de Serial/Código nas colunas (Nokia = I, Furukawa = H)
+// Atualização: Refinamento de cores, linhas divisórias e alinhamento à esquerda
 // ==============================================================================
 
 window.POTENCIA_CLIENTS_DATA = {};
@@ -35,7 +35,6 @@ async function runPotenciaEngine() {
         window.POTENCIA_CLIENTS_DATA = {};
         window.POTENCIA_LAST_UPDATES = {};
 
-        // ALCANCE AMPLIADO para A:H para alcançar a coluna de Código nas Furukawa (Col H = index 7)
         const ranges = GLOBAL_MASTER_OLT_LIST.map(o => o.type === 'nokia' ? `${o.sheetTab}!A:L` : `${o.sheetTab}!A:H`);
         const dataBatch = await API.getBatch(ranges);
 
@@ -82,14 +81,14 @@ async function runPotenciaEngine() {
                     pwrStr = columns[11];
                     porta = columns[0] || '';
                     serial = columns[2] || '';
-                    codigo = columns[8] || ''; // Coluna I (índice 8)
+                    codigo = columns[8] || ''; 
                 } else {
                     isOnline = (columns[2] || '').trim().toLowerCase() === 'active';
                     if (!isOnline) return;
                     pwrStr = columns[5];
                     porta = columns[0] || '';
                     serial = columns[3] || '';
-                    codigo = columns[7] || ''; // Coluna H (índice 7)
+                    codigo = columns[7] || ''; 
                 }
 
                 const powerVal = parsePowerValue(pwrStr);
@@ -126,25 +125,23 @@ async function runPotenciaEngine() {
             globalAnalisados += analisados;
         });
 
-        // ==============================================================================
-        // ATUALIZA O CARD NA HOME: TOP 5 PIORES SINAIS COM DADOS COMPLETOS
-        // ==============================================================================
         if (globalBody) {
             todosClientesCriticos.sort((a, b) => a.potencia - b.potencia);
             const top5Piores = todosClientesCriticos.slice(0, 5);
 
             let rankingPioresHtml = '';
             top5Piores.forEach((c, index) => {
+                // Aqui garantimos que o container interno alinhe tudo RIGIDAMENTE à esquerda
                 rankingPioresHtml += `
-                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); width: 100%;">
-                       <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); width: 100%;">
+                       <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start; text-align: left;">
                            <strong style="color: var(--m3-on-surface); font-size: 1rem;">
                                <span style="color: var(--m3-on-surface-variant); margin-right: 5px;">${index + 1}º</span> 
                                ${c.olt} <span style="color:var(--m3-outline); font-weight: normal; margin: 0 3px;">|</span> ${c.porta}
                            </strong>
                            <span style="color: var(--m3-on-surface-variant); font-family: var(--font-family-mono); font-size: 0.75rem;">SN: ${c.serial} <span style="color:var(--m3-outline); font-weight: normal; margin: 0 3px;">|</span> Cód: ${c.codigo}</span>
                        </div>
-                       <span style="font-family: var(--font-family-mono); font-weight: bold; color: #f87171; font-size: 1.1rem; align-self: center;">${c.potencia} dBm</span>
+                       <span style="font-family: var(--font-family-mono); font-weight: bold; color: #f87171; font-size: 1.1rem;">${c.potencia} dBm</span>
                     </div>
                 `;
             });
@@ -155,20 +152,17 @@ async function runPotenciaEngine() {
 
             globalBody.innerHTML = `
                 <div style="width: 100%; display: flex; flex-direction: column; justify-content: stretch; height: 100%;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
-                        <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">warning</span>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                        <span class="material-symbols-rounded" style="color: #f87171; font-size: 20px;">warning</span>
                         <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Top 5 Piores Sinais</h3>
                     </div>
-                    <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start;">
                         ${rankingPioresHtml}
                     </div>
                 </div>
             `;
         }
 
-        // ==============================================================================
-        // PÁGINA ESPECÍFICA DE POTÊNCIA (potencia.html)
-        // ==============================================================================
         if (isPotenciaPage && gridEl) {
             gridEl.innerHTML = '';
             

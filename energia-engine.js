@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Alinhamento à esquerda garantido no bloco de Clientes
+// Atualização: Correção de cor do ícone e remoção de linha sob o título
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
@@ -122,8 +122,8 @@ function updateGlobalEnergyCard() {
                 </div>
             </div>
             <div style="flex: 3; border-left: 1px solid var(--m3-outline); padding-left: 40px; display: flex; flex-direction: column; min-width: 300px; justify-content: stretch;">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
-                    <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">bar_chart</span>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                    <span class="material-symbols-rounded" style="color: #fbbf24; font-size: 20px;">bar_chart</span>
                     <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Ranking de OLTs Críticas</h3>
                 </div>
                 <div style="flex: 1; width: 100%; position: relative; min-height: 160px; display: flex; flex-direction: column;">
