@@ -1,5 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
+// Atualização: Ranking "Top 5 Piores Sinais" injetado na Home
 // ==============================================================================
 
 window.POTENCIA_CLIENTS_DATA = {};
@@ -124,63 +125,60 @@ async function runPotenciaEngine() {
             globalAnalisados += analisados;
         });
 
-        oltStats.sort((a, b) => b.criticos - a.criticos);
-
+        // ==============================================================================
+        // ATUALIZA O CARD NA HOME: TOP 5 PIORES SINAIS DA REDE
+        // ==============================================================================
         if (globalBody) {
-            const healthGlobal = globalAnalisados > 0 ? (((globalAnalisados - globalCriticos) / globalAnalisados) * 100) : 0;
-            let iconGlobal = healthGlobal >= 95 ? 'verified' : (healthGlobal >= 90 ? 'warning' : 'dangerous');
-            let colorGlobal = healthGlobal >= 95 ? 'var(--m3-color-success)' : (healthGlobal >= 90 ? 'var(--m3-color-warning)' : 'var(--m3-color-error)');
+            todosClientesCriticos.sort((a, b) => a.potencia - b.potencia);
+            const top5Piores = todosClientesCriticos.slice(0, 5);
 
-            let top3Html = '';
-            oltStats.slice(0, 3).forEach((o, i) => {
-                const perc = o.analisados > 0 ? (o.criticos / o.analisados * 100) : 0;
-                top3Html += `
-                    <div style="margin-bottom: 18px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items: baseline;">
-                            <strong style="color: var(--m3-on-surface); font-size: 1.2rem;">${i + 1}º ${o.id}</strong>
-                            <span class="stat-number" style="font-size: 1.3rem; color: #fbbf24; width: auto;">${o.criticos} Sinais</span>
-                        </div>
-                        <div style="height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; overflow: hidden;">
-                            <div style="height: 100%; width: ${perc}%; background: #fbbf24; border-radius: 6px;"></div>
+            let rankingPioresHtml = '';
+            top5Piores.forEach((c, index) => {
+                rankingPioresHtml += `
+                    <div style="margin-bottom: 12px; width: 100%;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 1rem; font-weight: bold; color: var(--m3-on-surface-variant); width: 20px;">${index + 1}º</span>
+                                <span style="font-size: 0.95rem; font-weight: bold; color: var(--m3-on-surface);">${c.olt} <span style="color:var(--m3-outline);">|</span> ${c.porta}</span>
+                            </div>
+                            <span style="font-family: var(--font-family-mono); font-weight: bold; color: #f87171;">${c.potencia} dBm</span>
                         </div>
                     </div>
                 `;
             });
 
-            if (top3Html === '') {
-                top3Html = `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px; width: 100%;"><span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Sinais 100% OK!</div>`;
+            if (rankingPioresHtml === '') {
+                rankingPioresHtml = `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px; width: 100%;"><span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Rede 100% Saudável!</div>`;
             }
 
-            // APLICADOS OS PADDINGS (RESPIROS) AQUI: padding-right e padding-left bem ajustados
             globalBody.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 20px; height: 100%;">
                     <div class="card-stats global-stat" style="padding-right: 30px; min-width: 200px; display: flex; flex-direction: column; justify-content: center;">
                         <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 5px; gap: 8px;">
-                            <span class="material-symbols-rounded" style="font-size: 24px; color: #fbbf24; opacity: 0.9;">signal_cellular_alt</span>
+                            <span class="material-symbols-rounded" style="font-size: 24px; color: #f87171; opacity: 0.9;">signal_cellular_alt</span>
                             <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;">SINAIS CRÍTICOS</span>
                         </div>
-                        <h2 class="stat-number" style="margin: 0; color: #fbbf24; line-height: 1;">${globalCriticos}</h2>
+                        <h2 class="stat-number" style="margin: 0; color: #f87171; line-height: 1;">${globalCriticos}</h2>
                         <div style="margin-top: 10px; color: var(--m3-on-surface-variant); font-size: 0.85rem; line-height: 1.4;">
-                            <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">search</span> Analisados: <strong style="color: var(--m3-on-surface);">${globalAnalisados}</strong> clientes online.<br>
+                            <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">search</span> Analisados: <strong style="color: var(--m3-on-surface);">${globalAnalisados}</strong> clientes
                         </div>
                     </div>
-                    <div style="flex: 1; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 40px; padding-right: 30px; display: flex; flex-direction: column; justify-content: center; min-width: 250px;">
-                        <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;">
-                            <span class="material-symbols-rounded" style="font-size: 48px; color: ${colorGlobal};">${iconGlobal}</span>
-                            <span style="font-size: 2.5rem; font-family: var(--font-family-mono); font-weight: bold; color: var(--m3-on-surface);">${healthGlobal.toFixed(1)}%</span>
-                            <span style="font-size: 0.85rem; text-transform: uppercase; color: var(--m3-on-surface-variant); font-weight: 600;">Saúde Óptica Geral</span>
+                    <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 40px; display: flex; flex-direction: column; min-width: 300px; justify-content: stretch;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 8px;">
+                            <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">warning</span>
+                            <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Top 5 Piores Sinais</h3>
                         </div>
-                    </div>
-                    <div style="flex: 1; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 40px; display: flex; flex-direction: column; justify-content: center; min-width: 250px;">
-                        <div style="width: 100%;">
-                            <h4 style="margin: 0 0 15px 0; color: var(--m3-on-surface); font-size: 0.9rem; text-transform: uppercase;">Top 3 OLTs (Qtd. Atenção)</h4>
-                            ${top3Html}
+                        <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center;">
+                            ${rankingPioresHtml}
                         </div>
                     </div>
                 </div>
             `;
         }
 
+        // ==============================================================================
+        // PÁGINA ESPECÍFICA DE POTÊNCIA (potencia.html)
+        // ==============================================================================
         if (isPotenciaPage && gridEl) {
             gridEl.innerHTML = '';
             
@@ -224,6 +222,8 @@ async function runPotenciaEngine() {
                 </div>
             `;
 
+            oltStats.sort((a, b) => b.criticos - a.criticos);
+            
             oltStats.forEach(o => {
                 const btnHtml = `
                     <button class="card-header-button" onclick="window.abrirModalPotencia('${o.id}')" title="Ver Clientes">

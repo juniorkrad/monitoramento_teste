@@ -54,7 +54,7 @@ function drawEnergyChart(oltsData) {
                 datasets: [{
                     label: 'Clientes Offline (Energia)',
                     data: data,
-                    backgroundColor: '#f87171',
+                    backgroundColor: '#fbbf24', // Cor amarela harmonizando com o raio
                     borderRadius: 6,
                     borderSkipped: false
                 }]
@@ -92,7 +92,8 @@ function updateGlobalEnergyCard() {
     const globalData = window.ENERGY_DATA_STORE.global;
     const oltsData = window.ENERGY_DATA_STORE.olts;
 
-    let cardBody = document.getElementById('global-poweroff-total')?.closest('.card-body');
+    // CORREÇÃO: Agora o motor procura especificamente pelo ID da Home
+    let cardBody = document.getElementById('global-energia-body');
     if (!cardBody) {
         const chartCanvas = document.getElementById('energyChartOlt');
         if (chartCanvas) cardBody = chartCanvas.closest('.card-body');
@@ -106,19 +107,18 @@ function updateGlobalEnergyCard() {
     let relativoPerc = "0%";
     if (globalData.totalOffline > 0) relativoPerc = ((globalData.powerOff / globalData.totalOffline) * 100).toFixed(1) + '%';
 
-    // APLICADOS OS PADDINGS (RESPIROS) AQUI: padding-right e padding-left nas divisões
     cardBody.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 20px; height: 100%;">
             <div class="card-stats global-stat" style="padding-right: 30px; min-width: 200px; display: flex; flex-direction: column; justify-content: center;">
                 <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 5px; gap: 8px;">
-                    <span class="material-symbols-rounded" style="font-size: 24px; color: #f87171; opacity: 0.9;">power_off</span>
+                    <span class="material-symbols-rounded" style="font-size: 24px; color: #fbbf24; opacity: 0.9;">power_off</span>
                     <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;">CLIENTES SEM ENERGIA</span>
                 </div>
-                <h2 id="global-poweroff-total" class="stat-number" style="margin: 0; color: #f87171; line-height: 1;">${globalData.powerOff}</h2>
+                <h2 id="global-poweroff-total" class="stat-number" style="margin: 0; color: #fbbf24; line-height: 1;">${globalData.powerOff}</h2>
                 <div id="global-poweroff-context" style="margin-top: 10px; color: var(--m3-on-surface-variant); font-size: 0.85rem; line-height: 1.4;">
                     <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">dns</span> <strong id="global-olts-afetadas" style="color: var(--m3-on-surface);">${globalData.oltsAffected}</strong> de 17 OLTs afetadas.<br>
                     <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">public</span> Impacto rede: <strong id="global-impacto-perc" style="color: var(--m3-on-surface);">${impactoPerc}</strong><br>
-                    <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">pie_chart</span> Relativo OFF: <strong id="global-offline-relativo-perc" style="color: #f87171;">${relativoPerc}</strong>
+                    <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">pie_chart</span> Relativo OFF: <strong id="global-offline-relativo-perc" style="color: #fbbf24;">${relativoPerc}</strong>
                 </div>
             </div>
             <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 40px; display: flex; flex-direction: column; min-width: 300px; justify-content: stretch;">
@@ -276,8 +276,8 @@ window.startEnergyMonitoring = async function() {
                                     <strong style="color:var(--m3-on-surface); font-size: 1.3rem;">${oData.offline}</strong>
                                 </div>
                                 <div style="flex: 1;">
-                                    <span class="material-symbols-rounded" style="color:#f87171; font-size: 26px;">bolt</span><br>
-                                    <strong style="color:#f87171; font-size: 1.3rem;">${oData.powerOff}</strong>
+                                    <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 26px;">bolt</span><br>
+                                    <strong style="color:#fbbf24; font-size: 1.3rem;">${oData.powerOff}</strong>
                                 </div>
                                 <div style="flex: 1;">
                                     <span class="material-symbols-rounded" style="color:var(--m3-color-warning); font-size: 26px;">wifi_off</span><br>
@@ -366,7 +366,7 @@ window.openEnergyPlacaDetails = function(oltId, placa) {
                     <td style="font-weight: bold;">${placa}/${pt}</td>
                     <td><span class="circuit-badge">${pData.circuit}</span></td>
                     <td>${pData.total}</td>
-                    <td style="color: #f87171; font-weight: bold;">${pData.powerOff > 0 ? pData.powerOff : '-'}</td>
+                    <td style="color: #fbbf24; font-weight: bold;">${pData.powerOff > 0 ? pData.powerOff : '-'}</td>
                     <td>${Math.round(perc * 100)}%</td>
                     <td>${statusBadge}</td>
                 </tr>`;
