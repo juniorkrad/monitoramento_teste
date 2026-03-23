@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Remoção do texto "Média", mantendo apenas ícone e valor (Minimalismo)
+// Atualização: Remoção da injeção do texto "Detalhes - Placa X"
 // ==============================================================================
 
 const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO'; 
@@ -422,10 +422,10 @@ window.startPotenciaMonitoring = function(config) {
 
             const detalhesView = document.getElementById('potencia-view-detalhes');
             if (detalhesView && detalhesView.style.display === 'block') {
-                const subtitle = document.getElementById('potencia-placa-subtitle').innerText;
-                const match = subtitle.match(/Placa (\d+)/);
-                if (match) {
-                    window.openPotenciaPlacaDetails(match[1], config.type);
+                const subtitle = document.getElementById('potencia-placa-subtitle');
+                if (subtitle) {
+                    const match = subtitle.innerText.match(/Placa (\d+)/);
+                    if (match) window.openPotenciaPlacaDetails(match[1], config.type);
                 }
             }
 
@@ -442,7 +442,8 @@ window.startPotenciaMonitoring = function(config) {
 window.openPotenciaPlacaDetails = function(placa, oltType) {
     document.getElementById('potencia-view-placas').style.display = 'none';
     document.getElementById('potencia-view-detalhes').style.display = 'block';
-    document.getElementById('potencia-placa-subtitle').innerText = `Detalhes - Placa ${placa}`;
+    
+    // Removida a injeção do subtítulo
     
     const tbody = document.getElementById('potencia-detalhes-tbody');
     tbody.innerHTML = '';
