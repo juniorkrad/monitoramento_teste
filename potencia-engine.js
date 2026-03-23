@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Média no corpo do card, Data e Hora com ícones isolados no rodapé
+// Atualização: Remoção do texto "Média", mantendo apenas ícone e valor (Minimalismo)
 // ==============================================================================
 
 const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO'; 
@@ -200,7 +200,7 @@ async function runPotenciaEngine() {
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 8px;">
                                         <span class="material-symbols-rounded" style="color:#60a5fa; font-size: 18px;">insights</span>
-                                        <span style="font-size: 0.9rem; color:var(--m3-on-surface-variant);">Média: <strong style="color:var(--m3-on-surface);">${o.media} dBm</strong></span>
+                                        <span style="font-size: 1.1rem; color:var(--m3-on-surface); font-weight: 500;">${o.media} dBm</span>
                                     </div>
                                 </div>
                                 <div style="text-align: right;">
