@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Fix do escopo do Modal e expansão lateral das informações nos cards
+// Atualização: Blindagem do escopo global do botão e robustez na abertura do Modal
 // ==============================================================================
 
 const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO'; 
@@ -34,6 +34,9 @@ async function runPotenciaEngine() {
         let globalAnalisados = 0;
         let oltStats = [];
         let todosClientesCriticos = []; 
+        
+        window.POTENCIA_CLIENTS_DATA = {};
+        window.POTENCIA_LAST_UPDATES = {};
 
         const ranges = GLOBAL_MASTER_OLT_LIST.map(o => `${o.sheetTab}!A:J`);
         const dataBatch = await API.getBatch(ranges);
@@ -65,6 +68,8 @@ async function runPotenciaEngine() {
                     if (dateMatch && timeMatch) lastUpdateStr = `${dateMatch[0]} ${timeMatch[0]}`;
                 }
             }
+
+            window.POTENCIA_LAST_UPDATES[olt.id] = lastUpdateStr;
 
             rows.forEach(columns => {
                 if (columns.length === 0) return;
@@ -166,12 +171,12 @@ async function runPotenciaEngine() {
                 const o = oltStats.find(stats => stats.id === oltDef.id);
                 if(!o) return;
 
+                // CORREÇÃO MESTRE: window. adicionado no onclick para forçar o escopo global
                 const btnHtml = `
-                    <button class="card-header-button" onclick="openPotenciaSuperModal('${o.id}', '${oltDef.sheetTab}', '${oltDef.type}', ${oltDef.boards})" title="Ver Placas e Portas">
+                    <button class="card-header-button" onclick="window.openPotenciaSuperModal('${o.id}', '${oltDef.sheetTab}', '${oltDef.type}', ${oltDef.boards})" title="Ver Placas e Portas">
                         <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
                     </button>`;
                 
-                // AJUSTE: width 100%, box-sizing e paddings laterais reduzidos para esticar o conteúdo
                 gridEl.innerHTML += `
                     <div class="overview-card" style="display: flex; flex-direction: column; width: 100%;">
                         <div class="card-header" style="justify-content: space-between; width: 100%; box-sizing: border-box;">
@@ -228,25 +233,51 @@ window.stopPotenciaMonitoring = function() {
     }
 };
 
+// ==============================================================================
+// FUNÇÃO DE ABERTURA BLINDADA (Try/Catch e Verificação de Elementos)
+// ==============================================================================
 window.openPotenciaSuperModal = function(id, sheetTab, type, boards) {
-    document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${id}`;
-    document.getElementById('potencia-view-detalhes').style.display = 'none';
-    document.getElementById('potencia-view-placas').style.display = 'block';
-    
-    document.getElementById('potencia-update-date').textContent = window.POTENCIA_LAST_UPDATES[id] ? window.POTENCIA_LAST_UPDATES[id].split(' ')[0] : '--/--/----';
-    document.getElementById('potencia-update-time').textContent = window.POTENCIA_LAST_UPDATES[id] ? (window.POTENCIA_LAST_UPDATES[id].split(' ')[1] || '--:--:--') : '--:--:--';
-    
-    document.getElementById('potencia-placas-list').innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-            <span class="material-symbols-rounded" style="font-size: 48px; display: block; margin-bottom: 10px;">hourglass_top</span>
-            <h2>Lendo potências da OLT...</h2>
-        </div>
-    `;
-    
-    document.getElementById('super-modal').style.display = 'flex';
-    
-    // CORREÇÃO: Utilizando a função no escopo global correto
-    window.startPotenciaMonitoring({ id: sheetTab, type: type, boards: boards, oltName: id });
+    try {
+        const modal = document.getElementById('super-modal');
+        if (!modal) {
+            console.error("[Potência] Modal principal não encontrado no HTML.");
+            return;
+        }
+        
+        document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${id}`;
+        document.getElementById('potencia-view-detalhes').style.display = 'none';
+        document.getElementById('potencia-view-placas').style.display = 'block';
+        
+        let dateStr = '--/--/----';
+        let timeStr = '--:--:--';
+        
+        // Separação segura da String de Data/Hora
+        if (window.POTENCIA_LAST_UPDATES && window.POTENCIA_LAST_UPDATES[id]) {
+            const parts = window.POTENCIA_LAST_UPDATES[id].split(' ');
+            if (parts.length > 0 && parts[0]) dateStr = parts[0];
+            if (parts.length > 1 && parts[1]) timeStr = parts[1];
+        }
+        
+        document.getElementById('potencia-update-date').textContent = dateStr;
+        document.getElementById('potencia-update-time').textContent = timeStr;
+        
+        document.getElementById('potencia-placas-list').innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                <span class="material-symbols-rounded" style="font-size: 48px; display: block; margin-bottom: 10px;">hourglass_top</span>
+                <h2>Lendo potências da OLT...</h2>
+            </div>
+        `;
+        
+        modal.style.display = 'flex';
+        
+        if (typeof window.startPotenciaMonitoring === 'function') {
+            window.startPotenciaMonitoring({ id: sheetTab, type: type, boards: boards, oltName: id });
+        } else {
+            console.error("[Potência] A função startPotenciaMonitoring não está definida no escopo global.");
+        }
+    } catch (e) {
+        console.error("[Potência] Erro fatal ao abrir o modal das OLTs:", e);
+    }
 }
 
 window.startPotenciaMonitoring = function(config) {
@@ -442,7 +473,7 @@ window.openPotenciaPlacaDetails = function(placa, oltType) {
                 <td>Porta ${String(pt).padStart(2, '0')}</td>
                 <td>
                     <span class="circuit-badge circuit-clickable" 
-                          onclick="openPotenciaCircuitClients('${placa}', '${pt}', '${safeInfo}', '${oltType}')"
+                          onclick="window.openPotenciaCircuitClients('${placa}', '${pt}', '${safeInfo}', '${oltType}')"
                           title="Ver clientes deste circuito">
                         ${info}
                     </span>
@@ -523,7 +554,7 @@ window.filterClients = function() {
 window.closeSuperModal = function(event) {
     if (event && event.target.id !== 'super-modal' && !event.target.classList.contains('close-modal')) return;
     document.getElementById('super-modal').style.display = 'none';
-    if (typeof stopPotenciaMonitoring === 'function') stopPotenciaMonitoring();
+    if (typeof window.stopPotenciaMonitoring === 'function') window.stopPotenciaMonitoring();
 }
 
 window.backToPotenciaPlacas = function() {
