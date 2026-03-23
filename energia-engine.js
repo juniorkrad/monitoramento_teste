@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Margens compactadas para acompanhar novo layout da Home
+// Atualização: Rodapé com Data e Hora padronizado nos cards e limpeza do modal
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
@@ -261,15 +261,26 @@ window.startEnergyMonitoring = async function() {
                 const pctPowerOff = oData.totalClients ? (oData.powerOff / oData.totalClients * 100) : 0;
                 const pctOfflineOther = oData.totalClients ? (oData.offlineOther / oData.totalClients * 100) : 0;
                 
+                // Formatação segura da data extraída para o rodapé
+                let dateVal = '--/--/----';
+                let timeVal = '--:--:--';
+                let cellData = oData.lastUpdate ? String(oData.lastUpdate) : '';
+                if (cellData && cellData !== '--/-- --:--') {
+                    const dateMatch = cellData.match(/\d{2}\/\d{2}\/\d{2,4}/);
+                    const timeMatch = cellData.match(/\d{2}:\d{2}(:\d{2})?/);
+                    if (dateMatch) dateVal = dateMatch[0];
+                    if (timeMatch) timeVal = timeMatch[0];
+                }
+                
                 gridEl.innerHTML += `
-                    <div class="overview-card" style="display: flex; flex-direction: column;">
-                        <div class="card-header">
+                    <div class="overview-card" style="display: flex; flex-direction: column; width: 100%;">
+                        <div class="card-header" style="justify-content: space-between; width: 100%; box-sizing: border-box;">
                             <h3><span class="material-symbols-rounded">dns</span> ${oData.id}</h3>
                             <button class="card-header-button" onclick="window.openEnergyModal('${oData.id}')" title="Ver Detalhes">
                                 <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
                             </button>
                         </div>
-                        <div class="card-body" style="flex-direction: column; padding: 15px;">
+                        <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
                             <div style="display: flex; justify-content: space-between; width: 100%; text-align: center; margin-bottom: 12px;">
                                 <div style="flex: 1;">
                                     <span class="material-symbols-rounded" style="color:var(--m3-on-surface); font-size: 26px;">router</span><br>
@@ -289,6 +300,15 @@ window.startEnergyMonitoring = async function() {
                                 <div class="bar-poweroff" style="width: ${pctPowerOff}%"></div>
                                 <div class="bar-offline" style="width: ${pctOfflineOther}%"></div>
                             </div>
+                            <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%;">
+                                <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
+                                    <span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span> ${dateVal}
+                                </div>
+                                <span style="color: rgba(255,255,255,0.1);">|</span>
+                                <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
+                                    <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span> ${timeVal}
+                                </div>
+                            </div>
                         </div>
                     </div>`;
             });
@@ -304,23 +324,6 @@ window.openEnergyModal = function(oltId) {
     const oData = window.ENERGY_DATA_STORE.olts[oltId];
     
     document.getElementById('energy-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${oltId}`;
-    
-    let datePart = '--/--/----';
-    let timePart = '--:--:--';
-    let cellData = oData.lastUpdate ? String(oData.lastUpdate) : '';
-
-    if (cellData && cellData !== '--/-- --:--') {
-        const dateMatch = cellData.match(/\d{2}\/\d{2}\/\d{2,4}/);
-        const timeMatch = cellData.match(/\d{2}:\d{2}(:\d{2})?/);
-
-        if (dateMatch) datePart = dateMatch[0];
-        if (timeMatch) timePart = timeMatch[0];
-    }
-
-    const elDate = document.getElementById('energy-update-date');
-    const elTime = document.getElementById('energy-update-time');
-    if (elDate) elDate.textContent = datePart;
-    if (elTime) elTime.textContent = timePart;
 
     const placasGrid = document.getElementById('energy-placas-list');
     placasGrid.innerHTML = '';
