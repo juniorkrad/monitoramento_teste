@@ -2,6 +2,19 @@
    ESTILOS ESPECÍFICOS - PAINEL DE OLTs / EQUIPAMENTOS (olt.html)
    ========================================================================== */
 
+/* --- FORMATO QUADRADO/ARREDONDADO COMPACTO DOS BOTÕES --- */
+.card-header-button {
+    border-radius: 6px !important; 
+    padding: 4px 6px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-header-button span {
+    font-size: 18px !important;
+}
+
 /* Barra de Filtros (Pesquisa e Status) do Modal Terciário */
 .filter-bar {
     display: flex;

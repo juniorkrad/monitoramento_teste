@@ -1,6 +1,5 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Leitura de Data/Hora na Coluna K e remoção da data do Modal
 // ==============================================================================
 
 const TAB_CIRCUITOS = 'CIRCUITO'; 
@@ -12,7 +11,6 @@ window.NETWORK_BACKBONE_STORE = new Set();
 window.currentOltInterval = null; 
 
 async function fetchGlobalOltData(olt) {
-    // Ampliado o range para capturar a célula K1
     const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:K` : `${olt.sheetTab}!A:K`;
     
     try {
@@ -292,13 +290,10 @@ window.startOltMonitoring = function(config) {
     async function populateTables() {
         window.CURRENT_OLT_PORT_DATA = {}; 
         window.OLT_CLIENTS_DATA = {}; 
-        // Ampliado para capturar a data e hora que, por ventura, possa ser lida no background
         const rangeOlt = `${config.id}!A:K`; 
 
         try {
             const [dataOlt, rowsCircuitos] = await Promise.all([API.get(rangeOlt), fetchCircuitosData()]);
-
-            // A injeção de data no modal (olt-update-date) foi totalmente removida deste bloco.
 
             const rowsOlt = (dataOlt.values || []).slice(1);
 
@@ -406,10 +401,11 @@ window.startOltMonitoring = function(config) {
 
             const detalhesView = document.getElementById('olt-view-detalhes');
             if (detalhesView && detalhesView.style.display === 'block') {
-                const subtitle = document.getElementById('olt-placa-subtitle').innerText;
-                const match = subtitle.match(/Placa (\d+)/);
-                if (match) {
-                    window.openOltPlacaDetails(match[1], config.type);
+                const subtitle = document.getElementById('olt-placa-subtitle');
+                // Adicionada uma verificação de segurança, já que removemos do HTML
+                if (subtitle) {
+                    const match = subtitle.innerText.match(/Placa (\d+)/);
+                    if (match) window.openOltPlacaDetails(match[1], config.type);
                 }
             }
 
@@ -426,7 +422,8 @@ window.startOltMonitoring = function(config) {
 window.openOltPlacaDetails = function(placa, oltType) {
     document.getElementById('olt-view-placas').style.display = 'none';
     document.getElementById('olt-view-detalhes').style.display = 'block';
-    document.getElementById('olt-placa-subtitle').innerText = `Detalhes - Placa ${placa}`;
+    
+    // LINHA REMOVIDA: document.getElementById('olt-placa-subtitle').innerText = `Detalhes - Placa ${placa}`;
     
     const tbody = document.getElementById('olt-detalhes-tbody');
     tbody.innerHTML = '';
