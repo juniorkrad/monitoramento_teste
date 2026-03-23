@@ -44,7 +44,12 @@
     overflow: hidden;
     margin-top: 15px;
 }
-.bar-online { background-color: rgba(255,255,255,0.05); } /* Online Fica Neutro/Transparente */
+
+/* ATUALIZAÇÃO: Aplicado o Verde MD3 para representar clientes online */
+.bar-online { 
+    background-color: var(--m3-color-success); 
+} 
+
 .bar-poweroff { background-color: #fbbf24; } /* Sem Energia (Amarelo) */
 .bar-offline { background-color: #60a5fa; } /* Sem Sinal Óptico (Azul) */
 
