@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-page.js - Controlador Exclusivo da Página de Status das OLTs (olt.html)
-// Atualização: Correção de overflow para textos longos (Active/Inactive) e fixação do gráfico
+// Atualização: Injeção de Data e Hora lidas da K1 no rodapé do Card
 // ==============================================================================
 
 window.OLT_LAST_UPDATES = {};
@@ -12,15 +12,15 @@ function createCardPlaceholders() {
     
     GLOBAL_MASTER_OLT_LIST.forEach(olt => {
         grid.innerHTML += `
-            <div class="overview-card" id="card-${olt.id}">
+            <div class="overview-card" id="card-${olt.id}" style="display: flex; flex-direction: column;">
                 <div class="card-header">
                     <h3><span class="material-symbols-rounded">dns</span> ${olt.id}</h3>
                     <button onclick="openSuperModal('${olt.id}', '${olt.sheetTab}', '${olt.type}', ${olt.boards})" class="card-header-button" title="Ver Placas e Portas">
                         <span class="material-symbols-rounded">manage_search</span>
                     </button>
                 </div>
-                <div class="card-body" style="display: flex; justify-content: space-between; align-items: center;">
-                     <div class="card-stats" style="flex: 1;">
+                <div class="card-body" style="display: flex; flex-direction: column; padding: 15px 20px;">
+                     <div class="card-stats" style="flex: 1; width: 100%;">
                         <p>Carregando...</p>
                     </div>
                 </div>
@@ -114,7 +114,6 @@ function updateCardUI(oltId, data) {
         header.classList.add('status-normal'); 
     }
     
-    // Alinhamento mais compacto (50px e gap 10px) para acomodar palavras longas (Inactive)
     const statsHtml = `
         <div class="stat-item" style="display: grid; grid-template-columns: 50px 1fr; gap: 10px; margin-bottom: 12px; align-items: center;">
             <span class="stat-number" style="font-size: 1.5rem; display: block; text-align: left;">${total}</span>
@@ -134,7 +133,6 @@ function updateCardUI(oltId, data) {
     const circumference = 2 * Math.PI * newRadius; 
     const offset = circumference - (onlinePercent / 100) * circumference;
     
-    // flex-shrink: 0 e width: 100px garantem que o gráfico não será esmagado nem expulso do card
     const chartHtml = `
         <div class="donut-chart-container" style="position: relative; right: auto; top: auto; transform: none; margin-left: 10px; flex-shrink: 0; width: 100px; height: 100px;">
             <svg class="donut-chart" width="100" height="100" viewBox="0 0 100 100">
@@ -148,8 +146,32 @@ function updateCardUI(oltId, data) {
         </div>
     `;
 
-    // min-width: 0 impede que textos muito longos estourem a caixa do flex: 1
-    card.querySelector('.card-body').innerHTML = `<div class="card-stats" style="flex: 1; min-width: 0;">${statsHtml}</div>${chartHtml}`;
+    let dateVal = '--/--/----';
+    let timeVal = '--:--:--';
+    if (window.OLT_LAST_UPDATES && window.OLT_LAST_UPDATES[oltId]) {
+        dateVal = window.OLT_LAST_UPDATES[oltId].date;
+        timeVal = window.OLT_LAST_UPDATES[oltId].time;
+    }
+
+    const footerHtml = `
+        <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
+                <span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span> ${dateVal}
+            </div>
+            <span style="color: rgba(255,255,255,0.1);">|</span>
+            <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
+                <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span> ${timeVal}
+            </div>
+        </div>
+    `;
+
+    card.querySelector('.card-body').innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div class="card-stats" style="flex: 1; min-width: 0;">${statsHtml}</div>
+            ${chartHtml}
+        </div>
+        ${footerHtml}
+    `;
 }
 
 async function runOverview() {
@@ -174,16 +196,6 @@ function openSuperModal(id, sheetTab, type, boards) {
     document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${id}`;
     document.getElementById('olt-view-detalhes').style.display = 'none';
     document.getElementById('olt-view-placas').style.display = 'block';
-    
-    let dateVal = '--/--/----';
-    let timeVal = '--:--:--';
-    if (window.OLT_LAST_UPDATES && window.OLT_LAST_UPDATES[id]) {
-        dateVal = window.OLT_LAST_UPDATES[id].date;
-        timeVal = window.OLT_LAST_UPDATES[id].time;
-    }
-    
-    document.getElementById('olt-update-date').textContent = dateVal;
-    document.getElementById('olt-update-time').textContent = timeVal;
     
     document.getElementById('olt-placas-list').innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">

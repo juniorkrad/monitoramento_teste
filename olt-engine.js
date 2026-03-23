@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Elementos internos super compactos para nova grid da Home
+// Atualização: Leitura de Data/Hora na Coluna K e remoção da data do Modal
 // ==============================================================================
 
 const TAB_CIRCUITOS = 'CIRCUITO'; 
@@ -12,7 +12,8 @@ window.NETWORK_BACKBONE_STORE = new Set();
 window.currentOltInterval = null; 
 
 async function fetchGlobalOltData(olt) {
-    const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:E` : `${olt.sheetTab}!A:C`;
+    // Ampliado o range para capturar a célula K1
+    const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:K` : `${olt.sheetTab}!A:K`;
     
     try {
         const data = await API.get(range);
@@ -69,7 +70,6 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
     
     const total = globalOnline + globalOffline;
     
-    // VISÃO GERAL: Ajuste das margens e gaps (reduzidos)
     const statsHtml = `
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; width: 100%;">
             <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">analytics</span>
@@ -92,7 +92,6 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
     const nokiaPct = nokiaTotal > 0 ? (nokiaOnline / nokiaTotal) * 100 : 0;
     const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
     
-    // POR FABRICANTE: Margens reduzidas
     const vendorHtml = `
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; width: 100%;">
             <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">precision_manufacturing</span>
@@ -120,7 +119,6 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
         </div>
     `;
 
-    // RANKING OLTS: Margens e paddings reduzidos
     let rankingHtmlContent = `
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; width: 100%;">
             <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">warning</span>
@@ -150,7 +148,6 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
     }
     rankingHtmlContent += `</div>`; 
 
-    // Padding lateral interno reduzido de 40/30 para 20/15
     cardBody.innerHTML = `
         <div class="card-stats" style="padding-right: 15px; min-width: 250px; align-items: flex-start !important; text-align: left !important;">
             ${statsHtml}
@@ -295,41 +292,13 @@ window.startOltMonitoring = function(config) {
     async function populateTables() {
         window.CURRENT_OLT_PORT_DATA = {}; 
         window.OLT_CLIENTS_DATA = {}; 
-        const rangeOlt = `${config.id}!A:Z`; 
+        // Ampliado para capturar a data e hora que, por ventura, possa ser lida no background
+        const rangeOlt = `${config.id}!A:K`; 
 
         try {
             const [dataOlt, rowsCircuitos] = await Promise.all([API.get(rangeOlt), fetchCircuitosData()]);
 
-            let datePart = '--/--/----';
-            let timePart = '--:--:--';
-            
-            if (dataOlt.values && dataOlt.values.length > 0) {
-                const firstRow = dataOlt.values[0];
-                let cellData = firstRow[10] ? String(firstRow[10]) : '';
-                
-                if (!cellData) {
-                    for (let i = firstRow.length - 1; i >= 0; i--) {
-                        let val = firstRow[i] ? String(firstRow[i]) : '';
-                        if (val.match(/\d{2}\/\d{2}/) && val.match(/\d{2}:\d{2}/)) {
-                            cellData = val;
-                            break;
-                        }
-                    }
-                }
-                
-                if (cellData) {
-                    const dateMatch = cellData.match(/\d{2}\/\d{2}\/\d{2,4}/);
-                    const timeMatch = cellData.match(/\d{2}:\d{2}(:\d{2})?/);
-                    
-                    if (dateMatch) datePart = dateMatch[0];
-                    if (timeMatch) timePart = timeMatch[0];
-                }
-            }
-            
-            const elDate = document.getElementById('olt-update-date');
-            const elTime = document.getElementById('olt-update-time');
-            if (elDate) elDate.textContent = datePart;
-            if (elTime) elTime.textContent = timePart;
+            // A injeção de data no modal (olt-update-date) foi totalmente removida deste bloco.
 
             const rowsOlt = (dataOlt.values || []).slice(1);
 
