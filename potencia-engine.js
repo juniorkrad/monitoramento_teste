@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Data e hora injetadas no rodapé do card com design aprimorado
+// Atualização: Média no corpo do card, Data e Hora com ícones isolados no rodapé
 // ==============================================================================
 
 const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO'; 
@@ -49,7 +49,7 @@ async function runPotenciaEngine() {
             let analisados = 0;
             let criticos = 0;
             let dbmSums = 0;
-            let lastUpdateStr = '--/--/---- --:--:--'; // Default mais elegante
+            let lastUpdateStr = '--/--/---- --:--:--'; 
 
             if (dataBatch.valueRanges[index].values && dataBatch.valueRanges[index].values.length > 0) {
                 const firstRow = dataBatch.valueRanges[index].values[0];
@@ -176,6 +176,11 @@ async function runPotenciaEngine() {
                         <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
                     </button>`;
                 
+                // Separação da data e hora para os ícones do rodapé
+                const dateParts = o.lastUpdate ? o.lastUpdate.split(' ') : ['--/--/----', '--:--:--'];
+                const dateVal = dateParts[0] || '--/--/----';
+                const timeVal = dateParts[1] || '--:--:--';
+                
                 gridEl.innerHTML += `
                     <div class="overview-card" style="display: flex; flex-direction: column; width: 100%;">
                         <div class="card-header" style="justify-content: space-between; width: 100%; box-sizing: border-box;">
@@ -193,16 +198,23 @@ async function runPotenciaEngine() {
                                         <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 18px;">warning</span>
                                         <span style="font-size: 1.1rem; color:#fbbf24; font-weight: bold;">${o.criticos}</span>
                                     </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span class="material-symbols-rounded" style="color:#60a5fa; font-size: 18px;">insights</span>
+                                        <span style="font-size: 0.9rem; color:var(--m3-on-surface-variant);">Média: <strong style="color:var(--m3-on-surface);">${o.media} dBm</strong></span>
+                                    </div>
                                 </div>
                                 <div style="text-align: right;">
                                     <span style="font-size: 2rem; font-family: var(--font-family-mono); font-weight: bold; color: ${o.health >= 90 ? 'var(--m3-color-success)' : 'var(--m3-color-error)'};">${o.health.toFixed(1)}%</span><br>
                                     <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); text-transform: uppercase;">Saúde</span>
                                 </div>
                             </div>
-                            <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                                <span style="font-size: 0.85rem; color: var(--m3-on-surface-variant);">Média: <strong style="color: var(--m3-on-surface);">${o.media} dBm</strong></span>
+                            <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%;">
                                 <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
-                                    <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span> ${o.lastUpdate}
+                                    <span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span> ${dateVal}
+                                </div>
+                                <span style="color: rgba(255,255,255,0.1);">|</span>
+                                <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
+                                    <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span> ${timeVal}
                                 </div>
                             </div>
                         </div>
