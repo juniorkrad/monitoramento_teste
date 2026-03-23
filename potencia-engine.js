@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Ampliação do range da API (A:K) para capturar a Data/Hora em K1
+// Atualização: Data e hora injetadas no rodapé do card com design aprimorado
 // ==============================================================================
 
 const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO'; 
@@ -38,7 +38,6 @@ async function runPotenciaEngine() {
         window.POTENCIA_CLIENTS_DATA = {};
         window.POTENCIA_LAST_UPDATES = {};
 
-        // CORREÇÃO: Range alterado de A:J para A:K para capturar a célula K1
         const ranges = GLOBAL_MASTER_OLT_LIST.map(o => `${o.sheetTab}!A:K`);
         const dataBatch = await API.getBatch(ranges);
 
@@ -50,7 +49,7 @@ async function runPotenciaEngine() {
             let analisados = 0;
             let criticos = 0;
             let dbmSums = 0;
-            let lastUpdateStr = '--/-- --:--';
+            let lastUpdateStr = '--/--/---- --:--:--'; // Default mais elegante
 
             if (dataBatch.valueRanges[index].values && dataBatch.valueRanges[index].values.length > 0) {
                 const firstRow = dataBatch.valueRanges[index].values[0];
@@ -200,9 +199,11 @@ async function runPotenciaEngine() {
                                     <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); text-transform: uppercase;">Saúde</span>
                                 </div>
                             </div>
-                            <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; font-size: 0.85rem; color: var(--m3-on-surface-variant); display: flex; justify-content: space-between; width: 100%;">
-                                <span>Média: <strong style="color: var(--m3-on-surface);">${o.media} dBm</strong></span>
-                                <span style="font-size: 0.75rem;">${o.lastUpdate}</span>
+                            <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <span style="font-size: 0.85rem; color: var(--m3-on-surface-variant);">Média: <strong style="color: var(--m3-on-surface);">${o.media} dBm</strong></span>
+                                <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
+                                    <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span> ${o.lastUpdate}
+                                </div>
                             </div>
                         </div>
                     </div>`;
@@ -244,18 +245,6 @@ window.openPotenciaSuperModal = function(id, sheetTab, type, boards) {
         document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${id}`;
         document.getElementById('potencia-view-detalhes').style.display = 'none';
         document.getElementById('potencia-view-placas').style.display = 'block';
-        
-        let dateStr = '--/--/----';
-        let timeStr = '--:--:--';
-        
-        if (window.POTENCIA_LAST_UPDATES && window.POTENCIA_LAST_UPDATES[id]) {
-            const parts = window.POTENCIA_LAST_UPDATES[id].split(' ');
-            if (parts.length > 0 && parts[0]) dateStr = parts[0];
-            if (parts.length > 1 && parts[1]) timeStr = parts[1];
-        }
-        
-        document.getElementById('potencia-update-date').textContent = dateStr;
-        document.getElementById('potencia-update-time').textContent = timeStr;
         
         document.getElementById('potencia-placas-list').innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
@@ -313,7 +302,6 @@ window.startPotenciaMonitoring = function(config) {
     async function populateTables() {
         window.POTENCIA_PORT_DATA = {}; 
         window.POTENCIA_CLIENTS_DATA = {}; 
-        // CORREÇÃO: Range alterado de A:J para A:K para pesquisa de circuito secundária
         const rangeOlt = `${config.id}!A:K`; 
 
         try {
