@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Aplicação de Cores nos Ícones e Números (Vermelho, Amarelo, Azul)
+// Atualização: Remoção do texto de subtítulo de Ocorrências no modal
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
@@ -347,7 +347,7 @@ window.openEnergyModal = function(oltId) {
 window.openEnergyPlacaDetails = function(oltId, placa) {
     document.getElementById('energy-view-placas').style.display = 'none';
     document.getElementById('energy-view-detalhes').style.display = 'block';
-    document.getElementById('energy-placa-subtitle').innerText = `Ocorrências - Placa ${placa}`;
+    
     const tbody = document.getElementById('energy-detalhes-tbody');
     tbody.innerHTML = '';
     const ports = window.ENERGY_DATA_STORE.olts[oltId].ports[placa];
