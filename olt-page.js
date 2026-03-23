@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-page.js - Controlador Exclusivo da Página de Status das OLTs (olt.html)
-// Atualização: Injeção de Data e Hora lidas da K1 no rodapé do Card
+// Atualização: Remoção do bloco de data/hora do título do modal
 // ==============================================================================
 
 window.OLT_LAST_UPDATES = {};
@@ -193,7 +193,9 @@ async function runOverview() {
 }
 
 function openSuperModal(id, sheetTab, type, boards) {
+    // ATUALIZAÇÃO: Exibe apenas o título no modal, removendo o bloco de data/hora
     document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${id}`;
+    
     document.getElementById('olt-view-detalhes').style.display = 'none';
     document.getElementById('olt-view-placas').style.display = 'block';
     
