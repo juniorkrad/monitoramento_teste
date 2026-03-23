@@ -1,10 +1,13 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Itens super compactados para a nova grade Justa da Home
+// Atualização: Refatoração total para padrão OLT (Ordenação Master + Modais de Camadas)
 // ==============================================================================
 
+const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO'; 
+
 window.POTENCIA_CLIENTS_DATA = {};
-window.POTENCIA_LAST_UPDATES = {}; 
+window.POTENCIA_PORT_DATA = {}; 
+window.currentPotenciaInterval = null; 
 
 function parsePowerValue(powerStr) {
     if (!powerStr) return null;
@@ -31,11 +34,9 @@ async function runPotenciaEngine() {
         let globalAnalisados = 0;
         let oltStats = [];
         let todosClientesCriticos = []; 
-        
-        window.POTENCIA_CLIENTS_DATA = {};
-        window.POTENCIA_LAST_UPDATES = {};
 
-        const ranges = GLOBAL_MASTER_OLT_LIST.map(o => o.type === 'nokia' ? `${o.sheetTab}!A:L` : `${o.sheetTab}!A:H`);
+        // Coleta de dados ampliada para abranger as colunas de Código de ambas as tecnologias (Até J)
+        const ranges = GLOBAL_MASTER_OLT_LIST.map(o => `${o.sheetTab}!A:J`);
         const dataBatch = await API.getBatch(ranges);
 
         if (!dataBatch.valueRanges) throw new Error("Falha na estrutura de retorno da API de Potência");
@@ -47,8 +48,6 @@ async function runPotenciaEngine() {
             let criticos = 0;
             let dbmSums = 0;
             let lastUpdateStr = '--/-- --:--';
-
-            window.POTENCIA_CLIENTS_DATA[olt.id] = [];
 
             if (dataBatch.valueRanges[index].values && dataBatch.valueRanges[index].values.length > 0) {
                 const firstRow = dataBatch.valueRanges[index].values[0];
@@ -68,8 +67,6 @@ async function runPotenciaEngine() {
                 }
             }
 
-            window.POTENCIA_LAST_UPDATES[olt.id] = lastUpdateStr;
-
             rows.forEach(columns => {
                 if (columns.length === 0) return;
 
@@ -78,34 +75,30 @@ async function runPotenciaEngine() {
                 if (olt.type === 'nokia') {
                     isOnline = (columns[4] || '').trim().toLowerCase().includes('up');
                     if (!isOnline) return;
-                    pwrStr = columns[11];
+                    pwrStr = columns[5]; // Coluna F
                     porta = columns[0] || '';
-                    serial = columns[2] || '';
-                    codigo = columns[8] || ''; 
+                    serial = columns[2] || ''; // Coluna C
+                    codigo = columns[8] || ''; // Coluna I
                 } else {
                     isOnline = (columns[2] || '').trim().toLowerCase() === 'active';
                     if (!isOnline) return;
-                    pwrStr = columns[5];
+                    pwrStr = columns[5]; // Coluna F
                     porta = columns[0] || '';
-                    serial = columns[3] || '';
-                    codigo = columns[7] || ''; 
+                    serial = columns[3] || ''; // Coluna D
+                    codigo = columns[7] || ''; // Coluna H
                 }
 
                 const powerVal = parsePowerValue(pwrStr);
                 
-                if (powerVal !== null && powerVal !== 0 && powerVal < 0 && powerVal > -60.00) {
+                // Trava contra valores fantasmas (<= -60 dBm)
+                if (powerVal !== null && powerVal !== 0 && powerVal < 0 && powerVal >= -60.00) {
                     analisados++;
                     dbmSums += powerVal;
-                    let pLevel = 'normal';
                     
                     if (powerVal <= -28.00) { 
                         criticos++; 
-                        pLevel = 'critico'; 
-                        const cData = { olt: olt.id, porta, serial, codigo, potencia: powerVal };
-                        window.POTENCIA_CLIENTS_DATA[olt.id].push(cData);
-                        todosClientesCriticos.push(cData);
+                        todosClientesCriticos.push({ olt: olt.id, porta, serial, codigo, potencia: powerVal });
                     } 
-                    else if (powerVal <= -26.00) pLevel = 'atencao';
                 }
             });
 
@@ -125,13 +118,15 @@ async function runPotenciaEngine() {
             globalAnalisados += analisados;
         });
 
+        // ==============================================================================
+        // INJEÇÃO DA HOME (Apenas Top 5 Piores Sinais)
+        // ==============================================================================
         if (globalBody) {
             todosClientesCriticos.sort((a, b) => a.potencia - b.potencia);
             const top5Piores = todosClientesCriticos.slice(0, 5);
 
             let rankingPioresHtml = '';
             top5Piores.forEach((c, index) => {
-                // Padding e margens cortadas para o limite
                 rankingPioresHtml += `
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); width: 100%;">
                        <div style="display: flex; flex-direction: column; gap: 2px; align-items: flex-start; text-align: left;">
@@ -163,55 +158,20 @@ async function runPotenciaEngine() {
             `;
         }
 
+        // ==============================================================================
+        // INJEÇÃO DA PÁGINA POTÊNCIA (Grade mantida exata ao GLOBAL_MASTER_OLT_LIST)
+        // ==============================================================================
         if (isPotenciaPage && gridEl) {
             gridEl.innerHTML = '';
             
-            todosClientesCriticos.sort((a, b) => a.potencia - b.potencia);
-            const pioresRede = todosClientesCriticos.slice(0, 10);
-            
-            let htmlPiores = '';
-            pioresRede.forEach((c, idx) => {
-                htmlPiores += `
-                    <tr>
-                        <td style="font-family: var(--font-family-mono); font-size: 0.8rem;">${idx + 1}º</td>
-                        <td style="font-weight: bold;">${c.olt}</td>
-                        <td style="font-family: var(--font-family-mono);">${c.porta}</td>
-                        <td style="color: #f87171; font-weight: bold; font-family: var(--font-family-mono);">${c.potencia} dBm</td>
-                    </tr>
-                `;
-            });
+            // OLTs geradas na ordem mestre exata, garantindo harmonia visual com olt.html
+            GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {
+                const o = oltStats.find(stats => stats.id === oltDef.id);
+                if(!o) return;
 
-            gridEl.innerHTML += `
-                <div class="overview-card piores-card" style="grid-column: 1 / -1; display: flex; flex-direction: row; background: rgba(248, 113, 113, 0.05); border: 1px solid rgba(248, 113, 113, 0.2);">
-                    <div style="flex: 0 0 250px; padding: 25px; border-right: 1px solid rgba(248, 113, 113, 0.2); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
-                        <span class="material-symbols-rounded" style="font-size: 54px; color: #f87171; margin-bottom: 15px;">warning</span>
-                        <h3 style="color: #f87171; margin: 0 0 10px 0; font-size: 1.2rem;">TOP 10 PIORES</h3>
-                        <p style="font-size: 0.85rem; color: var(--m3-on-surface-variant); margin: 0;">Sinais mais críticos detectados em toda a rede no momento.</p>
-                    </div>
-                    <div style="flex: 1; padding: 15px 25px; max-height: 250px; overflow-y: auto;" class="custom-scroll">
-                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                            <thead>
-                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--m3-on-surface-variant); font-size: 0.8rem; text-transform: uppercase;">
-                                    <th style="padding: 10px 5px;">Pos</th>
-                                    <th style="padding: 10px 5px;">OLT</th>
-                                    <th style="padding: 10px 5px;">Placa/Porta</th>
-                                    <th style="padding: 10px 5px;">Sinal</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${htmlPiores || '<tr><td colspan="4" style="padding: 15px; text-align: center;">Nenhum sinal crítico extremo detectado.</td></tr>'}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-
-            oltStats.sort((a, b) => b.criticos - a.criticos);
-            
-            oltStats.forEach(o => {
                 const btnHtml = `
-                    <button class="card-header-button" onclick="window.abrirModalPotencia('${o.id}')" title="Ver Clientes">
-                        <span class="material-symbols-rounded" style="font-size: 22px;">list_alt</span>
+                    <button class="card-header-button" onclick="openPotenciaSuperModal('${o.id}', '${oltDef.sheetTab}', '${oltDef.type}', ${oltDef.boards})" title="Ver Placas e Portas">
+                        <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
                     </button>`;
                 
                 gridEl.innerHTML += `
@@ -251,53 +211,335 @@ async function runPotenciaEngine() {
     }
 }
 
-window.abrirModalPotencia = function(oltId) {
-    const modal = document.getElementById('potencia-modal');
-    if (!modal) return;
+// ==============================================================================
+// SISTEMA DE NAVEGAÇÃO DE MODAIS (PLACA -> PORTA -> CLIENTES)
+// ==============================================================================
+
+async function fetchCircuitosData() {
+    const range = `${TAB_CIRCUITOS_POTENCIA}!A:AK`;
+    try {
+        const data = await API.get(range);
+        return data.values || [];
+    } catch (e) { return []; }
+}
+
+window.stopPotenciaMonitoring = function() {
+    if (window.currentPotenciaInterval) {
+        clearInterval(window.currentPotenciaInterval);
+        window.currentPotenciaInterval = null;
+    }
+};
+
+window.openPotenciaSuperModal = function(id, sheetTab, type, boards) {
+    document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${id}`;
+    document.getElementById('potencia-view-detalhes').style.display = 'none';
+    document.getElementById('potencia-view-placas').style.display = 'block';
     
-    document.getElementById('potencia-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${oltId} - Sinais Críticos`;
+    document.getElementById('potencia-update-date').textContent = window.POTENCIA_LAST_UPDATES[id] ? window.POTENCIA_LAST_UPDATES[id].split(' ')[0] : '--/--/----';
+    document.getElementById('potencia-update-time').textContent = window.POTENCIA_LAST_UPDATES[id] ? (window.POTENCIA_LAST_UPDATES[id].split(' ')[1] || '--:--:--') : '--:--:--';
     
-    const tbody = document.getElementById('potencia-detalhes-tbody');
-    const clientes = window.POTENCIA_CLIENTS_DATA[oltId] || [];
+    document.getElementById('potencia-placas-list').innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+            <span class="material-symbols-rounded" style="font-size: 48px; display: block; margin-bottom: 10px;">hourglass_top</span>
+            <h2>Lendo potências da OLT...</h2>
+        </div>
+    `;
     
-    if (clientes.length === 0) {
-        if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px;">Nenhum cliente com sinal crítico (<= -28 dBm) encontrado.</td></tr>`;
-    } else {
-        clientes.sort((a, b) => a.potencia - b.potencia);
-        
-        let htmlBuffer = '';
-        clientes.forEach(c => {
-            const colorClass = c.potencia <= -30.00 ? 'status-problema' : 'status-atencao';
-            htmlBuffer += `
-                <tr class="linha-cliente-potencia">
-                    <td style="font-weight: bold;">${c.porta}</td>
-                    <td>${c.serial}</td>
-                    <td><span class="${colorClass}">${c.potencia} dBm</span></td>
-                    <td>${c.codigo}</td>
-                </tr>
-            `;
-        });
-        
-        if (tbody) tbody.innerHTML = htmlBuffer;
+    document.getElementById('super-modal').style.display = 'flex';
+    
+    startPotenciaMonitoring({ id: sheetTab, type: type, boards: boards, oltName: id });
+}
+
+window.startPotenciaMonitoring = function(config) {
+    window.stopPotenciaMonitoring(); 
+
+    // Injeção dinâmica do Modal Terciário caso não exista (Padrão OLT)
+    if (!document.getElementById('detail-modal')) {
+        const modalHTML = `
+            <div id="detail-modal" class="modal-overlay" style="display: none;" onclick="closeModal(event)">
+                <div class="modal-content modal-large">
+                    <div class="modal-header">
+                        <h3 id="modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">Detalhes</h3>
+                        <button class="close-modal" onclick="closeModal()" title="Fechar">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="view-clients">
+                            <div class="filter-bar">
+                                <input type="text" id="search-input" class="filter-input" placeholder="Buscar (Nome, Serial...)" onkeyup="filterClients()">
+                                <select id="status-filter" class="filter-select" onchange="filterClients()">
+                                    <option value="all">Todos os Sinais</option>
+                                    <option value="critico">Crítico (<= -28 dBm)</option>
+                                </select>
+                            </div>
+                            <div class="client-table-container">
+                                <table id="table-clients">
+                                    <thead id="clients-thead" class="table-header-row"></thead>
+                                    <tbody id="clients-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
 
-    modal.style.display = 'flex';
-};
+    async function populateTables() {
+        window.POTENCIA_PORT_DATA = {}; 
+        window.POTENCIA_CLIENTS_DATA = {}; 
+        const rangeOlt = `${config.id}!A:J`; 
 
-window.fecharModalPotencia = function(event) {
-    if (event && event.target.id !== 'potencia-modal' && !event.target.classList.contains('close-modal')) return;
-    document.getElementById('potencia-modal').style.display = 'none';
-};
+        try {
+            const [dataOlt, rowsCircuitos] = await Promise.all([API.get(rangeOlt), fetchCircuitosData()]);
+            const rowsOlt = (dataOlt.values || []).slice(1);
 
-window.filtrarTabelaPotencia = function() {
-    const termo = document.getElementById('potencia-search').value.toLowerCase();
-    const linhas = document.querySelectorAll('.linha-cliente-potencia');
+            rowsOlt.forEach(columns => {
+                if (columns.length === 0) return;
+                let placa, porta, isOnline;
+                let pos = '', serial = '', potencia = '', desc1 = '', desc2 = '';
+
+                if (config.type === 'nokia') {
+                    const pon = columns[0];
+                    const status = columns[4]; 
+                    if (!pon || !status) return;
+                    const match = pon.match(/(\d+)\/(\d+)\/(\d+)\/(\d+)/);
+                    if (match) { placa = match[3]; porta = match[4]; }
+                    isOnline = status.trim().toLowerCase().includes('up');
+
+                    pos = columns[1] || '';
+                    serial = columns[2] || '';
+                    potencia = columns[5] || ''; // F
+                    desc1 = columns[7] || ''; // H
+                    desc2 = columns[8] || ''; // I
+                } else { 
+                    const portStr = columns[0];
+                    const status = columns[2]; 
+                    if (!portStr || !status) return;
+                    
+                    if (config.type === 'furukawa-10') {
+                        const parts = portStr.split('/');
+                        if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
+                    } else {
+                        const match = portStr.match(/GPON\s*(\d+)\/(\d+)/i);
+                        if (match) { placa = match[1]; porta = match[2]; }
+                    }
+                    isOnline = status.trim().toLowerCase() === 'active';
+
+                    pos = columns[1] || '';
+                    potencia = columns[5] || ''; // F
+                    serial = columns[3] || ''; // D
+                    desc1 = columns[7] || ''; // H
+                }
+
+                if (!placa || !porta || !isOnline) return;
+                
+                const powerVal = parsePowerValue(potencia);
+                if (powerVal === null || powerVal >= 0 || powerVal < -60.00) return; // Filtro de leitura
+
+                const placaNum = parseInt(placa);
+                const portaNum = parseInt(porta);
+                const portKey = `${placaNum}/${portaNum}`;
+                
+                if (!window.POTENCIA_PORT_DATA[placaNum]) {
+                    window.POTENCIA_PORT_DATA[placaNum] = {};
+                }
+
+                if (!window.POTENCIA_PORT_DATA[placaNum][portaNum]) {
+                    const infoExtra = getGlobalCircuitInfo(rowsCircuitos, config.oltName || config.id, placa, porta, config.type);
+                    window.POTENCIA_PORT_DATA[placaNum][portaNum] = { validCount: 0, sumPower: 0, info: infoExtra };
+                    window.POTENCIA_CLIENTS_DATA[portKey] = [];
+                }
+
+                window.POTENCIA_PORT_DATA[placaNum][portaNum].validCount++;
+                window.POTENCIA_PORT_DATA[placaNum][portaNum].sumPower += powerVal;
+                
+                window.POTENCIA_CLIENTS_DATA[portKey].push({
+                    pos, serial, potencia: powerVal, desc1, desc2
+                });
+            });
+
+            const placasList = document.getElementById('potencia-placas-list');
+            if (placasList) placasList.innerHTML = '';
+
+            for (let i = 1; i <= config.boards; i++) {
+                const placaNum = i;
+                const ports = window.POTENCIA_PORT_DATA[placaNum] || {};
+                
+                let hasCritical = false;
+
+                for (const pt in ports) {
+                    const p = ports[pt];
+                    const media = p.validCount > 0 ? (p.sumPower / p.validCount) : 0;
+                    if (media <= -28.00) {
+                        hasCritical = true;
+                    }
+                }
+
+                let btnClass = 'placa-btn';
+                let badgeHtml = '';
+                if (hasCritical) {
+                    btnClass += ' has-alarm';
+                    badgeHtml = `<span class="alarm-count critico">Média Crítica</span>`;
+                }
+
+                if (placasList) {
+                    placasList.innerHTML += `
+                        <button class="${btnClass}" onclick="openPotenciaPlacaDetails('${placaNum}', '${config.type}')">
+                            <span class="material-symbols-rounded" style="font-size: 32px;">developer_board</span>
+                            Placa ${placaNum}
+                            ${badgeHtml}
+                        </button>
+                    `;
+                }
+            }
+
+            const detalhesView = document.getElementById('potencia-view-detalhes');
+            if (detalhesView && detalhesView.style.display === 'block') {
+                const subtitle = document.getElementById('potencia-placa-subtitle').innerText;
+                const match = subtitle.match(/Placa (\d+)/);
+                if (match) {
+                    window.openPotenciaPlacaDetails(match[1], config.type);
+                }
+            }
+
+        } catch (error) { 
+            console.error('Erro na engine de potência (populateTables):', error); 
+        }
+    }
+
+    const runUpdate = async () => { await populateTables(); };
+    runUpdate(); 
+    window.currentPotenciaInterval = setInterval(runUpdate, GLOBAL_REFRESH_SECONDS * 1000); 
+}
+
+window.openPotenciaPlacaDetails = function(placa, oltType) {
+    document.getElementById('potencia-view-placas').style.display = 'none';
+    document.getElementById('potencia-view-detalhes').style.display = 'block';
+    document.getElementById('potencia-placa-subtitle').innerText = `Detalhes - Placa ${placa}`;
     
-    linhas.forEach(linha => {
-        const texto = linha.textContent.toLowerCase();
-        linha.style.display = texto.includes(termo) ? '' : 'none';
+    const tbody = document.getElementById('potencia-detalhes-tbody');
+    tbody.innerHTML = '';
+    
+    const ports = window.POTENCIA_PORT_DATA[placa] || {};
+    const sortedPorts = Object.keys(ports).sort((a, b) => parseInt(a) - parseInt(b));
+    
+    if (sortedPorts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 20px; color: var(--m3-on-surface-variant);">Nenhuma porta com leituras de potência nesta placa.</td></tr>`;
+        return;
+    }
+
+    sortedPorts.forEach(pt => {
+        const { validCount, sumPower, info } = ports[pt];
+        const media = validCount > 0 ? (sumPower / validCount).toFixed(2) : 0;
+        
+        let mediaColor = 'var(--m3-on-surface)';
+        if (media <= -28.00) mediaColor = '#f87171'; // Crítico
+        else if (media <= -26.00) mediaColor = '#fbbf24'; // Atenção
+
+        const safeInfo = info.replace(/'/g, "\\'");
+
+        tbody.innerHTML += `
+            <tr>
+                <td>Porta ${String(pt).padStart(2, '0')}</td>
+                <td>
+                    <span class="circuit-badge circuit-clickable" 
+                          onclick="openPotenciaCircuitClients('${placa}', '${pt}', '${safeInfo}', '${oltType}')"
+                          title="Ver clientes deste circuito">
+                        ${info}
+                    </span>
+                </td>
+                <td>
+                    <strong style="color: ${mediaColor};">${media} dBm</strong>
+                </td>
+            </tr>
+        `;
     });
 };
+
+window.openPotenciaCircuitClients = function(placa, porta, circuitoNome, oltType) {
+    const modal = document.getElementById('detail-modal');
+    if (!modal) return;
+    
+    const modalContent = document.querySelector('#detail-modal .modal-content');
+    modalContent.classList.add('modal-large');     
+
+    const textoCircuito = (circuitoNome && circuitoNome !== "-") ? ` - Circuito: ${circuitoNome}` : "";
+    document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta}${textoCircuito}`;
+
+    document.getElementById('search-input').value = '';
+    document.getElementById('status-filter').value = 'all'; 
+
+    const thead = document.getElementById('clients-thead');
+    const tbody = document.getElementById('clients-tbody');
+    
+    // Nomenclatura ajustada: "Potência" substitui o antigo "Status"
+    if (oltType === 'nokia') {
+        thead.innerHTML = `<tr><th>Posição</th><th>Serial</th><th>Potência</th><th>Descrição 1</th><th>Descrição 2</th></tr>`;
+    } else {
+        thead.innerHTML = `<tr><th>Posição</th><th>Potência</th><th>Serial</th><th>Descrição</th></tr>`;
+    }
+    
+    tbody.innerHTML = '';
+
+    const portKey = `${placa}/${porta}`;
+    const clients = window.POTENCIA_CLIENTS_DATA[portKey] || [];
+
+    if (clients.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${oltType === 'nokia' ? 5 : 4}" style="text-align:center;">Nenhum cliente com leitura válida.</td></tr>`;
+    } else {
+        clients.sort((a, b) => a.potencia - b.potencia); // Ordena do pior para o melhor
+
+        clients.forEach(c => {
+            const isCritical = c.potencia <= -28.00;
+            // Destaque de linha caso seja crítico (-28 ou menos)
+            const rowClass = isCritical ? 'client-row filter-critico bg-alerta-sinal' : 'client-row filter-normal';
+            const valColor = isCritical ? '#f87171' : 'inherit';
+            
+            let rowHTML = '';
+            if (oltType === 'nokia') {
+                rowHTML = `<tr class="${rowClass}"><td>${c.pos}</td><td>${c.serial}</td><td><strong style="color:${valColor};">${c.potencia} dBm</strong></td><td>${c.desc1}</td><td>${c.desc2}</td></tr>`;
+            } else {
+                rowHTML = `<tr class="${rowClass}"><td>${c.pos}</td><td><strong style="color:${valColor};">${c.potencia} dBm</strong></td><td>${c.serial}</td><td>${c.desc1}</td></tr>`;
+            }
+            tbody.innerHTML += rowHTML;
+        });
+    }
+    modal.style.display = 'flex';
+}
+
+window.filterClients = function() {
+    const searchText = document.getElementById('search-input').value.toLowerCase();
+    const statusFilter = document.getElementById('status-filter').value;
+    const rows = document.querySelectorAll('.client-row');
+    
+    rows.forEach(row => {
+        const textContent = row.textContent.toLowerCase();
+        let matchesSearch = textContent.includes(searchText);
+        let matchesStatus = true;
+        if (statusFilter === 'critico') matchesStatus = row.classList.contains('filter-critico');
+        
+        if (matchesSearch && matchesStatus) row.style.display = '';
+        else row.style.display = 'none';
+    });
+}
+
+window.closeSuperModal = function(event) {
+    if (event && event.target.id !== 'super-modal' && !event.target.classList.contains('close-modal')) return;
+    document.getElementById('super-modal').style.display = 'none';
+    if (typeof stopPotenciaMonitoring === 'function') stopPotenciaMonitoring();
+}
+
+window.backToPotenciaPlacas = function() {
+    document.getElementById('potencia-view-detalhes').style.display = 'none';
+    document.getElementById('potencia-view-placas').style.display = 'block';
+}
+
+window.closeModal = function(event) {
+    if (event && event.target.id !== 'detail-modal' && !event.target.classList.contains('close-modal')) return;
+    const modal = document.getElementById('detail-modal');
+    if (modal) modal.style.display = 'none';
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     const isPotenciaPage = window.location.pathname.includes('potencia.html');

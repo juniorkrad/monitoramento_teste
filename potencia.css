@@ -2,9 +2,19 @@
    ESTILOS ESPECÍFICOS - PAINEL DE POTÊNCIA ÓPTICA (potencia.html)
    ========================================================================== */
 
-/* --- TABELAS E COMPONENTES DO MODAL --- */
+/* DESTAQUE SUTIL PARA CLIENTES COM SINAL CRÍTICO */
+.bg-alerta-sinal { 
+    background-color: rgba(248, 113, 113, 0.12) !important; /* Vermelho suave translúcido */
+    transition: background-color 0.3s ease;
+}
 
-/* Container da Tabela no Modal */
+.bg-alerta-sinal:hover {
+    background-color: rgba(248, 113, 113, 0.2) !important;
+}
+
+/* --- TABELAS E COMPONENTES ESPECÍFICOS DO MODAL --- */
+
+/* Container da Tabela no Modal (Caso seja necessário além do padrão global) */
 .potencia-table-container { 
     max-height: 500px; 
     overflow-y: auto; 
@@ -39,14 +49,6 @@
     font-family: var(--font-family-mono); 
 }
 
-.potencia-table tr:nth-child(even) { 
-    background-color: rgba(255, 255, 255, 0.02); 
-}
-
-.potencia-table tr:hover { 
-    background-color: rgba(208, 188, 255, 0.08); 
-}
-
 /* Badges de Alerta de Sinal Específicos */
 .sinal-critico { 
     color: #f87171 !important; 
@@ -62,38 +64,4 @@
     background: rgba(251, 191, 36, 0.15); 
     padding: 4px 10px;
     border-radius: 12px;
-}
-
-/* Barra de Busca do Modal */
-.search-bar-container { 
-    display: flex; 
-    gap: 10px; 
-    margin-bottom: 15px; 
-}
-
-.search-input { 
-    flex: 1; 
-    padding: 12px 20px; 
-    border-radius: 24px; 
-    border: 1px solid var(--m3-outline-variant); 
-    background-color: var(--m3-surface-container-high); 
-    color: var(--m3-on-surface); 
-    font-family: 'Montserrat', sans-serif; 
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: var(--m3-primary);
-    box-shadow: 0 0 0 2px rgba(103, 7, 159, 0.3); 
-}
-
-/* Animação do Ícone de Carregamento (Sync) */
-.rotate-anim {
-    animation: spin 1s linear infinite;
-    display: inline-block;
-}
-
-@keyframes spin { 
-    to { transform: rotate(360deg); } 
 }

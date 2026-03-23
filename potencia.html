@@ -24,59 +24,73 @@
 
         <main class="main-content" style="flex-direction: column;">
             
-            <div id="global-potencia-body" style="display: none;"></div>
-            
-            <div id="potencia-grid" class="grid-container">
-                <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                    <span class="material-symbols-rounded rotate-anim" style="font-size: 40px; color: var(--m3-on-surface-variant);">sync</span>
-                    <p style="color: var(--m3-on-surface-variant);">Processando potências da rede...</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h2 style="margin: 0; color: var(--m3-on-surface); font-size: 1.5rem; display: flex; align-items: center; gap: 10px;">
+                    <span class="material-symbols-rounded" style="color: var(--m3-primary); font-size: 28px;">sensors</span>
+                    Monitoramento de Sinais
+                </h2>
+                <div class="update-indicator">
+                    <span class="material-symbols-rounded">sync</span>
+                    <span id="update-timestamp">Aguardando atualização...</span>
                 </div>
+            </div>
+
+            <div id="potencia-grid" class="grid-container">
             </div>
 
         </main>
-    </div>
 
-    <div id="footer-placeholder"></div>
-
-    <div id="potencia-modal" class="modal-overlay" onclick="fecharModalPotencia(event)">
-        <div class="modal-content modal-large">
-            
-            <div class="modal-header">
-                <div>
-                    <h3 id="modal-potencia-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                        <span class="material-symbols-rounded">dns</span> OLT Selecionada
+        <div id="super-modal" class="modal-overlay" style="display: none;" onclick="closeSuperModal(event)">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3 id="super-modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <span class="material-symbols-rounded">dns</span> OLT
                     </h3>
-                    <p id="modal-potencia-last-update" style="margin: 5px 0 0 0; font-size: 0.85rem; color: var(--m3-on-surface); font-family: var(--font-family-mono); display: flex; align-items: center; gap: 5px;">
-                        <span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span> <span id="potencia-update-date">--/--/----</span>
-                        <span style="color: rgba(255,255,255,0.3); margin: 0 4px;">|</span>
-                        <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span> <span id="potencia-update-time">--:--:--</span>
-                    </p>
+                    <button class="close-modal" onclick="closeSuperModal()" title="Fechar">&times;</button>
                 </div>
-                <button class="close-modal" onclick="fecharModalPotencia()" title="Fechar">&times;</button>
-            </div>
-            
-            <div class="modal-body">
-                <div class="search-bar-container">
-                    <input type="text" id="potencia-search" class="search-input" placeholder="Buscar por porta, serial ou código..." onkeyup="filtrarTabelaPotencia()">
-                </div>
-                
-                <div class="potencia-table-container">
-                    <table class="potencia-table" id="tabela-potencia">
-                        <thead>
-                            <tr>
-                                <th>Placa/Porta</th>
-                                <th>Serial do Equip.</th>
-                                <th>Potência (dBm)</th>
-                                <th>Código Cliente</th>
-                            </tr>
-                        </thead>
-                        <tbody id="potencia-tbody">
-                            </tbody>
-                    </table>
+                <div class="modal-body" style="position: relative; min-height: 300px;">
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--m3-outline-variant); padding-bottom: 10px;">
+                        <p style="margin: 0; color: var(--m3-on-surface-variant); font-size: 0.9rem;">
+                            Última atualização: <strong id="potencia-update-date" style="color: var(--m3-on-surface);">--/--/----</strong> às <strong id="potencia-update-time" style="color: var(--m3-on-surface);">--:--:--</strong>
+                        </p>
+                    </div>
+
+                    <div id="potencia-view-placas">
+                        <p style="color: var(--m3-on-surface-variant); margin-bottom: 15px;">Selecione uma placa para ver os detalhes das portas:</p>
+                        <div id="potencia-placas-list" class="placas-grid">
+                            </div>
+                    </div>
+
+                    <div id="potencia-view-detalhes" style="display: none;">
+                        <button class="btn-voltar-placas" onclick="backToPotenciaPlacas()">
+                            <span class="material-symbols-rounded">arrow_back</span> Voltar para Placas
+                        </button>
+                        
+                        <h4 id="potencia-placa-subtitle">Detalhes - Placa X</h4>
+                        
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr class="table-header-row">
+                                        <th>Porta</th>
+                                        <th>Circuitos</th>
+                                        <th>Média de Potência</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="potencia-detalhes-tbody">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
+
     </div>
+
+    <div id="footer-placeholder"></div>
 
     <script src="config.js"></script>
     <script src="api-service.js"></script>
