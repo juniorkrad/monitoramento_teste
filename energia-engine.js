@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Remoção do texto de subtítulo de Ocorrências no modal
+// Atualização: Injeção do Gráfico de Blocos (Opção 5) e Paleta de Cores Refinada
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
@@ -257,10 +257,32 @@ window.startEnergyMonitoring = async function() {
             gridEl.innerHTML = '';
             GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {
                 const oData = window.ENERGY_DATA_STORE.olts[oltDef.id];
-                const pctOnline = oData.totalClients ? (oData.online / oData.totalClients * 100) : 0;
+                
+                // Cálculo das percentagens para o Waffle Chart
                 const pctPowerOff = oData.totalClients ? (oData.powerOff / oData.totalClients * 100) : 0;
                 const pctOfflineOther = oData.totalClients ? (oData.offlineOther / oData.totalClients * 100) : 0;
                 
+                let powerBlocks = Math.round(pctPowerOff / 5);
+                let offlineBlocks = Math.round(pctOfflineOther / 5);
+                let onlineBlocks = 20 - powerBlocks - offlineBlocks;
+                
+                // Correção anti-transbordo
+                if (onlineBlocks < 0) {
+                    onlineBlocks = 0;
+                    const totalOff = powerBlocks + offlineBlocks;
+                    if (totalOff > 20) {
+                        powerBlocks = Math.round((powerBlocks / totalOff) * 20);
+                        offlineBlocks = 20 - powerBlocks;
+                    }
+                }
+
+                // Geração dinâmica dos 20 blocos (Opção 5)
+                let blocksHtml = '<div class="opt5-container">';
+                for(let i=0; i<onlineBlocks; i++) blocksHtml += `<div class="block" style="background: var(--m3-color-success);" title="Online"></div>`;
+                for(let i=0; i<powerBlocks; i++) blocksHtml += `<div class="block" style="background: #fbbf24;" title="Sem Energia"></div>`;
+                for(let i=0; i<offlineBlocks; i++) blocksHtml += `<div class="block" style="background: #f87171;" title="Sem Sinal"></div>`;
+                blocksHtml += '</div>';
+
                 let dateVal = '--/--/----';
                 let timeVal = '--:--:--';
                 let cellData = oData.lastUpdate ? String(oData.lastUpdate) : '';
@@ -281,24 +303,22 @@ window.startEnergyMonitoring = async function() {
                         </div>
                         <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
                             <div style="display: flex; justify-content: space-between; width: 100%; text-align: center; margin-bottom: 12px;">
-                                <div style="flex: 1;">
-                                    <span class="material-symbols-rounded" style="color:#f87171; font-size: 26px;">router</span><br>
-                                    <strong style="color:#f87171; font-size: 1.3rem;">${oData.offline}</strong>
+                                <div style="flex: 1;" title="Total Offline">
+                                    <span class="material-symbols-outlined" style="color:#9ca3af; font-size: 26px;">router_off</span><br>
+                                    <strong style="color:#9ca3af; font-size: 1.3rem;">${oData.offline}</strong>
                                 </div>
-                                <div style="flex: 1;">
+                                <div style="flex: 1;" title="Sem Energia">
                                     <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 26px;">bolt</span><br>
                                     <strong style="color:#fbbf24; font-size: 1.3rem;">${oData.powerOff}</strong>
                                 </div>
-                                <div style="flex: 1;">
-                                    <span class="material-symbols-rounded" style="color:#60a5fa; font-size: 26px;">wifi_off</span><br>
-                                    <strong style="color:#60a5fa; font-size: 1.3rem;">${oData.offlineOther}</strong>
+                                <div style="flex: 1;" title="Sem Sinal Fibra">
+                                    <span class="material-symbols-rounded" style="color:#f87171; font-size: 26px;">wifi_off</span><br>
+                                    <strong style="color:#f87171; font-size: 1.3rem;">${oData.offlineOther}</strong>
                                 </div>
                             </div>
-                            <div class="triple-progress-bar">
-                                <div class="bar-online" style="width: ${pctOnline}%"></div>
-                                <div class="bar-poweroff" style="width: ${pctPowerOff}%"></div>
-                                <div class="bar-offline" style="width: ${pctOfflineOther}%"></div>
-                            </div>
+                            
+                            ${blocksHtml}
+                            
                             <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%;">
                                 <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
                                     <span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span> ${dateVal}
