@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Blindagem do escopo global do botão e robustez na abertura do Modal
+// Atualização: Ampliação do range da API (A:K) para capturar a Data/Hora em K1
 // ==============================================================================
 
 const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO'; 
@@ -38,7 +38,8 @@ async function runPotenciaEngine() {
         window.POTENCIA_CLIENTS_DATA = {};
         window.POTENCIA_LAST_UPDATES = {};
 
-        const ranges = GLOBAL_MASTER_OLT_LIST.map(o => `${o.sheetTab}!A:J`);
+        // CORREÇÃO: Range alterado de A:J para A:K para capturar a célula K1
+        const ranges = GLOBAL_MASTER_OLT_LIST.map(o => `${o.sheetTab}!A:K`);
         const dataBatch = await API.getBatch(ranges);
 
         if (!dataBatch.valueRanges) throw new Error("Falha na estrutura de retorno da API de Potência");
@@ -162,7 +163,7 @@ async function runPotenciaEngine() {
         }
 
         // ==============================================================================
-        // INJEÇÃO DA PÁGINA POTÊNCIA (Grade mantida exata ao GLOBAL_MASTER_OLT_LIST)
+        // INJEÇÃO DA PÁGINA POTÊNCIA
         // ==============================================================================
         if (isPotenciaPage && gridEl) {
             gridEl.innerHTML = '';
@@ -171,7 +172,6 @@ async function runPotenciaEngine() {
                 const o = oltStats.find(stats => stats.id === oltDef.id);
                 if(!o) return;
 
-                // CORREÇÃO MESTRE: window. adicionado no onclick para forçar o escopo global
                 const btnHtml = `
                     <button class="card-header-button" onclick="window.openPotenciaSuperModal('${o.id}', '${oltDef.sheetTab}', '${oltDef.type}', ${oltDef.boards})" title="Ver Placas e Portas">
                         <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
@@ -233,9 +233,6 @@ window.stopPotenciaMonitoring = function() {
     }
 };
 
-// ==============================================================================
-// FUNÇÃO DE ABERTURA BLINDADA (Try/Catch e Verificação de Elementos)
-// ==============================================================================
 window.openPotenciaSuperModal = function(id, sheetTab, type, boards) {
     try {
         const modal = document.getElementById('super-modal');
@@ -251,7 +248,6 @@ window.openPotenciaSuperModal = function(id, sheetTab, type, boards) {
         let dateStr = '--/--/----';
         let timeStr = '--:--:--';
         
-        // Separação segura da String de Data/Hora
         if (window.POTENCIA_LAST_UPDATES && window.POTENCIA_LAST_UPDATES[id]) {
             const parts = window.POTENCIA_LAST_UPDATES[id].split(' ');
             if (parts.length > 0 && parts[0]) dateStr = parts[0];
@@ -317,7 +313,8 @@ window.startPotenciaMonitoring = function(config) {
     async function populateTables() {
         window.POTENCIA_PORT_DATA = {}; 
         window.POTENCIA_CLIENTS_DATA = {}; 
-        const rangeOlt = `${config.id}!A:J`; 
+        // CORREÇÃO: Range alterado de A:J para A:K para pesquisa de circuito secundária
+        const rangeOlt = `${config.id}!A:K`; 
 
         try {
             const [dataOlt, rowsCircuitos] = await Promise.all([API.get(rangeOlt), fetchCircuitosData()]);
