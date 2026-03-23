@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Rodapé com Data e Hora padronizado nos cards e limpeza do modal
+// Atualização: Aplicação de Cores nos Ícones e Números (Vermelho, Amarelo, Azul)
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
@@ -261,7 +261,6 @@ window.startEnergyMonitoring = async function() {
                 const pctPowerOff = oData.totalClients ? (oData.powerOff / oData.totalClients * 100) : 0;
                 const pctOfflineOther = oData.totalClients ? (oData.offlineOther / oData.totalClients * 100) : 0;
                 
-                // Formatação segura da data extraída para o rodapé
                 let dateVal = '--/--/----';
                 let timeVal = '--:--:--';
                 let cellData = oData.lastUpdate ? String(oData.lastUpdate) : '';
@@ -283,16 +282,16 @@ window.startEnergyMonitoring = async function() {
                         <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
                             <div style="display: flex; justify-content: space-between; width: 100%; text-align: center; margin-bottom: 12px;">
                                 <div style="flex: 1;">
-                                    <span class="material-symbols-rounded" style="color:var(--m3-on-surface); font-size: 26px;">router</span><br>
-                                    <strong style="color:var(--m3-on-surface); font-size: 1.3rem;">${oData.offline}</strong>
+                                    <span class="material-symbols-rounded" style="color:#f87171; font-size: 26px;">router</span><br>
+                                    <strong style="color:#f87171; font-size: 1.3rem;">${oData.offline}</strong>
                                 </div>
                                 <div style="flex: 1;">
                                     <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 26px;">bolt</span><br>
                                     <strong style="color:#fbbf24; font-size: 1.3rem;">${oData.powerOff}</strong>
                                 </div>
                                 <div style="flex: 1;">
-                                    <span class="material-symbols-rounded" style="color:var(--m3-color-warning); font-size: 26px;">wifi_off</span><br>
-                                    <strong style="color:var(--m3-color-warning); font-size: 1.3rem;">${oData.offlineOther}</strong>
+                                    <span class="material-symbols-rounded" style="color:#60a5fa; font-size: 26px;">wifi_off</span><br>
+                                    <strong style="color:#60a5fa; font-size: 1.3rem;">${oData.offlineOther}</strong>
                                 </div>
                             </div>
                             <div class="triple-progress-bar">

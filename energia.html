@@ -24,17 +24,6 @@
 
         <main class="main-content" style="flex-direction: column;">
             
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                <h2 style="margin: 0; color: var(--m3-on-surface); font-size: 1.5rem; display: flex; align-items: center; gap: 10px;">
-                    <span class="material-symbols-rounded" style="color: #fbbf24; font-size: 28px;">bolt</span>
-                    Monitoramento de Energia
-                </h2>
-                <div class="update-indicator">
-                    <span class="material-symbols-rounded">sync</span>
-                    <span id="update-timestamp">Aguardando atualização...</span>
-                </div>
-            </div>
-
             <div id="energy-olt-grid" class="grid-container">
             </div>
 
@@ -53,7 +42,7 @@
                 <div class="modal-body" style="position: relative; min-height: 300px;">
 
                     <div id="energy-view-placas">
-                        <p style="color: var(--m3-on-surface-variant); margin-bottom: 15px;">Selecione uma placa para ver as ocorrências de falta de energia:</p>
+                        <p style="color: var(--m3-on-surface-variant); margin-bottom: 15px;">Selecione uma placa para ver os detalhes das portas:</p>
                         <div id="energy-placas-list" class="placas-grid">
                         </div>
                     </div>
