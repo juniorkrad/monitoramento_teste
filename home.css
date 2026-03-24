@@ -119,6 +119,10 @@
 .bar-poweroff { background-color: #f87171; } 
 .bar-offline { background-color: var(--m3-color-warning); }
 
+/* Classes utilitárias para quebra de linha (Comportamento Desktop Padrão) */
+.mobile-break-separator { display: inline; }
+.mobile-break-line { display: inline; }
+
 /* RESPONSIVIDADE EXCLUSIVA DA HOME (MÓVEL & TABLETS) */
 @media (max-width: 900px) {
     .split-grid {
@@ -144,12 +148,22 @@
         text-align: left !important;
     }
 
+    /* Linhas separadoras removidas para o Mobile, conforme solicitado */
     .global-card div[style*="flex: 1"] {
-        border-top: 1px solid var(--m3-outline) !important;
+        border-top: none !important;
     }
 
     .donut-chart-container {
         align-self: center !important;
         margin-top: 15px !important;
+    }
+
+    /* Quebra de linha exclusiva para o Mobile (Serial e Código) */
+    .mobile-break-separator {
+        display: none !important;
+    }
+    .mobile-break-line {
+        display: block !important;
+        margin-top: 3px;
     }
 }

@@ -137,7 +137,11 @@ async function runPotenciaEngine() {
                                <span style="color: var(--m3-on-surface-variant); margin-right: 5px;">${index + 1}º</span> 
                                ${c.olt} <span style="color:var(--m3-outline); font-weight: normal; margin: 0 3px;">|</span> ${c.porta}
                            </strong>
-                           <span style="color: var(--m3-on-surface-variant); font-family: var(--font-family-mono); font-size: 0.75rem;">SN: ${c.serial} <span style="color:var(--m3-outline); font-weight: normal; margin: 0 3px;">|</span> Cód: ${c.codigo}</span>
+                           <span style="color: var(--m3-on-surface-variant); font-family: var(--font-family-mono); font-size: 0.75rem;">
+                               SN: ${c.serial} 
+                               <span class="mobile-break-separator" style="color:var(--m3-outline); font-weight: normal; margin: 0 3px;">|</span> 
+                               <span class="mobile-break-line">Cód: ${c.codigo}</span>
+                           </span>
                        </div>
                        <span style="font-family: var(--font-family-mono); font-weight: bold; color: #f87171; font-size: 1.1rem;">${c.potencia} dBm</span>
                     </div>
@@ -580,3 +584,4 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(runPotenciaEngine, GLOBAL_REFRESH_SECONDS * 1000);
     }
 });
+}
