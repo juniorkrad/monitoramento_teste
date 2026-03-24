@@ -4,7 +4,7 @@
 
 /* Padronização compacta dos cards na Home */
 .global-card .card-body {
-    padding: 16px 20px !important; /* Espaço vazio reduzido drasticamente */
+    padding: 16px 20px !important; 
     box-sizing: border-box !important;
     display: flex !important;
     justify-content: space-between !important;
@@ -29,19 +29,6 @@
     text-align: left !important;
 }
 
-/* --- FORMATO QUADRADO/ARREDONDADO COMPACTO DOS BOTÕES --- */
-.card-header-button {
-    border-radius: 6px !important; 
-    padding: 4px 6px !important; /* Redução de 50% no tamanho do botão */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.card-header-button span {
-    font-size: 18px !important; /* Ícone menor para caber no novo botão */
-}
-
 /* --- RESTAURAÇÃO DE CORES DOS INDICADORES --- */
 .global-card .stat-item.online .stat-number, 
 .global-card .stat-item.online label, 
@@ -58,7 +45,7 @@
 .global-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 8px; /* Redução de ~70% aplicada aqui (de 24px para 8px) */
+    gap: 8px; 
     width: 100%;
 }
 
@@ -66,7 +53,7 @@
 .split-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px; /* Acompanha a grade principal para não haver desalinhamento */
+    gap: 8px; 
     width: 100%;
 }
 
@@ -77,12 +64,12 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     display: flex;
     flex-direction: column;
-    margin: 0; /* Garante que não haja espaçamento vertical fantasma */
+    margin: 0; 
 }
 
 .global-card .card-header {
     background-color: var(--m3-surface-container-high);
-    padding: 10px 20px; /* Título mais estreito (reduzido) */
+    padding: 10px 20px; 
     border-bottom: 1px solid var(--m3-outline-variant);
     display: flex;
     justify-content: space-between;
@@ -102,7 +89,7 @@
 .global-stat {
     display: flex;
     flex-direction: column;
-    margin-bottom: 10px; /* Margem reduzida */
+    margin-bottom: 10px; 
 }
 
 .global-stat .stat-number {
@@ -135,7 +122,7 @@
 /* RESPONSIVIDADE EXCLUSIVA DA HOME (MÓVEL & TABLETS) */
 @media (max-width: 900px) {
     .split-grid {
-        grid-template-columns: 1fr; /* Empilha os cards no celular */
+        grid-template-columns: 1fr; 
     }
 
     .global-card .card-body {
