@@ -584,4 +584,3 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(runPotenciaEngine, GLOBAL_REFRESH_SECONDS * 1000);
     }
 });
-}
