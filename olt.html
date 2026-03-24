@@ -15,6 +15,9 @@
     <link rel="stylesheet" href="layout.css">
     <link rel="stylesheet" href="olt.css">
     <link rel="icon" type="image/png" href="favicon.png">
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#67079f">
 </head>
 <body>
 
@@ -75,6 +78,15 @@
     <script src="api-service.js"></script>
     <script src="layout.js"></script>
     <script src="olt-engine.js"></script>
-    <script src="olt-page.js"></script> 
+    <script src="olt-page.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(reg => console.log('Service Worker registrado com sucesso!'))
+                .catch(err => console.error('Erro ao registrar Service Worker:', err));
+            });
+        }
+    </script>
 </body>
 </html>

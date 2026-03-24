@@ -1,0 +1,21 @@
+{
+  "name": "NOC - Monitoramento",
+  "short_name": "NOC App",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#22003a",
+  "theme_color": "#67079f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
