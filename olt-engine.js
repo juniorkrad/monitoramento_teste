@@ -402,7 +402,6 @@ window.startOltMonitoring = function(config) {
             const detalhesView = document.getElementById('olt-view-detalhes');
             if (detalhesView && detalhesView.style.display === 'block') {
                 const subtitle = document.getElementById('olt-placa-subtitle');
-                // Adicionada uma verificação de segurança, já que removemos do HTML
                 if (subtitle) {
                     const match = subtitle.innerText.match(/Placa (\d+)/);
                     if (match) window.openOltPlacaDetails(match[1], config.type);
@@ -422,8 +421,6 @@ window.startOltMonitoring = function(config) {
 window.openOltPlacaDetails = function(placa, oltType) {
     document.getElementById('olt-view-placas').style.display = 'none';
     document.getElementById('olt-view-detalhes').style.display = 'block';
-    
-    // LINHA REMOVIDA: document.getElementById('olt-placa-subtitle').innerText = `Detalhes - Placa ${placa}`;
     
     const tbody = document.getElementById('olt-detalhes-tbody');
     tbody.innerHTML = '';
@@ -445,7 +442,7 @@ window.openOltPlacaDetails = function(placa, oltType) {
         const percOffline = total > 0 ? (offline / total) : 0;
 
         if (total >= 5) {
-            if (percOffline === 1) { statusClass = 'status-problema'; statusText = 'Crítico'; }
+            if (percOffline === 1) { statusClass = 'status-critico'; statusText = 'Crítico'; }
             else if (percOffline >= 0.5 || offline >= 32) { statusClass = 'status-problema'; statusText = 'Problema'; }
             else if (offline >= 16) { statusClass = 'status-atencao'; statusText = 'Atenção'; }
         }
@@ -463,7 +460,7 @@ window.openOltPlacaDetails = function(placa, oltType) {
                     </span>
                 </td>
                 <td>
-                    <button class="status ${statusClass} status-btn" style="border: none; cursor: pointer;"
+                    <button class="status ${statusClass} status-btn" style="cursor: pointer;"
                         onclick="openPortDetails('${placa}', '${pt}', '${safeInfo}', ${online}, ${offline}, ${total})">
                         ${statusText}
                     </button>

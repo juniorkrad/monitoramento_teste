@@ -89,10 +89,33 @@ tbody tr:hover td { background-color: var(--m3-state-layer-hover); }
 tbody td:first-child { font-weight: 700; color: var(--m3-on-surface); }
 
 .circuit-badge { display: inline-block; background-color: var(--m3-outline); color: var(--m3-on-primary); border-radius: 20px; padding: 3px 12px; font-weight: 500; font-size: 0.9em; min-width: 20px; text-align: center; vertical-align: middle; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.status { font-weight: bold; padding: 4px 12px; border-radius: 20px; display: inline-block; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px; }
-.status-normal { background-color: var(--m3-color-success); color: #fff; }
-.status-atencao { background-color: var(--m3-color-warning); color: #000; }
-.status-problema { background-color: var(--m3-color-error); color: #fff; }
+
+/* ESTILOS DE STATUS TRANSLÚCIDOS E ALERTA CRÍTICO */
+.status { 
+    font-weight: 700; 
+    padding: 6px 14px; 
+    border-radius: 14px; 
+    display: inline-block; 
+    font-size: 0.8rem; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+    transition: all 0.2s ease;
+}
+button.status:hover { filter: brightness(1.2); }
+
+.status-normal { background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
+.status-atencao { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+.status-problema { background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
+
+.status-critico {
+    background: #000000; color: #ff3333; border: 1px solid #ff3333;
+    animation: pulsoCritico 1.5s infinite;
+}
+@keyframes pulsoCritico {
+    0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.6); }
+    70% { box-shadow: 0 0 0 8px rgba(255, 51, 51, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); }
+}
 
 /* ==========================================================================
    ESTRUTURA BASE DOS CARDS GRANDES (GLOBAL CARDS)
