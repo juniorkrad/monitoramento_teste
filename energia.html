@@ -57,9 +57,15 @@
                     </div>
 
                     <div id="energy-view-detalhes" style="display: none;">
-                        <button class="btn-voltar-placas" style="margin-bottom: 15px;" onclick="backToEnergyPlacas()">
-                            <span class="material-symbols-rounded">arrow_back</span> Voltar para Placas
-                        </button>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <button class="btn-voltar-placas" style="margin-bottom: 0;" onclick="backToEnergyPlacas()">
+                                <span class="material-symbols-rounded">arrow_back</span> Voltar para Placas
+                            </button>
+                            <button class="btn-voltar-placas" style="margin-bottom: 0; padding: 10px;" onclick="exportEnergyPlacaToTXT()" title="Exportar para TXT">
+                                <span class="material-symbols-rounded">download</span>
+                            </button>
+                        </div>
                         
                         <div class="table-container">
                             <table class="olt-table">
@@ -85,11 +91,14 @@
 
     </div>
 
+    <div id="footer-placeholder"></div>
+
     <script src="config.js"></script>
     <script src="api-service.js"></script>
     <script src="layout.js"></script>
     <script src="notifications.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="energia-engine.js"></script> 
     <script>
         if ('serviceWorker' in navigator) {

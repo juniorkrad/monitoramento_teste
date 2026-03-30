@@ -1,12 +1,14 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Injeção do Gráfico de Blocos (Opção 5) e Paleta de Cores Refinada
+// Atualização: Exportações (PNG com bordas / TXT) e Gráfico de Blocos (10 Blocos)
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
 
 window.ENERGY_DATA_STORE = {};
 window.NETWORK_ENERGY_STORE = new Set(); 
+window.CURRENT_ENERGY_OLT = null; 
+window.CURRENT_ENERGY_PLACA = null; 
 let energyChartInstance = null; 
 
 function extractPort(val) {
@@ -22,6 +24,81 @@ function extractPort(val) {
     }
     return null;
 }
+
+// FUNÇÃO PARA EXPORTAR CARD EM PNG (Fundo Transparente)
+window.exportCardToImage = function(event, cardId, oltName) {
+    if (event) event.stopPropagation();
+
+    const card = document.getElementById(cardId);
+    if (!card) return;
+
+    const btn = event ? event.currentTarget : null;
+    let originalContent = '';
+    if (btn) {
+        originalContent = btn.innerHTML;
+        btn.innerHTML = `<span class="material-symbols-rounded">hourglass_empty</span>`;
+    }
+
+    html2canvas(card, {
+        backgroundColor: null, 
+        scale: 2, 
+        useCORS: true,
+        logging: false
+    }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `Energia_${oltName}_${new Date().getTime()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        if (btn) btn.innerHTML = originalContent;
+    }).catch(error => {
+        console.error('Erro ao gerar imagem:', error);
+        alert('Ocorreu um erro ao exportar a imagem.');
+        if (btn) btn.innerHTML = originalContent;
+    });
+};
+
+// FUNÇÃO PARA EXPORTAR TABELA EM TXT
+window.exportEnergyPlacaToTXT = function() {
+    const oltName = window.CURRENT_ENERGY_OLT || 'OLT_Desconhecida';
+    const placa = window.CURRENT_ENERGY_PLACA || '?';
+    
+    let txtContent = `=================================================\n`;
+    txtContent += `   RELATÓRIO DE ENERGIA - ${oltName} (PLACA ${placa})\n`;
+    txtContent += `   Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+    txtContent += `=================================================\n\n`;
+    
+    const tbody = document.getElementById('energy-detalhes-tbody');
+    const rows = tbody.querySelectorAll('tr');
+    
+    if (rows.length === 0) {
+        alert('Nenhum dado disponível para exportação.');
+        return;
+    }
+    
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('td');
+        if (cols.length >= 6) {
+            const porta = cols[0].innerText.trim();
+            const circuito = cols[1].innerText.trim();
+            const total = cols[2].innerText.trim();
+            const powerOff = cols[3].innerText.trim();
+            const impacto = cols[4].innerText.trim();
+            const status = cols[5].innerText.trim();
+            
+            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(25, ' ')} | OFF(Energia): ${powerOff} de ${total} (${impacto}) | Status: ${status}\n`;
+        }
+    });
+    
+    txtContent += `\n=================================================\n`;
+    
+    const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Energia_${oltName.replace(/[^a-zA-Z0-9-]/g, '_')}_Placa_${placa}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
 
 function drawEnergyChart(oltsData) {
     let chartData = [];
@@ -258,25 +335,25 @@ window.startEnergyMonitoring = async function() {
             GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {
                 const oData = window.ENERGY_DATA_STORE.olts[oltDef.id];
                 
-                // Cálculo das percentagens para o Waffle Chart
+                // Cálculo das percentagens para o Waffle Chart (Reduzido para 10 blocos)
                 const pctPowerOff = oData.totalClients ? (oData.powerOff / oData.totalClients * 100) : 0;
                 const pctOfflineOther = oData.totalClients ? (oData.offlineOther / oData.totalClients * 100) : 0;
                 
-                let powerBlocks = Math.round(pctPowerOff / 5);
-                let offlineBlocks = Math.round(pctOfflineOther / 5);
-                let onlineBlocks = 20 - powerBlocks - offlineBlocks;
+                let powerBlocks = Math.round(pctPowerOff / 10);
+                let offlineBlocks = Math.round(pctOfflineOther / 10);
+                let onlineBlocks = 10 - powerBlocks - offlineBlocks;
                 
                 // Correção anti-transbordo
                 if (onlineBlocks < 0) {
                     onlineBlocks = 0;
                     const totalOff = powerBlocks + offlineBlocks;
-                    if (totalOff > 20) {
-                        powerBlocks = Math.round((powerBlocks / totalOff) * 20);
-                        offlineBlocks = 20 - powerBlocks;
+                    if (totalOff > 10) {
+                        powerBlocks = Math.round((powerBlocks / totalOff) * 10);
+                        offlineBlocks = 10 - powerBlocks;
                     }
                 }
 
-                // Geração dinâmica dos 20 blocos (Opção 5)
+                // Geração dinâmica dos 10 blocos
                 let blocksHtml = '<div class="opt5-container">';
                 for(let i=0; i<onlineBlocks; i++) blocksHtml += `<div class="block" style="background: var(--m3-color-success);" title="Online"></div>`;
                 for(let i=0; i<powerBlocks; i++) blocksHtml += `<div class="block" style="background: #fbbf24;" title="Sem Energia"></div>`;
@@ -294,12 +371,17 @@ window.startEnergyMonitoring = async function() {
                 }
                 
                 gridEl.innerHTML += `
-                    <div class="overview-card" style="display: flex; flex-direction: column; width: 100%;">
+                    <div class="overview-card" id="card-${oData.id}" style="display: flex; flex-direction: column; width: 100%;">
                         <div class="card-header" style="justify-content: space-between; width: 100%; box-sizing: border-box;">
                             <h3><span class="material-symbols-rounded">dns</span> ${oData.id}</h3>
-                            <button class="card-header-button" onclick="window.openEnergyModal('${oData.id}')" title="Ver Detalhes">
-                                <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
-                            </button>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="card-header-button" onclick="exportCardToImage(event, 'card-${oData.id}', '${oData.id}')" title="Exportar Card">
+                                    <span class="material-symbols-rounded">photo_camera</span>
+                                </button>
+                                <button class="card-header-button" onclick="window.openEnergyModal('${oData.id}')" title="Ver Detalhes">
+                                    <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
+                                </button>
+                            </div>
                         </div>
                         <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
                             <div style="display: flex; justify-content: space-between; width: 100%; text-align: center; margin-bottom: 12px;">
@@ -365,6 +447,10 @@ window.openEnergyModal = function(oltId) {
 };
 
 window.openEnergyPlacaDetails = function(oltId, placa) {
+    // SALVANDO O CONTEXTO PARA O TXT
+    window.CURRENT_ENERGY_OLT = oltId;
+    window.CURRENT_ENERGY_PLACA = placa;
+
     document.getElementById('energy-view-placas').style.display = 'none';
     document.getElementById('energy-view-detalhes').style.display = 'block';
     
