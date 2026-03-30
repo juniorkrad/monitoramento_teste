@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-page.js - Controlador Exclusivo da Página de Status das OLTs (olt.html)
-// Atualização: Remoção do bloco de data/hora do título do modal
+// Atualização: Inclusão do botão e função de exportar card para imagem (PNG)
 // ==============================================================================
 
 window.OLT_LAST_UPDATES = {};
@@ -15,9 +15,14 @@ function createCardPlaceholders() {
             <div class="overview-card" id="card-${olt.id}" style="display: flex; flex-direction: column;">
                 <div class="card-header">
                     <h3><span class="material-symbols-rounded">dns</span> ${olt.id}</h3>
-                    <button onclick="openSuperModal('${olt.id}', '${olt.sheetTab}', '${olt.type}', ${olt.boards})" class="card-header-button" title="Ver Placas e Portas">
-                        <span class="material-symbols-rounded">manage_search</span>
-                    </button>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="exportCardToImage(event, 'card-${olt.id}', '${olt.id}')" class="card-header-button" title="Exportar Card">
+                            <span class="material-symbols-rounded">photo_camera</span>
+                        </button>
+                        <button onclick="openSuperModal('${olt.id}', '${olt.sheetTab}', '${olt.type}', ${olt.boards})" class="card-header-button" title="Ver Placas e Portas">
+                            <span class="material-symbols-rounded">manage_search</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body" style="display: flex; flex-direction: column; padding: 15px 20px;">
                      <div class="card-stats" style="flex: 1; width: 100%;">
@@ -28,6 +33,43 @@ function createCardPlaceholders() {
         `;
     });
 }
+
+// Nova função para capturar e exportar a imagem do card
+window.exportCardToImage = function(event, cardId, oltName) {
+    if (event) event.stopPropagation();
+
+    const card = document.getElementById(cardId);
+    if (!card) return;
+
+    const btn = event ? event.currentTarget : null;
+    let originalContent = '';
+    if (btn) {
+        originalContent = btn.innerHTML;
+        // Muda o ícone temporariamente para indicar carregamento
+        btn.innerHTML = `<span class="material-symbols-rounded">hourglass_empty</span>`;
+    }
+
+    // Configura e dispara o html2canvas
+    html2canvas(card, {
+        backgroundColor: '#2f0e51', // Cor de fundo real do card (M3 surface-container)
+        scale: 2, // Resolução em dobro para melhor nitidez
+        useCORS: true,
+        logging: false
+    }).then(canvas => {
+        // Cria um link temporário para forçar o download
+        const link = document.createElement('a');
+        link.download = `Status_${oltName}_${new Date().getTime()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        
+        // Restaura o ícone original da câmera
+        if (btn) btn.innerHTML = originalContent;
+    }).catch(error => {
+        console.error('Erro ao gerar imagem:', error);
+        alert('Ocorreu um erro ao exportar a imagem.');
+        if (btn) btn.innerHTML = originalContent;
+    });
+};
 
 async function fetchOltData(olt) {
     const range = `${olt.sheetTab}!A:K`;
@@ -193,7 +235,6 @@ async function runOverview() {
 }
 
 function openSuperModal(id, sheetTab, type, boards) {
-    // ATUALIZAÇÃO: Exibe apenas o título no modal, removendo o bloco de data/hora
     document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${id}`;
     
     document.getElementById('olt-view-detalhes').style.display = 'none';
