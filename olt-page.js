@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-page.js - Controlador Exclusivo da Página de Status das OLTs (olt.html)
-// Atualização: Inclusão do botão e função de exportar card para imagem (PNG)
+// Atualização: Exportação em imagem PNG (HTML2Canvas) com fundo transparente
 // ==============================================================================
 
 window.OLT_LAST_UPDATES = {};
@@ -34,7 +34,7 @@ function createCardPlaceholders() {
     });
 }
 
-// Nova função para capturar e exportar a imagem do card
+// Função para capturar e exportar a imagem do card com bordas arredondadas (Fundo Transparente)
 window.exportCardToImage = function(event, cardId, oltName) {
     if (event) event.stopPropagation();
 
@@ -49,10 +49,10 @@ window.exportCardToImage = function(event, cardId, oltName) {
         btn.innerHTML = `<span class="material-symbols-rounded">hourglass_empty</span>`;
     }
 
-    // Configura e dispara o html2canvas
+    // Configura e dispara o html2canvas com backgroundColor: null para respeitar o border-radius
     html2canvas(card, {
-        backgroundColor: '#2f0e51', // Cor de fundo real do card (M3 surface-container)
-        scale: 2, // Resolução em dobro para melhor nitidez
+        backgroundColor: null, 
+        scale: 2, 
         useCORS: true,
         logging: false
     }).then(canvas => {
