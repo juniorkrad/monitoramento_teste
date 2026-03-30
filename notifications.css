@@ -44,6 +44,7 @@
     cursor: pointer;
     box-sizing: border-box;
     transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    order: 0; /* Ordem padrão para todos os alarmes normais */
 }
 
 /* --- ANIMAÇÕES DE ENTRADA --- */
@@ -149,8 +150,8 @@
     min-height: 96px; 
     border-left: 6px solid #FF1744; 
     background-color: #1a0000; 
-    /* A animação original de entrada precisa ser mantida via JS, o pulso entra junto */
     animation: pulseCritical 1.5s infinite; 
+    order: -1; /* Mantém logo abaixo do nível 2, sobrepondo alarmes comuns */
 }
 
 .toast.backbone-l1 .toast-icon { 
@@ -162,7 +163,7 @@
 .toast.backbone-l1 strong { 
     font-size: 21px; 
     color: #FF1744; 
-    text-transform: none; /* Mantém como "Backbone" */
+    text-transform: none; 
 }
 
 .toast.backbone-l1 .toast-content > span { font-size: 17.5px; } 
@@ -178,6 +179,8 @@
     border-left: 8px solid #ff0000;
     box-shadow: 0 0 15px rgba(255, 0, 0, 0.6), 0 6px 20px rgba(0, 0, 0, 0.8);
     animation: flashBackgroundL2 1s infinite; 
+    order: -2; /* Prioridade Máxima: Fica sempre no topo do container */
+    z-index: 10;
 }
 
 .toast.backbone-l2 .toast-icon { 
@@ -190,7 +193,7 @@
 .toast.backbone-l2 strong { 
     font-size: 24px; 
     color: #ff0000; 
-    text-transform: uppercase; /* Força "BACKBONE" */
+    text-transform: uppercase; 
     text-shadow: 0 0 5px rgba(255, 0, 0, 0.8);
 }
 
