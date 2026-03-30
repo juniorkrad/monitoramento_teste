@@ -48,9 +48,15 @@
                 </div>
 
                 <div id="olt-view-detalhes" style="display: none;">
-                    <button class="btn-voltar-placas" style="margin-bottom: 15px;" onclick="backToOltPlacas()">
-                        <span class="material-symbols-rounded">arrow_back</span> Voltar para Placas
-                    </button>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <button class="btn-voltar-placas" style="margin-bottom: 0;" onclick="backToOltPlacas()">
+                            <span class="material-symbols-rounded">arrow_back</span> Voltar para Placas
+                        </button>
+                        <button class="btn-voltar-placas" style="margin-bottom: 0; padding: 10px;" onclick="exportPlacaToTXT()" title="Exportar para TXT">
+                            <span class="material-symbols-rounded">download</span>
+                        </button>
+                    </div>
                     
                     <div class="table-container">
                         <table>

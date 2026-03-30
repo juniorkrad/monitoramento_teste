@@ -9,6 +9,7 @@ window.CURRENT_OLT_PORT_DATA = {};
 window.NETWORK_PROBLEMS_STORE = new Set();
 window.NETWORK_BACKBONE_STORE = new Set();
 window.currentOltInterval = null; 
+window.CURRENT_VIEW_PLACA = null; // Armazena a placa atual para o relatório
 
 async function fetchGlobalOltData(olt) {
     const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:K` : `${olt.sheetTab}!A:K`;
@@ -419,6 +420,8 @@ window.startOltMonitoring = function(config) {
 }
 
 window.openOltPlacaDetails = function(placa, oltType) {
+    window.CURRENT_VIEW_PLACA = placa; 
+    
     document.getElementById('olt-view-placas').style.display = 'none';
     document.getElementById('olt-view-detalhes').style.display = 'block';
     
@@ -468,6 +471,49 @@ window.openOltPlacaDetails = function(placa, oltType) {
             </tr>
         `;
     });
+};
+
+window.exportPlacaToTXT = function() {
+    const titleEl = document.getElementById('super-modal-title');
+    let oltName = 'OLT_Desconhecida';
+    if (titleEl) {
+        oltName = titleEl.innerText.replace('dns', '').trim();
+    }
+    const placa = window.CURRENT_VIEW_PLACA || '?';
+    
+    let txtContent = `=================================================\n`;
+    txtContent += `   RELATÓRIO DE STATUS - ${oltName} (PLACA ${placa})\n`;
+    txtContent += `   Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+    txtContent += `=================================================\n\n`;
+    
+    const tbody = document.getElementById('olt-detalhes-tbody');
+    const rows = tbody.querySelectorAll('tr');
+    
+    if (rows.length === 0 || rows[0].innerText.includes('Nenhuma porta')) {
+        alert('Nenhum dado disponível para exportação.');
+        return;
+    }
+    
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('td');
+        if (cols.length >= 3) {
+            const porta = cols[0].innerText.trim();
+            const circuito = cols[1].innerText.trim();
+            const status = cols[2].innerText.trim();
+            
+            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(25, ' ')} | Status: ${status}\n`;
+        }
+    });
+    
+    txtContent += `\n=================================================\n`;
+    
+    const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Status_${oltName.replace(/[^a-zA-Z0-9-]/g, '_')}_Placa_${placa}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 };
 
 window.closeModal = function(event) {
