@@ -50,9 +50,15 @@
                     </div>
 
                     <div id="potencia-view-detalhes" style="display: none;">
-                        <button class="btn-voltar-placas" style="margin-bottom: 15px;" onclick="backToPotenciaPlacas()">
-                            <span class="material-symbols-rounded">arrow_back</span> Voltar para Placas
-                        </button>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <button class="btn-voltar-placas" style="margin-bottom: 0;" onclick="backToPotenciaPlacas()">
+                                <span class="material-symbols-rounded">arrow_back</span> Voltar para Placas
+                            </button>
+                            <button class="btn-voltar-placas" style="margin-bottom: 0; padding: 10px;" onclick="exportPotenciaPlacaToTXT()" title="Exportar para TXT">
+                                <span class="material-symbols-rounded">download</span>
+                            </button>
+                        </div>
                         
                         <div class="table-container">
                             <table>
@@ -81,6 +87,7 @@
     <script src="api-service.js"></script>
     <script src="layout.js"></script>
     <script src="notifications.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="potencia-engine.js"></script>
     <script>
         if ('serviceWorker' in navigator) {

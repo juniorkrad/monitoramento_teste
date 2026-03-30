@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Remoção da injeção do texto "Detalhes - Placa X"
+// Atualização: Inclusão de exportação de imagem PNG e relatório TXT
 // ==============================================================================
 
 const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO'; 
@@ -8,6 +8,7 @@ const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO';
 window.POTENCIA_CLIENTS_DATA = {};
 window.POTENCIA_PORT_DATA = {}; 
 window.currentPotenciaInterval = null; 
+window.CURRENT_VIEW_PLACA = null; // Memória para o arquivo TXT
 
 function parsePowerValue(powerStr) {
     if (!powerStr) return null;
@@ -16,6 +17,86 @@ function parsePowerValue(powerStr) {
     return isNaN(val) ? null : val;
 }
 
+// ==============================================================================
+// FUNÇÕES DE EXPORTAÇÃO (PNG E TXT)
+// ==============================================================================
+window.exportCardToImage = function(event, cardId, oltName) {
+    if (event) event.stopPropagation();
+
+    const card = document.getElementById(cardId);
+    if (!card) return;
+
+    const btn = event ? event.currentTarget : null;
+    let originalContent = '';
+    if (btn) {
+        originalContent = btn.innerHTML;
+        btn.innerHTML = `<span class="material-symbols-rounded">hourglass_empty</span>`;
+    }
+
+    html2canvas(card, {
+        backgroundColor: null, // Fundo transparente
+        scale: 2, 
+        useCORS: true,
+        logging: false
+    }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `Potencia_${oltName}_${new Date().getTime()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        if (btn) btn.innerHTML = originalContent;
+    }).catch(error => {
+        console.error('Erro ao gerar imagem:', error);
+        alert('Ocorreu um erro ao exportar a imagem.');
+        if (btn) btn.innerHTML = originalContent;
+    });
+};
+
+window.exportPotenciaPlacaToTXT = function() {
+    const titleEl = document.getElementById('super-modal-title');
+    let oltName = 'OLT_Desconhecida';
+    if (titleEl) {
+        oltName = titleEl.innerText.replace('dns', '').trim();
+    }
+    const placa = window.CURRENT_VIEW_PLACA || '?';
+    
+    let txtContent = `=================================================\n`;
+    txtContent += `   RELATÓRIO DE POTÊNCIA - ${oltName} (PLACA ${placa})\n`;
+    txtContent += `   Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+    txtContent += `=================================================\n\n`;
+    
+    const tbody = document.getElementById('potencia-detalhes-tbody');
+    const rows = tbody.querySelectorAll('tr');
+    
+    if (rows.length === 0 || rows[0].innerText.includes('Nenhuma porta')) {
+        alert('Nenhum dado disponível para exportação.');
+        return;
+    }
+    
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('td');
+        if (cols.length >= 3) {
+            const porta = cols[0].innerText.trim();
+            const circuito = cols[1].innerText.trim();
+            const media = cols[2].innerText.trim();
+            
+            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(25, ' ')} | Média: ${media}\n`;
+        }
+    });
+    
+    txtContent += `\n=================================================\n`;
+    
+    const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Potencia_${oltName.replace(/[^a-zA-Z0-9-]/g, '_')}_Placa_${placa}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
+// ==============================================================================
+// MOTOR PRINCIPAL
+// ==============================================================================
 async function runPotenciaEngine() {
     const gridEl = document.getElementById('potencia-grid');
     const globalBody = document.getElementById('global-potencia-body');
@@ -176,17 +257,21 @@ async function runPotenciaEngine() {
                 if(!o) return;
 
                 const btnHtml = `
-                    <button class="card-header-button" onclick="window.openPotenciaSuperModal('${o.id}', '${oltDef.sheetTab}', '${oltDef.type}', ${oltDef.boards})" title="Ver Placas e Portas">
-                        <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
-                    </button>`;
+                    <div style="display: flex; gap: 8px;">
+                        <button class="card-header-button" onclick="exportCardToImage(event, 'card-${o.id}', '${o.id}')" title="Exportar Card">
+                            <span class="material-symbols-rounded">photo_camera</span>
+                        </button>
+                        <button class="card-header-button" onclick="window.openPotenciaSuperModal('${o.id}', '${oltDef.sheetTab}', '${oltDef.type}', ${oltDef.boards})" title="Ver Placas e Portas">
+                            <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
+                        </button>
+                    </div>`;
                 
-                // Separação da data e hora para os ícones do rodapé
                 const dateParts = o.lastUpdate ? o.lastUpdate.split(' ') : ['--/--/----', '--:--:--'];
                 const dateVal = dateParts[0] || '--/--/----';
                 const timeVal = dateParts[1] || '--:--:--';
                 
                 gridEl.innerHTML += `
-                    <div class="overview-card" style="display: flex; flex-direction: column; width: 100%;">
+                    <div class="overview-card" id="card-${o.id}" style="display: flex; flex-direction: column; width: 100%;">
                         <div class="card-header" style="justify-content: space-between; width: 100%; box-sizing: border-box;">
                             <h3><span class="material-symbols-rounded">dns</span> ${o.id}</h3>
                             ${btnHtml}
@@ -424,15 +509,6 @@ window.startPotenciaMonitoring = function(config) {
                 }
             }
 
-            const detalhesView = document.getElementById('potencia-view-detalhes');
-            if (detalhesView && detalhesView.style.display === 'block') {
-                const subtitle = document.getElementById('potencia-placa-subtitle');
-                if (subtitle) {
-                    const match = subtitle.innerText.match(/Placa (\d+)/);
-                    if (match) window.openPotenciaPlacaDetails(match[1], config.type);
-                }
-            }
-
         } catch (error) { 
             console.error('Erro na engine de potência (populateTables):', error); 
         }
@@ -444,10 +520,10 @@ window.startPotenciaMonitoring = function(config) {
 }
 
 window.openPotenciaPlacaDetails = function(placa, oltType) {
+    window.CURRENT_VIEW_PLACA = placa; // Salva para o relatório TXT
+
     document.getElementById('potencia-view-placas').style.display = 'none';
     document.getElementById('potencia-view-detalhes').style.display = 'block';
-    
-    // Removida a injeção do subtítulo
     
     const tbody = document.getElementById('potencia-detalhes-tbody');
     tbody.innerHTML = '';
