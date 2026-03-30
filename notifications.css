@@ -1,6 +1,5 @@
 /* ==========================================================================
-   notifications.css - Sistema Global de Alertas (Versão 9.1 - Ajuste Híbrido)
-   Atualização: Ampliação exclusiva do Alarme Híbrido (+25%) e remoção de cortes
+   notifications.css - Sistema Global de Alertas (Nova Hierarquia Backbone)
    ========================================================================== */
 
 /* --- CONTAINERS DE NOTIFICAÇÕES (ESQUERDA E DIREITA) --- */
@@ -28,7 +27,7 @@
 }
 
 /* ==========================================================================
-   O MOLDE UNIVERSAL DO TOAST (Base 400px - Mantido perfeito para a Rede)
+   O MOLDE UNIVERSAL DO TOAST (Base 400px - Rede Padrão e Normalizados)
    ========================================================================== */
 .toast {
     width: 400px; 
@@ -68,18 +67,20 @@
     width: 100%;
 }
 
+/* Título Strong Universal */
 .toast strong {
+    font-family: 'Montserrat', sans-serif;
     font-size: 19px; 
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.6px;
     color: #ffffff;
-    white-space: nowrap; /* Padrão para rede: Corta se passar do tamanho */
+    white-space: nowrap; 
     text-overflow: ellipsis;
     overflow: hidden;
 }
 
-/* Descrição Principal Padrão */
+/* Descrição Universal */
 .toast .toast-content > span {
     font-size: 16px; 
     font-family: var(--font-family-mono);
@@ -90,7 +91,7 @@
     margin-top: 4px;
 }
 
-/* Proteção absoluta para Ícones dentro do texto */
+/* Proteção para Ícones dentro do texto */
 .toast .toast-content span.material-symbols-rounded {
     font-family: 'Material Symbols Rounded' !important;
     vertical-align: middle;
@@ -99,9 +100,37 @@
 }
 
 /* ==========================================================================
-   IDENTIDADE VISUAL (CORES E BORDAS)
+   1. QUEDA DE ENERGIA (Esquerda, 500px, Sem Cortes de Texto)
    ========================================================================== */
+.toast.hibrido { 
+    width: 500px; 
+    min-height: 110px;
+    border-left: 8px solid #fbbf24; 
+    background-color: #2b2510; 
+}
 
+.toast.hibrido .toast-icon { 
+    font-size: 50px; 
+    color: #fbbf24; 
+}
+
+.toast.hibrido strong { 
+    font-size: 24px; 
+    color: #fbbf24; 
+    white-space: normal; 
+    overflow: visible;
+    line-height: 1.1;
+    margin-bottom: 5px;
+}
+
+.toast.hibrido .toast-content > span {
+    font-size: 20px; 
+    white-space: normal; 
+}
+
+/* ==========================================================================
+   2. CORES E BORDAS PADRÃO REDE E SUCESSO (400px)
+   ========================================================================== */
 .toast.status-normal { border-left: 6px solid var(--m3-color-success); }
 .toast.status-normal .toast-icon { color: var(--m3-color-success); }
 
@@ -111,63 +140,103 @@
 .toast.rede-problem { border-left: 6px solid var(--m3-color-error); }
 .toast.rede-problem .toast-icon { color: var(--m3-color-error); }
 
-.toast.rede-super { 
+/* ==========================================================================
+   3. BACKBONE Nível 1 (Direita, Escala +10% -> 440px)
+   (Porta 100% OFF Isolada)
+   ========================================================================== */
+.toast.backbone-l1 { 
+    width: 440px; 
+    min-height: 96px; 
     border-left: 6px solid #FF1744; 
     background-color: #1a0000; 
+    /* A animação original de entrada precisa ser mantida via JS, o pulso entra junto */
     animation: pulseCritical 1.5s infinite; 
 }
-.toast.rede-super .toast-icon { color: #FF1744; animation: shakeIcon 0.5s infinite; }
-.toast.rede-super strong { color: #FF1744; }
+
+.toast.backbone-l1 .toast-icon { 
+    font-size: 44px; 
+    color: #FF1744; 
+    animation: shakeIcon 0.5s infinite; 
+}
+
+.toast.backbone-l1 strong { 
+    font-size: 21px; 
+    color: #FF1744; 
+    text-transform: none; /* Mantém como "Backbone" */
+}
+
+.toast.backbone-l1 .toast-content > span { font-size: 17.5px; } 
 
 /* ==========================================================================
-   5. HÍBRIDO EXCLUSIVO (+25% Escala, 500px, Sem Cortes de Texto)
+   4. BACKBONE Nível 2 (Direita, Escala MAX +25% -> 500px, Neon/Pisca)
+   (Rompimento Massivo / Múltiplas Portas)
    ========================================================================== */
-.toast.hibrido { 
-    width: 500px; /* Alargado +25% do padrão */
+.toast.backbone-l2 { 
+    width: 500px; 
     min-height: 110px;
-    border-left: 8px solid #fbbf24; 
-    background-color: #2b2510; 
+    border: 2px solid #ff0000;
+    border-left: 8px solid #ff0000;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.6), 0 6px 20px rgba(0, 0, 0, 0.8);
+    animation: flashBackgroundL2 1s infinite; 
 }
 
-.toast.hibrido .toast-icon { 
-    font-size: 50px; /* Ícone lateral maior (+25%) */
-    color: #fbbf24; 
+.toast.backbone-l2 .toast-icon { 
+    font-size: 50px; 
+    color: #ff0000; 
+    filter: drop-shadow(0 0 5px #ff0000);
+    animation: shakeIconL2 0.3s infinite; 
 }
 
-.toast.hibrido strong { 
-    font-size: 24px; /* Título maior (+25%) */
-    color: #fbbf24; 
-    white-space: normal; /* A MÁGICA: Permite quebrar linha! Fim do texto cortado. */
-    overflow: visible;
-    line-height: 1.1;
-    margin-bottom: 5px;
+.toast.backbone-l2 strong { 
+    font-size: 24px; 
+    color: #ff0000; 
+    text-transform: uppercase; /* Força "BACKBONE" */
+    text-shadow: 0 0 5px rgba(255, 0, 0, 0.8);
 }
 
-.toast.hibrido .toast-content > span {
-    font-size: 20px; /* Descrição maior (+25%) */
-    white-space: normal; /* Permite que os dados respirem */
+.toast.backbone-l2 .toast-content > span {
+    font-size: 20px; 
+    color: #ffcccc; 
+    text-shadow: 0 1px 2px #000;
 }
 
 /* ==========================================================================
-   ANIMAÇÕES E RESPONSIVIDADE
+   ANIMAÇÕES EXCLUSIVAS
    ========================================================================== */
+
+/* Pulso suave de borda (Backbone L1) */
 @keyframes pulseCritical {
-    0% { box-shadow: 0 0 0 rgba(255, 23, 68, 0); }
-    50% { box-shadow: 0 0 20px rgba(255, 23, 68, 0.5); }
-    100% { box-shadow: 0 0 0 rgba(255, 23, 68, 0); }
+    0% { box-shadow: 0 0 0 rgba(255, 23, 68, 0), 0 6px 20px rgba(0, 0, 0, 0.6); }
+    50% { box-shadow: 0 0 20px rgba(255, 23, 68, 0.5), 0 6px 20px rgba(0, 0, 0, 0.6); }
+    100% { box-shadow: 0 0 0 rgba(255, 23, 68, 0), 0 6px 20px rgba(0, 0, 0, 0.6); }
 }
 
+/* Tremor original de ícone (Backbone L1) */
 @keyframes shakeIcon {
     0%, 100% { transform: rotate(0deg); }
     25% { transform: rotate(5deg); }
     75% { transform: rotate(-5deg); }
 }
 
+/* Fundo Pisca Gradiente Agressivo (Backbone L2) */
+@keyframes flashBackgroundL2 {
+    0%, 100% { background: linear-gradient(135deg, #1a0000 0%, #000000 100%); }
+    50% { background: linear-gradient(135deg, #4d0000 0%, #1a0000 100%); }
+}
+
+/* Tremor Rápido de ícone (Backbone L2) */
+@keyframes shakeIconL2 {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(8deg) scale(1.1); }
+    75% { transform: rotate(-8deg) scale(1.1); }
+}
+
+/* RESPONSIVIDADE (Mobile) */
 @media (max-width: 768px) {
     #toast-container-left, #toast-container-right { left: 10px; right: 10px; top: 10px; align-items: center; }
     .toast { width: 100%; max-width: 380px; }
-    /* Ajuste para o Híbrido não vazar a tela no Mobile */
-    .toast.hibrido { max-width: 95vw; } 
+    /* Impede que alarmes expandidos quebrem a tela no mobile */
+    .toast.hibrido, .toast.backbone-l1, .toast.backbone-l2 { max-width: 95vw; } 
     .toast.slide-left, .toast.slide-right { transform: translateY(-120%); }
     .toast.show { transform: translateY(0); }
 }

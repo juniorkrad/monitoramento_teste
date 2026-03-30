@@ -1,5 +1,5 @@
 // ==============================================================================
-// notifications.js - Sistema Central de Alertas (Restauração Completa Base Old)
+// notifications.js - Sistema Central de Alertas (Com Hierarquia de Backbone)
 // ==============================================================================
 
 // Memórias de Estado
@@ -90,13 +90,13 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
         }
     }
 
-    // 2. DISPAROS: BACKBONE
+    // 2. DISPAROS: BACKBONE NÍVEL 2 (Massivo)
     for (const bb of activeBackbones) {
         if (!currentBackbones.has(bb)) {
             showToast(
-                'ROMPIMENTO DE BACKBONE', 
+                'BACKBONE', 
                 `${bb}`, 
-                'rede-super', 
+                'backbone-l2', 
                 'sos', 
                 'right'
             );
@@ -108,7 +108,6 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     const activeHybridPorts = new Set(); 
 
     for (const hb of newHybridProblems) {
-        // Formato Exato da versão old que extrai offline e powerOff
         const match = hb.match(/^\[(.*?)\] HIBRIDO::(\d+\/\d+)::(\d+)::(\d+)$/);
         if (match) {
             const oltId = match[1];
@@ -120,7 +119,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
             
             if (!currentHybridProblems.has(hb)) {
                 showToast(
-                    'Possível Queda de Energia', 
+                    'Queda de Energia', 
                     `${oltId} (${porta}): ${offRede} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">router</span> / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">power_off</span>`, 
                     'hibrido', 
                     'offline_bolt', 
@@ -131,7 +130,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     }
     currentHybridProblems = new Set(newHybridProblems);
 
-    // 4. DISPAROS: REDE PURA
+    // 4. DISPAROS: REDE PURA E BACKBONE NÍVEL 1
     for (const problemKey of newProblems) {
         if (!currentProblems.has(problemKey)) {
 
@@ -148,7 +147,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                 const descLimpa = portsArray.join(', ');
 
                 showToast(
-                    'Falha Múltipla de Rede', 
+                    'Falha Múltipla', 
                     `${oltId} - ${descLimpa}`, 
                     'rede-problem', 
                     'error',        
@@ -157,7 +156,6 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                 continue; 
             }
 
-            // Regex Exato da versão old: (\d+\/\d+)
             const matchSingle = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)_(\d+\/\d+)::(\d+)$/);
             if (matchSingle) {
                 const oltId = matchSingle[1];
@@ -166,16 +164,16 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
 
                 if (activeHybridPorts.has(`${oltId}_${porta}`)) continue;
 
-                let title = 'Problema de Rede';
+                let title = 'Problema';
                 let typeClass = 'rede-problem';
                 let icon = 'error';
 
                 if (severity === 'SUPER') {
-                    title = 'FALHA CRÍTICA';
-                    typeClass = 'rede-super';
+                    title = 'Backbone';
+                    typeClass = 'backbone-l1';
                     icon = 'fmd_bad';
                 } else if (severity === 'WARN') {
-                    title = 'Atenção na Rede';
+                    title = 'Atenção';
                     typeClass = 'rede-warn';
                     icon = 'warning';
                 }
