@@ -1,6 +1,6 @@
 /* ==========================================================================
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
-   Atualização: Restauração da Regra dos 70% e Cérebro Matemático
+   Atualização: Regra do Híbrido ajustada para >= 32 clientes
    ========================================================================== */
 
 let lastNotifiedState = ""; 
@@ -40,7 +40,7 @@ function watchHomeAlarms() {
         }
 
         // ============================================================
-        // A REGRA DOS 70% (RESTAURADA)
+        // A REGRA DOS 70% (ATUALIZADA PARA 32 CLIENTES)
         // ============================================================
         for (const oltId in window.ENERGY_DATA_STORE.olts) {
             const oltData = window.ENERGY_DATA_STORE.olts[oltId];
@@ -49,8 +49,8 @@ function watchHomeAlarms() {
                     const pData = oltData.ports[placa][porta];
                     const pt = `${placa}/${porta}`;
 
-                    // Gatilho: Mínimo de 16 offline E Energia representa >= 70% do problema
-                    if (pData.offline >= 16 && pData.powerOff > 0) {
+                    // Gatilho: Mínimo de 32 offline E Energia representa >= 70% do problema
+                    if (pData.offline >= 32 && pData.powerOff > 0) {
                         const overlap = pData.powerOff / pData.offline;
                         if (overlap >= 0.70) {
                             // O formato exato que a RegEx do notifications-old espera
