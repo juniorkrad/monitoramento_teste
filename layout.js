@@ -176,3 +176,30 @@ function getGlobalCircuitInfo(rowsCircuitos, oltIdentifier, placa, porta, type) 
 async function loadTimestamp(sheetTab, apiKey, sheetId) {
     updateGlobalTimestamp();
 }
+
+// ==============================================================================
+// SISTEMA DE AUTO-HIDE (MODO KIOSK/IMERSÃO EXPANSIVA)
+// ==============================================================================
+function initAutoHide() {
+    let idleTimer;
+    const idleTime = 10000; // 10 segundos de inatividade para ocultar
+
+    const resetTimer = () => {
+        document.body.classList.remove('idle');
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => document.body.classList.add('idle'), idleTime);
+    };
+
+    // Escuta eventos de interação para resetar o tempo
+    window.addEventListener('mousemove', resetTimer);
+    window.addEventListener('mousedown', resetTimer);
+    window.addEventListener('keypress', resetTimer);
+    window.addEventListener('touchmove', resetTimer);
+    window.addEventListener('scroll', resetTimer);
+
+    // Inicia o timer logo no carregamento da página
+    resetTimer();
+}
+
+// Inicia o monitor de inatividade assim que o layout.js for carregado
+document.addEventListener('DOMContentLoaded', initAutoHide);

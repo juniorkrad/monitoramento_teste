@@ -6,6 +6,11 @@
 .header { 
     display: flex; justify-content: space-between; align-items: center; 
     padding-bottom: 10px; border-bottom: 1px solid var(--m3-outline); margin-bottom: 10px; 
+    /* Adições para o Auto-Hide */
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 150px;
+    overflow: hidden;
+    opacity: 1;
 }
 
 .logo-title-group { 
@@ -59,6 +64,30 @@
 .footer { 
     margin-top: 10px; padding: 8px 0; border-top: 1px solid var(--m3-outline); 
     text-align: center; color: var(--m3-on-surface-variant); font-size: 0.85em; 
+    /* Adições para o Auto-Hide */
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 100px;
+    overflow: hidden;
+    opacity: 1;
+}
+
+/* ==========================================================================
+   MODO KIOSK / AUTO-HIDE (Desativação de elementos em inatividade)
+   ========================================================================== */
+body.idle .header, 
+body.idle .footer { 
+    max-height: 0; 
+    padding-top: 0; 
+    padding-bottom: 0; 
+    margin-top: 0;
+    margin-bottom: 0;
+    border-width: 0; 
+    opacity: 0; 
+}
+
+/* Garante expansão suave do conteúdo principal */
+.main-content {
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ==========================================================================
@@ -138,16 +167,16 @@
     }
     
     .header-nav { 
-        display: contents; /* Desfaz o empacotamento para posicionar itens livremente */
+        display: contents; 
     }
     
     .logo-title-group { 
-        order: 1; /* Garante que fique na esquerda */
+        order: 1; 
         justify-content: flex-start;
     }
     
     .logo-title-group img { 
-        width: 100px; /* Reduz um pouco o logo para não apertar a tela */
+        width: 100px; 
     }
     
     .logo-title-group h1 { 
@@ -155,12 +184,12 @@
     }
     
     .icon-btn {
-        order: 2; /* Força o botão para a direita, ao lado da logo */
+        order: 2; 
         margin-left: auto;
     }
     
     .timestamp-badge { 
-        order: 3; /* Força a badge de hora para a linha de baixo */
+        order: 3; 
         width: 100%; 
         justify-content: center;
         margin-top: 5px;
