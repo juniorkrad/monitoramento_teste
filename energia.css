@@ -51,18 +51,28 @@
 }
 
 /* --- MODAL MINIMALISTA: CAIXAS DE DESTAQUE --- */
-.energy-box-total {
+/* Aplicado diretamente na div .modal-stat-box para sobrescrever o estilo global */
+.modal-stat-box.energy-box-total {
     background-color: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+.modal-stat-box.energy-box-total .modal-stat-value {
     color: #ffffff !important;
 }
 
-.energy-box-offline {
+.modal-stat-box.energy-box-offline {
     background-color: rgba(248, 113, 113, 0.15) !important;
+    border: 1px solid rgba(248, 113, 113, 0.3) !important;
+}
+.modal-stat-box.energy-box-offline .modal-stat-value {
     color: #f87171 !important;
 }
 
-.energy-box-poweroff {
+.modal-stat-box.energy-box-poweroff {
     background-color: rgba(251, 191, 36, 0.15) !important;
+    border: 1px solid rgba(251, 191, 36, 0.3) !important;
+}
+.modal-stat-box.energy-box-poweroff .modal-stat-value {
     color: #fbbf24 !important;
 }
 
