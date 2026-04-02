@@ -50,6 +50,12 @@
     border-radius: 2px;
 }
 
+/* --- MODAL MINIMALISTA: CAIXA SEM ENERGIA --- */
+.val-poweroff {
+    background-color: rgba(251, 191, 36, 0.15) !important;
+    color: #fbbf24 !important;
+}
+
 /* ==========================================================================
    RESPONSIVIDADE
    ========================================================================== */
