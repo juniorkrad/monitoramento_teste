@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Exportações (PNG com bordas / TXT) e Gráfico de Blocos (10 Blocos)
+// Atualização: Padronização UI de Tabelas e Modais Minimalistas de Status
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
@@ -25,7 +25,6 @@ function extractPort(val) {
     return null;
 }
 
-// FUNÇÃO PARA EXPORTAR CARD EM PNG (Fundo Transparente)
 window.exportCardToImage = function(event, cardId, oltName) {
     if (event) event.stopPropagation();
 
@@ -57,7 +56,7 @@ window.exportCardToImage = function(event, cardId, oltName) {
     });
 };
 
-// FUNÇÃO PARA EXPORTAR TABELA EM TXT
+// EXPORTAÇÃO TXT REESCRITA PARA PEGAR DA MEMÓRIA
 window.exportEnergyPlacaToTXT = function() {
     const oltName = window.CURRENT_ENERGY_OLT || 'OLT_Desconhecida';
     const placa = window.CURRENT_ENERGY_PLACA || '?';
@@ -67,25 +66,24 @@ window.exportEnergyPlacaToTXT = function() {
     txtContent += `   Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
     txtContent += `=================================================\n\n`;
     
-    const tbody = document.getElementById('energy-detalhes-tbody');
-    const rows = tbody.querySelectorAll('tr');
+    const ports = window.ENERGY_DATA_STORE.olts[oltName]?.ports[placa];
     
-    if (rows.length === 0) {
-        alert('Nenhum dado disponível para exportação.');
+    if (!ports || Object.keys(ports).length === 0) {
+        alert('Nenhum dado disponível para exportação nesta placa.');
         return;
     }
     
-    rows.forEach(row => {
-        const cols = row.querySelectorAll('td');
-        if (cols.length >= 6) {
-            const porta = cols[0].innerText.trim();
-            const circuito = cols[1].innerText.trim();
-            const total = cols[2].innerText.trim();
-            const powerOff = cols[3].innerText.trim();
-            const impacto = cols[4].innerText.trim();
-            const status = cols[5].innerText.trim();
+    Object.keys(ports).sort((a, b) => parseInt(a) - parseInt(b)).forEach(pt => {
+        const pData = ports[pt];
+        if (pData.total > 0) {
+            const impacto = Math.round((pData.powerOff / pData.total) * 100) + '%';
             
-            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(25, ' ')} | OFF(Energia): ${powerOff} de ${total} (${impacto}) | Status: ${status}\n`;
+            let status = 'Normal';
+            const perc = pData.powerOff / pData.total;
+            if ((perc >= 0.5 && pData.powerOff >= 10) || (perc === 1 && pData.total >= 5)) status = 'Crítico';
+            else if (perc >= 0.15 && pData.powerOff >= 5) status = 'Atenção';
+
+            txtContent += `• Porta ${String(pt).padStart(2, '0').padEnd(8, ' ')} | Circuito: ${pData.circuit.padEnd(20, ' ')} | OFF(Energia): ${pData.powerOff} de ${pData.total} (${impacto}) | Status: ${status}\n`;
         }
     });
     
@@ -335,7 +333,6 @@ window.startEnergyMonitoring = async function() {
             GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {
                 const oData = window.ENERGY_DATA_STORE.olts[oltDef.id];
                 
-                // Cálculo das percentagens para o Waffle Chart (Reduzido para 10 blocos)
                 const pctPowerOff = oData.totalClients ? (oData.powerOff / oData.totalClients * 100) : 0;
                 const pctOfflineOther = oData.totalClients ? (oData.offlineOther / oData.totalClients * 100) : 0;
                 
@@ -343,7 +340,6 @@ window.startEnergyMonitoring = async function() {
                 let offlineBlocks = Math.round(pctOfflineOther / 10);
                 let onlineBlocks = 10 - powerBlocks - offlineBlocks;
                 
-                // Correção anti-transbordo
                 if (onlineBlocks < 0) {
                     onlineBlocks = 0;
                     const totalOff = powerBlocks + offlineBlocks;
@@ -353,7 +349,6 @@ window.startEnergyMonitoring = async function() {
                     }
                 }
 
-                // Geração dinâmica dos 10 blocos
                 let blocksHtml = '<div class="opt5-container">';
                 for(let i=0; i<onlineBlocks; i++) blocksHtml += `<div class="block" style="background: var(--m3-color-success);" title="Online"></div>`;
                 for(let i=0; i<powerBlocks; i++) blocksHtml += `<div class="block" style="background: #fbbf24;" title="Sem Energia"></div>`;
@@ -447,7 +442,6 @@ window.openEnergyModal = function(oltId) {
 };
 
 window.openEnergyPlacaDetails = function(oltId, placa) {
-    // SALVANDO O CONTEXTO PARA O TXT
     window.CURRENT_ENERGY_OLT = oltId;
     window.CURRENT_ENERGY_PLACA = placa;
 
@@ -457,29 +451,63 @@ window.openEnergyPlacaDetails = function(oltId, placa) {
     const tbody = document.getElementById('energy-detalhes-tbody');
     tbody.innerHTML = '';
     const ports = window.ENERGY_DATA_STORE.olts[oltId].ports[placa];
+    
+    if (!ports || Object.keys(ports).length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 20px; color: var(--m3-on-surface-variant);">Nenhuma porta encontrada nesta placa.</td></tr>`;
+        return;
+    }
+
     Object.keys(ports).sort((a, b) => parseInt(a) - parseInt(b)).forEach(pt => {
         const pData = ports[pt];
         if (pData.total > 0) {
             const perc = pData.powerOff / pData.total;
-            let statusBadge = `<span class="impact-badge impact-low">Mínimo</span>`; 
+            let statusClass = 'status-normal';
+            let statusText = 'Normal';
             
             if ((perc >= 0.5 && pData.powerOff >= 10) || (perc === 1 && pData.total >= 5)) {
-                statusBadge = `<span class="impact-badge impact-high">Crítico</span>`; 
+                statusClass = 'status-critico';
+                statusText = 'Crítico';
             } else if (perc >= 0.15 && pData.powerOff >= 5) {
-                statusBadge = `<span class="impact-badge impact-med">Atenção</span>`; 
+                statusClass = 'status-atencao';
+                statusText = 'Atenção';
             }
+
+            const safeInfo = pData.circuit.replace(/'/g, "\\'");
 
             tbody.innerHTML += `
                 <tr>
-                    <td style="font-weight: bold;">${placa}/${pt}</td>
+                    <td>Porta ${String(pt).padStart(2, '0')}</td>
                     <td><span class="circuit-badge">${pData.circuit}</span></td>
-                    <td>${pData.total}</td>
-                    <td style="color: #fbbf24; font-weight: bold;">${pData.powerOff > 0 ? pData.powerOff : '-'}</td>
-                    <td>${Math.round(perc * 100)}%</td>
-                    <td>${statusBadge}</td>
+                    <td>
+                        <button class="status ${statusClass} status-btn" style="cursor: pointer;"
+                            onclick="openEnergyPortDetails('${placa}', '${pt}', '${safeInfo}', ${pData.total}, ${pData.offline}, ${pData.powerOff})">
+                            ${statusText}
+                        </button>
+                    </td>
                 </tr>`;
         }
     });
+};
+
+// NOVA FUNÇÃO: ABRE O MODAL MINIMALISTA DA PORTA (ENERGIA)
+window.openEnergyPortDetails = function(placa, porta, circuito, total, offline, powerOff) {
+    const modal = document.getElementById('energy-port-modal');
+    if (!modal) return;
+
+    const textoCircuito = (circuito && circuito !== "-") ? ` - Circuito: ${circuito}` : "";
+    document.getElementById('energy-port-modal-title').textContent = `Placa ${placa} / Porta ${porta}${textoCircuito}`;
+
+    document.getElementById('energy-modal-total').textContent = total;
+    document.getElementById('energy-modal-offline').textContent = offline;
+    document.getElementById('energy-modal-poweroff').textContent = powerOff;
+
+    modal.style.display = 'flex';
+};
+
+window.closeEnergyPortModal = function(event) {
+    if (event && event.target.id !== 'energy-port-modal' && !event.target.classList.contains('close-modal')) return;
+    const modal = document.getElementById('energy-port-modal');
+    if (modal) modal.style.display = 'none';
 };
 
 window.closeEnergyModal = function(event) {

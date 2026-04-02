@@ -68,15 +68,12 @@
                         </div>
                         
                         <div class="table-container">
-                            <table class="olt-table">
+                            <table>
                                 <thead>
-                                    <tr>
-                                        <th>Porta</th>
-                                        <th>Circuitos</th>
-                                        <th>Total Clientes</th>
-                                        <th style="color: #fbbf24;">Power Off</th>
-                                        <th>Impacto</th>
-                                        <th>Status</th>
+                                    <tr class="table-header-row">
+                                        <th>PORTAS</th>
+                                        <th>CIRCUITOS</th>
+                                        <th>STATUS</th>
                                     </tr>
                                 </thead>
                                 <tbody id="energy-detalhes-tbody">
@@ -85,6 +82,31 @@
                         </div>
                     </div>
 
+                </div>
+            </div>
+        </div>
+
+        <div id="energy-port-modal" class="modal-overlay" style="display: none;" onclick="closeEnergyPortModal(event)">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="energy-port-modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">Detalhes</h3>
+                    <button class="close-modal" onclick="closeEnergyPortModal()" title="Fechar">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="energy-view-stats" class="modal-stats-grid" style="display: flex;">
+                        <div class="modal-stat-box">
+                            <span id="energy-modal-total" class="modal-stat-value val-total">0</span>
+                            <span class="modal-stat-label">TOTAL CLIENTES</span>
+                        </div>
+                        <div class="modal-stat-box">
+                            <span id="energy-modal-offline" class="modal-stat-value val-offline">0</span>
+                            <span class="modal-stat-label">OFFLINE (FIBRA)</span>
+                        </div>
+                        <div class="modal-stat-box">
+                            <span id="energy-modal-poweroff" class="modal-stat-value" style="color: #fbbf24;">0</span>
+                            <span class="modal-stat-label" style="color: #fbbf24;">SEM ENERGIA</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

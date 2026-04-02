@@ -50,18 +50,6 @@
     border-radius: 2px;
 }
 
-/* Status Badges Específicos de Energia */
-.impact-badge {
-    padding: 6px 14px;
-    border-radius: 14px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-.impact-high { background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
-.impact-med { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
-.impact-low { background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
-
 /* ==========================================================================
    RESPONSIVIDADE
    ========================================================================== */
