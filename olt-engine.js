@@ -1,5 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
+// Atualização: Exportação em Imagem (PNG) do Modal de Detalhes da Porta
 // ==============================================================================
 
 const TAB_CIRCUITOS = 'CIRCUITO'; 
@@ -251,7 +252,12 @@ window.startOltMonitoring = function(config) {
                 <div class="modal-content modal-large">
                     <div class="modal-header">
                         <h3 id="modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">Detalhes</h3>
-                        <button class="close-modal" onclick="closeModal()" title="Fechar">&times;</button>
+                        <div style="display: flex; gap: 15px; align-items: center;">
+                            <button onclick="exportDetailModalToImage(event)" title="Exportar para PNG" style="background: transparent; border: none; color: var(--m3-on-surface-variant); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; transition: color 0.2s;">
+                                <span class="material-symbols-rounded" style="font-size: 26px;">photo_camera</span>
+                            </button>
+                            <button class="close-modal" onclick="closeModal()" title="Fechar">&times;</button>
+                        </div>
                     </div>
                     <div class="modal-body">
                         <div id="view-stats" class="modal-stats-grid">
@@ -514,6 +520,46 @@ window.exportPlacaToTXT = function() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+};
+
+// NOVA FUNÇÃO: Exportar Imagem (PNG) do Modal de Detalhes
+window.exportDetailModalToImage = function(event) {
+    if (event) event.stopPropagation();
+
+    // Captura apenas o conteúdo interno do modal para a imagem
+    const modalContent = document.querySelector('#detail-modal .modal-content');
+    if (!modalContent) return;
+
+    const btn = event ? event.currentTarget : null;
+    let originalContent = '';
+    if (btn) {
+        originalContent = btn.innerHTML;
+        btn.innerHTML = `<span class="material-symbols-rounded">hourglass_empty</span>`;
+    }
+
+    const titleEl = document.getElementById('modal-title');
+    let titleName = 'Detalhes';
+    if (titleEl) {
+        titleName = titleEl.innerText.replace(/[^a-zA-Z0-9-]/g, '_');
+    }
+
+    html2canvas(modalContent, {
+        backgroundColor: null, // Mantém o fundo transparente para respeitar as bordas arredondadas do CSS
+        scale: 2, 
+        useCORS: true,
+        logging: false
+    }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `Status_${titleName}_${new Date().getTime()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        
+        if (btn) btn.innerHTML = originalContent;
+    }).catch(error => {
+        console.error('Erro ao gerar imagem:', error);
+        alert('Ocorreu um erro ao exportar a imagem.');
+        if (btn) btn.innerHTML = originalContent;
+    });
 };
 
 window.closeModal = function(event) {
