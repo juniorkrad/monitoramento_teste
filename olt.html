@@ -37,7 +37,13 @@
                 <h3 id="super-modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
                     <span class="material-symbols-rounded">dns</span> Detalhes da OLT
                 </h3>
-                <button class="close-modal" onclick="closeSuperModal()" title="Fechar">&times;</button>
+                
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <button onclick="gerarRelatorioOltOffscreen(event)" title="Gerar Boletim de Alarmes (Imagem)" style="background: transparent; border: none; color: var(--m3-on-surface-variant); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; transition: color 0.2s;">
+                        <span class="material-symbols-rounded" style="font-size: 28px;">summarize</span>
+                    </button>
+                    <button class="close-modal" onclick="closeSuperModal()" title="Fechar">&times;</button>
+                </div>
             </div>
 
             <div class="modal-body">
@@ -85,6 +91,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="olt-engine.js"></script>
     <script src="olt-page.js"></script>
+    <script src="olt-relatorio.js"></script>
+    
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
