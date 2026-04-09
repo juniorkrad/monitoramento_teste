@@ -91,30 +91,34 @@ window.gerarRelatorioOltOffscreen = function(event) {
             const statusColor = '#f87171'; // Sempre vermelho, já que agora é só crítico
             const statusBg = 'rgba(248, 113, 113, 0.15)';
             
-            // Larguras fixas, divisória e fundo avermelhado para impacto e status
+            // Larguras iguais (20%) para evitar ilusão de ótica e Badge para o Circuito
             rowsHtml += `
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                    <td style="padding: 12px 10px; font-weight: bold; text-align: center; width: 12%;">${p.placa}</td>
-                    <td style="padding: 12px 10px; font-family: 'Roboto Mono', monospace; text-align: center; width: 15%;">${p.porta}</td>
-                    <td style="padding: 12px 10px; text-align: center; width: 43%;">${p.circuito}</td>
-                    <td style="padding: 12px 10px; text-align: center; font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight: bold; width: 15%; border-left: 1px solid rgba(255,255,255,0.1); background-color: rgba(248, 113, 113, 0.04);">${p.perc}</td>
-                    <td style="padding: 12px 10px; text-align: center; width: 15%; background-color: rgba(248, 113, 113, 0.04);">
+                    <td style="padding: 12px 10px; font-weight: bold; text-align: center; width: 20%;">${p.placa}</td>
+                    <td style="padding: 12px 10px; font-family: 'Roboto Mono', monospace; text-align: center; width: 20%;">${p.porta}</td>
+                    
+                    <td style="padding: 12px 10px; text-align: center; width: 20%;">
+                        <span style="border: 1px solid rgba(255,255,255,0.2); background-color: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 8px; font-family: 'Roboto Mono', monospace; font-size: 0.9rem;">${p.circuito}</span>
+                    </td>
+                    
+                    <td style="padding: 12px 10px; text-align: center; font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight: bold; width: 20%; border-left: 1px solid rgba(255,255,255,0.1); background-color: rgba(248, 113, 113, 0.04);">${p.perc}</td>
+                    <td style="padding: 12px 10px; text-align: center; width: 20%; background-color: rgba(248, 113, 113, 0.04);">
                         <span style="background: ${statusBg}; color: ${statusColor}; padding: 6px 12px; border-radius: 12px; font-weight: bold; font-size: 0.85rem;">${p.status}</span>
                     </td>
                 </tr>
             `;
         });
 
-        // Divisão visual nas tags <th>
+        // Divisão visual nas tags <th> com todas as colunas em exatos 20%
         tableHtml = `
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.95rem;">
                 <thead>
                     <tr>
-                        <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; border-radius: 8px 0 0 0; width: 12%;">PLACA</th>
-                        <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 15%;">PORTA</th>
-                        <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 43%;">CIRCUITO</th>
-                        <th style="padding: 12px 10px; background: rgba(248, 113, 113, 0.1); text-align: center; border-left: 1px solid rgba(255,255,255,0.1); width: 15%;">IMPACTO</th>
-                        <th style="padding: 12px 10px; background: rgba(248, 113, 113, 0.1); text-align: center; border-radius: 0 8px 0 0; width: 15%;">STATUS</th>
+                        <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; border-radius: 8px 0 0 0; width: 20%;">PLACA</th>
+                        <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 20%;">PORTA</th>
+                        <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 20%;">CIRCUITO</th>
+                        <th style="padding: 12px 10px; background: rgba(248, 113, 113, 0.1); text-align: center; border-left: 1px solid rgba(255,255,255,0.1); width: 20%;">IMPACTO</th>
+                        <th style="padding: 12px 10px; background: rgba(248, 113, 113, 0.1); text-align: center; border-radius: 0 8px 0 0; width: 20%;">STATUS</th>
                     </tr>
                 </thead>
                 <tbody>
