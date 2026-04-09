@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-relatorio.js - Gerador de Boletim Visual (PNG Off-screen) para OLTs
-// Atualização: Título Inteligente, Impacto em %, Logo e Bordas Arredondadas
+// Atualização: Ícones MD3, Alinhamento Central, Divisão Visual de Tabela
 // ==============================================================================
 
 window.gerarRelatorioOltOffscreen = function(event) {
@@ -76,7 +76,7 @@ window.gerarRelatorioOltOffscreen = function(event) {
     if (portasCriticas.length === 0) {
         tableHtml = `
             <div style="text-align: center; padding: 40px; background: rgba(255,255,255,0.05); border-radius: 12px; margin-top: 20px;">
-                <span style="font-size: 48px; color: #4ade80; margin-bottom: 10px; display:block;">✔</span>
+                <span style="font-family: 'Material Symbols Rounded'; font-size: 48px; color: #4ade80; margin-bottom: 10px; display:block;">check_circle</span>
                 <h2 style="margin: 0; color: #4ade80;">Rede Estável</h2>
                 <p style="color: #CAC4D0; margin-top: 5px;">Nenhum alarme crítico de queda total (100%) detectado nesta OLT no momento.</p>
             </div>
@@ -91,30 +91,30 @@ window.gerarRelatorioOltOffscreen = function(event) {
             const statusColor = '#f87171'; // Sempre vermelho, já que agora é só crítico
             const statusBg = 'rgba(248, 113, 113, 0.15)';
             
+            // Larguras fixas, divisória e fundo avermelhado para impacto e status
             rowsHtml += `
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                    <td style="padding: 12px 10px; font-weight: bold; text-align: center;">${p.placa}</td>
-                    <td style="padding: 12px 10px; font-family: 'Roboto Mono', monospace; text-align: center;">${p.porta}</td>
-                    <td style="padding: 12px 10px;">${p.circuito}</td>
-                    <td style="padding: 12px 10px; text-align: center; font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight: bold;">
-                        ${p.perc}
-                    </td>
-                    <td style="padding: 12px 10px; text-align: center;">
+                    <td style="padding: 12px 10px; font-weight: bold; text-align: center; width: 12%;">${p.placa}</td>
+                    <td style="padding: 12px 10px; font-family: 'Roboto Mono', monospace; text-align: center; width: 15%;">${p.porta}</td>
+                    <td style="padding: 12px 10px; text-align: center; width: 43%;">${p.circuito}</td>
+                    <td style="padding: 12px 10px; text-align: center; font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight: bold; width: 15%; border-left: 1px solid rgba(255,255,255,0.1); background-color: rgba(248, 113, 113, 0.04);">${p.perc}</td>
+                    <td style="padding: 12px 10px; text-align: center; width: 15%; background-color: rgba(248, 113, 113, 0.04);">
                         <span style="background: ${statusBg}; color: ${statusColor}; padding: 6px 12px; border-radius: 12px; font-weight: bold; font-size: 0.85rem;">${p.status}</span>
                     </td>
                 </tr>
             `;
         });
 
+        // Divisão visual nas tags <th>
         tableHtml = `
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.95rem;">
                 <thead>
                     <tr>
-                        <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; border-radius: 8px 0 0 0;">PLACA</th>
-                        <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center;">PORTA</th>
-                        <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: left;">CIRCUITO</th>
-                        <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center;">IMPACTO</th>
-                        <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; border-radius: 0 8px 0 0;">STATUS</th>
+                        <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; border-radius: 8px 0 0 0; width: 12%;">PLACA</th>
+                        <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 15%;">PORTA</th>
+                        <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 43%;">CIRCUITO</th>
+                        <th style="padding: 12px 10px; background: rgba(248, 113, 113, 0.1); text-align: center; border-left: 1px solid rgba(255,255,255,0.1); width: 15%;">IMPACTO</th>
+                        <th style="padding: 12px 10px; background: rgba(248, 113, 113, 0.1); text-align: center; border-radius: 0 8px 0 0; width: 15%;">STATUS</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -126,16 +126,19 @@ window.gerarRelatorioOltOffscreen = function(event) {
 
     const dataHora = new Date().toLocaleString('pt-BR');
 
-    // Estrutura principal do documento que será fotografado
+    // Estrutura principal com ícones explícitos garantindo renderização correta
     offscreenDiv.innerHTML = `
         <div style="border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end;">
             <div style="display: flex; align-items: center; gap: 20px;">
                 <img src="logo-relatorio.png" style="max-height: 60px; width: auto; object-fit: contain;" onerror="this.style.display='none'">
                 <div>
                     <h2 style="margin: 0; font-size: 1.6rem; color: #f87171; display: flex; align-items: center; gap: 10px;">
-                        ${portasCriticas.length > 0 ? '⚠ ' : ''}${tituloBoletim}
+                        ${portasCriticas.length > 0 ? `<span style="font-family: 'Material Symbols Rounded'; font-weight: normal; font-size: 28px;">warning</span>` : ''}
+                        ${tituloBoletim}
                     </h2>
-                    <h3 style="margin: 5px 0 0 0; font-size: 1.3rem; color: #ffffff;">${oltName}</h3>
+                    <h3 style="margin: 5px 0 0 0; font-size: 1.3rem; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+                        <span style="font-family: 'Material Symbols Rounded'; font-weight: normal; font-size: 24px;">dns</span> ${oltName}
+                    </h3>
                 </div>
             </div>
             <div style="text-align: right;">
@@ -149,7 +152,7 @@ window.gerarRelatorioOltOffscreen = function(event) {
 
     // 5. Acionar o HTML2Canvas para tirar a foto da Div
     html2canvas(offscreenDiv, {
-        backgroundColor: null, // Alterado para null para manter a transparência externa e bordas arredondadas do CSS
+        backgroundColor: null, 
         scale: 2, 
         logging: false
     }).then(canvas => {
