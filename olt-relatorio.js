@@ -1,5 +1,6 @@
 // ==============================================================================
 // olt-relatorio.js - Gerador de Boletim Visual (PNG Off-screen) para OLTs
+// Atualização: Título Inteligente, Impacto em %, Logo e Bordas Arredondadas
 // ==============================================================================
 
 window.gerarRelatorioOltOffscreen = function(event) {
@@ -20,9 +21,9 @@ window.gerarRelatorioOltOffscreen = function(event) {
         oltName = titleEl.innerText.replace('dns', '').trim();
     }
 
-    // 2. Filtrar apenas as portas com alarmes críticos
+    // 2. Filtrar apenas as portas com alarmes críticos (100% DOWN)
     const portasCriticas = [];
-    const data = window.CURRENT_OLT_PORT_DATA || {}; // Puxa os dados que o olt-engine.js guardou na memória
+    const data = window.CURRENT_OLT_PORT_DATA || {}; 
 
     for (const placa in data) {
         const ports = data[placa];
@@ -30,21 +31,28 @@ window.gerarRelatorioOltOffscreen = function(event) {
             const pData = ports[porta];
             const total = pData.online + pData.offline;
             
-            // Mesma regra de alarme do motor principal
+            // Focado exclusivamente em situação de 100% da porta down
             if (total >= 5) {
                 const percOffline = pData.offline / total;
-                if (percOffline === 1 || percOffline >= 0.5 || pData.offline >= 32) {
+                if (percOffline === 1) { 
                     portasCriticas.push({
                         placa: placa,
                         porta: String(porta).padStart(2, '0'),
                         circuito: pData.info,
-                        offline: pData.offline,
-                        total: total,
-                        status: percOffline === 1 ? 'DOWN TOTAL' : 'CRÍTICO'
+                        perc: Math.round(percOffline * 100) + '%',
+                        status: 'CRÍTICO'
                     });
                 }
             }
         }
+    }
+
+    // Título inteligente baseado na quantidade de portas caídas
+    let tituloBoletim = "REDE ESTÁVEL";
+    if (portasCriticas.length > 1) {
+        tituloBoletim = "ROMPIMENTO BACKBONE";
+    } else if (portasCriticas.length === 1) {
+        tituloBoletim = "ROMPIMENTO CIRCUITO";
     }
 
     // 3. Criar a "Lona" (Div Invisível) onde o layout será desenhado
@@ -57,7 +65,8 @@ window.gerarRelatorioOltOffscreen = function(event) {
     offscreenDiv.style.backgroundColor = '#2f0e51'; // Fundo Padrão (M3 Surface)
     offscreenDiv.style.color = '#ffffff';
     offscreenDiv.style.padding = '30px';
-    offscreenDiv.style.borderRadius = '16px';
+    offscreenDiv.style.borderRadius = '24px'; // Bordas arredondadas fortes
+    offscreenDiv.style.overflow = 'hidden'; // Garante que o conteúdo não vaze as bordas
     offscreenDiv.style.fontFamily = "'Montserrat', sans-serif";
     offscreenDiv.style.boxSizing = 'border-box';
 
@@ -69,7 +78,7 @@ window.gerarRelatorioOltOffscreen = function(event) {
             <div style="text-align: center; padding: 40px; background: rgba(255,255,255,0.05); border-radius: 12px; margin-top: 20px;">
                 <span style="font-size: 48px; color: #4ade80; margin-bottom: 10px; display:block;">✔</span>
                 <h2 style="margin: 0; color: #4ade80;">Rede Estável</h2>
-                <p style="color: #CAC4D0; margin-top: 5px;">Nenhum alarme crítico ou queda total detectado nesta OLT no momento.</p>
+                <p style="color: #CAC4D0; margin-top: 5px;">Nenhum alarme crítico de queda total (100%) detectado nesta OLT no momento.</p>
             </div>
         `;
     } else {
@@ -79,18 +88,16 @@ window.gerarRelatorioOltOffscreen = function(event) {
         portasCriticas.sort((a, b) => parseInt(a.placa) - parseInt(b.placa) || parseInt(a.porta) - parseInt(b.porta));
         
         portasCriticas.forEach(p => {
-            const statusColor = p.status === 'DOWN TOTAL' ? '#f87171' : '#fbbf24';
-            const statusBg = p.status === 'DOWN TOTAL' ? 'rgba(248, 113, 113, 0.15)' : 'rgba(251, 191, 36, 0.15)';
+            const statusColor = '#f87171'; // Sempre vermelho, já que agora é só crítico
+            const statusBg = 'rgba(248, 113, 113, 0.15)';
             
-            // As cores em HEX inline garantem que a foto do Canvas saia perfeita
             rowsHtml += `
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                     <td style="padding: 12px 10px; font-weight: bold; text-align: center;">${p.placa}</td>
                     <td style="padding: 12px 10px; font-family: 'Roboto Mono', monospace; text-align: center;">${p.porta}</td>
                     <td style="padding: 12px 10px;">${p.circuito}</td>
-                    <td style="padding: 12px 10px; text-align: center;">
-                        <span style="font-family: 'Roboto Mono', monospace; font-size: 0.95rem; color: #f87171; font-weight: bold;">${p.offline}</span>
-                        <span style="font-family: 'Roboto Mono', monospace; font-size: 0.8rem; color: rgba(255,255,255,0.5);">/${p.total}</span>
+                    <td style="padding: 12px 10px; text-align: center; font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight: bold;">
+                        ${p.perc}
                     </td>
                     <td style="padding: 12px 10px; text-align: center;">
                         <span style="background: ${statusBg}; color: ${statusColor}; padding: 6px 12px; border-radius: 12px; font-weight: bold; font-size: 0.85rem;">${p.status}</span>
@@ -106,7 +113,7 @@ window.gerarRelatorioOltOffscreen = function(event) {
                         <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; border-radius: 8px 0 0 0;">PLACA</th>
                         <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center;">PORTA</th>
                         <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: left;">CIRCUITO</th>
-                        <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center;">CLIENTES (OFF/TOTAL)</th>
+                        <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center;">IMPACTO</th>
                         <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; border-radius: 0 8px 0 0;">STATUS</th>
                     </tr>
                 </thead>
@@ -122,27 +129,27 @@ window.gerarRelatorioOltOffscreen = function(event) {
     // Estrutura principal do documento que será fotografado
     offscreenDiv.innerHTML = `
         <div style="border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end;">
-            <div>
-                <h2 style="margin: 0; font-size: 1.6rem; color: #ffffff; display: flex; align-items: center; gap: 10px;">
-                    <span style="color: #f87171;">⚠</span> BOLETIM DE ALARMES CRÍTICOS
-                </h2>
-                <h3 style="margin: 5px 0 0 0; font-size: 1.3rem; color: #fbbf24;">${oltName}</h3>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <img src="logo-relatorio.png" style="max-height: 60px; width: auto; object-fit: contain;" onerror="this.style.display='none'">
+                <div>
+                    <h2 style="margin: 0; font-size: 1.6rem; color: #f87171; display: flex; align-items: center; gap: 10px;">
+                        ${portasCriticas.length > 0 ? '⚠ ' : ''}${tituloBoletim}
+                    </h2>
+                    <h3 style="margin: 5px 0 0 0; font-size: 1.3rem; color: #ffffff;">${oltName}</h3>
+                </div>
             </div>
             <div style="text-align: right;">
                 <span style="font-size: 0.85rem; color: #CAC4D0; font-family: 'Roboto Mono', monospace;">Gerado em: ${dataHora}</span>
             </div>
         </div>
         ${tableHtml}
-        <div style="margin-top: 25px; text-align: center; font-size: 0.75rem; color: rgba(255,255,255,0.4);">
-            Gerado automaticamente pelo NOC Dashboard
-        </div>
     `;
 
     document.body.appendChild(offscreenDiv);
 
     // 5. Acionar o HTML2Canvas para tirar a foto da Div
     html2canvas(offscreenDiv, {
-        backgroundColor: '#2f0e51', 
+        backgroundColor: null, // Alterado para null para manter a transparência externa e bordas arredondadas do CSS
         scale: 2, 
         logging: false
     }).then(canvas => {
