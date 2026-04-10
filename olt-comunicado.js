@@ -1,7 +1,7 @@
 // ==============================================================================
 // olt-comunicado.js - Gerador de Imagem para Redes Sociais (Formato Stories 9:16)
 // Tema: Material Design Light / Cores do Projeto (Roxo) / Fundo Branco
-// Atualização: Título centralizado com ícone absoluto, cards originais restaurados, mensagem final dinâmica.
+// Atualização: Correção de Logo, Rodapé sem texto nas listas, Página Final Exclusiva para Mensagens.
 // ==============================================================================
 
 window.gerarComunicadoSocialOffscreen = async function(event) {
@@ -46,9 +46,12 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
         // Converte o Set para um Array e ordena alfabeticamente
         const bairros = Array.from(circuitosAfetadosSet).sort();
 
-        // 3. Paginação (Limite de bairros por "Story" para não ficar pequeno)
+        // 3. Paginação (Limite de bairros por "Story")
         const LIMITE_BAIRROS = 8;
-        const totalPaginas = Math.max(1, Math.ceil(bairros.length / LIMITE_BAIRROS));
+        // Calculamos as páginas de lista
+        const paginasDeLista = Math.ceil(bairros.length / LIMITE_BAIRROS);
+        // Se houver bairros, adicionamos +1 página exclusiva para o encerramento
+        const totalPaginas = bairros.length > 0 ? paginasDeLista + 1 : 1;
         
         // Paleta Material Design 3 Light com Roxo do Projeto
         const colorPrimaryPurple = '#67079f'; 
@@ -84,8 +87,15 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
 
             // Conteúdo Condicional
             let conteudoCentralHtml = '';
+            let isPaginaFinalMensagens = false;
+
+            // Define se é a página final exclusiva de mensagens (só se houver bairros)
+            if (bairros.length > 0 && paginaAtual === totalPaginas) {
+                isPaginaFinalMensagens = true;
+            }
 
             if (bairros.length === 0) {
+                // Cenário Rede Estável (Mantido)
                 conteudoCentralHtml = `
                     <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 80px; text-align: center;">
                         <span style="font-family: 'Material Symbols Rounded'; font-size: 180px; color: #10b981; margin-bottom: 40px;">check_circle</span>
@@ -93,14 +103,38 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                         <p style="font-size: 40px; color: ${colorOnSurfaceVariant}; margin: 0; line-height: 1.4;">Nenhuma instabilidade identificada nesta região.</p>
                     </div>
                 `;
+            } else if (isPaginaFinalMensagens) {
+                // --- NOVO CENÁRIO: PÁGINA FINAL EXCLUSIVA DE MENSAGENS ---
+                conteudoCentralHtml = `
+                    <div style="flex: 1; padding: 0 80px 40px 80px; display: flex; flex-direction: column;">
+                        
+                        <div style="padding: 0 0 50px 0;">
+                            <div style="position: relative; display: flex; align-items: center; justify-content: center; background-color: rgba(103, 7, 159, 0.1); padding: 30px 40px; min-height: 160px; border-radius: 100px; border: 2px solid rgba(103, 7, 159, 0.15); margin-bottom: 30px; margin-top: 20px; box-sizing: border-box;">
+                                <span style="font-family: 'Material Symbols Rounded'; font-size: 120px; color: ${colorPrimaryPurple}; position: absolute; left: 40px;">campaign</span>
+                                <h1 style="font-size: 60px; color: ${colorPrimaryPurple}; margin: 0 0 0 80px; font-weight: 800; text-transform: uppercase; letter-spacing: -1px; text-align: center;">Aviso de Manutenção</h1>
+                            </div>
+                        </div>
+                        
+                        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 60px; padding: 40px 0;">
+                            
+                            <div style="background-color: transparent; border: 4px dashed rgba(103, 7, 159, 0.3); border-radius: 32px; padding: 60px; text-align: center; width: 100%; box-sizing: border-box;">
+                                <p style="font-size: 40px; color: ${colorPrimaryPurple}; margin: 0; line-height: 1.6; font-weight: 600;">Nossa equipe técnica já está trabalhando para normalizar os serviços o mais rápido possível.</p>
+                            </div>
+
+                            <p style="font-size: 45px; margin: 0; font-weight: 700; color: ${colorPrimaryPurple}; text-align: center; text-transform: uppercase; letter-spacing: 1px;">Agradecemos a compreensão.</p>
+
+                        </div>
+                        
+                    </div>
+                `;
             } else {
+                // --- CENÁRIO: PÁGINAS DE LISTA (Etiquetas) ---
                 let bairrosHtml = '';
                 const startIndex = (paginaAtual - 1) * LIMITE_BAIRROS;
                 const endIndex = startIndex + LIMITE_BAIRROS;
                 const fatiaBairros = bairros.slice(startIndex, endIndex);
 
                 fatiaBairros.forEach(bairro => {
-                    // Card Restaurado: Borda lateral grossa, sombra marcante e border-radius de 16px
                     bairrosHtml += `
                         <div style="background-color: ${colorPrimaryContainer}; border-left: 12px solid ${colorPrimaryPurple}; border-radius: 16px; padding: 30px 40px; margin-bottom: 25px; display: flex; align-items: center; gap: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
                             <span style="font-family: 'Material Symbols Rounded'; font-size: 48px; color: ${colorPrimaryPurple};">location_on</span>
@@ -109,42 +143,29 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                     `;
                 });
 
-                // Lógica Dinâmica para a Mensagem da Equipe Técnica (Só aparece na última página)
-                let mensagemEquipeHtml = '';
-                if (paginaAtual === totalPaginas) {
-                    mensagemEquipeHtml = `
-                        <div style="background-color: transparent; border: 3px dashed rgba(103, 7, 159, 0.3); border-radius: 24px; padding: 40px; text-align: center; margin-top: 40px;">
-                            <p style="font-size: 34px; color: ${colorPrimaryPurple}; margin: 0; line-height: 1.5; font-weight: 600;">Nossa equipe técnica já está trabalhando para normalizar os serviços o mais rápido possível.</p>
-                        </div>
-                    `;
-                }
-
                 conteudoCentralHtml = `
                     <div style="flex: 1; padding: 0 80px 40px 80px; display: flex; flex-direction: column;">
                         
                         <div style="padding: 0 0 50px 0;">
-                            
                             <div style="position: relative; display: flex; align-items: center; justify-content: center; background-color: rgba(103, 7, 159, 0.1); padding: 30px 40px; min-height: 160px; border-radius: 100px; border: 2px solid rgba(103, 7, 159, 0.15); margin-bottom: 30px; margin-top: 20px; box-sizing: border-box;">
                                 <span style="font-family: 'Material Symbols Rounded'; font-size: 120px; color: ${colorPrimaryPurple}; position: absolute; left: 40px;">campaign</span>
                                 <h1 style="font-size: 60px; color: ${colorPrimaryPurple}; margin: 0 0 0 80px; font-weight: 800; text-transform: uppercase; letter-spacing: -1px; text-align: center;">Aviso de Manutenção</h1>
                             </div>
-
                             <p style="text-align: center; font-size: 38px; color: ${colorOnSurfaceVariant}; margin: 0; line-height: 1.5; font-weight: 500;">Identificamos uma instabilidade que afeta a conexão nos seguintes locais:</p>
                         </div>
                         
                         <div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-start;">
                             ${bairrosHtml}
-                            ${mensagemEquipeHtml}
                         </div>
                         
                     </div>
                 `;
             }
 
-            // Cabeçalho (Área da Logo)
+            // Cabeçalho (Área da Logo) - CORRIGIDO onerror para não exibir texto
             const headerHtml = `
                 <div style="height: 320px; width: 100%; display: flex; align-items: center; justify-content: center; padding: 40px 0; z-index: 10; box-sizing: border-box;">
-                    <img id="social-logo-${paginaAtual}" src="logo-comunicado.png.png" style="max-height: 175px; max-width: 85%; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerHTML='<h2 style=\\'font-size:60px; color:${colorPrimaryPurple}; margin:0; text-transform:uppercase; font-weight:800; letter-spacing:-1px;\\'>COMUNICADO</h2>';">
+                    <img id="social-logo-${paginaAtual}" src="logo-comunicado.png" style="max-height: 175px; max-width: 85%; object-fit: contain;" onerror="this.style.display='none';">
                 </div>
             `;
 
@@ -158,10 +179,22 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                 `;
             }
 
-            // Rodapé Material Roxo
+            // Rodapé Roxo (CORRIGIDO: Sem texto nas páginas de lista)
+            let footerContent = '';
+            if (bairros.length === 0) {
+                 // Texto padrão para rede estável
+                 footerContent = `<p style="font-size: 34px; margin: 0; font-weight: 600; color: #ffffff;">NOC Monitoramento</p>`;
+            } else if (isPaginaFinalMensagens) {
+                // Página final: barra roxa lisa (o texto já está no corpo central)
+                footerContent = ''; 
+            } else {
+                // Páginas de lista: barra roxa lisa para fechar o design
+                footerContent = '';
+            }
+
             const footerHtml = `
-                <div style="background-color: ${colorPrimaryPurple}; padding: 50px 40px; text-align: center; border-radius: 40px 40px 0 0; margin-top: auto;">
-                    <p style="font-size: 34px; margin: 0; font-weight: 600; color: #ffffff;">Agradecemos a compreensão.</p>
+                <div style="background-color: ${colorPrimaryPurple}; padding: ${footerContent ? '50px 40px' : '30px 40px'}; text-align: center; border-radius: 40px 40px 0 0; margin-top: auto; min-height: ${footerContent ? 'auto' : '60px'}; box-sizing: border-box;">
+                    ${footerContent}
                 </div>
             `;
 
@@ -176,23 +209,22 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             wrapperDiv.appendChild(offscreenDiv);
             document.body.appendChild(wrapperDiv);
 
-            // --- TRAVA DE SEGURANÇA: AGUARDAR A IMAGEM CARREGAR ANTES DE BATER A FOTO ---
+            // Trava de segurança para carregar imagem
             const imgEl = document.getElementById(`social-logo-${paginaAtual}`);
-            if (imgEl && !imgEl.complete) {
+            if (imgEl && !imgEl.complete && imgEl.style.display !== 'none') {
                 await new Promise((resolve) => {
                     imgEl.onload = resolve;
-                    imgEl.onerror = resolve; // Continua mesmo se der erro, para não travar o painel
+                    imgEl.onerror = resolve; 
                 });
             }
-            // Pequeno delay extra para garantir que o navegador desenhou a imagem na lona invisível
             await new Promise(resolve => setTimeout(resolve, 200));
 
             // 4. Gerar a imagem com HTML2Canvas
             const canvas = await html2canvas(wrapperDiv, {
-                backgroundColor: null, // Assegura quinas transparentes
-                scale: 1, // Escala 1 é suficiente pois a base já é enorme (1080x1920)
+                backgroundColor: null, 
+                scale: 1, 
                 logging: false,
-                useCORS: true // Ajuda a carregar a imagem
+                useCORS: true 
             });
 
             // Nome do arquivo
@@ -205,7 +237,6 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             link.href = canvas.toDataURL('image/png');
             link.click();
             
-            // Limpar a memória removendo o Wrapper Invisível inteiro
             document.body.removeChild(wrapperDiv);
         }
 
