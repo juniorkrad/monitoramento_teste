@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-relatorio.js - Gerador de Boletim Visual (PNG Off-screen) para OLTs
-// Atualização: Paginação Automática (Fatiamento Inteligente para grandes alarmes)
+// Atualização: Correção de quinas brancas (Wrapper Transparente) nas bordas
 // ==============================================================================
 
 window.gerarRelatorioOltOffscreen = async function(event) {
@@ -67,12 +67,17 @@ window.gerarRelatorioOltOffscreen = async function(event) {
         // Loop assíncrono para gerar cada página sequencialmente
         for (let paginaAtual = 1; paginaAtual <= totalPaginas; paginaAtual++) {
             
-            // 3. Criar a "Lona" (Div Invisível) onde o layout será desenhado
+            // 3. O TRUQUE: Criar um Wrapper Transparente para evitar quinas brancas
+            const wrapperDiv = document.createElement('div');
+            wrapperDiv.id = `offscreen-wrapper-pag-${paginaAtual}`;
+            wrapperDiv.style.position = 'absolute';
+            wrapperDiv.style.left = '-9999px'; 
+            wrapperDiv.style.top = '0';
+            wrapperDiv.style.backgroundColor = 'transparent'; // Transparência total na raiz
+            wrapperDiv.style.padding = '0';
+
+            // A Lona Real onde o layout será desenhado
             const offscreenDiv = document.createElement('div');
-            offscreenDiv.id = `offscreen-report-pag-${paginaAtual}`;
-            offscreenDiv.style.position = 'absolute';
-            offscreenDiv.style.left = '-9999px'; // Esconde longe da tela
-            offscreenDiv.style.top = '0';
             offscreenDiv.style.width = '850px';
             offscreenDiv.style.backgroundColor = '#2f0e51'; // Fundo Padrão (M3 Surface)
             offscreenDiv.style.color = '#ffffff';
@@ -172,11 +177,13 @@ window.gerarRelatorioOltOffscreen = async function(event) {
                 ${tableHtml}
             `;
 
-            document.body.appendChild(offscreenDiv);
+            // Adiciona a Lona Colorida para dentro do Wrapper Transparente
+            wrapperDiv.appendChild(offscreenDiv);
+            document.body.appendChild(wrapperDiv);
 
-            // 5. Acionar o HTML2Canvas (Aguardando o render concluir antes de ir para a próxima página)
-            const canvas = await html2canvas(offscreenDiv, {
-                backgroundColor: null, 
+            // 5. Acionar o HTML2Canvas NA CAIXA MÃE (Aguardando o render concluir)
+            const canvas = await html2canvas(wrapperDiv, {
+                backgroundColor: null, // Assegura que o canvas baseia-se no wrapper transparente
                 scale: 2, 
                 logging: false
             });
@@ -191,8 +198,8 @@ window.gerarRelatorioOltOffscreen = async function(event) {
             link.href = canvas.toDataURL('image/png');
             link.click();
             
-            // Limpar a memória removendo a Div invisível
-            document.body.removeChild(offscreenDiv);
+            // Limpar a memória removendo o Wrapper Invisível inteiro
+            document.body.removeChild(wrapperDiv);
         }
 
     } catch (error) {
