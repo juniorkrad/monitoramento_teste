@@ -1,7 +1,7 @@
 // ==============================================================================
 // olt-comunicado.js - Gerador de Imagem para Redes Sociais (Formato Stories 9:16)
 // Tema: Material Design Light / Cores do Projeto (Roxo) / Fundo Branco
-// Atualização: Borda recuada (moldura), Logo com zoom de 50%, Textos atualizados e centralizados.
+// Atualização: Texto alterado para "Aviso de Reparo".
 // ==============================================================================
 
 window.gerarComunicadoSocialOffscreen = async function(event) {
@@ -117,7 +117,7 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                         <div style="padding: 0 0 50px 0;">
                             <div style="position: relative; display: flex; align-items: center; justify-content: center; background-color: rgba(103, 7, 159, 0.1); padding: 30px 40px; min-height: 160px; border-radius: 100px; border: 2px solid rgba(103, 7, 159, 0.15); margin-bottom: 30px; margin-top: 20px; box-sizing: border-box;">
                                 <span style="font-family: 'Material Symbols Rounded'; font-size: 120px; color: ${colorPrimaryPurple}; position: absolute; left: 40px;">campaign</span>
-                                <h1 style="font-size: 60px; color: ${colorPrimaryPurple}; margin: 0 0 0 80px; font-weight: 800; text-transform: uppercase; letter-spacing: -1px; text-align: center;">Aviso de Manutenção</h1>
+                                <h1 style="font-size: 60px; color: ${colorPrimaryPurple}; margin: 0 0 0 80px; font-weight: 800; text-transform: uppercase; letter-spacing: -1px; text-align: center;">Aviso de Reparo</h1>
                             </div>
                         </div>
                         
@@ -155,7 +155,7 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                         <div style="padding: 0 0 50px 0;">
                             <div style="position: relative; display: flex; align-items: center; justify-content: center; background-color: rgba(103, 7, 159, 0.1); padding: 30px 40px; min-height: 160px; border-radius: 100px; border: 2px solid rgba(103, 7, 159, 0.15); margin-bottom: 30px; margin-top: 20px; box-sizing: border-box;">
                                 <span style="font-family: 'Material Symbols Rounded'; font-size: 120px; color: ${colorPrimaryPurple}; position: absolute; left: 40px;">campaign</span>
-                                <h1 style="font-size: 60px; color: ${colorPrimaryPurple}; margin: 0 0 0 80px; font-weight: 800; text-transform: uppercase; letter-spacing: -1px; text-align: center;">Aviso de Manutenção</h1>
+                                <h1 style="font-size: 60px; color: ${colorPrimaryPurple}; margin: 0 0 0 80px; font-weight: 800; text-transform: uppercase; letter-spacing: -1px; text-align: center;">Aviso de Reparo</h1>
                             </div>
                             <p style="text-align: center; font-size: 38px; color: ${colorOnSurfaceVariant}; margin: 0; line-height: 1.5; font-weight: 500;">Identificamos um ROMPIMENTO em nossa fibra que afeta a conexão nos seguintes locais:</p>
                         </div>
