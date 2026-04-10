@@ -134,7 +134,7 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             // Cabeçalho (Área da Logo)
             const headerHtml = `
                 <div style="height: 280px; width: 100%; display: flex; align-items: center; justify-content: center; padding-top: 40px; z-index: 10;">
-                    <img src="logo-comunicado.png" style="max-height: 140px; max-width: 80%; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerHTML='<h2 style=\\'font-size:60px; color:${colorPrimaryPurple}; margin:0; text-transform:uppercase; font-weight:800; letter-spacing:-1px;\\'>COMUNICADO</h2>';">
+                    <img id="social-logo-${paginaAtual}" src="logo-comunicado.png" style="max-height: 140px; max-width: 80%; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerHTML='<h2 style=\\'font-size:60px; color:${colorPrimaryPurple}; margin:0; text-transform:uppercase; font-weight:800; letter-spacing:-1px;\\'>COMUNICADO</h2>';">
                 </div>
             `;
 
@@ -166,12 +166,23 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             wrapperDiv.appendChild(offscreenDiv);
             document.body.appendChild(wrapperDiv);
 
+            // --- TRAVA DE SEGURANÇA: AGUARDAR A IMAGEM CARREGAR ANTES DE BATER A FOTO ---
+            const imgEl = document.getElementById(`social-logo-${paginaAtual}`);
+            if (imgEl && !imgEl.complete) {
+                await new Promise((resolve) => {
+                    imgEl.onload = resolve;
+                    imgEl.onerror = resolve; // Continua mesmo se der erro, para não travar o painel
+                });
+            }
+            // Pequeno delay extra para garantir que o navegador desenhou a imagem na tela invisível
+            await new Promise(resolve => setTimeout(resolve, 150));
+
             // 4. Gerar a imagem com HTML2Canvas
             const canvas = await html2canvas(wrapperDiv, {
                 backgroundColor: null, // Assegura quinas transparentes
                 scale: 1, // Escala 1 é suficiente pois a base já é enorme (1080x1920)
                 logging: false,
-                useCORS: true // Ajuda a carregar a imagem da logo
+                useCORS: true // Ajuda a carregar a imagem
             });
 
             // Nome do arquivo
