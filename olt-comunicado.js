@@ -1,7 +1,7 @@
 // ==============================================================================
 // olt-comunicado.js - Gerador de Imagem para Redes Sociais (Formato Stories 9:16)
 // Tema: Material Design Light / Cores do Projeto (Roxo) / Fundo Branco
-// Atualização: Rodapé removido, Borda roxa em volta do story, Logo ampliada em 50%.
+// Atualização: Borda recuada (moldura), Logo com zoom de 50%, Textos atualizados e centralizados.
 // ==============================================================================
 
 window.gerarComunicadoSocialOffscreen = async function(event) {
@@ -83,9 +83,13 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             offscreenDiv.style.position = 'relative';
             offscreenDiv.style.overflow = 'hidden';
             
-            // Bordas arredondadas fortes e BORDA FINA ROXA no contorno
+            // Bordas arredondadas fortes 
             offscreenDiv.style.borderRadius = '48px'; 
-            offscreenDiv.style.border = `8px solid ${colorPrimaryPurple}`;
+            
+            // Borda interna descolada da extremidade (A moldura elegante)
+            const innerBorderHtml = `
+                <div style="position: absolute; top: 35px; bottom: 35px; left: 35px; right: 35px; border: 8px solid ${colorPrimaryPurple}; border-radius: 36px; pointer-events: none; z-index: 999;"></div>
+            `;
 
             // Conteúdo Condicional
             let conteudoCentralHtml = '';
@@ -117,13 +121,13 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                             </div>
                         </div>
                         
-                        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 60px; padding: 40px 0;">
+                        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 80px; padding: 0 0 150px 0;">
                             
-                            <div style="background-color: transparent; border: 4px dashed rgba(103, 7, 159, 0.3); border-radius: 32px; padding: 60px; text-align: center; width: 100%; box-sizing: border-box;">
-                                <p style="font-size: 40px; color: ${colorPrimaryPurple}; margin: 0; line-height: 1.6; font-weight: 600;">Nossa equipe técnica já está trabalhando para normalizar os serviços o mais rápido possível.</p>
+                            <div style="background-color: rgba(103, 7, 159, 0.03); border: 5px dashed rgba(103, 7, 159, 0.5); border-radius: 36px; padding: 70px; text-align: center; width: 100%; box-sizing: border-box; box-shadow: 0 15px 40px rgba(103, 7, 159, 0.05);">
+                                <p style="font-size: 45px; color: ${colorPrimaryPurple}; margin: 0; line-height: 1.6; font-weight: 700;">Nossa equipe técnica já está trabalhando para normalizar os serviços o mais rápido possível.</p>
                             </div>
 
-                            <p style="font-size: 45px; margin: 0; font-weight: 700; color: ${colorPrimaryPurple}; text-align: center; text-transform: uppercase; letter-spacing: 1px;">Agradecemos a compreensão.</p>
+                            <p style="font-size: 55px; margin: 0; font-weight: 800; color: ${colorPrimaryPurple}; text-align: center; text-transform: uppercase; letter-spacing: 2px;">Agradecemos a compreensão.</p>
 
                         </div>
                         
@@ -153,7 +157,7 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                                 <span style="font-family: 'Material Symbols Rounded'; font-size: 120px; color: ${colorPrimaryPurple}; position: absolute; left: 40px;">campaign</span>
                                 <h1 style="font-size: 60px; color: ${colorPrimaryPurple}; margin: 0 0 0 80px; font-weight: 800; text-transform: uppercase; letter-spacing: -1px; text-align: center;">Aviso de Manutenção</h1>
                             </div>
-                            <p style="text-align: center; font-size: 38px; color: ${colorOnSurfaceVariant}; margin: 0; line-height: 1.5; font-weight: 500;">Identificamos uma instabilidade que afeta a conexão nos seguintes locais:</p>
+                            <p style="text-align: center; font-size: 38px; color: ${colorOnSurfaceVariant}; margin: 0; line-height: 1.5; font-weight: 500;">Identificamos um ROMPIMENTO em nossa fibra que afeta a conexão nos seguintes locais:</p>
                         </div>
                         
                         <div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-start;">
@@ -164,25 +168,26 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                 `;
             }
 
-            // Cabeçalho (Área da Logo) - Altura aumentada para comportar a logo gigante
+            // Cabeçalho (Área da Logo) - Zoom de 50% aplicado
             const headerHtml = `
-                <div style="height: 380px; width: 100%; display: flex; align-items: center; justify-content: center; padding: 40px 0; z-index: 10; box-sizing: border-box;">
-                    <img id="social-logo-${paginaAtual}" src="logo-comunicado.png" style="max-height: 280px; max-width: 90%; object-fit: contain;" onerror="this.style.display='none';">
+                <div style="height: 450px; width: 100%; display: flex; align-items: center; justify-content: center; padding: 60px 0 20px 0; z-index: 10; box-sizing: border-box;">
+                    <img id="social-logo-${paginaAtual}" src="logo-comunicado.png" style="max-height: 420px; max-width: 85%; object-fit: contain;" onerror="this.style.display='none';">
                 </div>
             `;
 
-            // Indicador de Página Material
+            // Indicador de Página Material (Reposicionado para respeitar a nova borda)
             let indicadorHtml = '';
             if (totalPaginas > 1) {
                 indicadorHtml = `
-                    <div style="position: absolute; top: 40px; right: 60px; background-color: rgba(103, 7, 159, 0.15); color: ${colorPrimaryPurple}; font-size: 30px; font-weight: bold; padding: 15px 30px; border-radius: 40px; border: 1px solid rgba(103, 7, 159, 0.2);">
+                    <div style="position: absolute; top: 60px; right: 60px; background-color: rgba(103, 7, 159, 0.15); color: ${colorPrimaryPurple}; font-size: 30px; font-weight: bold; padding: 15px 30px; border-radius: 40px; border: 1px solid rgba(103, 7, 159, 0.2); z-index: 20;">
                         ${paginaAtual}/${totalPaginas}
                     </div>
                 `;
             }
 
-            // Monta a estrutura do Story (Sem Rodapé)
+            // Monta a estrutura do Story (Com a moldura interna em primeiro lugar)
             offscreenDiv.innerHTML = `
+                ${innerBorderHtml}
                 ${headerHtml}
                 ${indicadorHtml}
                 ${conteudoCentralHtml}
