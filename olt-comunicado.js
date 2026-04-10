@@ -134,7 +134,7 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             // Cabeçalho (Área da Logo)
             const headerHtml = `
                 <div style="height: 280px; width: 100%; display: flex; align-items: center; justify-content: center; padding-top: 40px; z-index: 10;">
-                    <img src="logo-comunicado.png.png" style="max-height: 140px; max-width: 80%; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerHTML='<h2 style=\\'font-size:60px; color:${colorPrimaryPurple}; margin:0; text-transform:uppercase; font-weight:800; letter-spacing:-1px;\\'>COMUNICADO</h2>';">
+                    <img src="logo-comunicado.png" style="max-height: 140px; max-width: 80%; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerHTML='<h2 style=\\'font-size:60px; color:${colorPrimaryPurple}; margin:0; text-transform:uppercase; font-weight:800; letter-spacing:-1px;\\'>COMUNICADO</h2>';">
                 </div>
             `;
 
