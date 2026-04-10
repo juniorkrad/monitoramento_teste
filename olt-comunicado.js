@@ -1,7 +1,7 @@
 // ==============================================================================
 // olt-comunicado.js - Gerador de Imagem para Redes Sociais (Formato Stories 9:16)
 // Tema: Material Design Light / Cores do Projeto (Roxo) / Fundo Branco
-// Atualização: Correção de Logo, Rodapé sem texto nas listas, Página Final Exclusiva para Mensagens.
+// Atualização: Rodapé removido, Borda roxa em volta do story, Logo ampliada em 50%.
 // ==============================================================================
 
 window.gerarComunicadoSocialOffscreen = async function(event) {
@@ -82,8 +82,10 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             offscreenDiv.style.boxSizing = 'border-box';
             offscreenDiv.style.position = 'relative';
             offscreenDiv.style.overflow = 'hidden';
-            // Bordas arredondadas fortes para o PNG final
+            
+            // Bordas arredondadas fortes e BORDA FINA ROXA no contorno
             offscreenDiv.style.borderRadius = '48px'; 
+            offscreenDiv.style.border = `8px solid ${colorPrimaryPurple}`;
 
             // Conteúdo Condicional
             let conteudoCentralHtml = '';
@@ -104,7 +106,7 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                     </div>
                 `;
             } else if (isPaginaFinalMensagens) {
-                // --- NOVO CENÁRIO: PÁGINA FINAL EXCLUSIVA DE MENSAGENS ---
+                // --- PÁGINA FINAL EXCLUSIVA DE MENSAGENS ---
                 conteudoCentralHtml = `
                     <div style="flex: 1; padding: 0 80px 40px 80px; display: flex; flex-direction: column;">
                         
@@ -128,7 +130,7 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                     </div>
                 `;
             } else {
-                // --- CENÁRIO: PÁGINAS DE LISTA (Etiquetas) ---
+                // --- PÁGINAS DE LISTA (Etiquetas) ---
                 let bairrosHtml = '';
                 const startIndex = (paginaAtual - 1) * LIMITE_BAIRROS;
                 const endIndex = startIndex + LIMITE_BAIRROS;
@@ -162,10 +164,10 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                 `;
             }
 
-            // Cabeçalho (Área da Logo) - CORRIGIDO onerror para não exibir texto
+            // Cabeçalho (Área da Logo) - Altura aumentada para comportar a logo gigante
             const headerHtml = `
-                <div style="height: 320px; width: 100%; display: flex; align-items: center; justify-content: center; padding: 40px 0; z-index: 10; box-sizing: border-box;">
-                    <img id="social-logo-${paginaAtual}" src="logo-comunicado.png" style="max-height: 175px; max-width: 85%; object-fit: contain;" onerror="this.style.display='none';">
+                <div style="height: 380px; width: 100%; display: flex; align-items: center; justify-content: center; padding: 40px 0; z-index: 10; box-sizing: border-box;">
+                    <img id="social-logo-${paginaAtual}" src="logo-comunicado.png" style="max-height: 280px; max-width: 90%; object-fit: contain;" onerror="this.style.display='none';">
                 </div>
             `;
 
@@ -179,31 +181,11 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                 `;
             }
 
-            // Rodapé Roxo (CORRIGIDO: Sem texto nas páginas de lista)
-            let footerContent = '';
-            if (bairros.length === 0) {
-                 // Texto padrão para rede estável
-                 footerContent = `<p style="font-size: 34px; margin: 0; font-weight: 600; color: #ffffff;">NOC Monitoramento</p>`;
-            } else if (isPaginaFinalMensagens) {
-                // Página final: barra roxa lisa (o texto já está no corpo central)
-                footerContent = ''; 
-            } else {
-                // Páginas de lista: barra roxa lisa para fechar o design
-                footerContent = '';
-            }
-
-            const footerHtml = `
-                <div style="background-color: ${colorPrimaryPurple}; padding: ${footerContent ? '50px 40px' : '30px 40px'}; text-align: center; border-radius: 40px 40px 0 0; margin-top: auto; min-height: ${footerContent ? 'auto' : '60px'}; box-sizing: border-box;">
-                    ${footerContent}
-                </div>
-            `;
-
-            // Monta a estrutura do Story
+            // Monta a estrutura do Story (Sem Rodapé)
             offscreenDiv.innerHTML = `
                 ${headerHtml}
                 ${indicadorHtml}
                 ${conteudoCentralHtml}
-                ${footerHtml}
             `;
 
             wrapperDiv.appendChild(offscreenDiv);
