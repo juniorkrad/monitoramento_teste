@@ -1,7 +1,7 @@
 // ==============================================================================
 // olt-comunicado.js - Gerador de Imagem para Redes Sociais (Formato Stories 9:16)
 // Tema: Material Design Light / Cores do Projeto (Roxo) / Fundo Branco
-// Atualização: Layout otimizado, Logo maior, Título "Pill" horizontal.
+// Atualização: Título centralizado com ícone absoluto, cards originais restaurados, mensagem final dinâmica.
 // ==============================================================================
 
 window.gerarComunicadoSocialOffscreen = async function(event) {
@@ -100,23 +100,33 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                 const fatiaBairros = bairros.slice(startIndex, endIndex);
 
                 fatiaBairros.forEach(bairro => {
-                    // Card Material Design 3 (Surface Container)
+                    // Card Restaurado: Borda lateral grossa, sombra marcante e border-radius de 16px
                     bairrosHtml += `
-                        <div style="background-color: ${colorPrimaryContainer}; border-radius: 24px; padding: 30px 40px; margin-bottom: 25px; display: flex; align-items: center; gap: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="background-color: ${colorPrimaryContainer}; border-left: 12px solid ${colorPrimaryPurple}; border-radius: 16px; padding: 30px 40px; margin-bottom: 25px; display: flex; align-items: center; gap: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
                             <span style="font-family: 'Material Symbols Rounded'; font-size: 48px; color: ${colorPrimaryPurple};">location_on</span>
                             <span style="font-size: 45px; font-weight: 700; color: ${colorOnSurface};">${bairro}</span>
                         </div>
                     `;
                 });
 
+                // Lógica Dinâmica para a Mensagem da Equipe Técnica (Só aparece na última página)
+                let mensagemEquipeHtml = '';
+                if (paginaAtual === totalPaginas) {
+                    mensagemEquipeHtml = `
+                        <div style="background-color: transparent; border: 3px dashed rgba(103, 7, 159, 0.3); border-radius: 24px; padding: 40px; text-align: center; margin-top: 40px;">
+                            <p style="font-size: 34px; color: ${colorPrimaryPurple}; margin: 0; line-height: 1.5; font-weight: 600;">Nossa equipe técnica já está trabalhando para normalizar os serviços o mais rápido possível.</p>
+                        </div>
+                    `;
+                }
+
                 conteudoCentralHtml = `
                     <div style="flex: 1; padding: 0 80px 40px 80px; display: flex; flex-direction: column;">
                         
                         <div style="padding: 0 0 50px 0;">
                             
-                            <div style="display: flex; align-items: center; justify-content: center; gap: 20px; background-color: rgba(103, 7, 159, 0.1); padding: 30px 50px; border-radius: 100px; border: 2px solid rgba(103, 7, 159, 0.15); margin-bottom: 30px; margin-top: 20px;">
-                                <span style="font-family: 'Material Symbols Rounded'; font-size: 70px; color: ${colorPrimaryPurple};">campaign</span>
-                                <h1 style="font-size: 65px; color: ${colorPrimaryPurple}; margin: 0; font-weight: 800; text-transform: uppercase; letter-spacing: -1px;">Aviso de Manutenção</h1>
+                            <div style="position: relative; display: flex; align-items: center; justify-content: center; background-color: rgba(103, 7, 159, 0.1); padding: 30px 40px; min-height: 160px; border-radius: 100px; border: 2px solid rgba(103, 7, 159, 0.15); margin-bottom: 30px; margin-top: 20px; box-sizing: border-box;">
+                                <span style="font-family: 'Material Symbols Rounded'; font-size: 120px; color: ${colorPrimaryPurple}; position: absolute; left: 40px;">campaign</span>
+                                <h1 style="font-size: 60px; color: ${colorPrimaryPurple}; margin: 0 0 0 80px; font-weight: 800; text-transform: uppercase; letter-spacing: -1px; text-align: center;">Aviso de Manutenção</h1>
                             </div>
 
                             <p style="text-align: center; font-size: 38px; color: ${colorOnSurfaceVariant}; margin: 0; line-height: 1.5; font-weight: 500;">Identificamos uma instabilidade que afeta a conexão nos seguintes locais:</p>
@@ -124,23 +134,21 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                         
                         <div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-start;">
                             ${bairrosHtml}
+                            ${mensagemEquipeHtml}
                         </div>
                         
-                        <div style="background-color: transparent; border: 3px dashed rgba(103, 7, 159, 0.3); border-radius: 24px; padding: 40px; text-align: center; margin-top: 40px;">
-                            <p style="font-size: 34px; color: ${colorPrimaryPurple}; margin: 0; line-height: 1.5; font-weight: 600;">Nossa equipe técnica já está trabalhando para normalizar os serviços o mais rápido possível.</p>
-                        </div>
                     </div>
                 `;
             }
 
-            // Cabeçalho (Área da Logo) - Aumentada em 25%
+            // Cabeçalho (Área da Logo)
             const headerHtml = `
                 <div style="height: 320px; width: 100%; display: flex; align-items: center; justify-content: center; padding: 40px 0; z-index: 10; box-sizing: border-box;">
-                    <img id="social-logo-${paginaAtual}" src="logo-comunicado.png" style="max-height: 175px; max-width: 85%; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerHTML='<h2 style=\\'font-size:60px; color:${colorPrimaryPurple}; margin:0; text-transform:uppercase; font-weight:800; letter-spacing:-1px;\\'>COMUNICADO</h2>';">
+                    <img id="social-logo-${paginaAtual}" src="logo-comunicado.png.png" style="max-height: 175px; max-width: 85%; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerHTML='<h2 style=\\'font-size:60px; color:${colorPrimaryPurple}; margin:0; text-transform:uppercase; font-weight:800; letter-spacing:-1px;\\'>COMUNICADO</h2>';">
                 </div>
             `;
 
-            // Indicador de Página Material (Reposicionado)
+            // Indicador de Página Material
             let indicadorHtml = '';
             if (totalPaginas > 1) {
                 indicadorHtml = `
