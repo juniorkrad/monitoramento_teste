@@ -1,7 +1,7 @@
 // ==============================================================================
 // olt-comunicado.js - Gerador de Imagem para Redes Sociais (Formato Stories 9:16)
 // Tema: Material Design Light / Cores do Projeto (Roxo) / Fundo Branco
-// Atualização: Texto alterado para "Aviso de Reparo".
+// Atualização: Integração com a aba LOCALIDADE (Bairros) via layout.js
 // ==============================================================================
 
 window.gerarComunicadoSocialOffscreen = async function(event) {
@@ -22,8 +22,18 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             oltName = titleEl.innerText.replace('dns', '').trim();
         }
 
-        // 2. Extrair APENAS os Circuitos das portas 100% caídas
-        const circuitosAfetadosSet = new Set();
+        // Descobrir o tipo da OLT (necessário para calcular a linha na planilha de Bairros)
+        let oltType = 'nokia'; 
+        if (window.GLOBAL_MASTER_OLT_LIST) {
+            const config = window.GLOBAL_MASTER_OLT_LIST.find(o => 
+                (o.id && o.id.replace(/-/g, '') === oltName.replace(/-/g, '')) || 
+                (o.sheetTab && o.sheetTab.replace(/-/g, '') === oltName.replace(/-/g, ''))
+            );
+            if (config && config.type) oltType = config.type;
+        }
+
+        // 2. Extrair APENAS as Localidades (Bairros) das portas 100% caídas
+        const localidadesAfetadasSet = new Set();
         const data = window.CURRENT_OLT_PORT_DATA || {}; 
 
         for (const placa in data) {
@@ -34,35 +44,43 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                 
                 // Critério de queda: total >= 5 clientes e 100% offline
                 if (total >= 5 && (pData.offline / total) === 1) {
-                    // Limpa traços extras e pega o nome do circuito
-                    let nomeCircuito = pData.info.replace(/'/g, "").trim();
-                    if (nomeCircuito && nomeCircuito !== "-") {
-                        circuitosAfetadosSet.add(nomeCircuito);
+                    let nomeLocalidade = null;
+                    
+                    // Cruza os dados com a nova aba "LOCALIDADE"
+                    // Requer que window.GLOBAL_BAIRROS_DATA seja populado pelo seu arquivo de API!
+                    if (window.getGlobalBairroInfo && window.GLOBAL_BAIRROS_DATA) {
+                        nomeLocalidade = window.getGlobalBairroInfo(window.GLOBAL_BAIRROS_DATA, oltName, placa, porta, oltType);
+                    }
+                    
+                    // Fallback de Segurança: Se não encontrar o bairro (ou se a aba não foi carregada), usa o circuito
+                    if (!nomeLocalidade || nomeLocalidade.trim() === "" || nomeLocalidade.trim() === "-") {
+                        nomeLocalidade = pData.info.replace(/'/g, "").trim();
+                    }
+
+                    if (nomeLocalidade && nomeLocalidade !== "-") {
+                        localidadesAfetadasSet.add(nomeLocalidade);
                     }
                 }
             }
         }
 
         // Converte o Set para um Array e ordena alfabeticamente
-        const bairros = Array.from(circuitosAfetadosSet).sort();
+        const bairros = Array.from(localidadesAfetadasSet).sort();
 
         // 3. Paginação (Limite de bairros por "Story")
         const LIMITE_BAIRROS = 8;
-        // Calculamos as páginas de lista
         const paginasDeLista = Math.ceil(bairros.length / LIMITE_BAIRROS);
-        // Se houver bairros, adicionamos +1 página exclusiva para o encerramento
         const totalPaginas = bairros.length > 0 ? paginasDeLista + 1 : 1;
         
         // Paleta Material Design 3 Light com Roxo do Projeto
         const colorPrimaryPurple = '#67079f'; 
-        const colorPrimaryContainer = '#f3edf7'; // Fundo suave para os cards
-        const colorOnSurface = '#1c1b1f'; // Texto Principal
-        const colorOnSurfaceVariant = '#49454f'; // Texto Secundário
-        const colorBackground = '#ffffff'; // Fundo Total Branco
+        const colorPrimaryContainer = '#f3edf7'; 
+        const colorOnSurface = '#1c1b1f'; 
+        const colorOnSurfaceVariant = '#49454f'; 
+        const colorBackground = '#ffffff'; 
 
         for (let paginaAtual = 1; paginaAtual <= totalPaginas; paginaAtual++) {
             
-            // Criar o Wrapper Transparente para evitar quinas brancas
             const wrapperDiv = document.createElement('div');
             wrapperDiv.id = `social-wrapper-pag-${paginaAtual}`;
             wrapperDiv.style.position = 'absolute';
@@ -71,7 +89,6 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             wrapperDiv.style.backgroundColor = 'transparent'; 
             wrapperDiv.style.padding = '0';
 
-            // A Lona do Story (Formato Vertical: 1080x1920)
             const offscreenDiv = document.createElement('div');
             offscreenDiv.style.width = '1080px';
             offscreenDiv.style.height = '1920px';
@@ -83,25 +100,21 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             offscreenDiv.style.position = 'relative';
             offscreenDiv.style.overflow = 'hidden';
             
-            // Bordas arredondadas fortes 
             offscreenDiv.style.borderRadius = '48px'; 
             
-            // Borda interna descolada da extremidade (A moldura elegante)
             const innerBorderHtml = `
                 <div style="position: absolute; top: 35px; bottom: 35px; left: 35px; right: 35px; border: 8px solid ${colorPrimaryPurple}; border-radius: 36px; pointer-events: none; z-index: 999;"></div>
             `;
 
-            // Conteúdo Condicional
             let conteudoCentralHtml = '';
             let isPaginaFinalMensagens = false;
 
-            // Define se é a página final exclusiva de mensagens (só se houver bairros)
             if (bairros.length > 0 && paginaAtual === totalPaginas) {
                 isPaginaFinalMensagens = true;
             }
 
             if (bairros.length === 0) {
-                // Cenário Rede Estável (Mantido)
+                // Cenário Rede Estável
                 conteudoCentralHtml = `
                     <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 80px; text-align: center;">
                         <span style="font-family: 'Material Symbols Rounded'; font-size: 180px; color: #10b981; margin-bottom: 40px;">check_circle</span>
@@ -110,7 +123,7 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                     </div>
                 `;
             } else if (isPaginaFinalMensagens) {
-                // --- PÁGINA FINAL EXCLUSIVA DE MENSAGENS ---
+                // Página Final Exclusiva de Mensagens
                 conteudoCentralHtml = `
                     <div style="flex: 1; padding: 0 80px 40px 80px; display: flex; flex-direction: column;">
                         
@@ -134,7 +147,7 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                     </div>
                 `;
             } else {
-                // --- PÁGINAS DE LISTA (Etiquetas) ---
+                // Páginas de Lista (Bairros)
                 let bairrosHtml = '';
                 const startIndex = (paginaAtual - 1) * LIMITE_BAIRROS;
                 const endIndex = startIndex + LIMITE_BAIRROS;
@@ -168,14 +181,13 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                 `;
             }
 
-            // Cabeçalho (Área da Logo) - Zoom de 50% aplicado
+            // Cabeçalho (Área da Logo)
             const headerHtml = `
                 <div style="height: 450px; width: 100%; display: flex; align-items: center; justify-content: center; padding: 60px 0 20px 0; z-index: 10; box-sizing: border-box;">
                     <img id="social-logo-${paginaAtual}" src="logo-comunicado.png" style="max-height: 420px; max-width: 85%; object-fit: contain;" onerror="this.style.display='none';">
                 </div>
             `;
 
-            // Indicador de Página Material (Reposicionado para respeitar a nova borda)
             let indicadorHtml = '';
             if (totalPaginas > 1) {
                 indicadorHtml = `
@@ -185,7 +197,7 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                 `;
             }
 
-            // Monta a estrutura do Story (Com a moldura interna em primeiro lugar)
+            // Montagem Final do Lado de Fora
             offscreenDiv.innerHTML = `
                 ${innerBorderHtml}
                 ${headerHtml}
@@ -214,11 +226,9 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                 useCORS: true 
             });
 
-            // Nome do arquivo
             let nomeArquivo = `Story_${oltName.replace(/[^a-zA-Z0-9-]/g, '_')}_${new Date().getTime()}`;
             if (totalPaginas > 1) nomeArquivo += `_Pag${paginaAtual}`;
 
-            // Criar Link de Download
             const link = document.createElement('a');
             link.download = `${nomeArquivo}.png`;
             link.href = canvas.toDataURL('image/png');

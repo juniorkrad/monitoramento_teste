@@ -1,16 +1,17 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Exportação em Imagem (PNG) do Modal de Detalhes da Porta
+// Atualização: Inclusão do download automático da aba LOCALIDADE para cruzamento
 // ==============================================================================
 
 const TAB_CIRCUITOS = 'CIRCUITO'; 
+const TAB_LOCALIDADE = 'LOCALIDADE'; // Definindo a nova aba
 
 window.OLT_CLIENTS_DATA = {};
 window.CURRENT_OLT_PORT_DATA = {}; 
 window.NETWORK_PROBLEMS_STORE = new Set();
 window.NETWORK_BACKBONE_STORE = new Set();
 window.currentOltInterval = null; 
-window.CURRENT_VIEW_PLACA = null; // Armazena a placa atual para o relatório
+window.CURRENT_VIEW_PLACA = null; 
 
 async function fetchGlobalOltData(olt) {
     const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:K` : `${olt.sheetTab}!A:K`;
@@ -243,6 +244,18 @@ async function fetchCircuitosData() {
     } catch (e) { return []; }
 }
 
+// NOVA FUNÇÃO: Busca os dados da aba LOCALIDADE para cruzamento no Stories
+async function fetchLocalidadeData() {
+    const range = `${TAB_LOCALIDADE}!A:AH`;
+    try {
+        const data = await API.get(range);
+        return data.values || [];
+    } catch (e) { 
+        console.error('Erro ao baixar aba LOCALIDADE:', e);
+        return []; 
+    }
+}
+
 window.startOltMonitoring = function(config) {
     window.stopOltMonitoring(); 
     
@@ -300,7 +313,15 @@ window.startOltMonitoring = function(config) {
         const rangeOlt = `${config.id}!A:K`; 
 
         try {
-            const [dataOlt, rowsCircuitos] = await Promise.all([API.get(rangeOlt), fetchCircuitosData()]);
+            // ATUALIZAÇÃO IMPORTANTE: Agora ele baixa também a aba LOCALIDADE em paralelo!
+            const [dataOlt, rowsCircuitos, rowsLocalidades] = await Promise.all([
+                API.get(rangeOlt), 
+                fetchCircuitosData(),
+                fetchLocalidadeData()
+            ]);
+
+            // Salva globalmente os bairros para o olt-comunicado.js poder utilizar
+            window.GLOBAL_BAIRROS_DATA = rowsLocalidades;
 
             const rowsOlt = (dataOlt.values || []).slice(1);
 
@@ -522,7 +543,7 @@ window.exportPlacaToTXT = function() {
     document.body.removeChild(link);
 };
 
-// NOVA FUNÇÃO: Exportar Imagem (PNG) do Modal de Detalhes
+// Exportar Imagem (PNG) do Modal de Detalhes
 window.exportDetailModalToImage = function(event) {
     if (event) event.stopPropagation();
 
@@ -544,7 +565,7 @@ window.exportDetailModalToImage = function(event) {
     }
 
     html2canvas(modalContent, {
-        backgroundColor: null, // Mantém o fundo transparente para respeitar as bordas arredondadas do CSS
+        backgroundColor: null, 
         scale: 2, 
         useCORS: true,
         logging: false

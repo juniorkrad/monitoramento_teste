@@ -172,6 +172,53 @@ function getGlobalCircuitInfo(rowsCircuitos, oltIdentifier, placa, porta, type) 
     return "-";
 }
 
+// NOVO: Função para buscar o Bairro na Aba "LOCALIDADE"
+function getGlobalBairroInfo(rowsLocalidades, oltIdentifier, placa, porta, type) {
+    if (!rowsLocalidades || !rowsLocalidades.length) return null;
+
+    // Padroniza o nome da OLT (remove traços e espaços, ex: "HEL-1" vira "HEL1")
+    const cleanOlt = (oltIdentifier || "").toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+    // Mapa de colunas baseado na arquitetura da aba LOCALIDADE (Colunas Pares/Índice Ímpar)
+    const bairroColMap = {
+        'HEL1': 1,  // Coluna B
+        'HEL2': 3,  // Coluna D
+        'MGP': 5,   // Coluna F
+        'PQA1': 7,  // Coluna H
+        'PSV1': 9,  // Coluna J
+        'PSV7': 11, // Coluna L
+        'SBO2': 13, // Coluna N
+        'SBO3': 15, // Coluna P
+        'SBO4': 17, // Coluna R
+        'SB1': 19,  // Coluna T
+        'SB2': 21,  // Coluna V
+        'SB3': 23,  // Coluna X
+        'PQA2': 25, // Coluna Z
+        'PQA3': 27, // Coluna AB (Ajustado conforme correção)
+        'LTXV2': 29,// Coluna AD
+        'LTXV1': 31,// Coluna AF
+        'SBO1': 33  // Coluna AH
+    };
+
+    const colIndex = bairroColMap[cleanOlt];
+    if (colIndex === undefined) return null;
+
+    let rowIndex = -1;
+    const p = parseInt(porta);
+    const sl = parseInt(placa);
+
+    // Mesma lógica de cálculo de linha utilizada nos circuitos
+    if (type === 'nokia') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
+    else if (type === 'furukawa-2') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
+    else if (type === 'furukawa-10') rowIndex = ((sl - 1) * 4) + (p - 1) + 1;
+
+    if (rowIndex > 0 && rowIndex < rowsLocalidades.length) {
+        const bairro = rowsLocalidades[rowIndex][colIndex];
+        return bairro ? bairro.trim() : null;
+    }
+    return null;
+}
+
 // Mantido apenas por segurança caso algum script antigo procure pela função
 async function loadTimestamp(sheetTab, apiKey, sheetId) {
     updateGlobalTimestamp();
@@ -190,16 +237,13 @@ function initAutoHide() {
         idleTimer = setTimeout(() => document.body.classList.add('idle'), idleTime);
     };
 
-    // Escuta eventos de interação para resetar o tempo
     window.addEventListener('mousemove', resetTimer);
     window.addEventListener('mousedown', resetTimer);
     window.addEventListener('keypress', resetTimer);
     window.addEventListener('touchmove', resetTimer);
     window.addEventListener('scroll', resetTimer);
 
-    // Inicia o timer logo no carregamento da página
     resetTimer();
 }
 
-// Inicia o monitor de inatividade assim que o layout.js for carregado
 document.addEventListener('DOMContentLoaded', initAutoHide);
