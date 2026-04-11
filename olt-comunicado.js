@@ -1,7 +1,7 @@
 // ==============================================================================
 // olt-comunicado.js - Gerador de Imagem para Redes Sociais (Formato Stories 9:16)
 // Tema: Material Design Light / Cores do Projeto (Roxo) / Fundo Branco
-// Atualização: Integração com a aba LOCALIDADE (Bairros) via layout.js
+// Atualização: Inclusão do Fatiador Inteligente para múltiplas localidades no mesmo circuito.
 // ==============================================================================
 
 window.gerarComunicadoSocialOffscreen = async function(event) {
@@ -58,7 +58,17 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                     }
 
                     if (nomeLocalidade && nomeLocalidade !== "-") {
-                        localidadesAfetadasSet.add(nomeLocalidade);
+                        // --- O FATIADOR INTELIGENTE ---
+                        // Divide a string se encontrar vírgula, barra ou a palavra "e" (com espaços)
+                        const partes = nomeLocalidade.split(/,|\/|\se\s/gi);
+                        
+                        partes.forEach(parte => {
+                            const bairroLimpo = parte.trim();
+                            // Só adiciona se o pedaço não for vazio ou apenas um traço
+                            if (bairroLimpo && bairroLimpo !== "-") {
+                                localidadesAfetadasSet.add(bairroLimpo); // O Set garante que não haverá repetições
+                            }
+                        });
                     }
                 }
             }
