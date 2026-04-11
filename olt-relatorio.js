@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-relatorio.js - Gerador de Boletim Visual (PNG Off-screen) para OLTs
-// Atualização: Correção de quinas brancas (Wrapper Transparente) nas bordas
+// Atualização: Imagem com tamanho fixo (850x1000) independente do número de linhas
 // ==============================================================================
 
 window.gerarRelatorioOltOffscreen = async function(event) {
@@ -79,6 +79,7 @@ window.gerarRelatorioOltOffscreen = async function(event) {
             // A Lona Real onde o layout será desenhado
             const offscreenDiv = document.createElement('div');
             offscreenDiv.style.width = '850px';
+            offscreenDiv.style.height = '1000px'; // Tamanho FIXO definido aqui
             offscreenDiv.style.backgroundColor = '#2f0e51'; // Fundo Padrão (M3 Surface)
             offscreenDiv.style.color = '#ffffff';
             offscreenDiv.style.padding = '30px';
@@ -86,15 +87,18 @@ window.gerarRelatorioOltOffscreen = async function(event) {
             offscreenDiv.style.overflow = 'hidden'; // Garante que o conteúdo não vaze as bordas
             offscreenDiv.style.fontFamily = "'Montserrat', sans-serif";
             offscreenDiv.style.boxSizing = 'border-box';
+            offscreenDiv.style.display = 'flex'; // Aplicação de flex para controle de fluxo
+            offscreenDiv.style.flexDirection = 'column';
+            offscreenDiv.style.justifyContent = 'flex-start';
 
             let tableHtml = '';
             
             if (portasCriticas.length === 0) {
                 tableHtml = `
-                    <div style="text-align: center; padding: 40px; background: rgba(255,255,255,0.05); border-radius: 12px; margin-top: 20px;">
-                        <span style="font-family: 'Material Symbols Rounded'; font-size: 48px; color: #4ade80; margin-bottom: 10px; display:block;">check_circle</span>
-                        <h2 style="margin: 0; color: #4ade80;">Rede Estável</h2>
-                        <p style="color: #CAC4D0; margin-top: 5px;">Nenhum alarme crítico de queda total (100%) detectado nesta OLT no momento.</p>
+                    <div style="text-align: center; padding: 40px; background: rgba(255,255,255,0.05); border-radius: 12px; margin-top: 20px; flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                        <span style="font-family: 'Material Symbols Rounded'; font-size: 64px; color: #4ade80; margin-bottom: 15px; display:block;">check_circle</span>
+                        <h2 style="margin: 0; color: #4ade80; font-size: 2rem;">Rede Estável</h2>
+                        <p style="color: #CAC4D0; margin-top: 10px; font-size: 1.1rem;">Nenhum alarme crítico de queda total (100%) detectado nesta OLT no momento.</p>
                     </div>
                 `;
             } else {
