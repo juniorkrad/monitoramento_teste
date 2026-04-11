@@ -1,7 +1,7 @@
 // ==============================================================================
 // olt-comunicado.js - Gerador de Imagem para Redes Sociais (Formato Stories 9:16)
 // Tema: Material Design Light / Cores do Projeto (Roxo) / Fundo Branco
-// Atualização: Inclusão do Fatiador Inteligente para múltiplas localidades no mesmo circuito.
+// Atualização: Prevenção de bloqueio de downloads múltiplos e Regex aprimorado.
 // ==============================================================================
 
 window.gerarComunicadoSocialOffscreen = async function(event) {
@@ -47,26 +47,24 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                     let nomeLocalidade = null;
                     
                     // Cruza os dados com a nova aba "LOCALIDADE"
-                    // Requer que window.GLOBAL_BAIRROS_DATA seja populado pelo seu arquivo de API!
                     if (window.getGlobalBairroInfo && window.GLOBAL_BAIRROS_DATA) {
                         nomeLocalidade = window.getGlobalBairroInfo(window.GLOBAL_BAIRROS_DATA, oltName, placa, porta, oltType);
                     }
                     
-                    // Fallback de Segurança: Se não encontrar o bairro (ou se a aba não foi carregada), usa o circuito
+                    // Fallback de Segurança: Se a célula de Localidade estiver VAZIA, puxa da aba Circuito
                     if (!nomeLocalidade || nomeLocalidade.trim() === "" || nomeLocalidade.trim() === "-") {
                         nomeLocalidade = pData.info.replace(/'/g, "").trim();
                     }
 
                     if (nomeLocalidade && nomeLocalidade !== "-") {
-                        // --- O FATIADOR INTELIGENTE ---
-                        // Divide a string se encontrar vírgula, barra ou a palavra "e" (com espaços)
-                        const partes = nomeLocalidade.split(/,|\/|\se\s/gi);
+                        // --- FATIADOR INTELIGENTE APRIMORADO ---
+                        // Divide a string por vírgulas, barras ou "e", ignorando espaços extras
+                        const partes = nomeLocalidade.split(/\s*,\s*|\s*\/\s*|\s+e\s+/gi);
                         
                         partes.forEach(parte => {
                             const bairroLimpo = parte.trim();
-                            // Só adiciona se o pedaço não for vazio ou apenas um traço
                             if (bairroLimpo && bairroLimpo !== "-") {
-                                localidadesAfetadasSet.add(bairroLimpo); // O Set garante que não haverá repetições
+                                localidadesAfetadasSet.add(bairroLimpo); // O Set elimina duplicatas
                             }
                         });
                     }
@@ -245,6 +243,9 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             link.click();
             
             document.body.removeChild(wrapperDiv);
+
+            // TRAVA ANTI-BLOQUEIO DO NAVEGADOR: Pausa de 800ms antes de gerar a próxima imagem
+            await new Promise(resolve => setTimeout(resolve, 800));
         }
 
     } catch (error) {
