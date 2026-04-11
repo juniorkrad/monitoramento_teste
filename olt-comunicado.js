@@ -1,7 +1,7 @@
 // ==============================================================================
 // olt-comunicado.js - Gerador de Imagem para Redes Sociais (Formato Stories 9:16)
 // Tema: Material Design Light / Cores do Projeto (Roxo) / Fundo Branco
-// Atualização: Implementação do PROCV Real de Localidades (Busca linha a linha).
+// Atualização: Paginação ajustada de 8 para 7 bairros por página para melhor layout vertical.
 // ==============================================================================
 
 window.gerarComunicadoSocialOffscreen = async function(event) {
@@ -119,7 +119,8 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
         const bairros = Array.from(localidadesAfetadasSet).sort();
 
         // 3. Paginação (Limite de bairros por "Story")
-        const LIMITE_BAIRROS = 8;
+        // AJUSTE: Redução do limite de bairros por página de 8 para 7 para garantir espaçamento vertical e evitar que os itens toquem a borda inferior. Isso resultará em mais páginas, mas com um layout melhor.
+        const LIMITE_BAIRROS = 7;
         const paginasDeLista = Math.ceil(bairros.length / LIMITE_BAIRROS);
         const totalPaginas = bairros.length > 0 ? paginasDeLista + 1 : 1;
         
