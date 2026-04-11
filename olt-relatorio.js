@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-relatorio.js - Gerador de Boletim Visual (PNG Off-screen) para OLTs
-// Atualização: Imagem com tamanho fixo (850x1000) independente do número de linhas
+// Atualização: Imagem com tamanho fixo ajustado (850x750) para melhor proporção
 // ==============================================================================
 
 window.gerarRelatorioOltOffscreen = async function(event) {
@@ -79,7 +79,7 @@ window.gerarRelatorioOltOffscreen = async function(event) {
             // A Lona Real onde o layout será desenhado
             const offscreenDiv = document.createElement('div');
             offscreenDiv.style.width = '850px';
-            offscreenDiv.style.height = '1000px'; // Tamanho FIXO definido aqui
+            offscreenDiv.style.height = '750px'; // Tamanho FIXO otimizado (Redução de ~25%)
             offscreenDiv.style.backgroundColor = '#2f0e51'; // Fundo Padrão (M3 Surface)
             offscreenDiv.style.color = '#ffffff';
             offscreenDiv.style.padding = '30px';
