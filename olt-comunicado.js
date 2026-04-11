@@ -1,7 +1,7 @@
 // ==============================================================================
 // olt-comunicado.js - Gerador de Imagem para Redes Sociais (Formato Stories 9:16)
 // Tema: Material Design Light / Cores do Projeto (Roxo) / Fundo Branco
-// Atualização: Prevenção de bloqueio de downloads múltiplos e Regex aprimorado.
+// Atualização: Remoção do Fallback (Apenas Aba Localidade) e Download Reforçado.
 // ==============================================================================
 
 window.gerarComunicadoSocialOffscreen = async function(event) {
@@ -32,7 +32,7 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             if (config && config.type) oltType = config.type;
         }
 
-        // 2. Extrair APENAS as Localidades (Bairros) das portas 100% caídas
+        // 2. Extrair EXCLUSIVAMENTE as Localidades (Bairros) das portas 100% caídas
         const localidadesAfetadasSet = new Set();
         const data = window.CURRENT_OLT_PORT_DATA || {}; 
 
@@ -46,19 +46,14 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                 if (total >= 5 && (pData.offline / total) === 1) {
                     let nomeLocalidade = null;
                     
-                    // Cruza os dados com a nova aba "LOCALIDADE"
+                    // Cruza os dados EXCLUSIVAMENTE com a aba "LOCALIDADE"
                     if (window.getGlobalBairroInfo && window.GLOBAL_BAIRROS_DATA) {
                         nomeLocalidade = window.getGlobalBairroInfo(window.GLOBAL_BAIRROS_DATA, oltName, placa, porta, oltType);
                     }
                     
-                    // Fallback de Segurança: Se a célula de Localidade estiver VAZIA, puxa da aba Circuito
-                    if (!nomeLocalidade || nomeLocalidade.trim() === "" || nomeLocalidade.trim() === "-") {
-                        nomeLocalidade = pData.info.replace(/'/g, "").trim();
-                    }
-
-                    if (nomeLocalidade && nomeLocalidade !== "-") {
-                        // --- FATIADOR INTELIGENTE APRIMORADO ---
-                        // Divide a string por vírgulas, barras ou "e", ignorando espaços extras
+                    // Removido o Fallback para Circuito. Só processa se tiver Localidade válida.
+                    if (nomeLocalidade && nomeLocalidade.trim() !== "" && nomeLocalidade.trim() !== "-") {
+                        // Fatiador Inteligente: Divide a string por vírgulas, barras ou "e"
                         const partes = nomeLocalidade.split(/\s*,\s*|\s*\/\s*|\s+e\s+/gi);
                         
                         partes.forEach(parte => {
@@ -237,15 +232,20 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             let nomeArquivo = `Story_${oltName.replace(/[^a-zA-Z0-9-]/g, '_')}_${new Date().getTime()}`;
             if (totalPaginas > 1) nomeArquivo += `_Pag${paginaAtual}`;
 
+            // Criar Link de Download (Técnica reforçada para Chrome)
             const link = document.createElement('a');
             link.download = `${nomeArquivo}.png`;
             link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link); // Anexa ao DOM antes do clique
             link.click();
+            document.body.removeChild(link); // Limpa o DOM
             
             document.body.removeChild(wrapperDiv);
 
-            // TRAVA ANTI-BLOQUEIO DO NAVEGADOR: Pausa de 800ms antes de gerar a próxima imagem
-            await new Promise(resolve => setTimeout(resolve, 800));
+            // TRAVA ANTI-BLOQUEIO DO NAVEGADOR (Aumentado para 1500ms)
+            if (paginaAtual < totalPaginas) {
+                await new Promise(resolve => setTimeout(resolve, 1500));
+            }
         }
 
     } catch (error) {
