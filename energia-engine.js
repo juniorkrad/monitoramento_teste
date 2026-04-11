@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Padronização UI de Tabelas e Modais Minimalistas de Status
+// Atualização: Ícone 'bolt' substituído por 'power_off' nos cards das OLTs
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
@@ -385,7 +385,7 @@ window.startEnergyMonitoring = async function() {
                                     <strong style="color:#9ca3af; font-size: 1.3rem;">${oData.offline}</strong>
                                 </div>
                                 <div style="flex: 1;" title="Sem Energia">
-                                    <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 26px;">bolt</span><br>
+                                    <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 26px;">power_off</span><br>
                                     <strong style="color:#fbbf24; font-size: 1.3rem;">${oData.powerOff}</strong>
                                 </div>
                                 <div style="flex: 1;" title="Sem Sinal Fibra">
