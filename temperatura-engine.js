@@ -1,6 +1,6 @@
 // ==============================================================================
 // temperatura-engine.js - Motor Dedicado para Análise Térmica das OLTs
-// Atualização: Implementação do Grid/Nuvem Global na Home (17 OLTs simultâneas)
+// Atualização: Implementação da Trava do NOC (80°/90°), Ícones e Tooltip Flutuante
 // ==============================================================================
 
 const TAB_TEMPERATURA = 'TEMPERATURA'; 
@@ -113,7 +113,6 @@ async function runTemperaturaEngine() {
         let oltStats = [];
         window.TEMP_DATA_STORE = {};
 
-        // Busca toda a aba de TEMPERATURA de A até CX
         const range = `${TAB_TEMPERATURA}!A:CX`;
         const dataBatch = await API.get(range);
         
@@ -122,7 +121,7 @@ async function runTemperaturaEngine() {
             return;
         }
 
-        const rows = dataBatch.values.slice(2); // Pula Linha 1(Títulos OLT) e 2(Cabeçalhos)
+        const rows = dataBatch.values.slice(2); 
 
         GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {
             const oltId = oltDef.id;
@@ -151,14 +150,16 @@ async function runTemperaturaEngine() {
                 
                 if (tempAtual > maxTemp) maxTemp = tempAtual;
 
-                let isCritico = false, isAtencao = false;
+                // =======================================================
+                // TRAVA DO NOC ATIVADA: IGNORA LIMITES DA FABRICANTE SE >= 80° ou 90°
+                // =======================================================
+                let isCritico = tempAtual >= 90 || (!isNaN(limCrit) && tempAtual >= limCrit);
+                let isAtencao = (!isCritico) && (tempAtual >= 80 || (!isNaN(limAlta) && tempAtual >= limAlta));
                 
-                if (!isNaN(limCrit) && tempAtual >= limCrit) {
+                if (isCritico) {
                     criticos++;
-                    isCritico = true;
-                } else if (!isNaN(limAlta) && tempAtual >= limAlta) {
+                } else if (isAtencao) {
                     atencao++;
-                    isAtencao = true;
                 }
 
                 if (!window.TEMP_DATA_STORE[oltId][slot]) {
@@ -184,20 +185,21 @@ async function runTemperaturaEngine() {
         });
 
         // ==============================================================================
-        // INJEÇÃO DA HOME (Nuvem de Badges - Visão Global de 17 OLTs)
+        // INJEÇÃO DA HOME (Nuvem de Badges Simétrica com Hover Tooltip)
         // ==============================================================================
         if (globalBody) {
             let badgesHtml = '';
             
-            // Usamos a lista mestre (GLOBAL_MASTER_OLT_LIST) para garantir a ordem fixa das OLTs no painel
             GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {
                 const o = oltStats.find(stats => stats.id === oltDef.id);
                 
                 if (!o || o.analisados === 0) {
-                    // Se a OLT estiver sem dados de temperatura
                     badgesHtml += `
                         <div class="temp-badge-item" style="background-color: rgba(255,255,255,0.02); opacity: 0.5;">
-                            <span class="olt-name">${oltDef.id}</span>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span class="material-symbols-rounded" style="font-size: 18px; color: var(--m3-on-surface-variant);">device_thermostat</span>
+                                <span class="olt-name">${oltDef.id}</span>
+                            </div>
                             <span class="temp-value">--</span>
                         </div>
                     `;
@@ -205,18 +207,53 @@ async function runTemperaturaEngine() {
                 }
 
                 let classeCSS = 'status-normal';
+                let icone = 'device_thermostat';
+                let statusText = 'Estável';
+                let colorStatus = '#4ade80';
 
-                // A cor do badge é baseada no pior sensor daquela OLT
-                if (o.criticos > 0) {
+                // Usamos o pico global da OLT ou a contagem de críticos para pintar o badge
+                if (o.criticos > 0 || o.maxTemp >= 90) {
                     classeCSS = 'status-critico';
-                } else if (o.atencao > 0) {
+                    icone = 'local_fire_department'; // Foguinho (Crítico)
+                    statusText = 'Crítico';
+                    colorStatus = '#f87171';
+                } else if (o.atencao > 0 || o.maxTemp >= 80) {
                     classeCSS = 'status-atencao';
+                    icone = 'device_thermostat';
+                    statusText = 'Atenção';
+                    colorStatus = '#f97316';
                 }
 
+                // Construção do Tooltip Flutuante
+                let tooltipHtml = `
+                    <div class="temp-tooltip">
+                        <div class="temp-tooltip-title">
+                            <span class="material-symbols-rounded" style="font-size: 18px; color: ${colorStatus};">${icone}</span>
+                            ${o.id}
+                        </div>
+                        <div class="temp-tooltip-line">
+                            <span style="color: var(--m3-on-surface-variant);">Pico Atual:</span> 
+                            <strong>${o.maxTemp}°C</strong>
+                        </div>
+                        <div class="temp-tooltip-line">
+                            <span style="color: var(--m3-on-surface-variant);">Sensores em Alerta:</span> 
+                            <strong><span style="color:#f87171">${o.criticos}</span> / <span style="color:#f97316">${o.atencao}</span></strong>
+                        </div>
+                        <div class="temp-tooltip-line">
+                            <span style="color: var(--m3-on-surface-variant);">Status Geral:</span> 
+                            <strong style="color: ${colorStatus};">${statusText}</strong>
+                        </div>
+                    </div>
+                `;
+
                 badgesHtml += `
-                    <div class="temp-badge-item ${classeCSS}" title="Pico de temperatura na OLT">
-                        <span class="olt-name">${o.id}</span>
+                    <div class="temp-badge-item ${classeCSS}">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                            <span class="material-symbols-rounded" style="font-size: 18px;">${icone}</span>
+                            <span class="olt-name">${o.id}</span>
+                        </div>
                         <span class="temp-value">${o.maxTemp}°C</span>
+                        ${tooltipHtml}
                     </div>
                 `;
             });
