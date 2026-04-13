@@ -34,7 +34,7 @@ window.exportCardToImage = function(event, cardId, oltName) {
     }
 
     html2canvas(card, {
-        backgroundColor: null, // Fundo transparente
+        backgroundColor: null,
         scale: 2, 
         useCORS: true,
         logging: false
@@ -220,17 +220,46 @@ async function runPotenciaEngine() {
                 
                 top3Olts.forEach(o => {
                     const mediaVal = parseFloat(o.media);
-                    let color = 'var(--m3-on-surface)';
+                    // Lógica Invertida: Se for as PIORES médias, não pode ser verde.
+                    let color = '#f87171'; // Padrão Vermelho (Piores Sinais)
+                    let statusText = 'Crítico';
                     
-                    if (mediaVal <= -28.00) { color = '#f87171'; }
-                    else if (mediaVal <= -26.00) { color = '#fbbf24'; }
-                    else { color = '#4ade80'; }
+                    if (mediaVal > -26.00) { 
+                        color = '#fbbf24'; // Laranja/Amarelo se for ruim, mas nem tanto
+                        statusText = 'Atenção';
+                    }
+
+                    // Tooltip Flutuante
+                    let tooltipHtml = `
+                        <div class="pot-tooltip">
+                            <div class="pot-tooltip-title">
+                                <span class="material-symbols-rounded" style="font-size: 18px; color: ${color};">dns</span>
+                                ${o.id}
+                            </div>
+                            <div class="pot-tooltip-line">
+                                <span style="color: var(--m3-on-surface-variant);">Saúde da Rede:</span> 
+                                <strong style="color: ${o.health >= 90 ? '#4ade80' : '#f87171'};">${o.health.toFixed(1)}%</strong>
+                            </div>
+                            <div class="pot-tooltip-line">
+                                <span style="color: var(--m3-on-surface-variant);">Clientes Críticos:</span> 
+                                <strong style="color:#f87171">${o.criticos}</strong>
+                            </div>
+                            <div class="pot-tooltip-line">
+                                <span style="color: var(--m3-on-surface-variant);">Total Analisado:</span> 
+                                <strong>${o.analisados}</strong>
+                            </div>
+                        </div>
+                    `;
 
                     rankingHtml += `
-                        <div class="potencia-top-card" title="Média Global: ${o.media} dBm">
-                            <span class="pot-olt-name">${o.id}</span>
+                        <div class="potencia-top-card">
+                            <span class="pot-olt-name">
+                                <span class="material-symbols-rounded" style="font-size: 16px; color: var(--m3-on-surface-variant);">dns</span>
+                                ${o.id}
+                            </span>
                             <span class="pot-olt-media" style="color: ${color};">${o.media}</span>
                             <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); margin-top: 4px;">dBm</span>
+                            ${tooltipHtml}
                         </div>
                     `;
                 });

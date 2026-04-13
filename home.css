@@ -124,7 +124,7 @@
 .mobile-break-line { display: inline; }
 
 /* ==========================================================================
-   TOP 3 OLTs POTÊNCIA (HOME)
+   TOP 3 OLTs POTÊNCIA (HOME) - ATUALIZADO COM TOOLTIP E ÍCONES
    ========================================================================== */
 .potencia-top-grid {
     display: grid;
@@ -134,42 +134,108 @@
 }
 
 .potencia-top-card {
+    position: relative; /* Necessário para o Tooltip */
     background-color: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.05);
     border-radius: 12px;
-    padding: 15px 5px;
+    padding: 12px 5px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    transition: transform 0.2s;
+    transition: transform 0.2s, background-color 0.2s;
+    cursor: default;
 }
 
 .potencia-top-card:hover {
     transform: translateY(-2px);
+    background-color: rgba(255,255,255,0.05);
 }
 
 .potencia-top-card .pot-olt-name {
     font-size: 0.95rem;
     color: var(--m3-on-surface);
     font-weight: 700;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
 }
 
 .potencia-top-card .pot-olt-media {
     font-family: var(--font-family-mono);
-    font-size: 1.25rem;
+    font-size: 1.35rem; /* Aumentado um pouco para dar destaque */
     font-weight: 700;
     line-height: 1;
 }
 
+/* Tooltip da Potência */
+.pot-tooltip {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--m3-surface-container-high);
+    color: var(--m3-on-surface);
+    text-align: left;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--m3-outline);
+    z-index: 100;
+    width: max-content;
+    box-shadow: 0px 8px 24px rgba(0,0,0,0.6);
+    transition: opacity 0.2s, visibility 0.2s, bottom 0.2s;
+    font-size: 0.85rem;
+    pointer-events: none;
+}
+
+.pot-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -6px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: var(--m3-outline) transparent transparent transparent;
+}
+
+.potencia-top-card:hover .pot-tooltip {
+    visibility: visible;
+    opacity: 1;
+    bottom: 120%;
+}
+
+.pot-tooltip-title {
+    font-weight: 700;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+    color: var(--m3-on-surface);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pot-tooltip-line {
+    margin: 5px 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+
 /* ==========================================================================
-   GRID DE MINI-TERMÔMETROS (TEMPERATURA HOME) - SIMÉTRICO E ALINHADO
+   GRID DE MINI-TERMÔMETROS (TEMPERATURA HOME)
    ========================================================================== */
 .temp-badge-grid {
     display: flex;
