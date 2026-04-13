@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Equipamentos</title>
+    <title>Equipamentos - NOC</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,38 +25,29 @@
         <div id="header-placeholder"></div>
 
         <main class="main-content" style="flex-direction: column;">
-            <div id="fabricantes-grid" class="grid-container">
-                <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                    <span class="material-symbols-rounded rotate-anim" style="font-size: 40px; color: var(--m3-on-surface-variant);">sync</span>
-                    <p style="color: var(--m3-on-surface-variant);">Processando relatórios de fabricantes...</p>
-                </div>
-            </div>
-        </main>
-    </div>
+            
+            <div id="equipamentos-grid" class="grid-container"></div>
 
-    <div id="modal-desconhecidos" class="modal-overlay" onclick="closeUnknownModal(event)">
-        <div class="modal-content modal-large">
-            <div class="modal-header" style="background: rgba(248, 113, 113, 0.05); border-bottom: 1px solid rgba(248, 113, 113, 0.2);">
-                <h3 style="color: #f87171;"><span class="material-symbols-rounded">warning</span> Seriais Desconhecidos</h3>
-                <button class="close-modal" onclick="closeUnknownModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="table-container">
-                    <table id="tabela-desconhecidos">
-                        <thead>
-                            <tr class="table-header-row">
-                                <th>OLT</th>
-                                <th>Placa/Porta</th>
-                                <th>Serial Completo</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
+            <div class="table-container" style="margin-top: 30px;">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 15px; border-bottom: 1px solid var(--m3-outline);">
+                    <span class="material-symbols-rounded" style="color: #f87171;">help_center</span>
+                    <h3 style="margin: 0; font-size: 1.1rem; color: var(--m3-on-surface);">Equipamentos Desconhecidos (S/N Não Mapeado)</h3>
                 </div>
+                <table id="tabela-desconhecidos">
+                    <thead>
+                        <tr class="table-header-row">
+                            <th>OLT</th>
+                            <th>Placa/Porta</th>
+                            <th>Serial Completo</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
             </div>
-        </div>
+
+        </main>
     </div>
 
     <div id="footer-placeholder"></div>
@@ -64,6 +55,7 @@
     <script src="config.js"></script>
     <script src="api-service.js"></script>
     <script src="layout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="equipamentos-engine.js"></script>
 
     <style>
