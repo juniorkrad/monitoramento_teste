@@ -209,7 +209,7 @@ async function runTemperaturaEngine() {
 
             let rankingPioresHtml = '';
             top5Piores.forEach((c, index) => {
-                let colorTemp = c.pctPerigo >= 100 ? '#f87171' : '#fbbf24'; // Vermelho ou Amarelo
+                let colorTemp = c.pctPerigo >= 100 ? '#f87171' : '#f97316'; // Vermelho ou Laranja
                 rankingPioresHtml += `
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); width: 100%;">
                        <div style="display: flex; flex-direction: column; gap: 2px; align-items: flex-start; text-align: left;">
@@ -235,7 +235,7 @@ async function runTemperaturaEngine() {
             globalBody.innerHTML = `
                 <div style="width: 100%; display: flex; flex-direction: column; justify-content: stretch; height: 100%;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <span class="material-symbols-rounded" style="color: #fbbf24; font-size: 20px;">local_fire_department</span>
+                        <span class="material-symbols-rounded" style="color: #f97316; font-size: 20px;">local_fire_department</span>
                         <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Top 5 Sensores Aquecidos</h3>
                     </div>
                     <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start;">
@@ -285,11 +285,11 @@ async function runTemperaturaEngine() {
                                     <div style="display: flex; align-items: center; gap: 8px;" title="Crítico / Atenção">
                                         <span class="material-symbols-rounded" style="color:#f87171; font-size: 18px;">warning</span>
                                         <span style="font-size: 1.1rem; color:var(--m3-on-surface); font-weight: bold;">
-                                            <span style="color:#f87171">${o.criticos}</span> / <span style="color:#fbbf24">${o.atencao}</span>
+                                            <span style="color:#f87171">${o.criticos}</span> / <span style="color:#f97316">${o.atencao}</span>
                                         </span>
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 8px;" title="Pico de Temperatura">
-                                        <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 18px;">local_fire_department</span>
+                                        <span class="material-symbols-rounded" style="color:#f97316; font-size: 18px;">local_fire_department</span>
                                         <span style="font-size: 1.1rem; color:var(--m3-on-surface); font-weight: 500;">${o.maxTemp} °C</span>
                                     </div>
                                 </div>
@@ -357,7 +357,7 @@ window.openTemperaturaSuperModal = function(oltId) {
             badgeHtml = `<span class="alarm-count critico">CRÍTICO</span>`;
         } else if (hasAtencao) {
             btnClass += ' has-warning';
-            badgeHtml = `<span class="alarm-count atencao" style="background:#fbbf24; color:#000;">ATENÇÃO</span>`;
+            badgeHtml = `<span class="alarm-count atencao" style="background:#f97316; color:#000;">ATENÇÃO</span>`;
         }
 
         placasList.innerHTML += `
@@ -398,8 +398,8 @@ window.openTemperaturaSlotDetails = function(oltId, slot) {
             tempColor = '#f87171';
             rowClass = 'bg-alerta-temp-critico';
         } else if (s.isAtencao) {
-            statusBadge = `<span class="temp-atencao">Atenção</span>`;
-            tempColor = '#fbbf24';
+            statusBadge = `<span class="temp-atencao" style="background: rgba(249, 115, 22, 0.15); color: #f97316 !important;">Atenção</span>`;
+            tempColor = '#f97316';
             rowClass = 'bg-alerta-temp-atencao';
         }
 
