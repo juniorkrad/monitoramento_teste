@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento de Temperatura - NOC</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="layout.css">
+    <link rel="stylesheet" href="temperatura.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#67079f">
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="page-container">
+        <div id="header-placeholder"></div>
+
+        <main class="main-content" style="flex-direction: column;">
+            
+            <div id="temperatura-grid" class="grid-container">
+            </div>
+
+        </main>
+
+        <div id="super-modal" class="modal-overlay" style="display: none;" onclick="closeSuperModal(event)">
+            <div class="modal-content modal-large">
+                
+                <div class="modal-header">
+                    <h3 id="super-modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <span class="material-symbols-rounded">device_thermostat</span> OLT
+                    </h3>
+                    <button class="close-modal" onclick="closeSuperModal()" title="Fechar">&times;</button>
+                </div>
+
+                <div class="modal-body" style="position: relative; min-height: 300px;">
+
+                    <div id="temperatura-view-slots">
+                        <div id="temperatura-slots-list" class="placas-grid">
+                            </div>
+                    </div>
+
+                    <div id="temperatura-view-detalhes" style="display: none;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <button class="btn-voltar-placas" style="margin-bottom: 0;" onclick="backToTemperaturaSlots()">
+                                <span class="material-symbols-rounded">arrow_back</span> Voltar para Slots
+                            </button>
+                            <button class="btn-voltar-placas" style="margin-bottom: 0; padding: 10px;" onclick="exportTemperaturaSlotToTXT()" title="Exportar para TXT">
+                                <span class="material-symbols-rounded">download</span>
+                            </button>
+                        </div>
+                        
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr class="table-header-row">
+                                        <th style="text-align: center;">SENSOR</th>
+                                        <th style="text-align: center;">TEMP ATUAL</th>
+                                        <th style="text-align: center;">LIMITES (ALTA / CRÍTICO)</th>
+                                        <th style="text-align: center;">STATUS</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="temperatura-detalhes-tbody">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="config.js"></script>
+    <script src="api-service.js"></script>
+    <script src="layout.js"></script>
+    <script src="notifications.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="temperatura-engine.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(reg => console.log('Service Worker registrado com sucesso!'))
+                .catch(err => console.error('Erro ao registrar Service Worker:', err));
+            });
+        }
+    </script>
+</body>
+</html>
