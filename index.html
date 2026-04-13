@@ -91,10 +91,25 @@
                     </div>
                 </div>
 
+                <div class="global-card">
+                    <div class="card-header">
+                        <h3>
+                            <span class="material-symbols-rounded" style="color: #fbbf24;">device_thermostat</span> MONITORAMENTO TÉRMICO
+                        </h3>
+                        <a href="temperatura.html" class="card-header-button" title="Ver Painel Completo">
+                            <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
+                        </a>
+                    </div>
+                    <div class="card-body" id="global-temperatura-body">
+                        <p style="color: var(--m3-on-surface-variant);">Processando dados térmicos e ranking de sensores...</p>
+                    </div>
+                </div>
+
             </div>
 
             <div id="energy-olt-grid" style="display: none;"></div>
             <div id="potencia-grid" style="display: none;"></div>
+            <div id="temperatura-grid" style="display: none;"></div>
 
         </main>
     </div>
@@ -111,6 +126,7 @@
     <script src="energia-engine.js"></script>
     <script src="equipamentos-engine.js"></script>
     <script src="potencia-engine.js"></script>
+    <script src="temperatura-engine.js"></script>
     <script src="home-engine.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
