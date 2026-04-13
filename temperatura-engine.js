@@ -1,5 +1,6 @@
 // ==============================================================================
 // temperatura-engine.js - Motor Dedicado para Análise Térmica das OLTs
+// Atualização: Implementação do Grid/Nuvem Global na Home (17 OLTs simultâneas)
 // ==============================================================================
 
 const TAB_TEMPERATURA = 'TEMPERATURA'; 
@@ -110,7 +111,6 @@ async function runTemperaturaEngine() {
 
     try {
         let oltStats = [];
-        let rankingPioresSensores = []; 
         window.TEMP_DATA_STORE = {};
 
         // Busca toda a aba de TEMPERATURA de A até CX
@@ -134,7 +134,6 @@ async function runTemperaturaEngine() {
             let maxTemp = 0;
             let lastUpdateStr = '--/--/---- --:--:--';
             
-            // Armazena slots individualmente
             window.TEMP_DATA_STORE[oltId] = {}; 
 
             rows.forEach(row => {
@@ -162,21 +161,6 @@ async function runTemperaturaEngine() {
                     isAtencao = true;
                 }
 
-                // Cálculo para o TOP 5 Global (Baseado na proximidade percentual do desligamento)
-                let pctPerigo = 0;
-                if (!isNaN(limCrit) && limCrit > 0) {
-                    pctPerigo = (tempAtual / limCrit) * 100;
-                } else if (!isNaN(limAlta) && limAlta > 0) {
-                    pctPerigo = (tempAtual / limAlta) * 100;
-                }
-
-                if (pctPerigo >= 75) { // Só ranqueia se estiver acima de 75% da capacidade limite
-                    rankingPioresSensores.push({
-                        olt: oltId, slot, sensor, tempAtual, limAlta, limCrit, pctPerigo
-                    });
-                }
-
-                // Salva na memória do Modal
                 if (!window.TEMP_DATA_STORE[oltId][slot]) {
                     window.TEMP_DATA_STORE[oltId][slot] = [];
                 }
@@ -200,46 +184,51 @@ async function runTemperaturaEngine() {
         });
 
         // ==============================================================================
-        // INJEÇÃO DA HOME (Apenas Top 5 Sensores Mais Quentes)
+        // INJEÇÃO DA HOME (Nuvem de Badges - Visão Global de 17 OLTs)
         // ==============================================================================
         if (globalBody) {
-            // Ordena pelo maior percentual de perigo (Mais próximo do Shut-High)
-            rankingPioresSensores.sort((a, b) => b.pctPerigo - a.pctPerigo);
-            const top5Piores = rankingPioresSensores.slice(0, 5);
+            let badgesHtml = '';
+            
+            // Usamos a lista mestre (GLOBAL_MASTER_OLT_LIST) para garantir a ordem fixa das OLTs no painel
+            GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {
+                const o = oltStats.find(stats => stats.id === oltDef.id);
+                
+                if (!o || o.analisados === 0) {
+                    // Se a OLT estiver sem dados de temperatura
+                    badgesHtml += `
+                        <div class="temp-badge-item" style="background-color: rgba(255,255,255,0.02); opacity: 0.5;">
+                            <span class="olt-name">${oltDef.id}</span>
+                            <span class="temp-value">--</span>
+                        </div>
+                    `;
+                    return;
+                }
 
-            let rankingPioresHtml = '';
-            top5Piores.forEach((c, index) => {
-                let colorTemp = c.pctPerigo >= 100 ? '#f87171' : '#f97316'; // Vermelho ou Laranja
-                rankingPioresHtml += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); width: 100%;">
-                       <div style="display: flex; flex-direction: column; gap: 2px; align-items: flex-start; text-align: left;">
-                           <strong style="color: var(--m3-on-surface); font-size: 1rem;">
-                               <span style="color: var(--m3-on-surface-variant); margin-right: 5px;">${index + 1}º</span> 
-                               ${c.olt} <span style="color:var(--m3-outline); font-weight: normal; margin: 0 3px;">|</span> ${c.slot}
-                           </strong>
-                           <span style="color: var(--m3-on-surface-variant); font-family: var(--font-family-mono); font-size: 0.75rem;">
-                               Sensor: ${c.sensor} 
-                               <span class="mobile-break-separator" style="color:var(--m3-outline); font-weight: normal; margin: 0 3px;">|</span> 
-                               <span class="mobile-break-line">Max: ${c.limCrit || c.limAlta} °C</span>
-                           </span>
-                       </div>
-                       <span style="font-family: var(--font-family-mono); font-weight: bold; color: ${colorTemp}; font-size: 1.1rem;">${c.tempAtual} °C</span>
+                let classeCSS = 'status-normal';
+
+                // A cor do badge é baseada no pior sensor daquela OLT
+                if (o.criticos > 0) {
+                    classeCSS = 'status-critico';
+                } else if (o.atencao > 0) {
+                    classeCSS = 'status-atencao';
+                }
+
+                badgesHtml += `
+                    <div class="temp-badge-item ${classeCSS}" title="Pico de temperatura na OLT">
+                        <span class="olt-name">${o.id}</span>
+                        <span class="temp-value">${o.maxTemp}°C</span>
                     </div>
                 `;
             });
 
-            if (rankingPioresHtml === '') {
-                rankingPioresHtml = `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px; width: 100%;"><span class="material-symbols-rounded" style="font-size: 48px;">ac_unit</span><br>Termometros Estáveis!</div>`;
-            }
-
             globalBody.innerHTML = `
                 <div style="width: 100%; display: flex; flex-direction: column; justify-content: stretch; height: 100%;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <span class="material-symbols-rounded" style="color: #f97316; font-size: 20px;">local_fire_department</span>
-                        <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Top 5 Sensores Aquecidos</h3>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                        <span class="material-symbols-rounded" style="color: #f97316; font-size: 20px;">grid_view</span>
+                        <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Pico Térmico Global</h3>
                     </div>
-                    <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start;">
-                        ${rankingPioresHtml}
+                    <div class="temp-badge-grid">
+                        ${badgesHtml}
                     </div>
                 </div>
             `;
@@ -333,7 +322,7 @@ window.openTemperaturaSuperModal = function(oltId) {
     placasList.innerHTML = '';
     
     const slotsObj = window.TEMP_DATA_STORE[oltId] || {};
-    const slotNames = Object.keys(slotsObj).sort(); // Ordem Alfabética (nt-a, lt:1, etc)
+    const slotNames = Object.keys(slotsObj).sort(); 
     
     if (slotNames.length === 0) {
         placasList.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--m3-on-surface-variant);">Nenhum dado de slot encontrado.</div>`;
@@ -373,7 +362,7 @@ window.openTemperaturaSuperModal = function(oltId) {
 }
 
 window.openTemperaturaSlotDetails = function(oltId, slot) {
-    window.CURRENT_VIEW_SLOT = slot; // Salva para o relatório TXT
+    window.CURRENT_VIEW_SLOT = slot;
 
     document.getElementById('temperatura-view-slots').style.display = 'none';
     document.getElementById('temperatura-view-detalhes').style.display = 'block';

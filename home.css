@@ -123,6 +123,58 @@
 .mobile-break-separator { display: inline; }
 .mobile-break-line { display: inline; }
 
+/* ==========================================================================
+   GRID DE MINI-TERMÔMETROS (TEMPERATURA HOME)
+   ========================================================================== */
+.temp-badge-grid {
+    display: grid;
+    /* Tamanho mínimo de 120px garante que todas as OLTs fiquem do mesmo tamanho */
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    width: 100%;
+    margin-top: 5px;
+}
+
+.temp-badge-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.05);
+    box-sizing: border-box;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.temp-badge-item:hover {
+    transform: translateY(-2px);
+}
+
+.temp-badge-item .olt-name {
+    color: var(--m3-on-surface);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.temp-badge-item .temp-value {
+    font-family: var(--font-family-mono);
+    font-size: 1.1rem;
+}
+
+/* Cores Dinâmicas dos Termômetros */
+.temp-badge-item.status-normal { background-color: rgba(255,255,255,0.03); }
+.temp-badge-item.status-normal .temp-value { color: #4ade80; }
+
+.temp-badge-item.status-atencao { background-color: rgba(249, 115, 22, 0.15); border-color: rgba(249, 115, 22, 0.3); }
+.temp-badge-item.status-atencao .temp-value { color: #f97316; }
+
+.temp-badge-item.status-critico { background-color: rgba(248, 113, 113, 0.15); border-color: rgba(248, 113, 113, 0.3); }
+.temp-badge-item.status-critico .temp-value { color: #f87171; }
+
+
 /* RESPONSIVIDADE EXCLUSIVA DA HOME (MÓVEL & TABLETS) */
 @media (max-width: 900px) {
     .split-grid {
@@ -148,7 +200,7 @@
         text-align: left !important;
     }
 
-    /* Linhas separadoras removidas para o Mobile, conforme solicitado */
+    /* Linhas separadoras removidas para o Mobile */
     .global-card div[style*="flex: 1"] {
         border-top: none !important;
     }
@@ -156,6 +208,11 @@
     .donut-chart-container {
         align-self: center !important;
         margin-top: 15px !important;
+    }
+
+    /* Ajuste na nuvem de temperatura para telas pequenas */
+    .temp-badge-grid {
+        grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
     }
 
     /* Quebra de linha exclusiva para o Mobile (Serial e Código) */
