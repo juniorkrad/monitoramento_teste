@@ -31,18 +31,34 @@
 
             <div class="global-grid">
                 
-                <div class="global-card">
-                    <div class="card-header">
-                        <h3>
-                            <span class="material-symbols-rounded" style="color: var(--m3-color-success);">public</span> MONITORAMENTO DA REDE
-                        </h3>
-                        <a href="olt.html" class="card-header-button" title="Ver Painel Completo">
-                            <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
-                        </a>
+                <div class="split-grid">
+                    <div class="global-card">
+                        <div class="card-header">
+                            <h3>
+                                <span class="material-symbols-rounded" style="color: var(--m3-color-success);">public</span> MONITORAMENTO DA REDE
+                            </h3>
+                            <a href="olt.html" class="card-header-button" title="Ver Painel Completo">
+                                <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
+                            </a>
+                        </div>
+                        <div class="card-body" id="card-global">
+                            <div class="card-body" style="width: 100%;">
+                                <p style="color: var(--m3-on-surface-variant);">Conectando aos equipamentos...</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body" id="card-global">
-                        <div class="card-body" style="width: 100%;">
-                            <p style="color: var(--m3-on-surface-variant);">Conectando aos equipamentos...</p>
+
+                    <div class="global-card">
+                        <div class="card-header">
+                            <h3>
+                                <span class="material-symbols-rounded" style="color: #f87171;">sensors</span> MONITORAMENTO DE POTÊNCIA
+                            </h3>
+                            <a href="potencia.html" class="card-header-button" title="Ver Painel Completo">
+                                <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
+                            </a>
+                        </div>
+                        <div class="card-body" id="global-potencia-body">
+                            <p style="color: var(--m3-on-surface-variant);">Processando dados de sinais e potência óptica...</p>
                         </div>
                     </div>
                 </div>
@@ -75,20 +91,7 @@
                             <p style="color: var(--m3-on-surface-variant);">Processando ranking de fabricantes...</p>
                         </div>
                     </div>
-
-                    <div class="global-card">
-                        <div class="card-header">
-                            <h3>
-                                <span class="material-symbols-rounded" style="color: #f87171;">sensors</span> MONITORAMENTO DE POTÊNCIA
-                            </h3>
-                            <a href="potencia.html" class="card-header-button" title="Ver Painel Completo">
-                                <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
-                            </a>
-                        </div>
-                        <div class="card-body" id="global-potencia-body">
-                            <p style="color: var(--m3-on-surface-variant);">Processando dados de sinais e potência óptica...</p>
-                        </div>
-                    </div>
+                    <div style="visibility: hidden;"></div>
                 </div>
 
                 <div class="global-card">

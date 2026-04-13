@@ -1,10 +1,10 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Inclusão do download automático da aba LOCALIDADE para cruzamento
+// Atualização: Remoção de 'Por Fabricante' e adequação para 50% de largura.
 // ==============================================================================
 
 const TAB_CIRCUITOS = 'CIRCUITO'; 
-const TAB_LOCALIDADE = 'LOCALIDADE'; // Definindo a nova aba
+const TAB_LOCALIDADE = 'LOCALIDADE'; 
 
 window.OLT_CLIENTS_DATA = {};
 window.CURRENT_OLT_PORT_DATA = {}; 
@@ -65,7 +65,7 @@ async function fetchGlobalOltData(olt) {
     }
 }
 
-function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, top3Olts) {
+function updateGlobalNetworkCard(globalOnline, globalOffline, top3Olts) {
     const cardBody = document.querySelector('#card-global .card-body');
     if (!cardBody) return;
     
@@ -87,36 +87,6 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
         <div class="stat-item offline" style="display: grid; grid-template-columns: 120px 1fr; gap: 10px; align-items: center;">
             <span class="stat-number" style="font-size: 1.8rem; display: block; text-align: left; color: var(--m3-color-error);">${globalOffline}</span>
             <label style="font-size: 1.3rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px; color: var(--m3-color-error);"><span class="material-symbols-rounded icon-down" style="font-size: 22px;">error</span> Total Offline</label>
-        </div>
-    `;
-
-    const nokiaPct = nokiaTotal > 0 ? (nokiaOnline / nokiaTotal) * 100 : 0;
-    const furukawaPct = furukawaTotal > 0 ? (furukawaOnline / furukawaTotal) * 100 : 0;
-    
-    const vendorHtml = `
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; width: 100%;">
-            <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">precision_manufacturing</span>
-            <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Por Fabricante</h3>
-        </div>
-        <div style="display: flex; flex-direction: column; justify-content: center; gap: 15px; width: 100%; flex: 1;">
-            <div style="width: 100%;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <img src="imagens/logos/nokia.png" alt="Nokia" style="max-height: 24px; width: auto; object-fit: contain;">
-                    <span class="stat-number" style="font-size: 1.3rem; width: auto;">${Math.round(nokiaPct)}%</span>
-                </div>
-                <div style="height: 12px; background: var(--m3-surface-container-high); border-radius: 6px; overflow: hidden; width: 100%;">
-                    <div style="height: 100%; width: ${nokiaPct}%; background: var(--m3-color-success); border-radius: 6px;"></div>
-                </div>
-            </div>
-            <div style="width: 100%;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <img src="imagens/logos/furukawa.png" alt="Furukawa" style="max-height: 24px; width: auto; object-fit: contain;">
-                    <span class="stat-number" style="font-size: 1.3rem; width: auto;">${Math.round(furukawaPct)}%</span>
-                </div>
-                <div style="height: 12px; background: var(--m3-surface-container-high); border-radius: 6px; overflow: hidden; width: 100%;">
-                    <div style="height: 100%; width: ${furukawaPct}%; background: var(--m3-color-success); border-radius: 6px;"></div>
-                </div>
-            </div>
         </div>
     `;
 
@@ -150,11 +120,8 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokia
     rankingHtmlContent += `</div>`; 
 
     cardBody.innerHTML = `
-        <div class="card-stats" style="padding-right: 15px; min-width: 250px; align-items: flex-start !important; text-align: left !important;">
+        <div class="card-stats" style="padding-right: 15px; flex: 1; min-width: 250px; align-items: flex-start !important; text-align: left !important;">
             ${statsHtml}
-        </div>
-        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 20px; padding-right: 15px; display: flex; flex-direction: column; align-items: flex-start !important; text-align: left !important; min-width: 250px;">
-            ${vendorHtml}
         </div>
         <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 20px; display: flex; flex-direction: column; align-items: flex-start !important; text-align: left !important; min-width: 250px;">
             ${rankingHtmlContent}
@@ -167,7 +134,6 @@ async function runGlobalNetworkOverview() {
     const results = await Promise.all(oltPromises);
     
     let globalOnline = 0, globalOffline = 0;
-    let nokiaOnline = 0, nokiaTotal = 0, furukawaOnline = 0, furukawaTotal = 0;
     let oltStatsList = [], currentBackbones = new Set();
     let allProblems = new Set();
 
@@ -175,9 +141,6 @@ async function runGlobalNetworkOverview() {
         globalOnline += result.onlineCount; 
         globalOffline += result.offlineCount;
         let total = result.onlineCount + result.offlineCount;
-        
-        if (result.type === 'nokia') { nokiaOnline += result.onlineCount; nokiaTotal += total; }
-        else { furukawaOnline += result.onlineCount; furukawaTotal += total; }
         
         oltStatsList.push({ id: result.id, offline: result.offlineCount, total });
 
@@ -223,7 +186,7 @@ async function runGlobalNetworkOverview() {
     });
 
     oltStatsList.sort((a, b) => b.offline - a.offline);
-    updateGlobalNetworkCard(globalOnline, globalOffline, nokiaOnline, nokiaTotal, furukawaOnline, furukawaTotal, oltStatsList.slice(0, 3));
+    updateGlobalNetworkCard(globalOnline, globalOffline, oltStatsList.slice(0, 3));
 
     window.NETWORK_PROBLEMS_STORE = allProblems;
     window.NETWORK_BACKBONE_STORE = currentBackbones;
@@ -244,7 +207,6 @@ async function fetchCircuitosData() {
     } catch (e) { return []; }
 }
 
-// NOVA FUNÇÃO: Busca os dados da aba LOCALIDADE para cruzamento no Stories
 async function fetchLocalidadeData() {
     const range = `${TAB_LOCALIDADE}!A:AH`;
     try {
@@ -313,14 +275,12 @@ window.startOltMonitoring = function(config) {
         const rangeOlt = `${config.id}!A:K`; 
 
         try {
-            // ATUALIZAÇÃO IMPORTANTE: Agora ele baixa também a aba LOCALIDADE em paralelo!
             const [dataOlt, rowsCircuitos, rowsLocalidades] = await Promise.all([
                 API.get(rangeOlt), 
                 fetchCircuitosData(),
                 fetchLocalidadeData()
             ]);
 
-            // Salva globalmente os bairros para o olt-comunicado.js poder utilizar
             window.GLOBAL_BAIRROS_DATA = rowsLocalidades;
 
             const rowsOlt = (dataOlt.values || []).slice(1);
@@ -543,11 +503,9 @@ window.exportPlacaToTXT = function() {
     document.body.removeChild(link);
 };
 
-// Exportar Imagem (PNG) do Modal de Detalhes
 window.exportDetailModalToImage = function(event) {
     if (event) event.stopPropagation();
 
-    // Captura apenas o conteúdo interno do modal para a imagem
     const modalContent = document.querySelector('#detail-modal .modal-content');
     if (!modalContent) return;
 
