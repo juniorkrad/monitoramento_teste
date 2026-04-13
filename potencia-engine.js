@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Inclusão de exportação de imagem PNG e relatório TXT
+// Atualização: Home Dashboard exibe as 3 OLTs com a pior média de sinal.
 // ==============================================================================
 
 const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO'; 
@@ -203,44 +203,51 @@ async function runPotenciaEngine() {
         });
 
         // ==============================================================================
-        // INJEÇÃO DA HOME (Apenas Top 5 Piores Sinais)
+        // INJEÇÃO DA HOME (Top 3 OLTs Pior Média)
         // ==============================================================================
         if (globalBody) {
-            todosClientesCriticos.sort((a, b) => a.potencia - b.potencia);
-            const top5Piores = todosClientesCriticos.slice(0, 5);
+            const validOlts = oltStats.filter(o => o.analisados > 0);
+            
+            // Ordena pelo menor número (mais negativo). Ex: -30 é pior que -20.
+            validOlts.sort((a, b) => parseFloat(a.media) - parseFloat(b.media));
+            
+            const top3Olts = validOlts.slice(0, 3);
 
-            let rankingPioresHtml = '';
-            top5Piores.forEach((c, index) => {
-                rankingPioresHtml += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); width: 100%;">
-                       <div style="display: flex; flex-direction: column; gap: 2px; align-items: flex-start; text-align: left;">
-                           <strong style="color: var(--m3-on-surface); font-size: 1rem;">
-                               <span style="color: var(--m3-on-surface-variant); margin-right: 5px;">${index + 1}º</span> 
-                               ${c.olt} <span style="color:var(--m3-outline); font-weight: normal; margin: 0 3px;">|</span> ${c.porta}
-                           </strong>
-                           <span style="color: var(--m3-on-surface-variant); font-family: var(--font-family-mono); font-size: 0.75rem;">
-                               SN: ${c.serial} 
-                               <span class="mobile-break-separator" style="color:var(--m3-outline); font-weight: normal; margin: 0 3px;">|</span> 
-                               <span class="mobile-break-line">Cód: ${c.codigo}</span>
-                           </span>
-                       </div>
-                       <span style="font-family: var(--font-family-mono); font-weight: bold; color: #f87171; font-size: 1.1rem;">${c.potencia} dBm</span>
-                    </div>
-                `;
-            });
+            let rankingHtml = '';
+            
+            if (top3Olts.length > 0) {
+                rankingHtml += `<div class="potencia-top-grid">`;
+                
+                top3Olts.forEach(o => {
+                    const mediaVal = parseFloat(o.media);
+                    let color = 'var(--m3-on-surface)';
+                    
+                    if (mediaVal <= -28.00) { color = '#f87171'; }
+                    else if (mediaVal <= -26.00) { color = '#fbbf24'; }
+                    else { color = '#4ade80'; }
 
-            if (rankingPioresHtml === '') {
-                rankingPioresHtml = `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px; width: 100%;"><span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Rede 100% Saudável!</div>`;
+                    rankingHtml += `
+                        <div class="potencia-top-card" title="Média Global: ${o.media} dBm">
+                            <span class="pot-olt-name">${o.id}</span>
+                            <span class="pot-olt-media" style="color: ${color};">${o.media}</span>
+                            <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); margin-top: 4px;">dBm</span>
+                        </div>
+                    `;
+                });
+                
+                rankingHtml += `</div>`;
+            } else {
+                rankingHtml = `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px; width: 100%;"><span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Rede sem clientes online lidos!</div>`;
             }
 
             globalBody.innerHTML = `
                 <div style="width: 100%; display: flex; flex-direction: column; justify-content: stretch; height: 100%;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <span class="material-symbols-rounded" style="color: #f87171; font-size: 20px;">warning</span>
-                        <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Top 5 Piores Sinais</h3>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                        <span class="material-symbols-rounded" style="color: #f87171; font-size: 20px;">insights</span>
+                        <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Piores Médias (OLTs)</h3>
                     </div>
-                    <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start;">
-                        ${rankingPioresHtml}
+                    <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                        ${rankingHtml}
                     </div>
                 </div>
             `;

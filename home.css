@@ -124,20 +124,65 @@
 .mobile-break-line { display: inline; }
 
 /* ==========================================================================
+   TOP 3 OLTs POTÊNCIA (HOME)
+   ========================================================================== */
+.potencia-top-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+}
+
+.potencia-top-card {
+    background-color: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 15px 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+.potencia-top-card:hover {
+    transform: translateY(-2px);
+}
+
+.potencia-top-card .pot-olt-name {
+    font-size: 0.95rem;
+    color: var(--m3-on-surface);
+    font-weight: 700;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.potencia-top-card .pot-olt-media {
+    font-family: var(--font-family-mono);
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* ==========================================================================
    GRID DE MINI-TERMÔMETROS (TEMPERATURA HOME) - SIMÉTRICO E ALINHADO
    ========================================================================== */
 .temp-badge-grid {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center; /* Centraliza a quebra de linha (9 em cima, 8 embaixo) */
+    justify-content: center;
     gap: 8px;
     width: 100%;
     margin-top: 10px;
 }
 
 .temp-badge-item {
-    position: relative; /* Necessário para o Tooltip flutuante */
-    flex: 0 1 calc(11.11% - 8px); /* Matemágica: força no máximo 9 itens por linha */
+    position: relative; 
+    flex: 0 1 calc(11.11% - 8px); 
     min-width: 110px;
     display: flex;
     align-items: center;
@@ -168,7 +213,6 @@
     font-size: 1.1rem;
 }
 
-/* Ícones Animados */
 .temp-badge-item .material-symbols-rounded {
     transition: transform 0.3s ease;
 }
@@ -180,7 +224,6 @@
     100% { transform: scale(1.2); opacity: 1; text-shadow: 0 0 8px rgba(248, 113, 113, 1); }
 }
 
-/* Cores Dinâmicas dos Termômetros */
 .temp-badge-item.status-normal { background-color: rgba(255,255,255,0.03); }
 .temp-badge-item.status-normal .temp-value, .temp-badge-item.status-normal .material-symbols-rounded { color: #4ade80; }
 
@@ -190,10 +233,6 @@
 .temp-badge-item.status-critico { background-color: rgba(248, 113, 113, 0.15); border-color: rgba(248, 113, 113, 0.3); }
 .temp-badge-item.status-critico .temp-value, .temp-badge-item.status-critico .material-symbols-rounded { color: #f87171; }
 
-
-/* ==========================================================================
-   TOOLTIP DO MONITORAMENTO TÉRMICO (HOVER)
-   ========================================================================== */
 .temp-tooltip {
     visibility: hidden;
     opacity: 0;
@@ -276,7 +315,6 @@
         text-align: left !important;
     }
 
-    /* Linhas separadoras removidas para o Mobile */
     .global-card div[style*="flex: 1"] {
         border-top: none !important;
     }
@@ -286,15 +324,13 @@
         margin-top: 15px !important;
     }
 
-    /* Ajuste na nuvem de temperatura para telas pequenas */
     .temp-badge-grid {
         justify-content: space-between;
     }
     .temp-badge-item {
-        flex: 1 1 calc(33% - 8px); /* 3 itens por linha no celular */
+        flex: 1 1 calc(33% - 8px); 
     }
 
-    /* Quebra de linha exclusiva para o Mobile (Serial e Código) */
     .mobile-break-separator {
         display: none !important;
     }
