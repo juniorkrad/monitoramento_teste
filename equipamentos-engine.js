@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor Dedicado de Monitoramento de Fabricantes
-// Atualização: Home ocupando 100% da tela com 12 Cards padronizados e Hover (Tooltip)
+// Atualização: Home com suporte a arquivos de logotipos (imagens/logo/)
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -27,6 +27,14 @@ EQP_MARCAS.forEach(marca => {
 window.listaDesconhecidos = [];
 window.EQP_TOTALS = {};
 
+// Função auxiliar para converter o nome da marca no nome do arquivo da logo
+function getLogoFilename(nome) {
+    if (nome === 'MAXPRINT / V-SOL') return 'v-sol.png';
+    if (nome === 'CHINA MOBILE') return 'china-mobile.png';
+    if (nome === 'DESCONHECIDOS') return 'desconhecidos.png';
+    return nome.toLowerCase().replace(/\s+/g, '-') + '.png';
+}
+
 async function runEquipamentosEngine() {
     const globalBody = document.getElementById('global-equipamentos-body');
     const isEqpPage = window.location.pathname.includes('equipamentos.html');
@@ -37,7 +45,6 @@ async function runEquipamentosEngine() {
         window.EQP_TOTALS = {};
         window.listaDesconhecidos = [];
         
-        // Inicializa as 12 variações (11 definidas + Desconhecidos)
         EQP_MARCAS.forEach(m => {
             window.EQP_TOTALS[m.nome] = { total: 0, online: 0, offline: 0 };
         });
@@ -82,7 +89,7 @@ async function runEquipamentosEngine() {
         });
 
         // ==============================================================================
-        // INJEÇÃO NA HOME (12 Variações em Cards Padronizados)
+        // INJEÇÃO NA HOME (12 Logos em Grid)
         // ==============================================================================
         if (globalBody) {
             const allMarcas = [...EQP_MARCAS.map(m => m.nome), 'DESCONHECIDOS'];
@@ -103,7 +110,9 @@ async function runEquipamentosEngine() {
                 if (marca.nome === 'DESCONHECIDOS') color = '#f87171'; 
                 else if (marca.total === 0) color = 'var(--m3-on-surface-variant)';
                 
+                const disabledClass = marca.total === 0 ? 'disabled' : '';
                 const pctOnline = marca.total > 0 ? ((marca.online / marca.total) * 100).toFixed(1) : 0;
+                const logoFile = getLogoFilename(marca.nome);
 
                 let tooltipHtml = `
                     <div class="eqp-tooltip">
@@ -130,10 +139,12 @@ async function runEquipamentosEngine() {
                     </div>
                 `;
 
+                // Injeção da imagem. Se a imagem falhar (onerror), a span de texto é exibida no lugar.
                 eqpHtml += `
-                    <div class="eqp-badge-item">
-                        <span class="eqp-logo-text" style="color: ${marca.total > 0 ? 'var(--m3-on-surface)' : 'var(--m3-on-surface-variant)'};">${marca.nome}</span>
-                        <span class="eqp-total-value" style="color: ${color};">${marca.total}</span>
+                    <div class="eqp-badge-item ${disabledClass}">
+                        <img src="imagens/logo/${logoFile}" class="eqp-logo-img" alt="${marca.nome}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <span class="eqp-logo-text" style="display: none; color: ${marca.total > 0 ? 'var(--m3-on-surface)' : 'var(--m3-on-surface-variant)'};">${marca.nome}</span>
+                        <span class="eqp-total-value">${marca.total}</span>
                         ${tooltipHtml}
                     </div>
                 `;

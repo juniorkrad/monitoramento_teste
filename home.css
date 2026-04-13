@@ -234,12 +234,12 @@
 
 
 /* ==========================================================================
-   GRID DE MINI-TERMÔMETROS (TEMPERATURA HOME) - ALINHADO À DIREITA
+   GRID DE MINI-TERMÔMETROS (TEMPERATURA HOME) - ALINHADO À ESQUERDA
    ========================================================================== */
 .temp-badge-grid {
     display: flex;
     flex-wrap: wrap;
-    justify-content: flex-end; /* Alterado para alinhar à direita conforme solicitado */
+    justify-content: flex-start; /* Alinhado à esquerda conforme solicitado */
     gap: 8px;
     width: 100%;
     margin-top: 10px;
@@ -356,12 +356,11 @@
 }
 
 /* ==========================================================================
-   GRID DE FABRICANTES (EQUIPAMENTOS HOME) - 12 VARIAÇÕES PADRONIZADAS
+   GRID DE FABRICANTES (EQUIPAMENTOS HOME) - 6 CARDS POR LINHA COM LOGOS
    ========================================================================== */
 .eqp-badge-grid {
     display: grid;
-    /* Grid automático perfeitamente distribuído */
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    grid-template-columns: repeat(6, 1fr); /* Força exatos 6 itens por linha */
     gap: 12px;
     width: 100%;
     margin-top: 10px;
@@ -372,7 +371,7 @@
     background-color: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.05);
     border-radius: 12px;
-    padding: 16px 10px;
+    padding: 12px 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -388,6 +387,20 @@
     border-color: rgba(96, 165, 250, 0.3);
 }
 
+/* Estilização da Logo da Fabricante */
+.eqp-logo-img {
+    max-height: 24px;
+    max-width: 90%;
+    object-fit: contain;
+    margin-bottom: 8px;
+    transition: opacity 0.2s, filter 0.2s;
+}
+
+.eqp-badge-item.disabled .eqp-logo-img {
+    opacity: 0.25; /* Apagado se o total for 0 */
+    filter: grayscale(100%);
+}
+
 .eqp-logo-text {
     font-size: 0.85rem;
     font-weight: 700;
@@ -399,10 +412,15 @@
 
 .eqp-total-value {
     font-family: var(--font-family-mono);
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: #60a5fa; 
     line-height: 1;
+}
+
+.eqp-badge-item.disabled .eqp-total-value {
+    color: var(--m3-on-surface-variant);
+    opacity: 0.5;
 }
 
 /* Tooltip de Equipamentos */
@@ -499,7 +517,7 @@
     }
 
     .temp-badge-grid {
-        justify-content: space-between; /* Melhor distribuição no mobile */
+        justify-content: flex-start; 
     }
     .temp-badge-item {
         flex: 1 1 calc(33% - 8px); 
