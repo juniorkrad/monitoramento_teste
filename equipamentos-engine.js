@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor Dedicado de Monitoramento de Fabricantes
-// Atualização: Home com suporte a arquivos de logotipos (imagens/logo/)
+// Atualização: Correção do caminho das imagens para 'imagens/logos/'
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -139,10 +139,10 @@ async function runEquipamentosEngine() {
                     </div>
                 `;
 
-                // Injeção da imagem. Se a imagem falhar (onerror), a span de texto é exibida no lugar.
+                // Injeção da imagem com o caminho corrigido para imagens/logos/
                 eqpHtml += `
                     <div class="eqp-badge-item ${disabledClass}">
-                        <img src="imagens/logo/${logoFile}" class="eqp-logo-img" alt="${marca.nome}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <img src="imagens/logos/${logoFile}" class="eqp-logo-img" alt="${marca.nome}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                         <span class="eqp-logo-text" style="display: none; color: ${marca.total > 0 ? 'var(--m3-on-surface)' : 'var(--m3-on-surface-variant)'};">${marca.nome}</span>
                         <span class="eqp-total-value">${marca.total}</span>
                         ${tooltipHtml}
