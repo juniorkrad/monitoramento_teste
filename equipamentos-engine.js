@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor de Fabricantes (Visão por Marca)
-// Atualização: Inclusão do Modal "Desconhecidos" vinculado ao Card
+// Atualização: Correção Botão Modal (Ícone Padrão), Logo Dupla (Maxprint/V-SOL) e Timestamp
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -24,11 +24,25 @@ EQP_MARCAS.forEach(marca => {
     });
 });
 
-function getLogoFilename(nome) {
-    if (nome === 'MAXPRINT / V-SOL') return 'v-sol.png';
-    if (nome === 'CHINA MOBILE') return 'china-mobile.png';
-    if (nome === 'DESCONHECIDOS') return 'desconhecidos.png';
-    return nome.toLowerCase().replace(/\s+/g, '-') + '.png';
+// Lógica de Renderização de Logo (Suporte a Múltiplas Logos)
+function getLogoHtml(nome) {
+    if (nome === 'MAXPRINT / V-SOL') {
+        // Exibe as duas logos lado a lado
+        return `
+            <div style="display: flex; gap: 10px; align-items: center; justify-content: center;">
+                <img src="imagens/logos/maxprint.png" class="eqp-logo-img" alt="Maxprint" style="max-height: 24px;" onerror="this.style.display='none';">
+                <span style="color: var(--m3-on-surface-variant); font-size: 10px;">/</span>
+                <img src="imagens/logos/v-sol.png" class="eqp-logo-img" alt="V-SOL" style="max-height: 24px;" onerror="this.style.display='none';">
+            </div>
+        `;
+    }
+    
+    let logoFile = nome.toLowerCase().replace(/\s+/g, '-') + '.png';
+    if (nome === 'CHINA MOBILE') logoFile = 'china-mobile.png';
+    if (nome === 'DESCONHECIDOS') logoFile = 'desconhecidos.png';
+
+    return `<img src="imagens/logos/${logoFile}" class="eqp-logo-img" alt="${nome}" style="max-height: 24px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <span class="eqp-logo-text" style="display: none; color: var(--m3-on-surface); font-size: 0.85rem; font-weight: bold; text-transform: uppercase;">${nome}</span>`;
 }
 
 async function runEquipamentosEngine() {
@@ -95,15 +109,13 @@ async function runEquipamentosEngine() {
             todasMarcas.map(nome => ({ nome, ...brandData[nome] }))
                 .sort((a, b) => b.total - a.total)
                 .forEach(marca => {
-                    const logoFile = getLogoFilename(marca.nome);
                     const color = marca.nome === 'DESCONHECIDOS' ? '#f87171' : '#60a5fa';
                     const disabledClass = marca.total === 0 ? 'disabled' : '';
 
                     eqpHtml += `
                         <div class="eqp-badge-item ${disabledClass}">
-                            <img src="imagens/logos/${logoFile}" class="eqp-logo-img" alt="${marca.nome}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                            <span class="eqp-logo-text" style="display: none;">${marca.nome}</span>
-                            <span class="eqp-total-value">${marca.total}</span>
+                            ${getLogoHtml(marca.nome)}
+                            <span class="eqp-total-value" style="margin-top: 8px;">${marca.total}</span>
                         </div>
                     `;
                 });
@@ -121,7 +133,6 @@ async function runEquipamentosEngine() {
                 .filter(m => m.total > 0) 
                 .sort((a, b) => b.total - a.total)
                 .forEach(m => {
-                    const logoFile = getLogoFilename(m.nome);
                     const health = ((m.online / m.total) * 100).toFixed(1);
 
                     let oltListHtml = '';
@@ -134,21 +145,23 @@ async function runEquipamentosEngine() {
                         `;
                     });
 
-                    // Botão de Detalhes Exclusivo para o Card de Desconhecidos
-                    let extraButtonHtml = '';
+                    // Botão Padrão Ícone no Cabeçalho (Apenas para Desconhecidos)
+                    let headerButtonHtml = '';
                     if (m.nome === 'DESCONHECIDOS') {
-                        extraButtonHtml = `
-                            <button class="status-btn status-problema" style="width: 100%; margin-top: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 10px;" onclick="openUnknownModal()">
-                                <span class="material-symbols-rounded" style="font-size: 18px;">visibility</span> Ver Detalhes
+                        headerButtonHtml = `
+                            <button class="card-header-button" onclick="openUnknownModal()" title="Ver Detalhes">
+                                <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
                             </button>
                         `;
                     }
 
                     gridEqpPage.innerHTML += `
                         <div class="overview-card" style="display:flex; flex-direction:column;">
-                            <div class="card-header" style="justify-content:center; padding:15px;">
-                                <img src="imagens/logos/${logoFile}" style="max-height:30px; max-width:80%; object-fit:contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                                <h3 style="display:none; margin:0;">${m.nome}</h3>
+                            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; padding:15px 20px;">
+                                <div style="display:flex; align-items:center; justify-content:center; flex:1;">
+                                    ${getLogoHtml(m.nome)}
+                                </div>
+                                ${headerButtonHtml}
                             </div>
                             <div class="card-body" style="flex-direction:column; padding:20px; gap:15px;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
@@ -179,7 +192,6 @@ async function runEquipamentosEngine() {
                                         ${oltListHtml}
                                     </div>
                                 </div>
-                                ${extraButtonHtml}
                             </div>
                         </div>
                     `;
@@ -230,6 +242,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isEqpPage) {
         if (typeof loadHeader === 'function') loadHeader({ title: "Equipamentos por Fabricante", exactTitle: true });
         if (typeof loadFooter === 'function') loadFooter();
+        
+        // Chamada adicionada para ativar o relógio do cabeçalho
+        setTimeout(updateGlobalTimestamp, 500); 
     }
 
     if (isEqpPage || isHomePage) {
