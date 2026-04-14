@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Remoção de 'Por Fabricante' e adequação para 50% de largura.
+// Atualização: Sistema Híbrido (Tooltip/Modal) no Top 3 OLTs Críticas (Home)
 // ==============================================================================
 
 const TAB_CIRCUITOS = 'CIRCUITO'; 
@@ -12,6 +12,84 @@ window.NETWORK_PROBLEMS_STORE = new Set();
 window.NETWORK_BACKBONE_STORE = new Set();
 window.currentOltInterval = null; 
 window.CURRENT_VIEW_PLACA = null; 
+
+// ==============================================================================
+// FUNÇÕES DO SISTEMA HÍBRIDO (TOOLTIP PC / MODAL MOBILE)
+// ==============================================================================
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
+}
+
+window.handleNetHover = function(event) {
+    if (isMobileDevice()) return;
+    const tooltip = document.getElementById('smart-tooltip');
+    if (!tooltip) return;
+
+    const el = event.currentTarget;
+    tooltip.innerHTML = `
+        <div class="smart-tooltip-title">
+            <span class="material-symbols-rounded" style="font-size: 18px; color: var(--m3-color-error);">warning</span>
+            ${el.dataset.olt}
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Status:</span> 
+            <strong style="color: var(--m3-color-error);">Crítico</strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Total Offline:</span> 
+            <strong style="color: var(--m3-color-error);">${el.dataset.off}</strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Total Analisado:</span> 
+            <strong>${el.dataset.total}</strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Impacto na OLT:</span> 
+            <strong>${el.dataset.pct}%</strong>
+        </div>
+    `;
+
+    const rect = el.getBoundingClientRect();
+    tooltip.style.left = (rect.left + (rect.width / 2) + window.scrollX) + 'px';
+    tooltip.style.top = (rect.top + window.scrollY) + 'px';
+    tooltip.style.opacity = 1;
+};
+
+window.handleNetLeave = function() {
+    const tooltip = document.getElementById('smart-tooltip');
+    if (tooltip) tooltip.style.opacity = 0;
+};
+
+window.handleNetClick = function(event) {
+    if (!isMobileDevice()) return;
+    const modal = document.getElementById('mobile-fast-modal');
+    const content = document.getElementById('fast-modal-content');
+    if (!modal || !content) return;
+
+    const el = event.currentTarget;
+    content.innerHTML = `
+        <h3 style="margin-top: 0; border-bottom: 1px solid var(--m3-outline); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+            <span class="material-symbols-rounded" style="color: var(--m3-color-error);">warning</span> ${el.dataset.olt}
+        </h3>
+        <div style="margin-bottom: 15px; text-align: center;">
+            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Total Offline</span><br>
+            <strong style="font-size: 2.5rem; font-family: var(--font-family-mono); color: var(--m3-color-error); line-height: 1;">${el.dataset.off}</strong>
+        </div>
+        <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
+            <div>
+                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Total Analisado</span><br>
+                <strong style="font-size: 1.2rem;">${el.dataset.total}</strong>
+            </div>
+            <div style="text-align: right;">
+                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Impacto na OLT</span><br>
+                <strong style="font-size: 1.2rem; color: var(--m3-color-error);">${el.dataset.pct}%</strong>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+};
+
+// ==============================================================================
 
 async function fetchGlobalOltData(olt) {
     const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:K` : `${olt.sheetTab}!A:K`;
@@ -101,14 +179,26 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, top3Olts) {
     if (top3Olts.some(olt => olt.offline > 0)) {
         top3Olts.forEach((olt, index) => {
             if (olt.offline === 0) return;
-            const offlinePct = olt.total > 0 ? (olt.offline / olt.total) * 100 : 0;
+            const offlinePct = olt.total > 0 ? ((olt.offline / olt.total) * 100).toFixed(1) : 0;
+            
+            // Container atualizado com suporte a eventos de Tooltip (Hover/Click) e transições
             rankingHtmlContent += `
-                <div style="width: 100%; margin-bottom: 10px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline;">
+                <div style="width: 100%; margin-bottom: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background-color 0.2s ease; margin-left: -8px;"
+                     data-olt="${olt.id}"
+                     data-off="${olt.offline}"
+                     data-total="${olt.total}"
+                     data-pct="${offlinePct}"
+                     onmouseenter="handleNetHover(event)"
+                     onmouseleave="handleNetLeave()"
+                     onclick="handleNetClick(event)"
+                     onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'"
+                     onmouseout="this.style.backgroundColor='transparent'">
+                     
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline; pointer-events: none;">
                         <strong style="color: var(--m3-on-surface); font-size: 1.1rem;">${index + 1}º ${olt.id}</strong>
                         <span class="stat-number" style="font-size: 1.2rem; color: var(--m3-color-error); width: auto;">${olt.offline} OFF</span>
                     </div>
-                    <div style="height: 10px; background: var(--m3-surface-container-high); border-radius: 5px; overflow: hidden; width: 100%;">
+                    <div style="height: 10px; background: var(--m3-surface-container-high); border-radius: 5px; overflow: hidden; width: 100%; pointer-events: none;">
                         <div style="height: 100%; width: ${offlinePct}%; background: var(--m3-color-error); border-radius: 5px;"></div>
                     </div>
                 </div>
