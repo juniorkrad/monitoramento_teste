@@ -166,7 +166,7 @@ async function runEquipamentosEngine() {
                             <div class="card-body" style="flex-direction:column; padding:20px; gap:15px;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
                                     <div style="display:flex; flex-direction:column; gap:4px;">
-                                        <span style="font-size:0.75rem; color:var(--m3-on-surface-variant); text-transform:uppercase;">Total Geral</span>
+                                        <span style="font-size:0.75rem; color:var(--m3-on-surface-variant); text-transform:uppercase;">Total</span>
                                         <span style="font-size:1.8rem; font-weight:700; color:#60a5fa; font-family:var(--font-family-mono); line-height:1;">${m.total}</span>
                                     </div>
                                     <div style="text-align:right;">
