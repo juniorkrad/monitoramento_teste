@@ -60,7 +60,7 @@
 .global-card {
     background-color: var(--m3-surface-container);
     border-radius: 20px; 
-    overflow: hidden;
+    /* overflow: hidden; <- REMOVIDO para que os tooltips (hover) possam flutuar para fora do card livremente */
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     display: flex;
     flex-direction: column;
@@ -74,6 +74,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    /* Adicionado as bordas arredondadas aqui em cima para substituir o overflow do card inteiro */
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
 }
 
 .global-card .card-header h3 {
@@ -239,7 +242,7 @@
 .temp-badge-grid {
     display: flex;
     flex-wrap: wrap;
-    justify-content: flex-start; /* Alinhado à esquerda conforme solicitado */
+    justify-content: flex-start;
     gap: 8px;
     width: 100%;
     margin-top: 10px;
@@ -360,7 +363,7 @@
    ========================================================================== */
 .eqp-badge-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr); /* Força exatos 6 itens por linha */
+    grid-template-columns: repeat(6, 1fr);
     gap: 12px;
     width: 100%;
     margin-top: 10px;
@@ -387,7 +390,6 @@
     border-color: rgba(96, 165, 250, 0.3);
 }
 
-/* Estilização da Logo da Fabricante */
 .eqp-logo-img {
     max-height: 24px;
     max-width: 90%;
@@ -397,7 +399,7 @@
 }
 
 .eqp-badge-item.disabled .eqp-logo-img {
-    opacity: 0.25; /* Apagado se o total for 0 */
+    opacity: 0.25; 
     filter: grayscale(100%);
 }
 
@@ -423,7 +425,6 @@
     opacity: 0.5;
 }
 
-/* Tooltip de Equipamentos */
 .eqp-tooltip {
     visibility: hidden;
     opacity: 0;
@@ -481,7 +482,6 @@
     gap: 24px;
 }
 
-
 /* RESPONSIVIDADE EXCLUSIVA DA HOME (MÓVEL & TABLETS) */
 @media (max-width: 900px) {
     .split-grid {
@@ -524,7 +524,7 @@
     }
     
     .eqp-badge-grid {
-        grid-template-columns: repeat(3, 1fr); /* 3 colunas de logotipos no mobile */
+        grid-template-columns: repeat(3, 1fr); 
     }
 
     .mobile-break-separator {

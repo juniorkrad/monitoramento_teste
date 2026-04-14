@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor de Fabricantes (Visão por Marca)
-// Atualização: Inclusão do Modal de Distribuição por OLT no lugar da lista interna
+// Atualização: Responsividade nas imagens duplas para evitar corte de tela
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -24,15 +24,16 @@ EQP_MARCAS.forEach(marca => {
     });
 });
 
-window.BRAND_OLT_HTML = {}; // Variável global para armazenar a lista do modal
+window.BRAND_OLT_HTML = {}; 
 
 function getLogoHtml(nome) {
     if (nome === 'MAXPRINT / V-SOL') {
+        // Uso rigoroso de max-width e wrap no Flex para espremer as imagens mantendo-as dentro do card
         return `
-            <div style="display: flex; gap: 10px; align-items: center; justify-content: center;">
-                <img src="imagens/logos/maxprint.png" class="eqp-logo-img" alt="Maxprint" style="max-height: 24px;" onerror="this.style.display='none';">
-                <span style="color: var(--m3-on-surface-variant); font-size: 10px;">/</span>
-                <img src="imagens/logos/v-sol.png" class="eqp-logo-img" alt="V-SOL" style="max-height: 24px;" onerror="this.style.display='none';">
+            <div style="display: flex; gap: 6px; align-items: center; justify-content: center; width: 100%; flex-wrap: nowrap; margin-bottom: 8px;">
+                <img src="imagens/logos/maxprint.png" alt="Maxprint" style="max-height: 24px; max-width: 42%; object-fit: contain; transition: opacity 0.2s, filter 0.2s;" onerror="this.style.display='none';">
+                <span style="color: var(--m3-on-surface-variant); font-size: 12px; font-weight: bold;">/</span>
+                <img src="imagens/logos/v-sol.png" alt="V-SOL" style="max-height: 24px; max-width: 42%; object-fit: contain; transition: opacity 0.2s, filter 0.2s;" onerror="this.style.display='none';">
             </div>
         `;
     }
@@ -41,7 +42,8 @@ function getLogoHtml(nome) {
     if (nome === 'CHINA MOBILE') logoFile = 'china-mobile.png';
     if (nome === 'DESCONHECIDOS') logoFile = 'desconhecidos.png';
 
-    return `<img src="imagens/logos/${logoFile}" class="eqp-logo-img" alt="${nome}" style="max-height: 24px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+    // Logo simples controlada diretamente
+    return `<img src="imagens/logos/${logoFile}" class="eqp-logo-img" alt="${nome}" style="max-height: 24px; max-width: 90%; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
             <span class="eqp-logo-text" style="display: none; color: var(--m3-on-surface); font-size: 0.85rem; font-weight: bold; text-transform: uppercase;">${nome}</span>`;
 }
 
@@ -55,7 +57,7 @@ async function runEquipamentosEngine() {
     try {
         let brandData = {}; 
         let listaDesconhecidos = [];
-        window.BRAND_OLT_HTML = {}; // Limpa a memória do modal a cada atualização
+        window.BRAND_OLT_HTML = {}; 
 
         const todasMarcas = [...EQP_MARCAS.map(m => m.nome), 'DESCONHECIDOS'];
         todasMarcas.forEach(m => {
@@ -149,7 +151,7 @@ async function runEquipamentosEngine() {
                     eqpHtml += `
                         <div class="eqp-badge-item ${disabledClass}">
                             ${getLogoHtml(marca.nome)}
-                            <span class="eqp-total-value" style="margin-top: 8px;">${marca.total}</span>
+                            <span class="eqp-total-value" style="margin-top: 2px;">${marca.total}</span>
                             ${tooltipHtml}
                         </div>
                     `;
@@ -173,7 +175,6 @@ async function runEquipamentosEngine() {
                     const marcaInfo = EQP_MARCAS.find(em => em.nome === m.nome);
                     const prefixosTxt = marcaInfo ? marcaInfo.prefixos : 'Não Mapeado';
 
-                    // Monta a lista e SALVA na variável global para uso do Modal
                     let oltListHtml = '';
                     Object.keys(m.olts).sort().forEach(oltId => {
                         oltListHtml += `
@@ -183,9 +184,8 @@ async function runEquipamentosEngine() {
                             </div>
                         `;
                     });
-                    window.BRAND_OLT_HTML[m.nome] = oltListHtml; // Salva para o modal
+                    window.BRAND_OLT_HTML[m.nome] = oltListHtml; 
 
-                    // Botão no Cabeçalho (Apenas para Desconhecidos)
                     let headerButtonHtml = '';
                     if (m.nome === 'DESCONHECIDOS') {
                         headerButtonHtml = `
@@ -244,7 +244,6 @@ async function runEquipamentosEngine() {
                     `;
                 });
 
-            // Popula a tabela do Modal de Desconhecidos
             const tbody = document.querySelector('#tabela-desconhecidos tbody');
             if (tbody) {
                 tbody.innerHTML = '';
