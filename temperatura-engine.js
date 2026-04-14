@@ -1,11 +1,10 @@
 // ==============================================================================
 // temperatura-engine.js - Motor Dedicado para Análise Térmica das OLTs
-// Atualização: Implementação da Trava do NOC (80°/90°), Ícones e Tooltip Flutuante
+// Atualização: Sistema Híbrido (Smart Tooltip / Fast Modal) Integrado
 // ==============================================================================
 
 const TAB_TEMPERATURA = 'TEMPERATURA'; 
 
-// Mapa de Colunas baseado na arquitetura exata do Python Script (A=0, F=5)
 const MAPA_COLUNAS_TEMP = {
     'HEL-1': 0, 'HEL-2': 6, 'MGP': 12, 'PQA-1': 18, 'PSV-1': 24, 'PSV-7': 30, 
     'SBO-1': 36, 'SBO-2': 42, 'SBO-3': 48, 'SBO-4': 54, 'LTXV-1': 60, 
@@ -15,9 +14,80 @@ const MAPA_COLUNAS_TEMP = {
 window.TEMP_DATA_STORE = {}; 
 window.CURRENT_VIEW_SLOT = null; 
 
-// ==============================================================================
-// FUNÇÕES DE EXPORTAÇÃO (PNG E TXT)
-// ==============================================================================
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
+}
+
+// Funções Injetadas Globalmente para o Hover/Clique
+window.handleTempHover = function(event) {
+    if (isMobileDevice()) return;
+    const tooltip = document.getElementById('smart-tooltip');
+    if (!tooltip) return;
+
+    const el = event.currentTarget;
+    tooltip.innerHTML = `
+        <div class="smart-tooltip-title">
+            <span class="material-symbols-rounded" style="font-size: 18px; color: ${el.dataset.color};">${el.dataset.icon}</span>
+            ${el.dataset.olt}
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Pico Atual:</span> 
+            <strong style="font-family: var(--font-family-mono); font-size: 1rem;">${el.dataset.max}°C</strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Sensores em Alerta:</span> 
+            <strong><span style="color:#f87171">${el.dataset.crit}</span> / <span style="color:#f97316">${el.dataset.warn}</span></strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Status Geral:</span> 
+            <strong style="color: ${el.dataset.color};">${el.dataset.status}</strong>
+        </div>
+    `;
+
+    const rect = el.getBoundingClientRect();
+    tooltip.style.left = (rect.left + (rect.width / 2) + window.scrollX) + 'px';
+    tooltip.style.top = (rect.top + window.scrollY) + 'px';
+    tooltip.style.opacity = 1;
+};
+
+window.handleTempLeave = function() {
+    const tooltip = document.getElementById('smart-tooltip');
+    if (tooltip) tooltip.style.opacity = 0;
+};
+
+window.handleTempClick = function(event) {
+    if (!isMobileDevice()) return;
+    const modal = document.getElementById('mobile-fast-modal');
+    const content = document.getElementById('fast-modal-content');
+    if (!modal || !content) return;
+
+    const el = event.currentTarget;
+    content.innerHTML = `
+        <h3 style="margin-top: 0; border-bottom: 1px solid var(--m3-outline); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+            <span class="material-symbols-rounded" style="color: ${el.dataset.color};">${el.dataset.icon}</span> ${el.dataset.olt}
+        </h3>
+        <div style="margin-bottom: 15px; text-align: center;">
+            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Temperatura Máxima Lida</span><br>
+            <strong style="font-size: 2.5rem; font-family: var(--font-family-mono); color: ${el.dataset.color}; line-height: 1;">${el.dataset.max}°C</strong>
+        </div>
+        <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
+            <div>
+                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Sensores Críticos</span><br>
+                <strong style="font-size: 1.2rem; color: #f87171;">${el.dataset.crit}</strong>
+            </div>
+            <div style="text-align: right;">
+                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Sensores em Atenção</span><br>
+                <strong style="font-size: 1.2rem; color: #f97316;">${el.dataset.warn}</strong>
+            </div>
+        </div>
+        <div style="text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Status do Equipamento</span><br>
+            <strong style="color: ${el.dataset.color}; font-size: 1.1rem; text-transform: uppercase;">${el.dataset.status}</strong>
+        </div>
+    `;
+    modal.style.display = 'flex';
+};
+
 window.exportCardToImage = function(event, cardId, oltName) {
     if (event) event.stopPropagation();
 
@@ -93,9 +163,6 @@ window.exportTemperaturaSlotToTXT = function() {
     document.body.removeChild(link);
 };
 
-// ==============================================================================
-// MOTOR PRINCIPAL DE TEMPERATURA
-// ==============================================================================
 async function runTemperaturaEngine() {
     const gridEl = document.getElementById('temperatura-grid');
     const globalBody = document.getElementById('global-temperatura-body');
@@ -150,9 +217,6 @@ async function runTemperaturaEngine() {
                 
                 if (tempAtual > maxTemp) maxTemp = tempAtual;
 
-                // =======================================================
-                // TRAVA DO NOC ATIVADA: IGNORA LIMITES DA FABRICANTE SE >= 80° ou 90°
-                // =======================================================
                 let isCritico = tempAtual >= 90 || (!isNaN(limCrit) && tempAtual >= limCrit);
                 let isAtencao = (!isCritico) && (tempAtual >= 80 || (!isNaN(limAlta) && tempAtual >= limAlta));
                 
@@ -184,9 +248,6 @@ async function runTemperaturaEngine() {
             });
         });
 
-        // ==============================================================================
-        // INJEÇÃO DA HOME (Nuvem de Badges Simétrica com Hover Tooltip)
-        // ==============================================================================
         if (globalBody) {
             let badgesHtml = '';
             
@@ -196,11 +257,11 @@ async function runTemperaturaEngine() {
                 if (!o || o.analisados === 0) {
                     badgesHtml += `
                         <div class="temp-badge-item" style="background-color: rgba(255,255,255,0.02); opacity: 0.5;">
-                            <div style="display: flex; align-items: center; gap: 6px;">
+                            <div style="display: flex; align-items: center; gap: 6px; pointer-events: none;">
                                 <span class="material-symbols-rounded" style="font-size: 18px; color: var(--m3-on-surface-variant);">device_thermostat</span>
                                 <span class="olt-name">${oltDef.id}</span>
                             </div>
-                            <span class="temp-value">--</span>
+                            <span class="temp-value" style="pointer-events: none;">--</span>
                         </div>
                     `;
                     return;
@@ -211,10 +272,9 @@ async function runTemperaturaEngine() {
                 let statusText = 'Estável';
                 let colorStatus = '#4ade80';
 
-                // Usamos o pico global da OLT ou a contagem de críticos para pintar o badge
                 if (o.criticos > 0 || o.maxTemp >= 90) {
                     classeCSS = 'status-critico';
-                    icone = 'local_fire_department'; // Foguinho (Crítico)
+                    icone = 'local_fire_department'; 
                     statusText = 'Crítico';
                     colorStatus = '#f87171';
                 } else if (o.atencao > 0 || o.maxTemp >= 80) {
@@ -224,36 +284,23 @@ async function runTemperaturaEngine() {
                     colorStatus = '#f97316';
                 }
 
-                // Construção do Tooltip Flutuante
-                let tooltipHtml = `
-                    <div class="temp-tooltip">
-                        <div class="temp-tooltip-title">
-                            <span class="material-symbols-rounded" style="font-size: 18px; color: ${colorStatus};">${icone}</span>
-                            ${o.id}
-                        </div>
-                        <div class="temp-tooltip-line">
-                            <span style="color: var(--m3-on-surface-variant);">Pico Atual:</span> 
-                            <strong>${o.maxTemp}°C</strong>
-                        </div>
-                        <div class="temp-tooltip-line">
-                            <span style="color: var(--m3-on-surface-variant);">Sensores em Alerta:</span> 
-                            <strong><span style="color:#f87171">${o.criticos}</span> / <span style="color:#f97316">${o.atencao}</span></strong>
-                        </div>
-                        <div class="temp-tooltip-line">
-                            <span style="color: var(--m3-on-surface-variant);">Status Geral:</span> 
-                            <strong style="color: ${colorStatus};">${statusText}</strong>
-                        </div>
-                    </div>
-                `;
-
                 badgesHtml += `
-                    <div class="temp-badge-item ${classeCSS}">
-                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                    <div class="temp-badge-item ${classeCSS}"
+                         data-olt="${o.id}"
+                         data-max="${o.maxTemp}"
+                         data-crit="${o.criticos}"
+                         data-warn="${o.atencao}"
+                         data-status="${statusText}"
+                         data-color="${colorStatus}"
+                         data-icon="${icone}"
+                         onmouseenter="handleTempHover(event)"
+                         onmouseleave="handleTempLeave()"
+                         onclick="handleTempClick(event)">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; pointer-events: none;">
                             <span class="material-symbols-rounded" style="font-size: 18px;">${icone}</span>
                             <span class="olt-name">${o.id}</span>
                         </div>
-                        <span class="temp-value">${o.maxTemp}°C</span>
-                        ${tooltipHtml}
+                        <span class="temp-value" style="pointer-events: none;">${o.maxTemp}°C</span>
                     </div>
                 `;
             });
@@ -271,9 +318,6 @@ async function runTemperaturaEngine() {
             `;
         }
 
-        // ==============================================================================
-        // INJEÇÃO DA PÁGINA TEMPERATURA
-        // ==============================================================================
         if (isTemperaturaPage && gridEl) {
             gridEl.innerHTML = '';
             
@@ -342,10 +386,6 @@ async function runTemperaturaEngine() {
         console.error("Erro no motor de temperatura:", e);
     }
 }
-
-// ==============================================================================
-// SISTEMA DE NAVEGAÇÃO DE MODAIS (OLT -> SLOTS)
-// ==============================================================================
 
 window.openTemperaturaSuperModal = function(oltId) {
     const modal = document.getElementById('super-modal');

@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Home Dashboard exibe as 3 OLTs com a pior média de sinal.
+// Atualização: Sistema Híbrido (Smart Tooltip / Fast Modal) Integrado
 // ==============================================================================
 
 const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO'; 
@@ -8,7 +8,7 @@ const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO';
 window.POTENCIA_CLIENTS_DATA = {};
 window.POTENCIA_PORT_DATA = {}; 
 window.currentPotenciaInterval = null; 
-window.CURRENT_VIEW_PLACA = null; // Memória para o arquivo TXT
+window.CURRENT_VIEW_PLACA = null; 
 
 function parsePowerValue(powerStr) {
     if (!powerStr) return null;
@@ -17,9 +17,85 @@ function parsePowerValue(powerStr) {
     return isNaN(val) ? null : val;
 }
 
-// ==============================================================================
-// FUNÇÕES DE EXPORTAÇÃO (PNG E TXT)
-// ==============================================================================
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
+}
+
+// Funções Injetadas Globalmente para o Hover/Clique
+window.handlePotHover = function(event) {
+    if (isMobileDevice()) return;
+    const tooltip = document.getElementById('smart-tooltip');
+    if (!tooltip) return;
+
+    const el = event.currentTarget;
+    tooltip.innerHTML = `
+        <div class="smart-tooltip-title">
+            <span class="material-symbols-rounded" style="font-size: 18px; color: ${el.dataset.color};">dns</span>
+            ${el.dataset.olt}
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Média Global:</span> 
+            <strong style="font-family: var(--font-family-mono); color: ${el.dataset.color};">${el.dataset.media} dBm</strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Saúde da Rede:</span> 
+            <strong style="color: ${el.dataset.health >= 90 ? '#4ade80' : '#f87171'};">${el.dataset.health}%</strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Clientes Críticos:</span> 
+            <strong style="color:#f87171">${el.dataset.crit}</strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Total Analisado:</span> 
+            <strong>${el.dataset.total}</strong>
+        </div>
+    `;
+
+    const rect = el.getBoundingClientRect();
+    tooltip.style.left = (rect.left + (rect.width / 2) + window.scrollX) + 'px';
+    tooltip.style.top = (rect.top + window.scrollY) + 'px';
+    tooltip.style.opacity = 1;
+};
+
+window.handlePotLeave = function() {
+    const tooltip = document.getElementById('smart-tooltip');
+    if (tooltip) tooltip.style.opacity = 0;
+};
+
+window.handlePotClick = function(event) {
+    if (!isMobileDevice()) return;
+    const modal = document.getElementById('mobile-fast-modal');
+    const content = document.getElementById('fast-modal-content');
+    if (!modal || !content) return;
+
+    const el = event.currentTarget;
+    content.innerHTML = `
+        <h3 style="margin-top: 0; border-bottom: 1px solid var(--m3-outline); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+            <span class="material-symbols-rounded" style="color: ${el.dataset.color};">dns</span> ${el.dataset.olt}
+        </h3>
+        <div style="margin-bottom: 15px; text-align: center;">
+            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Média de Potência</span><br>
+            <strong style="font-size: 2.5rem; font-family: var(--font-family-mono); color: ${el.dataset.color}; line-height: 1;">${el.dataset.media}</strong>
+            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">dBm</span>
+        </div>
+        <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
+            <div>
+                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Clientes Críticos</span><br>
+                <strong style="font-size: 1.2rem; color: #f87171;">${el.dataset.crit}</strong>
+            </div>
+            <div style="text-align: right;">
+                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Total Analisado</span><br>
+                <strong style="font-size: 1.2rem;">${el.dataset.total}</strong>
+            </div>
+        </div>
+        <div style="text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Saúde Óptica da OLT</span><br>
+            <strong style="color: ${el.dataset.health >= 90 ? '#4ade80' : '#f87171'}; font-size: 1.2rem;">${el.dataset.health}%</strong>
+        </div>
+    `;
+    modal.style.display = 'flex';
+};
+
 window.exportCardToImage = function(event, cardId, oltName) {
     if (event) event.stopPropagation();
 
@@ -94,9 +170,6 @@ window.exportPotenciaPlacaToTXT = function() {
     document.body.removeChild(link);
 };
 
-// ==============================================================================
-// MOTOR PRINCIPAL
-// ==============================================================================
 async function runPotenciaEngine() {
     const gridEl = document.getElementById('potencia-grid');
     const globalBody = document.getElementById('global-potencia-body');
@@ -202,15 +275,9 @@ async function runPotenciaEngine() {
             globalAnalisados += analisados;
         });
 
-        // ==============================================================================
-        // INJEÇÃO DA HOME (Top 3 OLTs Pior Média)
-        // ==============================================================================
         if (globalBody) {
             const validOlts = oltStats.filter(o => o.analisados > 0);
-            
-            // Ordena pelo menor número (mais negativo). Ex: -30 é pior que -20.
             validOlts.sort((a, b) => parseFloat(a.media) - parseFloat(b.media));
-            
             const top3Olts = validOlts.slice(0, 3);
 
             let rankingHtml = '';
@@ -220,46 +287,26 @@ async function runPotenciaEngine() {
                 
                 top3Olts.forEach(o => {
                     const mediaVal = parseFloat(o.media);
-                    // Lógica Invertida: Se for as PIORES médias, não pode ser verde.
-                    let color = '#f87171'; // Padrão Vermelho (Piores Sinais)
-                    let statusText = 'Crítico';
-                    
-                    if (mediaVal > -26.00) { 
-                        color = '#fbbf24'; // Laranja/Amarelo se for ruim, mas nem tanto
-                        statusText = 'Atenção';
-                    }
-
-                    // Tooltip Flutuante
-                    let tooltipHtml = `
-                        <div class="pot-tooltip">
-                            <div class="pot-tooltip-title">
-                                <span class="material-symbols-rounded" style="font-size: 18px; color: ${color};">dns</span>
-                                ${o.id}
-                            </div>
-                            <div class="pot-tooltip-line">
-                                <span style="color: var(--m3-on-surface-variant);">Saúde da Rede:</span> 
-                                <strong style="color: ${o.health >= 90 ? '#4ade80' : '#f87171'};">${o.health.toFixed(1)}%</strong>
-                            </div>
-                            <div class="pot-tooltip-line">
-                                <span style="color: var(--m3-on-surface-variant);">Clientes Críticos:</span> 
-                                <strong style="color:#f87171">${o.criticos}</strong>
-                            </div>
-                            <div class="pot-tooltip-line">
-                                <span style="color: var(--m3-on-surface-variant);">Total Analisado:</span> 
-                                <strong>${o.analisados}</strong>
-                            </div>
-                        </div>
-                    `;
+                    let color = '#f87171'; 
+                    if (mediaVal > -26.00) color = '#fbbf24'; 
 
                     rankingHtml += `
-                        <div class="potencia-top-card">
-                            <span class="pot-olt-name">
+                        <div class="potencia-top-card"
+                             data-olt="${o.id}"
+                             data-media="${o.media}"
+                             data-health="${o.health.toFixed(1)}"
+                             data-crit="${o.criticos}"
+                             data-total="${o.analisados}"
+                             data-color="${color}"
+                             onmouseenter="handlePotHover(event)"
+                             onmouseleave="handlePotLeave()"
+                             onclick="handlePotClick(event)">
+                            <span class="pot-olt-name" style="pointer-events: none;">
                                 <span class="material-symbols-rounded" style="font-size: 16px; color: var(--m3-on-surface-variant);">dns</span>
                                 ${o.id}
                             </span>
-                            <span class="pot-olt-media" style="color: ${color};">${o.media}</span>
-                            <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); margin-top: 4px;">dBm</span>
-                            ${tooltipHtml}
+                            <span class="pot-olt-media" style="color: ${color}; pointer-events: none;">${o.media}</span>
+                            <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); margin-top: 4px; pointer-events: none;">dBm</span>
                         </div>
                     `;
                 });
@@ -282,9 +329,6 @@ async function runPotenciaEngine() {
             `;
         }
 
-        // ==============================================================================
-        // INJEÇÃO DA PÁGINA POTÊNCIA
-        // ==============================================================================
         if (isPotenciaPage && gridEl) {
             gridEl.innerHTML = '';
             
@@ -374,10 +418,7 @@ window.stopPotenciaMonitoring = function() {
 window.openPotenciaSuperModal = function(id, sheetTab, type, boards) {
     try {
         const modal = document.getElementById('super-modal');
-        if (!modal) {
-            console.error("[Potência] Modal principal não encontrado no HTML.");
-            return;
-        }
+        if (!modal) return;
         
         document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${id}`;
         document.getElementById('potencia-view-detalhes').style.display = 'none';
@@ -394,11 +435,9 @@ window.openPotenciaSuperModal = function(id, sheetTab, type, boards) {
         
         if (typeof window.startPotenciaMonitoring === 'function') {
             window.startPotenciaMonitoring({ id: sheetTab, type: type, boards: boards, oltName: id });
-        } else {
-            console.error("[Potência] A função startPotenciaMonitoring não está definida no escopo global.");
         }
     } catch (e) {
-        console.error("[Potência] Erro fatal ao abrir o modal das OLTs:", e);
+        console.error("Erro ao abrir o modal das OLTs:", e);
     }
 }
 
@@ -556,7 +595,7 @@ window.startPotenciaMonitoring = function(config) {
 }
 
 window.openPotenciaPlacaDetails = function(placa, oltType) {
-    window.CURRENT_VIEW_PLACA = placa; // Salva para o relatório TXT
+    window.CURRENT_VIEW_PLACA = placa; 
 
     document.getElementById('potencia-view-placas').style.display = 'none';
     document.getElementById('potencia-view-detalhes').style.display = 'block';

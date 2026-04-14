@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor de Fabricantes (Visão por Marca)
-// Atualização: Responsividade nas imagens duplas para evitar corte de tela
+// Atualização: Sistema Híbrido (Smart Tooltip / Fast Modal) Integrado
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -26,11 +26,14 @@ EQP_MARCAS.forEach(marca => {
 
 window.BRAND_OLT_HTML = {}; 
 
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
+}
+
 function getLogoHtml(nome) {
     if (nome === 'MAXPRINT / V-SOL') {
-        // Uso rigoroso de max-width e wrap no Flex para espremer as imagens mantendo-as dentro do card
         return `
-            <div style="display: flex; gap: 6px; align-items: center; justify-content: center; width: 100%; flex-wrap: nowrap; margin-bottom: 8px;">
+            <div style="display: flex; gap: 6px; align-items: center; justify-content: center; width: 100%; flex-wrap: nowrap; margin-bottom: 8px; pointer-events: none;">
                 <img src="imagens/logos/maxprint.png" alt="Maxprint" style="max-height: 24px; max-width: 42%; object-fit: contain; transition: opacity 0.2s, filter 0.2s;" onerror="this.style.display='none';">
                 <span style="color: var(--m3-on-surface-variant); font-size: 12px; font-weight: bold;">/</span>
                 <img src="imagens/logos/v-sol.png" alt="V-SOL" style="max-height: 24px; max-width: 42%; object-fit: contain; transition: opacity 0.2s, filter 0.2s;" onerror="this.style.display='none';">
@@ -42,10 +45,93 @@ function getLogoHtml(nome) {
     if (nome === 'CHINA MOBILE') logoFile = 'china-mobile.png';
     if (nome === 'DESCONHECIDOS') logoFile = 'desconhecidos.png';
 
-    // Logo simples controlada diretamente
-    return `<img src="imagens/logos/${logoFile}" class="eqp-logo-img" alt="${nome}" style="max-height: 24px; max-width: 90%; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-            <span class="eqp-logo-text" style="display: none; color: var(--m3-on-surface); font-size: 0.85rem; font-weight: bold; text-transform: uppercase;">${nome}</span>`;
+    return `<img src="imagens/logos/${logoFile}" class="eqp-logo-img" alt="${nome}" style="max-height: 24px; max-width: 90%; object-fit: contain; pointer-events: none;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <span class="eqp-logo-text" style="display: none; color: var(--m3-on-surface); font-size: 0.85rem; font-weight: bold; text-transform: uppercase; pointer-events: none;">${nome}</span>`;
 }
+
+// Funções Injetadas Globalmente para o Hover/Clique
+window.handleEqpHover = function(event) {
+    if (isMobileDevice()) return;
+    const tooltip = document.getElementById('smart-tooltip');
+    if (!tooltip) return;
+
+    const el = event.currentTarget;
+    tooltip.innerHTML = `
+        <div class="smart-tooltip-title">
+            <span class="material-symbols-rounded" style="font-size: 18px; color: ${el.dataset.color};">router</span>
+            ${el.dataset.nome}
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Prefixos:</span> 
+            <strong style="font-family: var(--font-family-mono); font-size: 0.75rem;">${el.dataset.prefixos}</strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Total na Rede:</span> 
+            <strong>${el.dataset.total}</strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Online:</span> 
+            <strong style="color: #4ade80;">${el.dataset.online}</strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Offline:</span> 
+            <strong style="color: #f87171;">${el.dataset.offline}</strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Saúde:</span> 
+            <strong>${el.dataset.pct}%</strong>
+        </div>
+    `;
+
+    const rect = el.getBoundingClientRect();
+    tooltip.style.left = (rect.left + (rect.width / 2) + window.scrollX) + 'px';
+    tooltip.style.top = (rect.top + window.scrollY) + 'px';
+    tooltip.style.opacity = 1;
+};
+
+window.handleEqpLeave = function() {
+    const tooltip = document.getElementById('smart-tooltip');
+    if (tooltip) tooltip.style.opacity = 0;
+};
+
+window.handleEqpClick = function(event) {
+    if (!isMobileDevice()) return;
+    const modal = document.getElementById('mobile-fast-modal');
+    const content = document.getElementById('fast-modal-content');
+    if (!modal || !content) return;
+
+    const el = event.currentTarget;
+    content.innerHTML = `
+        <h3 style="margin-top: 0; border-bottom: 1px solid var(--m3-outline); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+            <span class="material-symbols-rounded" style="color: ${el.dataset.color};">router</span> ${el.dataset.nome}
+        </h3>
+        <div style="margin-bottom: 15px;">
+            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Prefixos Mapeados</span><br>
+            <strong style="font-family: var(--font-family-mono); font-size: 0.9rem;">${el.dataset.prefixos}</strong>
+        </div>
+        <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
+            <div>
+                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Total</span><br>
+                <strong style="font-size: 1.2rem;">${el.dataset.total}</strong>
+            </div>
+            <div style="text-align: right;">
+                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Saúde</span><br>
+                <strong style="font-size: 1.2rem;">${el.dataset.pct}%</strong>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <div style="flex:1; background:rgba(74,222,128,0.1); padding:8px; border-radius:8px; text-align:center;">
+                <span style="display:block; font-size:0.7rem; color:#4ade80;">ONLINE</span>
+                <strong style="font-family:var(--font-family-mono); color:#4ade80;">${el.dataset.online}</strong>
+            </div>
+            <div style="flex:1; background:rgba(248,113,113,0.1); padding:8px; border-radius:8px; text-align:center;">
+                <span style="display:block; font-size:0.7rem; color:#f87171;">OFFLINE</span>
+                <strong style="font-family:var(--font-family-mono); color:#f87171;">${el.dataset.offline}</strong>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+};
 
 async function runEquipamentosEngine() {
     const globalBody = document.getElementById('global-equipamentos-body');
@@ -104,9 +190,6 @@ async function runEquipamentosEngine() {
             });
         });
 
-        // ==============================================================================
-        // INJEÇÃO NA HOME
-        // ==============================================================================
         if (globalBody) {
             let eqpHtml = `<div class="eqp-badge-grid">`;
             todasMarcas.map(nome => ({ nome, ...brandData[nome] }))
@@ -119,40 +202,20 @@ async function runEquipamentosEngine() {
                     const marcaInfo = EQP_MARCAS.find(em => em.nome === marca.nome);
                     const prefixosTxt = marcaInfo ? marcaInfo.prefixos : 'Não Mapeado';
 
-                    let tooltipHtml = `
-                        <div class="eqp-tooltip">
-                            <div class="eqp-tooltip-title">
-                                <span class="material-symbols-rounded" style="font-size: 18px; color: ${color};">router</span>
-                                ${marca.nome}
-                            </div>
-                            <div class="eqp-tooltip-line">
-                                <span style="color: var(--m3-on-surface-variant);">Prefixos:</span> 
-                                <strong style="font-family: var(--font-family-mono); font-size: 0.75rem;">${prefixosTxt}</strong>
-                            </div>
-                            <div class="eqp-tooltip-line">
-                                <span style="color: var(--m3-on-surface-variant);">Total na Rede:</span> 
-                                <strong>${marca.total}</strong>
-                            </div>
-                            <div class="eqp-tooltip-line">
-                                <span style="color: var(--m3-on-surface-variant);">Online:</span> 
-                                <strong style="color: #4ade80;">${marca.online}</strong>
-                            </div>
-                            <div class="eqp-tooltip-line">
-                                <span style="color: var(--m3-on-surface-variant);">Offline:</span> 
-                                <strong style="color: #f87171;">${marca.offline}</strong>
-                            </div>
-                            <div class="eqp-tooltip-line">
-                                <span style="color: var(--m3-on-surface-variant);">Saúde:</span> 
-                                <strong>${pctOnline}%</strong>
-                            </div>
-                        </div>
-                    `;
-
                     eqpHtml += `
-                        <div class="eqp-badge-item ${disabledClass}">
+                        <div class="eqp-badge-item ${disabledClass}"
+                             data-nome="${marca.nome}"
+                             data-prefixos="${prefixosTxt}"
+                             data-total="${marca.total}"
+                             data-online="${marca.online}"
+                             data-offline="${marca.offline}"
+                             data-pct="${pctOnline}"
+                             data-color="${color}"
+                             onmouseenter="handleEqpHover(event)"
+                             onmouseleave="handleEqpLeave()"
+                             onclick="handleEqpClick(event)">
                             ${getLogoHtml(marca.nome)}
-                            <span class="eqp-total-value" style="margin-top: 2px;">${marca.total}</span>
-                            ${tooltipHtml}
+                            <span class="eqp-total-value" style="margin-top: 2px; pointer-events: none;">${marca.total}</span>
                         </div>
                     `;
                 });
@@ -160,9 +223,6 @@ async function runEquipamentosEngine() {
             globalBody.innerHTML = `<div style="width:100%"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><span class="material-symbols-rounded" style="color:#60a5fa;font-size:20px">inventory_2</span><h3 style="margin:0;font-size:1rem;color:var(--m3-on-surface)">Fabricantes na Rede</h3></div>${eqpHtml}</div>`;
         }
 
-        // ==============================================================================
-        // INJEÇÃO NA PÁGINA EQUIPAMENTOS
-        // ==============================================================================
         if (isEqpPage && gridEqpPage) {
             gridEqpPage.innerHTML = '';
 
@@ -269,9 +329,6 @@ async function runEquipamentosEngine() {
     }
 }
 
-// ==============================================================================
-// FUNÇÕES DE CONTROLE DOS MODAIS
-// ==============================================================================
 window.openUnknownModal = function() {
     const modal = document.getElementById('modal-desconhecidos');
     if (modal) modal.style.display = 'flex';
@@ -301,9 +358,6 @@ window.closeDistribuicaoModal = function(event) {
     if (modal) modal.style.display = 'none';
 };
 
-// ==============================================================================
-// INICIALIZAÇÃO
-// ==============================================================================
 document.addEventListener('DOMContentLoaded', () => {
     const isEqpPage = window.location.pathname.includes('equipamentos.html');
     const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
