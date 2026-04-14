@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor de Fabricantes (Visão por Marca)
-// Atualização: Correção Botão Modal (Ícone Padrão), Logo Dupla (Maxprint/V-SOL) e Timestamp
+// Atualização: Inclusão da exibição dos Prefixos na Home (Tooltip) e nos Cards
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -111,11 +111,46 @@ async function runEquipamentosEngine() {
                 .forEach(marca => {
                     const color = marca.nome === 'DESCONHECIDOS' ? '#f87171' : '#60a5fa';
                     const disabledClass = marca.total === 0 ? 'disabled' : '';
+                    const pctOnline = marca.total > 0 ? ((marca.online / marca.total) * 100).toFixed(1) : 0;
+                    
+                    // Busca os prefixos da marca atual para exibir no tooltip
+                    const marcaInfo = EQP_MARCAS.find(em => em.nome === marca.nome);
+                    const prefixosTxt = marcaInfo ? marcaInfo.prefixos : 'Não Mapeado';
+
+                    let tooltipHtml = `
+                        <div class="eqp-tooltip">
+                            <div class="eqp-tooltip-title">
+                                <span class="material-symbols-rounded" style="font-size: 18px; color: ${color};">router</span>
+                                ${marca.nome}
+                            </div>
+                            <div class="eqp-tooltip-line">
+                                <span style="color: var(--m3-on-surface-variant);">Prefixos:</span> 
+                                <strong style="font-family: var(--font-family-mono); font-size: 0.75rem;">${prefixosTxt}</strong>
+                            </div>
+                            <div class="eqp-tooltip-line">
+                                <span style="color: var(--m3-on-surface-variant);">Total na Rede:</span> 
+                                <strong>${marca.total}</strong>
+                            </div>
+                            <div class="eqp-tooltip-line">
+                                <span style="color: var(--m3-on-surface-variant);">Online:</span> 
+                                <strong style="color: #4ade80;">${marca.online}</strong>
+                            </div>
+                            <div class="eqp-tooltip-line">
+                                <span style="color: var(--m3-on-surface-variant);">Offline:</span> 
+                                <strong style="color: #f87171;">${marca.offline}</strong>
+                            </div>
+                            <div class="eqp-tooltip-line">
+                                <span style="color: var(--m3-on-surface-variant);">Saúde:</span> 
+                                <strong>${pctOnline}%</strong>
+                            </div>
+                        </div>
+                    `;
 
                     eqpHtml += `
                         <div class="eqp-badge-item ${disabledClass}">
                             ${getLogoHtml(marca.nome)}
                             <span class="eqp-total-value" style="margin-top: 8px;">${marca.total}</span>
+                            ${tooltipHtml}
                         </div>
                     `;
                 });
@@ -134,6 +169,10 @@ async function runEquipamentosEngine() {
                 .sort((a, b) => b.total - a.total)
                 .forEach(m => {
                     const health = ((m.online / m.total) * 100).toFixed(1);
+                    
+                    // Busca os prefixos da marca atual para exibir no card
+                    const marcaInfo = EQP_MARCAS.find(em => em.nome === m.nome);
+                    const prefixosTxt = marcaInfo ? marcaInfo.prefixos : 'Não Mapeado';
 
                     let oltListHtml = '';
                     Object.keys(m.olts).sort().forEach(oltId => {
@@ -166,13 +205,18 @@ async function runEquipamentosEngine() {
                             <div class="card-body" style="flex-direction:column; padding:20px; gap:15px;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
                                     <div style="display:flex; flex-direction:column; gap:4px;">
-                                        <span style="font-size:0.75rem; color:var(--m3-on-surface-variant); text-transform:uppercase;">Total</span>
+                                        <span style="font-size:0.75rem; color:var(--m3-on-surface-variant); text-transform:uppercase;">Total Geral</span>
                                         <span style="font-size:1.8rem; font-weight:700; color:#60a5fa; font-family:var(--font-family-mono); line-height:1;">${m.total}</span>
                                     </div>
                                     <div style="text-align:right;">
                                         <span style="font-size:1.5rem; font-weight:700; color:${health >= 95 ? 'var(--m3-color-success)' : '#fbbf24'}; font-family:var(--font-family-mono);">${health}%</span><br>
                                         <span style="font-size:0.7rem; color:var(--m3-on-surface-variant); text-transform:uppercase;">Saúde</span>
                                     </div>
+                                </div>
+
+                                <div style="width: 100%; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 6px; text-align: center; margin-top: -5px; box-sizing: border-box;">
+                                    <span style="font-size:0.7rem; color:var(--m3-on-surface-variant); text-transform:uppercase; margin-right: 5px;">Prefixos:</span>
+                                    <span style="font-family:var(--font-family-mono); font-size:0.8rem; color:var(--m3-on-surface); font-weight:bold;">${prefixosTxt}</span>
                                 </div>
 
                                 <div style="display:flex; gap:10px; width:100%;">
@@ -243,7 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof loadHeader === 'function') loadHeader({ title: "Equipamentos por Fabricante", exactTitle: true });
         if (typeof loadFooter === 'function') loadFooter();
         
-        // Chamada adicionada para ativar o relógio do cabeçalho
         setTimeout(updateGlobalTimestamp, 500); 
     }
 
