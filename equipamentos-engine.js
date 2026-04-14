@@ -11,7 +11,7 @@ const EQP_MARCAS = [
     { nome: 'EURONET', prefixos: 'CIOT, YHTC' },
     { nome: 'HUAWEI', prefixos: 'HWTC' },
     { nome: 'MITRASTAR', prefixos: 'MSTC' },
-    { nome: 'MAXPRINT / V-SOL', prefixos: 'GPON, VSOL, DE30' },
+    { nome: 'MAXPRINT/V-SOL', prefixos: 'GPON, VSOL, DE30' },
     { nome: 'PARKS', prefixos: 'PRKS' },
     { nome: 'TENDA', prefixos: 'TDTC' },
     { nome: 'SHORELINE', prefixos: 'SHLN' }
@@ -26,7 +26,7 @@ EQP_MARCAS.forEach(marca => {
 
 // Lógica de Renderização de Logo (Suporte a Múltiplas Logos)
 function getLogoHtml(nome) {
-    if (nome === 'MAXPRINT / V-SOL') {
+    if (nome === 'MAXPRINT/V-SOL') {
         // Exibe as duas logos lado a lado
         return `
             <div style="display: flex; gap: 10px; align-items: center; justify-content: center;">
