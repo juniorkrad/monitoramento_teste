@@ -35,7 +35,7 @@
             <div class="modal-header">
                 <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
                     <span class="material-symbols-rounded" style="color: #f87171;">help_center</span>
-                    Equipamentos Desconhecidos
+                    Equipamentos Desconhecidos (Mapear Prefixo)
                 </h3>
                 <button class="close-modal" onclick="closeUnknownModal()" title="Fechar">&times;</button>
             </div>
@@ -53,6 +53,22 @@
                         <tbody></tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-distribuicao" class="modal-overlay" style="display: none;" onclick="closeDistribuicaoModal(event)">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-rounded" style="color: #60a5fa;">router</span>
+                    Distribuição: <span id="distribuicao-marca-titulo"></span>
+                </h3>
+                <button class="close-modal" onclick="closeDistribuicaoModal()" title="Fechar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="custom-scroll" id="distribuicao-lista-container" style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                    </div>
             </div>
         </div>
     </div>

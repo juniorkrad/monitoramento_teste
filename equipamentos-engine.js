@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor de Fabricantes (Visão por Marca)
-// Atualização: Inclusão da exibição dos Prefixos na Home (Tooltip) e nos Cards
+// Atualização: Inclusão do Modal de Distribuição por OLT no lugar da lista interna
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -11,7 +11,7 @@ const EQP_MARCAS = [
     { nome: 'EURONET', prefixos: 'CIOT, YHTC' },
     { nome: 'HUAWEI', prefixos: 'HWTC' },
     { nome: 'MITRASTAR', prefixos: 'MSTC' },
-    { nome: 'MAXPRINT/V-SOL', prefixos: 'GPON, VSOL, DE30' },
+    { nome: 'MAXPRINT / V-SOL', prefixos: 'GPON, VSOL, DE30' },
     { nome: 'PARKS', prefixos: 'PRKS' },
     { nome: 'TENDA', prefixos: 'TDTC' },
     { nome: 'SHORELINE', prefixos: 'SHLN' }
@@ -24,10 +24,10 @@ EQP_MARCAS.forEach(marca => {
     });
 });
 
-// Lógica de Renderização de Logo (Suporte a Múltiplas Logos)
+window.BRAND_OLT_HTML = {}; // Variável global para armazenar a lista do modal
+
 function getLogoHtml(nome) {
-    if (nome === 'MAXPRINT/V-SOL') {
-        // Exibe as duas logos lado a lado
+    if (nome === 'MAXPRINT / V-SOL') {
         return `
             <div style="display: flex; gap: 10px; align-items: center; justify-content: center;">
                 <img src="imagens/logos/maxprint.png" class="eqp-logo-img" alt="Maxprint" style="max-height: 24px;" onerror="this.style.display='none';">
@@ -55,6 +55,7 @@ async function runEquipamentosEngine() {
     try {
         let brandData = {}; 
         let listaDesconhecidos = [];
+        window.BRAND_OLT_HTML = {}; // Limpa a memória do modal a cada atualização
 
         const todasMarcas = [...EQP_MARCAS.map(m => m.nome), 'DESCONHECIDOS'];
         todasMarcas.forEach(m => {
@@ -113,7 +114,6 @@ async function runEquipamentosEngine() {
                     const disabledClass = marca.total === 0 ? 'disabled' : '';
                     const pctOnline = marca.total > 0 ? ((marca.online / marca.total) * 100).toFixed(1) : 0;
                     
-                    // Busca os prefixos da marca atual para exibir no tooltip
                     const marcaInfo = EQP_MARCAS.find(em => em.nome === marca.nome);
                     const prefixosTxt = marcaInfo ? marcaInfo.prefixos : 'Não Mapeado';
 
@@ -170,21 +170,22 @@ async function runEquipamentosEngine() {
                 .forEach(m => {
                     const health = ((m.online / m.total) * 100).toFixed(1);
                     
-                    // Busca os prefixos da marca atual para exibir no card
                     const marcaInfo = EQP_MARCAS.find(em => em.nome === m.nome);
                     const prefixosTxt = marcaInfo ? marcaInfo.prefixos : 'Não Mapeado';
 
+                    // Monta a lista e SALVA na variável global para uso do Modal
                     let oltListHtml = '';
                     Object.keys(m.olts).sort().forEach(oltId => {
                         oltListHtml += `
-                            <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.85rem;">
+                            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.9rem;">
                                 <span style="color:var(--m3-on-surface-variant)">${oltId}</span>
                                 <strong style="font-family:var(--font-family-mono)">${m.olts[oltId]}</strong>
                             </div>
                         `;
                     });
+                    window.BRAND_OLT_HTML[m.nome] = oltListHtml; // Salva para o modal
 
-                    // Botão Padrão Ícone no Cabeçalho (Apenas para Desconhecidos)
+                    // Botão no Cabeçalho (Apenas para Desconhecidos)
                     let headerButtonHtml = '';
                     if (m.nome === 'DESCONHECIDOS') {
                         headerButtonHtml = `
@@ -231,9 +232,11 @@ async function runEquipamentosEngine() {
                                 </div>
 
                                 <div style="width:100%; margin-top:5px;">
-                                    <span style="font-size:0.75rem; color:var(--m3-on-surface-variant); font-weight:700; display:block; margin-bottom:8px; border-bottom:1px solid var(--m3-outline); padding-bottom:4px;">DISTRIBUIÇÃO POR OLT</span>
-                                    <div class="custom-scroll" style="max-height:150px; overflow-y:auto; padding-right:5px;">
-                                        ${oltListHtml}
+                                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--m3-outline); padding-bottom:4px;">
+                                        <span style="font-size:0.75rem; color:var(--m3-on-surface-variant); font-weight:700; text-transform:uppercase;">DISTRIBUIÇÃO POR OLT</span>
+                                        <button onclick="openDistribuicaoModal('${m.nome}')" style="background:transparent; border:none; color:var(--m3-on-surface-variant); cursor:pointer; display:flex; align-items:center; padding:0; transition:color 0.2s;" onmouseover="this.style.color='var(--m3-on-surface)'" onmouseout="this.style.color='var(--m3-on-surface-variant)'" title="Ver Distribuição Detalhada">
+                                            <span class="material-symbols-rounded" style="font-size: 18px;">open_in_new</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -267,7 +270,9 @@ async function runEquipamentosEngine() {
     }
 }
 
-// Funções para controle do Modal
+// ==============================================================================
+// FUNÇÕES DE CONTROLE DOS MODAIS
+// ==============================================================================
 window.openUnknownModal = function() {
     const modal = document.getElementById('modal-desconhecidos');
     if (modal) modal.style.display = 'flex';
@@ -279,6 +284,27 @@ window.closeUnknownModal = function(event) {
     if (modal) modal.style.display = 'none';
 };
 
+window.openDistribuicaoModal = function(marca) {
+    const modal = document.getElementById('modal-distribuicao');
+    const titulo = document.getElementById('distribuicao-marca-titulo');
+    const container = document.getElementById('distribuicao-lista-container');
+
+    if (modal && titulo && container) {
+        titulo.innerText = marca;
+        container.innerHTML = window.BRAND_OLT_HTML[marca] || '<p style="text-align:center; color:var(--m3-on-surface-variant);">Sem dados de distribuição para este fabricante.</p>';
+        modal.style.display = 'flex';
+    }
+};
+
+window.closeDistribuicaoModal = function(event) {
+    if (event && event.target.id !== 'modal-distribuicao' && !event.target.classList.contains('close-modal')) return;
+    const modal = document.getElementById('modal-distribuicao');
+    if (modal) modal.style.display = 'none';
+};
+
+// ==============================================================================
+// INICIALIZAÇÃO
+// ==============================================================================
 document.addEventListener('DOMContentLoaded', () => {
     const isEqpPage = window.location.pathname.includes('equipamentos.html');
     const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
