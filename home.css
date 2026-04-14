@@ -60,7 +60,6 @@
 .global-card {
     background-color: var(--m3-surface-container);
     border-radius: 20px; 
-    /* overflow: hidden; <- REMOVIDO para que os tooltips (hover) possam flutuar para fora do card livremente */
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     display: flex;
     flex-direction: column;
@@ -74,7 +73,6 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    /* Adicionado as bordas arredondadas aqui em cima para substituir o overflow do card inteiro */
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
 }
@@ -126,6 +124,7 @@
 .mobile-break-separator { display: inline; }
 .mobile-break-line { display: inline; }
 
+
 /* ==========================================================================
    TOP 3 OLTs POTÊNCIA (HOME) 
    ========================================================================== */
@@ -137,7 +136,6 @@
 }
 
 .potencia-top-card {
-    position: relative; 
     background-color: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.05);
     border-radius: 12px;
@@ -148,7 +146,7 @@
     justify-content: center;
     text-align: center;
     transition: transform 0.2s, background-color 0.2s;
-    cursor: default;
+    cursor: pointer; /* Alterado para pointer indicando interatividade */
 }
 
 .potencia-top-card:hover {
@@ -178,66 +176,8 @@
     line-height: 1;
 }
 
-.pot-tooltip {
-    visibility: hidden;
-    opacity: 0;
-    position: absolute;
-    bottom: 110%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--m3-surface-container-high);
-    color: var(--m3-on-surface);
-    text-align: left;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid var(--m3-outline);
-    z-index: 100;
-    width: max-content;
-    box-shadow: 0px 8px 24px rgba(0,0,0,0.6);
-    transition: opacity 0.2s, visibility 0.2s, bottom 0.2s;
-    font-size: 0.85rem;
-    pointer-events: none;
-}
-
-.pot-tooltip::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -6px;
-    border-width: 6px;
-    border-style: solid;
-    border-color: var(--m3-outline) transparent transparent transparent;
-}
-
-.potencia-top-card:hover .pot-tooltip {
-    visibility: visible;
-    opacity: 1;
-    bottom: 120%;
-}
-
-.pot-tooltip-title {
-    font-weight: 700;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    padding-bottom: 6px;
-    margin-bottom: 8px;
-    color: var(--m3-on-surface);
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.pot-tooltip-line {
-    margin: 5px 0;
-    display: flex;
-    justify-content: space-between;
-    gap: 24px;
-}
-
-
 /* ==========================================================================
-   GRID DE MINI-TERMÔMETROS (TEMPERATURA HOME) - ALINHADO À ESQUERDA
+   GRID DE MINI-TERMÔMETROS (TEMPERATURA HOME)
    ========================================================================== */
 .temp-badge-grid {
     display: flex;
@@ -249,7 +189,6 @@
 }
 
 .temp-badge-item {
-    position: relative; 
     flex: 0 1 calc(11.11% - 8px); 
     min-width: 110px;
     display: flex;
@@ -262,7 +201,7 @@
     border: 1px solid rgba(255,255,255,0.05);
     box-sizing: border-box;
     transition: transform 0.2s ease, border-color 0.2s ease;
-    cursor: default;
+    cursor: pointer; /* Indicando interatividade */
 }
 
 .temp-badge-item:hover {
@@ -301,65 +240,9 @@
 .temp-badge-item.status-critico { background-color: rgba(248, 113, 113, 0.15); border-color: rgba(248, 113, 113, 0.3); }
 .temp-badge-item.status-critico .temp-value, .temp-badge-item.status-critico .material-symbols-rounded { color: #f87171; }
 
-.temp-tooltip {
-    visibility: hidden;
-    opacity: 0;
-    position: absolute;
-    bottom: 125%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--m3-surface-container-high);
-    color: var(--m3-on-surface);
-    text-align: left;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid var(--m3-outline);
-    z-index: 100;
-    width: max-content;
-    box-shadow: 0px 8px 24px rgba(0,0,0,0.6);
-    transition: opacity 0.2s, visibility 0.2s, bottom 0.2s;
-    font-size: 0.85rem;
-    pointer-events: none;
-}
-
-.temp-tooltip::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -6px;
-    border-width: 6px;
-    border-style: solid;
-    border-color: var(--m3-outline) transparent transparent transparent;
-}
-
-.temp-badge-item:hover .temp-tooltip {
-    visibility: visible;
-    opacity: 1;
-    bottom: 135%;
-}
-
-.temp-tooltip-title {
-    font-weight: 700;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    padding-bottom: 6px;
-    margin-bottom: 8px;
-    color: var(--m3-on-surface);
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.temp-tooltip-line {
-    margin: 5px 0;
-    display: flex;
-    justify-content: space-between;
-    gap: 24px;
-}
 
 /* ==========================================================================
-   GRID DE FABRICANTES (EQUIPAMENTOS HOME) - 6 CARDS POR LINHA COM LOGOS
+   GRID DE FABRICANTES (EQUIPAMENTOS HOME)
    ========================================================================== */
 .eqp-badge-grid {
     display: grid;
@@ -370,7 +253,6 @@
 }
 
 .eqp-badge-item {
-    position: relative;
     background-color: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.05);
     border-radius: 12px;
@@ -381,7 +263,7 @@
     justify-content: center;
     text-align: center;
     transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
-    cursor: default;
+    cursor: pointer;
 }
 
 .eqp-badge-item:hover {
@@ -425,28 +307,32 @@
     opacity: 0.5;
 }
 
-.eqp-tooltip {
-    visibility: hidden;
-    opacity: 0;
+
+/* ==========================================================================
+   SISTEMA HÍBRIDO: TOOLTIP INTELIGENTE (PC) E MODAL RÁPIDO (MOBILE)
+   ========================================================================== */
+
+/* Tooltip Dinâmico - Flutuante no Body */
+#smart-tooltip {
     position: absolute;
-    bottom: 110%;
-    left: 50%;
-    transform: translateX(-50%);
     background-color: var(--m3-surface-container-high);
     color: var(--m3-on-surface);
-    text-align: left;
     padding: 12px 16px;
     border-radius: 12px;
     border: 1px solid var(--m3-outline);
-    z-index: 100;
-    width: max-content;
     box-shadow: 0px 8px 24px rgba(0,0,0,0.6);
-    transition: opacity 0.2s, visibility 0.2s, bottom 0.2s;
-    font-size: 0.85rem;
     pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 99999;
+    transform: translate(-50%, -100%);
+    margin-top: -10px;
+    font-size: 0.85rem;
+    width: max-content;
+    text-align: left;
 }
 
-.eqp-tooltip::after {
+#smart-tooltip::after {
     content: "";
     position: absolute;
     top: 100%;
@@ -457,13 +343,7 @@
     border-color: var(--m3-outline) transparent transparent transparent;
 }
 
-.eqp-badge-item:hover .eqp-tooltip {
-    visibility: visible;
-    opacity: 1;
-    bottom: 120%;
-}
-
-.eqp-tooltip-title {
+.smart-tooltip-title {
     font-weight: 700;
     border-bottom: 1px solid rgba(255,255,255,0.1);
     padding-bottom: 6px;
@@ -475,12 +355,50 @@
     gap: 6px;
 }
 
-.eqp-tooltip-line {
+.smart-tooltip-line {
     margin: 5px 0;
     display: flex;
     justify-content: space-between;
     gap: 24px;
 }
+
+/* Modal Rápido - Focado em Mobile/Tablet */
+.fast-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: none; /* Ativado via JavaScript */
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    backdrop-filter: blur(2px);
+}
+
+.fast-modal-box {
+    background-color: var(--m3-surface-container-high);
+    border: 1px solid var(--m3-outline);
+    border-radius: 16px;
+    padding: 20px;
+    width: 280px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    position: relative;
+    text-align: left;
+    color: var(--m3-on-surface);
+}
+
+.fast-modal-box .close-btn {
+    position: absolute;
+    top: 15px; right: 15px;
+    background: none; border: none;
+    color: var(--m3-on-surface-variant); 
+    font-size: 1.5rem; cursor: pointer;
+    padding: 0; line-height: 1;
+}
+
+.fast-modal-box .close-btn:hover {
+    color: var(--m3-on-surface);
+}
+
 
 /* RESPONSIVIDADE EXCLUSIVA DA HOME (MÓVEL & TABLETS) */
 @media (max-width: 900px) {

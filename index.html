@@ -114,6 +114,15 @@
         </main>
     </div>
 
+    <div id="smart-tooltip"></div>
+
+    <div class="fast-modal-overlay" id="mobile-fast-modal" onclick="closeFastModal(event)">
+        <div class="fast-modal-box" onclick="event.stopPropagation()">
+            <button class="close-btn" onclick="closeFastModal()">&times;</button>
+            <div id="fast-modal-content"></div>
+        </div>
+    </div>
+
     <div id="footer-placeholder"></div>
 
     <script src="config.js"></script>
@@ -128,7 +137,15 @@
     <script src="potencia-engine.js"></script>
     <script src="temperatura-engine.js"></script>
     <script src="home-engine.js"></script>
+
     <script>
+        // Função Global para fechar o Modal Mobile
+        function closeFastModal(event) {
+            if (event && event.target.id !== 'mobile-fast-modal' && !event.target.classList.contains('close-btn')) return;
+            const modal = document.getElementById('mobile-fast-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
             navigator.serviceWorker.register('service-worker.js')
