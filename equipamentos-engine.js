@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor de Fabricantes (Visão por Marca)
-// Atualização: Cards da página agora são baseados nos Fabricantes.
+// Atualização: Inclusão do Modal "Desconhecidos" vinculado ao Card
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -39,10 +39,9 @@ async function runEquipamentosEngine() {
     if (!globalBody && !isEqpPage) return;
 
     try {
-        let brandData = {}; // Estrutura: { 'NOKIA': { total, online, offline, olts: { 'HEL-1': 10 } } }
+        let brandData = {}; 
         let listaDesconhecidos = [];
 
-        // Inicializa
         const todasMarcas = [...EQP_MARCAS.map(m => m.nome), 'DESCONHECIDOS'];
         todasMarcas.forEach(m => {
             brandData[m] = { total: 0, online: 0, offline: 0, olts: {} };
@@ -79,19 +78,17 @@ async function runEquipamentosEngine() {
                     listaDesconhecidos.push({ olt: olt.id, pon: porta, serial: serial, isOnline: isOnline });
                 }
 
-                // Incrementa Globais da Marca
                 brandData[marca].total++;
                 if (isOnline) brandData[marca].online++;
                 else brandData[marca].offline++;
 
-                // Incrementa Breakdown por OLT
                 if (!brandData[marca].olts[olt.id]) brandData[marca].olts[olt.id] = 0;
                 brandData[marca].olts[olt.id]++;
             });
         });
 
         // ==============================================================================
-        // INJEÇÃO NA HOME (Mantida conforme layout anterior)
+        // INJEÇÃO NA HOME
         // ==============================================================================
         if (globalBody) {
             let eqpHtml = `<div class="eqp-badge-grid">`;
@@ -115,19 +112,18 @@ async function runEquipamentosEngine() {
         }
 
         // ==============================================================================
-        // INJEÇÃO NA PÁGINA EQUIPAMENTOS (Agora por FABRICANTE)
+        // INJEÇÃO NA PÁGINA EQUIPAMENTOS
         // ==============================================================================
         if (isEqpPage && gridEqpPage) {
             gridEqpPage.innerHTML = '';
 
             todasMarcas.map(nome => ({ nome, ...brandData[nome] }))
-                .filter(m => m.total > 0) // Só mostra marcas que existem na rede
+                .filter(m => m.total > 0) 
                 .sort((a, b) => b.total - a.total)
                 .forEach(m => {
                     const logoFile = getLogoFilename(m.nome);
                     const health = ((m.online / m.total) * 100).toFixed(1);
 
-                    // Monta a lista de OLTs
                     let oltListHtml = '';
                     Object.keys(m.olts).sort().forEach(oltId => {
                         oltListHtml += `
@@ -137,6 +133,16 @@ async function runEquipamentosEngine() {
                             </div>
                         `;
                     });
+
+                    // Botão de Detalhes Exclusivo para o Card de Desconhecidos
+                    let extraButtonHtml = '';
+                    if (m.nome === 'DESCONHECIDOS') {
+                        extraButtonHtml = `
+                            <button class="status-btn status-problema" style="width: 100%; margin-top: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 10px;" onclick="openUnknownModal()">
+                                <span class="material-symbols-rounded" style="font-size: 18px;">visibility</span> Ver Detalhes
+                            </button>
+                        `;
+                    }
 
                     gridEqpPage.innerHTML += `
                         <div class="overview-card" style="display:flex; flex-direction:column;">
@@ -173,25 +179,30 @@ async function runEquipamentosEngine() {
                                         ${oltListHtml}
                                     </div>
                                 </div>
+                                ${extraButtonHtml}
                             </div>
                         </div>
                     `;
                 });
 
-            // Tabela de Desconhecidos (Mantida no final da página)
+            // Popula a tabela do Modal de Desconhecidos
             const tbody = document.querySelector('#tabela-desconhecidos tbody');
             if (tbody) {
                 tbody.innerHTML = '';
-                listaDesconhecidos.sort((a, b) => a.olt.localeCompare(b.olt)).forEach(item => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><strong>${item.olt}</strong></td>
-                            <td>${item.pon || '-'}</td>
-                            <td style="font-family: var(--font-family-mono);">${item.serial}</td>
-                            <td><span class="status ${item.isOnline ? 'status-normal' : 'status-problema'}">${item.isOnline ? 'Online' : 'Offline'}</span></td>
-                        </tr>
-                    `;
-                });
+                if (listaDesconhecidos.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--m3-on-surface-variant);">Nenhum equipamento desconhecido encontrado.</td></tr>`;
+                } else {
+                    listaDesconhecidos.sort((a, b) => a.olt.localeCompare(b.olt)).forEach(item => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td><strong>${item.olt}</strong></td>
+                                <td>${item.pon || '-'}</td>
+                                <td style="font-family: var(--font-family-mono);">${item.serial}</td>
+                                <td><span class="status ${item.isOnline ? 'status-normal' : 'status-problema'}">${item.isOnline ? 'Online' : 'Offline'}</span></td>
+                            </tr>
+                        `;
+                    });
+                }
             }
         }
 
@@ -199,6 +210,18 @@ async function runEquipamentosEngine() {
         console.error("Erro no motor de equipamentos:", e);
     }
 }
+
+// Funções para controle do Modal
+window.openUnknownModal = function() {
+    const modal = document.getElementById('modal-desconhecidos');
+    if (modal) modal.style.display = 'flex';
+};
+
+window.closeUnknownModal = function(event) {
+    if (event && event.target.id !== 'modal-desconhecidos' && !event.target.classList.contains('close-modal')) return;
+    const modal = document.getElementById('modal-desconhecidos');
+    if (modal) modal.style.display = 'none';
+};
 
 document.addEventListener('DOMContentLoaded', () => {
     const isEqpPage = window.location.pathname.includes('equipamentos.html');

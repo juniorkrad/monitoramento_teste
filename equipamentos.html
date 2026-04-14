@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Equipamentos - NOC</title>
+    <title>Equipamentos por Fabricante - NOC</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">    
-    
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     
     <link rel="stylesheet" href="styles.css">
@@ -28,26 +27,34 @@
             
             <div id="equipamentos-grid" class="grid-container"></div>
 
-            <div class="table-container" style="margin-top: 30px;">
-                <div style="display: flex; align-items: center; gap: 8px; padding: 15px; border-bottom: 1px solid var(--m3-outline);">
-                    <span class="material-symbols-rounded" style="color: #f87171;">help_center</span>
-                    <h3 style="margin: 0; font-size: 1.1rem; color: var(--m3-on-surface);">Equipamentos Desconhecidos (S/N Não Mapeado)</h3>
-                </div>
-                <table id="tabela-desconhecidos">
-                    <thead>
-                        <tr class="table-header-row">
-                            <th>OLT</th>
-                            <th>Placa/Porta</th>
-                            <th>Serial Completo</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
-            </div>
-
         </main>
+    </div>
+
+    <div id="modal-desconhecidos" class="modal-overlay" style="display: none;" onclick="closeUnknownModal(event)">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-rounded" style="color: #f87171;">help_center</span>
+                    Equipamentos Desconhecidos (Mapear Prefixo)
+                </h3>
+                <button class="close-modal" onclick="closeUnknownModal()" title="Fechar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                    <table id="tabela-desconhecidos" style="width: 100%; border-collapse: collapse; text-align: center;">
+                        <thead>
+                            <tr class="table-header-row">
+                                <th style="padding: 12px; border-bottom: 1px solid var(--m3-outline);">OLT</th>
+                                <th style="padding: 12px; border-bottom: 1px solid var(--m3-outline);">Placa/Porta</th>
+                                <th style="padding: 12px; border-bottom: 1px solid var(--m3-outline);">Serial Completo</th>
+                                <th style="padding: 12px; border-bottom: 1px solid var(--m3-outline);">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="footer-placeholder"></div>
@@ -55,22 +62,19 @@
     <script src="config.js"></script>
     <script src="api-service.js"></script>
     <script src="layout.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="equipamentos-engine.js"></script>
 
     <style>
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: var(--m3-outline); border-radius: 4px; }
-    </style>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-            navigator.serviceWorker.register('service-worker.js')
-                .then(reg => console.log('Service Worker registrado com sucesso!'))
-                .catch(err => console.error('Erro ao registrar Service Worker:', err));
-            });
+        /* Scrollbar customizada para a lista de OLTs dentro do card e do Modal */
+        .custom-scroll::-webkit-scrollbar, .table-container::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track, .table-container::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb, .table-container::-webkit-scrollbar-thumb { background: var(--m3-outline); border-radius: 4px; }
+        
+        #tabela-desconhecidos td {
+            padding: 12px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--m3-on-surface);
         }
-    </script>
+    </style>
 </body>
 </html>
