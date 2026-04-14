@@ -37,174 +37,142 @@
     padding: 18px;
     display: flex;
     align-items: center;
-    gap: 18px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
-    opacity: 0;
+    gap: 15px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
     pointer-events: auto;
     cursor: pointer;
-    box-sizing: border-box;
-    transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-    order: 0; /* Ordem padrão para todos os alarmes normais */
+    border: 1px solid rgba(255,255,255,0.05);
+    overflow: hidden;
+    position: relative;
+    /* Transição suave para o sumiço */
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-/* --- ANIMAÇÕES DE ENTRADA --- */
-.toast.slide-right { transform: translateX(120%); }
-.toast.slide-left { transform: translateX(-120%); }
-.toast.show { opacity: 1; transform: translateX(0); }
+/* Hover genérico para interatividade */
+.toast:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+}
 
-/* --- ESTRUTURA INTERNA PADRÃO --- */
-.toast .toast-icon {
-    font-size: 40px; 
-    font-family: 'Material Symbols Rounded';
+.toast-icon {
+    font-size: 32px;
     flex-shrink: 0;
 }
 
-.toast .toast-content {
+.toast-content {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    line-height: 1.4;
-    overflow: hidden;
+    gap: 4px;
     width: 100%;
+    z-index: 2;
 }
 
-/* Título Strong Universal */
-.toast strong {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 19px; 
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
+.toast-content strong {
+    font-size: 1.1rem;
     color: #ffffff;
-    white-space: nowrap; 
-    text-overflow: ellipsis;
-    overflow: hidden;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
-/* Descrição Universal */
-.toast .toast-content > span {
-    font-size: 16px; 
-    font-family: var(--font-family-mono);
-    color: #cccccc;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
+.toast-content span {
+    font-size: 0.85rem;
+    color: #CAC4D0;
+    line-height: 1.4;
+}
+
+/* --- DESTAQUE DA OLT NOS ALARMES --- */
+.olt-highlight {
+    display: block;
+    font-size: 1.25rem;
+    font-family: var(--font-family-mono), monospace;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.5px;
     margin-top: 4px;
-}
-
-/* Proteção para Ícones dentro do texto */
-.toast .toast-content span.material-symbols-rounded {
-    font-family: 'Material Symbols Rounded' !important;
-    vertical-align: middle;
-    color: inherit;
-    margin: 0 3px;
+    text-shadow: 0px 2px 4px rgba(0,0,0,0.5);
 }
 
 /* ==========================================================================
-   1. QUEDA DE ENERGIA (Esquerda, 500px, Sem Cortes de Texto)
+   ANIMAÇÕES DE ENTRADA (SLIDE LEFT / RIGHT)
    ========================================================================== */
-.toast.hibrido { 
-    width: 500px; 
-    min-height: 110px;
-    border-left: 8px solid #fbbf24; 
-    background-color: #2b2510; 
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 
-.toast.hibrido .toast-icon { 
-    font-size: 50px; 
-    color: #fbbf24; 
+@keyframes slideInLeft {
+    from { transform: translateX(-100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 
-.toast.hibrido strong { 
-    font-size: 24px; 
-    color: #fbbf24; 
-    white-space: normal; 
-    overflow: visible;
-    line-height: 1.1;
-    margin-bottom: 5px;
-}
-
-.toast.hibrido .toast-content > span {
-    font-size: 20px; 
-    white-space: normal; 
-}
+.slide-right { animation: slideInRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.slide-left { animation: slideInLeft 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
 
 /* ==========================================================================
-   2. CORES E BORDAS PADRÃO REDE E SUCESSO (400px)
+   CORES E TEMAS POR SEVERIDADE (REDE PADRÃO)
    ========================================================================== */
-.toast.status-normal { border-left: 6px solid var(--m3-color-success); }
-.toast.status-normal .toast-icon { color: var(--m3-color-success); }
+.rede-problem {
+    background-color: rgba(248, 113, 113, 0.15);
+    border-color: rgba(248, 113, 113, 0.3);
+}
+.rede-problem .toast-icon { color: #f87171; }
 
-.toast.rede-warn { border-left: 6px solid var(--m3-color-warning); }
-.toast.rede-warn .toast-icon { color: var(--m3-color-warning); }
-
-.toast.rede-problem { border-left: 6px solid var(--m3-color-error); }
-.toast.rede-problem .toast-icon { color: var(--m3-color-error); }
+.rede-warn {
+    background-color: rgba(251, 191, 36, 0.15);
+    border-color: rgba(251, 191, 36, 0.3);
+}
+.rede-warn .toast-icon { color: #fbbf24; }
 
 /* ==========================================================================
-   3. BACKBONE Nível 1 (Direita, Escala +10% -> 440px)
-   (Porta 100% OFF Isolada)
+   O NÍVEL BACKBONE (Maior Severidade e Agressividade Visual)
    ========================================================================== */
-.toast.backbone-l1 { 
-    width: 440px; 
-    min-height: 96px; 
-    border-left: 6px solid #FF1744; 
-    background-color: #1a0000; 
-    animation: pulseCritical 1.5s infinite; 
-    order: -1; /* Mantém logo abaixo do nível 2, sobrepondo alarmes comuns */
+
+/* Backbone L1 (Base): Pulso Vermelho + Ícone Tremendo */
+.backbone-l1 {
+    background-color: rgba(255, 23, 68, 0.2) !important;
+    border: 1px solid rgba(255, 23, 68, 0.8) !important;
+    animation: slideInRight 0.4s forwards, pulseCritical 1.5s infinite !important;
 }
 
-.toast.backbone-l1 .toast-icon { 
-    font-size: 44px; 
-    color: #FF1744; 
-    animation: shakeIcon 0.5s infinite; 
+.backbone-l1 .toast-icon {
+    color: #ff1744 !important;
+    animation: shakeIcon 0.5s infinite !important;
+    text-shadow: 0 0 10px rgba(255, 23, 68, 0.8);
 }
 
-.toast.backbone-l1 strong { 
-    font-size: 21px; 
-    color: #FF1744; 
-    text-transform: none; 
+.backbone-l1 .toast-content strong {
+    color: #ff1744 !important;
+    text-shadow: 0 0 5px rgba(255, 23, 68, 0.5);
 }
 
-.toast.backbone-l1 .toast-content > span { font-size: 17.5px; } 
-
-/* ==========================================================================
-   4. BACKBONE Nível 2 (Direita, Escala MAX +25% -> 500px, Neon/Pisca)
-   (Rompimento Massivo / Múltiplas Portas)
-   ========================================================================== */
-.toast.backbone-l2 { 
-    width: 500px; 
-    min-height: 110px;
-    border: 2px solid #ff0000;
-    border-left: 8px solid #ff0000;
-    box-shadow: 0 0 15px rgba(255, 0, 0, 0.6), 0 6px 20px rgba(0, 0, 0, 0.8);
-    animation: flashBackgroundL2 1s infinite; 
-    order: -2; /* Prioridade Máxima: Fica sempre no topo do container */
-    z-index: 10;
+/* Backbone L2 (Múltiplas OLTs 100% OFF): Fundo Piscante + Alargamento */
+.backbone-l2 {
+    width: 500px !important; /* Maior e mais invasivo na tela */
+    border: 2px solid #ff0000 !important;
+    animation: slideInRight 0.4s forwards, flashBackgroundL2 1s infinite !important;
 }
 
-.toast.backbone-l2 .toast-icon { 
-    font-size: 50px; 
-    color: #ff0000; 
-    filter: drop-shadow(0 0 5px #ff0000);
-    animation: shakeIconL2 0.3s infinite; 
+.backbone-l2 .toast-icon {
+    color: #ffffff !important;
+    font-size: 40px !important;
+    animation: shakeIcon 0.3s infinite !important;
 }
 
-.toast.backbone-l2 strong { 
-    font-size: 24px; 
-    color: #ff0000; 
-    text-transform: uppercase; 
-    text-shadow: 0 0 5px rgba(255, 0, 0, 0.8);
+.backbone-l2 .toast-content strong {
+    color: #ffffff !important;
+    font-size: 1.3rem !important;
+    text-transform: uppercase;
 }
 
-.toast.backbone-l2 .toast-content > span {
-    font-size: 20px; 
-    color: #ffcccc; 
-    text-shadow: 0 1px 2px #000;
+.backbone-l2 .toast-content span {
+    color: #ffcccc !important;
+    font-size: 0.95rem !important;
+    font-weight: 600;
 }
 
 /* ==========================================================================
-   ANIMAÇÕES EXCLUSIVAS
+   KEYFRAMES DAS ANIMAÇÕES CRÍTICAS
    ========================================================================== */
 
 /* Pulso suave de borda (Backbone L1) */
@@ -224,22 +192,5 @@
 /* Fundo Pisca Gradiente Agressivo (Backbone L2) */
 @keyframes flashBackgroundL2 {
     0%, 100% { background: linear-gradient(135deg, #1a0000 0%, #000000 100%); }
-    50% { background: linear-gradient(135deg, #4d0000 0%, #1a0000 100%); }
-}
-
-/* Tremor Rápido de ícone (Backbone L2) */
-@keyframes shakeIconL2 {
-    0%, 100% { transform: rotate(0deg) scale(1); }
-    25% { transform: rotate(8deg) scale(1.1); }
-    75% { transform: rotate(-8deg) scale(1.1); }
-}
-
-/* RESPONSIVIDADE (Mobile) */
-@media (max-width: 768px) {
-    #toast-container-left, #toast-container-right { left: 10px; right: 10px; top: 10px; align-items: center; }
-    .toast { width: 100%; max-width: 380px; }
-    /* Impede que alarmes expandidos quebrem a tela no mobile */
-    .toast.hibrido, .toast.backbone-l1, .toast.backbone-l2 { max-width: 95vw; } 
-    .toast.slide-left, .toast.slide-right { transform: translateY(-120%); }
-    .toast.show { transform: translateY(0); }
+    50% { background: linear-gradient(135deg, #660000 0%, #330000 100%); }
 }

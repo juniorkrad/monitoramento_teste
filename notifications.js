@@ -1,5 +1,6 @@
 // ==============================================================================
 // notifications.js - Sistema Central de Alertas (Com Hierarquia de Backbone)
+// Atualização: Unificação de Alarmes Híbridos e Ocultação de Portas
 // ==============================================================================
 
 // Memórias de Estado
@@ -37,156 +38,131 @@ function showToast(title, description, typeClass, icon, position = 'right') {
     `;
     
     toast.onclick = () => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 400); 
+        toast.style.animation = 'none';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
     };
 
-    container.prepend(toast); 
-
-    setTimeout(() => toast.classList.add('show'), 50);
+    container.appendChild(toast);
 
     setTimeout(() => {
         if (toast.parentElement) {
-            toast.classList.remove('show');
-            setTimeout(() => {
-                if (toast.parentElement) toast.remove();
-            }, 400);
+            toast.style.animation = 'none';
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
         }
     }, 10000); 
 }
 
-function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), newEnergyProblems = new Set(), newHybridProblems = new Set()) {
+function checkAndNotifyForNewProblems(networkProblems, backboneProblems, energyProblems, hybridProblems) {
     
-    // 1. DETECTAR NORMALIZAÇÕES
-    for (const oldBb of currentBackbones) {
-        if (!activeBackbones.has(oldBb)) {
-            showToast('Backbone Normalizado', `${oldBb}`, 'status-normal', 'check_circle', 'right');
+    const newBackbones = [...backboneProblems].filter(x => !currentBackbones.has(x));
+    const newHybridProblems = [...hybridProblems].filter(x => !currentHybridProblems.has(x));
+    const newProblems = [...networkProblems].filter(x => !currentProblems.has(x));
+
+    // 1. Processa Híbridos (Dying Gasp)
+    const activeHybridPorts = new Set();
+    
+    // Mapeia todas as portas híbridas ativas para evitar duplicação em problemas de rede normais
+    hybridProblems.forEach(problemKey => {
+        const match = problemKey.match(/^\[(.*?)\] HIBRIDO::(\d+\/\d+)::(\d+)::(\d+)$/);
+        if (match) {
+            activeHybridPorts.add(`${match[1]}_${match[2]}`);
         }
-    }
+    });
 
-    for (const oldProblem of currentProblems) {
-        if (!newProblems.has(oldProblem)) {
-            if (oldProblem.includes("STATUS::MULTI::")) {
-                const matchMulti = oldProblem.match(/^\[(.*?)\] STATUS::MULTI::/);
-                if (matchMulti) {
-                    const oltId = matchMulti[1];
-                    const stillHasIssue = Array.from(newProblems).some(p => p.startsWith(`[${oltId}] STATUS::`));
-                    if (!stillHasIssue) {
-                        showToast('Rede Normalizada', `${oltId} operando normalmente`, 'status-normal', 'check_circle', 'right');
-                    }
-                }
-            } else {
-                const matchSingle = oldProblem.match(/^\[(.*?)\] STATUS::(.*?)_(\d+\/\d+)/);
-                if (matchSingle) {
-                    const oltId = matchSingle[1];
-                    const porta = matchSingle[3];
-                    const stillHasIssue = Array.from(newProblems).some(p => p.startsWith(`[${oltId}] STATUS::`) && p.includes(porta));
-                    
-                    if (!stillHasIssue) {
-                        showToast('Sinal Normalizado', `${oltId} - ${porta}`, 'status-normal', 'check_circle', 'right'); 
-                    }
-                }
-            }
+    // Agrupa os NOVOS alarmes híbridos por OLT
+    const hybridOltSet = new Set();
+    newHybridProblems.forEach(problemKey => {
+        const match = problemKey.match(/^\[(.*?)\] HIBRIDO::(\d+\/\d+)::(\d+)::(\d+)$/);
+        if (match) {
+            hybridOltSet.add(match[1]);
         }
-    }
+    });
 
-    // 2. DISPAROS: BACKBONE NÍVEL 2 (Massivo)
-    for (const bb of activeBackbones) {
-        if (!currentBackbones.has(bb)) {
-            showToast(
-                'BACKBONE', 
-                `${bb}`, 
-                'backbone-l2', 
-                'sos', 
-                'right'
-            );
-        }
-    }
-    currentBackbones = new Set(activeBackbones);
+    // Dispara apenas 1 alerta Híbrido unificado por OLT afetada
+    hybridOltSet.forEach(oltId => {
+        showToast(
+            'Alerta Híbrido', 
+            `<span class="olt-highlight">${oltId}</span>`, 
+            'rede-warn', 
+            'warning',        
+            'right' 
+        );
+    });
 
-    // 3. DISPAROS: HÍBRIDO E SILENCIADOR
-    const activeHybridPorts = new Set(); 
 
-    for (const hb of newHybridProblems) {
-        const match = hb.match(/^\[(.*?)\] HIBRIDO::(\d+\/\d+)::(\d+)::(\d+)$/);
+    // 2. Processa Backbones
+    newBackbones.forEach(problemKey => {
+        const match = problemKey.match(/^\[(.*?)\] STATUS::SUPER_(.*)$/);
         if (match) {
             const oltId = match[1];
-            const porta = match[2];
-            const offRede = match[3];
-            const offEnergia = match[4];
-            
-            activeHybridPorts.add(`${oltId}_${porta}`);
-            
-            if (!currentHybridProblems.has(hb)) {
-                showToast(
-                    'Queda de Energia', 
-                    `${oltId} (${porta}): ${offRede} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">router</span> / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">power_off</span>`, 
-                    'hibrido', 
-                    'offline_bolt', 
-                    'left' 
-                );
-            }
+            // Remove a listagem de portas e exibe apenas a OLT em destaque
+            showToast(
+                'Backbone', 
+                `<span class="olt-highlight">${oltId}</span>`, 
+                'backbone-l1', 
+                'fmd_bad',      
+                'right' 
+            );
         }
-    }
-    currentHybridProblems = new Set(newHybridProblems);
+    });
 
-    // 4. DISPAROS: REDE PURA E BACKBONE NÍVEL 1
-    for (const problemKey of newProblems) {
-        if (!currentProblems.has(problemKey)) {
-
-            const matchMulti = problemKey.match(/^\[(.*?)\] STATUS::MULTI::(.*)$/);
-            if (matchMulti) {
-                const oltId = matchMulti[1];
-                const multiString = matchMulti[2]; 
-                
-                let portsArray = multiString.split(',');
-
-                portsArray = portsArray.filter(p => !activeHybridPorts.has(`${oltId}_${p}`));
-                if (portsArray.length === 0) continue;
-
-                const descLimpa = portsArray.join(', ');
-
-                showToast(
-                    'Falha Múltipla', 
-                    `${oltId} - ${descLimpa}`, 
-                    'rede-problem', 
-                    'error',        
-                    'right' 
-                );
-                continue; 
-            }
-
-            const matchSingle = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)_(\d+\/\d+)::(\d+)$/);
-            if (matchSingle) {
-                const oltId = matchSingle[1];
-                const severity = matchSingle[2];
-                const porta = matchSingle[3];
-
-                if (activeHybridPorts.has(`${oltId}_${porta}`)) continue;
-
-                let title = 'Problema';
-                let typeClass = 'rede-problem';
-                let icon = 'error';
-
-                if (severity === 'SUPER') {
-                    title = 'Backbone';
-                    typeClass = 'backbone-l1';
-                    icon = 'fmd_bad';
-                } else if (severity === 'WARN') {
-                    title = 'Atenção';
-                    typeClass = 'rede-warn';
-                    icon = 'warning';
-                }
-
-                showToast(
-                    title, 
-                    `${oltId} - ${porta}`, 
-                    typeClass, 
-                    icon, 
-                    'right' 
-                );
-            }
+    // 3. Processa Problemas de Rede (Multi e Single)
+    newProblems.forEach(problemKey => {
+        
+        // Falha Múltipla
+        const matchMulti = problemKey.match(/^\[(.*?)\] STATUS::MULTI::(.*)$/);
+        if (matchMulti) {
+            const oltId = matchMulti[1];
+            // Oculta a listagem de portas (matchMulti[2]) do alerta visual
+            showToast(
+                'Falha Múltipla', 
+                `<span class="olt-highlight">${oltId}</span>`, 
+                'rede-problem', 
+                'error',        
+                'right' 
+            );
+            return; 
         }
-    }
-    currentProblems = new Set(newProblems);
+
+        // Falha Singular (Problema/Atenção)
+        const matchSingle = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)_(\d+\/\d+)::(\d+)$/);
+        if (matchSingle) {
+            const oltId = matchSingle[1];
+            const severity = matchSingle[2];
+            const porta = matchSingle[3];
+
+            // Trava: se a porta já bipou como Híbrido, não avisa como rede
+            if (activeHybridPorts.has(`${oltId}_${porta}`)) return;
+
+            let title = 'Problema';
+            let typeClass = 'rede-problem';
+            let icon = 'error';
+
+            if (severity === 'SUPER') {
+                title = 'Backbone';
+                typeClass = 'backbone-l1';
+                icon = 'fmd_bad';
+            } else if (severity === 'WARN') {
+                title = 'Atenção';
+                typeClass = 'rede-warn';
+                icon = 'warning';
+            }
+
+            // Exibe o alerta isolado mantendo apenas a OLT no descritivo
+            showToast(
+                title, 
+                `<span class="olt-highlight">${oltId}</span>`, 
+                typeClass, 
+                icon, 
+                'right' 
+            );
+        }
+    });
+
+    // Sincroniza a memória de estado atual
+    currentProblems = new Set(networkProblems);
+    currentBackbones = new Set(backboneProblems);
+    currentHybridProblems = new Set(hybridProblems);
 }
