@@ -190,7 +190,7 @@ function closeSearchModal(event) {
 
 async function executeSerialSearch() {
     const inputField = document.getElementById('serial-search-input');
-    const input = inputField.value.trim().toUpperCase();
+    const input = inputField.value.trim().toUpperCase(); // Converte para UPPERCASE apenas para processar a busca internamente.
     const resultsArea = document.getElementById('search-results-area');
     
     if (input.length < 4) {
@@ -209,7 +209,8 @@ async function executeSerialSearch() {
     `;
 
     try {
-        if (!window.GLOBAL_MASTER_OLT_LIST || !window.API_KEY || !window.SHEET_ID) {
+        // CORREÇÃO APLICADA AQUI: Utilizando as variáveis globais corretas
+        if (!window.GLOBAL_MASTER_OLT_LIST || !window.GLOBAL_API_KEY || !window.GLOBAL_SHEET_ID) {
              resultsArea.innerHTML = `<div style="text-align:center; color: var(--m3-error); padding: 20px;">Erro Interno: Variáveis de API e Lista de OLTs não detectadas. A busca requer que a arquitetura global esteja carregada.</div>`;
              return;
         }
@@ -218,7 +219,8 @@ async function executeSerialSearch() {
         
         // Dispara requisições simultâneas para todas as abas das OLTs para ser ultra-rápido
         const fetchPromises = window.GLOBAL_MASTER_OLT_LIST.map(async (olt) => {
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${window.SHEET_ID}/values/${olt.sheetTab}?key=${window.API_KEY}`;
+            // CORREÇÃO APLICADA AQUI: Utilizando a URL com as variáveis globais do seu arquivo config
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${window.GLOBAL_SHEET_ID}/values/${olt.sheetTab}?key=${window.GLOBAL_API_KEY}`;
             try {
                 const response = await fetch(url);
                 if (!response.ok) return null;

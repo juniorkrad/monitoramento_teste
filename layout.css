@@ -210,7 +210,7 @@ body.idle .footer {
 .search-input {
     flex: 1; background-color: var(--m3-surface-container-highest); border: 1px solid var(--m3-outline);
     color: var(--m3-on-surface); padding: 14px 16px; border-radius: 12px; font-size: 1.1rem;
-    outline: none; transition: border-color 0.2s; font-family: 'Roboto Mono', monospace; text-transform: uppercase;
+    outline: none; transition: border-color 0.2s; font-family: 'Roboto Mono', monospace; 
 }
 .search-input:focus { border-color: var(--m3-primary); box-shadow: 0 0 0 1px var(--m3-primary); }
 .search-input::placeholder { text-transform: none; font-family: sans-serif; font-size: 0.95rem; opacity: 0.6; }
