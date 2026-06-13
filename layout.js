@@ -209,8 +209,8 @@ async function executeSerialSearch() {
     `;
 
     try {
-        // CORREÇÃO APLICADA AQUI: Utilizando as variáveis globais corretas
-        if (!window.GLOBAL_MASTER_OLT_LIST || !window.GLOBAL_API_KEY || !window.GLOBAL_SHEET_ID) {
+        // CORREÇÃO: Usando typeof para checar a existência de constantes globais sem gerar ReferenceError
+        if (typeof GLOBAL_MASTER_OLT_LIST === 'undefined' || typeof GLOBAL_API_KEY === 'undefined' || typeof GLOBAL_SHEET_ID === 'undefined') {
              resultsArea.innerHTML = `<div style="text-align:center; color: var(--m3-error); padding: 20px;">Erro Interno: Variáveis de API e Lista de OLTs não detectadas. A busca requer que a arquitetura global esteja carregada.</div>`;
              return;
         }
@@ -218,9 +218,9 @@ async function executeSerialSearch() {
         let foundResults = [];
         
         // Dispara requisições simultâneas para todas as abas das OLTs para ser ultra-rápido
-        const fetchPromises = window.GLOBAL_MASTER_OLT_LIST.map(async (olt) => {
-            // CORREÇÃO APLICADA AQUI: Utilizando a URL com as variáveis globais do seu arquivo config
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${window.GLOBAL_SHEET_ID}/values/${olt.sheetTab}?key=${window.GLOBAL_API_KEY}`;
+        // CORREÇÃO: Removido o window. e chamando a constante global diretamente
+        const fetchPromises = GLOBAL_MASTER_OLT_LIST.map(async (olt) => {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values/${olt.sheetTab}?key=${GLOBAL_API_KEY}`;
             try {
                 const response = await fetch(url);
                 if (!response.ok) return null;
