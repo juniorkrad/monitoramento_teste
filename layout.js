@@ -233,12 +233,15 @@ async function executeSerialSearch() {
                             
                             let statusStr = "Desconhecido";
                             let statusClass = "status-unknown";
-                            const rowStr = row.join(" ").toUpperCase();
                             
-                            if (rowStr.includes("UP") || rowStr.includes("ACTIVE")) { 
+                            // BUSCA CIRÚRGICA DO STATUS POR FABRICANTE (Nokia = Índice 4, Furukawa = Índice 2)
+                            let colStatus = (olt.type === 'nokia') ? 4 : 2;
+                            let statusCell = row[colStatus] ? String(row[colStatus]).toUpperCase().trim() : '';
+                            
+                            if (statusCell.includes("UP") || statusCell === "ACTIVE") { 
                                 statusStr = "UP"; 
                                 statusClass = "status-up"; 
-                            } else if (rowStr.includes("DOWN") || rowStr.includes("OFFLINE")) { 
+                            } else if (statusCell.includes("DOWN") || statusCell.includes("OFFLINE") || statusCell === "INACTIVE" || statusCell === "FAIL" || statusCell === "LOS") { 
                                 statusStr = "DOWN"; 
                                 statusClass = "status-down"; 
                             }
