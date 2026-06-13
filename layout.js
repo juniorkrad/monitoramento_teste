@@ -190,7 +190,7 @@ function closeSearchModal(event) {
 
 async function executeSerialSearch() {
     const inputField = document.getElementById('serial-search-input');
-    const input = inputField.value.trim().toUpperCase(); // Converte para UPPERCASE apenas para processar a busca internamente.
+    const input = inputField.value.trim().toUpperCase(); 
     const resultsArea = document.getElementById('search-results-area');
     
     if (input.length < 4) {
@@ -198,7 +198,6 @@ async function executeSerialSearch() {
         return;
     }
     
-    // Filtro inteligente: Pega no máximo os últimos 8 dígitos para ampliar a chance de Match
     const searchTarget = input.length >= 8 ? input.slice(-8) : input;
 
     resultsArea.innerHTML = `
@@ -216,9 +215,7 @@ async function executeSerialSearch() {
 
         let foundResults = [];
         
-        // Dispara requisições simultâneas para todas as abas das OLTs para ser ultra-rápido
         const fetchPromises = GLOBAL_MASTER_OLT_LIST.map(async (olt) => {
-            // CORREÇÃO APLICADA AQUI: Adicionado o !A:Z após o nome da aba
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${GLOBAL_SHEET_ID}/values/${olt.sheetTab}!A:Z?key=${GLOBAL_API_KEY}`;
             try {
                 const response = await fetch(url);
@@ -229,14 +226,11 @@ async function executeSerialSearch() {
                 for (let i = 1; i < data.values.length; i++) {
                     const row = data.values[i];
                     
-                    // Varre todas as células da linha procurando o final do Serial
                     for (let j = 0; j < row.length; j++) {
                         const cellVal = String(row[j]).toUpperCase().trim();
                         
-                        // Busca Parcial com base no final da string (EndsWith ou Includes)
                         if (cellVal.endsWith(searchTarget) || cellVal.includes(searchTarget)) {
                             
-                            // Define o Status visual baseado no conteúdo bruto da linha
                             let statusStr = "Desconhecido";
                             let statusClass = "status-unknown";
                             const rowStr = row.join(" ").toUpperCase();
@@ -252,12 +246,12 @@ async function executeSerialSearch() {
                             foundResults.push({
                                 serial: cellVal,
                                 oltName: olt.id || olt.sheetTab,
-                                porta: row[0] || "N/A", // Assume que a coluna 0 é sempre Placa/Porta
+                                porta: row[0] || "N/A", 
                                 status: statusStr,
                                 statusClass: statusClass
                             });
                             
-                            break; // Se achou nesta linha, para de procurar em outras células e vai pra proxima
+                            break; 
                         }
                     }
                 }
@@ -278,26 +272,26 @@ async function executeSerialSearch() {
             return;
         }
 
-        // Renderiza os resultados em cartões estilizados
+        // Renderiza os resultados limpos e minimalistas
         let html = '';
         foundResults.forEach(res => {
             html += `
                 <div class="search-result-card">
                     <div class="search-result-row">
                         <span class="material-symbols-rounded">barcode</span>
-                        <span>Serial: <span class="search-result-val">${res.serial}</span></span>
+                        <span class="search-result-val">${res.serial}</span>
                     </div>
                     <div class="search-result-row">
                         <span class="material-symbols-rounded">dns</span>
-                        <span>Equipamento (OLT): <span class="search-result-val">${res.oltName}</span></span>
+                        <span class="search-result-val">${res.oltName}</span>
                     </div>
                     <div class="search-result-row">
                         <span class="material-symbols-rounded">settings_input_component</span>
-                        <span>Placa / Porta: <span class="search-result-val">${res.porta}</span></span>
+                        <span class="search-result-val">${res.porta}</span>
                     </div>
                     <div class="search-result-row" style="margin-top: 5px;">
                         <span class="material-symbols-rounded">online_prediction</span>
-                        <span>Status de Conexão: <span class="search-result-status ${res.statusClass}">${res.status}</span></span>
+                        <span class="search-result-status ${res.statusClass}">${res.status}</span>
                     </div>
                 </div>
             `;
@@ -361,32 +355,16 @@ function getGlobalCircuitInfo(rowsCircuitos, oltIdentifier, placa, porta, type) 
     return "-";
 }
 
-// NOVO: Função para buscar o Bairro na Aba "LOCALIDADE"
 function getGlobalBairroInfo(rowsLocalidades, oltIdentifier, placa, porta, type) {
     if (!rowsLocalidades || !rowsLocalidades.length) return null;
 
-    // Padroniza o nome da OLT (remove traços e espaços, ex: "HEL-1" vira "HEL1")
     const cleanOlt = (oltIdentifier || "").toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-    // Mapa de colunas baseado na arquitetura da aba LOCALIDADE (Colunas Pares/Índice Ímpar)
     const bairroColMap = {
-        'HEL1': 1,  // Coluna B
-        'HEL2': 3,  // Coluna D
-        'MGP': 5,   // Coluna F
-        'PQA1': 7,  // Coluna H
-        'PSV1': 9,  // Coluna J
-        'PSV7': 11, // Coluna L
-        'SBO2': 13, // Coluna N
-        'SBO3': 15, // Coluna P
-        'SBO4': 17, // Coluna R
-        'SB1': 19,  // Coluna T
-        'SB2': 21,  // Coluna V
-        'SB3': 23,  // Coluna X
-        'PQA2': 25, // Coluna Z
-        'PQA3': 27, // Coluna AB (Ajustado conforme correção)
-        'LTXV2': 29,// Coluna AD
-        'LTXV1': 31,// Coluna AF
-        'SBO1': 33  // Coluna AH
+        'HEL1': 1,  'HEL2': 3,  'MGP': 5,   'PQA1': 7,  'PSV1': 9,  
+        'PSV7': 11, 'SBO2': 13, 'SBO3': 15, 'SBO4': 17, 'SB1': 19,  
+        'SB2': 21,  'SB3': 23,  'PQA2': 25, 'PQA3': 27, 'LTXV2': 29,
+        'LTXV1': 31, 'SBO1': 33  
     };
 
     const colIndex = bairroColMap[cleanOlt];
@@ -396,7 +374,6 @@ function getGlobalBairroInfo(rowsLocalidades, oltIdentifier, placa, porta, type)
     const p = parseInt(porta);
     const sl = parseInt(placa);
 
-    // Mesma lógica de cálculo de linha utilizada nos circuitos
     if (type === 'nokia') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
     else if (type === 'furukawa-2') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
     else if (type === 'furukawa-10') rowIndex = ((sl - 1) * 4) + (p - 1) + 1;
@@ -408,7 +385,6 @@ function getGlobalBairroInfo(rowsLocalidades, oltIdentifier, placa, porta, type)
     return null;
 }
 
-// Mantido apenas por segurança caso algum script antigo procure pela função
 async function loadTimestamp(sheetTab, apiKey, sheetId) {
     updateGlobalTimestamp();
 }
