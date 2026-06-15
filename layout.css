@@ -247,3 +247,67 @@ body.idle .footer {
 .search-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--m3-on-surface-variant); gap: 15px; padding: 30px; }
 .spinner { border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--m3-primary); border-radius: 50%; width: 32px; height: 32px; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ==========================================================================
+   MODAL DE EMERGÊNCIA (Passo 2)
+   ========================================================================== */
+.emergency-header { border-bottom-color: rgba(248, 113, 113, 0.2) !important; }
+.emergency-header h2 { color: #f87171 !important; }
+.emergency-header h2 .material-symbols-rounded { color: #f87171 !important; }
+
+.emergency-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+.emergency-grid::-webkit-scrollbar { width: 6px; }
+.emergency-grid::-webkit-scrollbar-thumb { background: rgba(248, 113, 113, 0.3); border-radius: 10px; }
+
+.emergency-card-btn {
+    background-color: var(--m3-surface-container);
+    border: 1px solid var(--m3-outline-variant);
+    border-radius: 16px;
+    padding: 20px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.emergency-card-btn:hover {
+    background-color: rgba(248, 113, 113, 0.1);
+    border-color: #f87171;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(248, 113, 113, 0.2);
+}
+.emergency-card-btn .material-symbols-rounded {
+    font-size: 38px;
+    color: var(--m3-on-surface-variant);
+    transition: color 0.2s;
+}
+.emergency-card-btn:hover .material-symbols-rounded { color: #f87171; }
+.emergency-card-name { font-weight: bold; font-size: 1.1rem; color: var(--m3-on-surface); }
+
+/* Confirmação e Timer */
+.emergency-confirm-box { text-align: center; padding: 20px 10px; display: flex; flex-direction: column; gap: 20px; align-items: center;}
+.emergency-confirm-title { font-size: 1.2rem; color: var(--m3-on-surface); line-height: 1.5;}
+.emergency-confirm-highlight { color: #f87171; font-weight: bold; font-size: 1.4rem; display: block; margin-top: 10px;}
+
+.emergency-btn-group { display: flex; gap: 15px; width: 100%; justify-content: center; }
+.btn-cancel { flex: 1; max-width: 150px; background-color: var(--m3-surface-container-highest); color: var(--m3-on-surface); border: none; padding: 14px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: background 0.2s; }
+.btn-cancel:hover { background-color: var(--m3-state-layer-hover); }
+.btn-confirm-danger { flex: 1; max-width: 150px; background-color: #f87171; color: #111; border: none; padding: 14px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: all 0.2s; }
+.btn-confirm-danger:hover { background-color: #ef4444; transform: scale(1.05); }
+
+.emergency-progress-container { width: 100%; height: 20px; background-color: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden; margin-top: 15px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
+.emergency-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #f87171, #ef4444); transition: width 1s linear; }
+.emergency-timer-text { font-family: 'Roboto Mono', monospace; font-size: 2.5rem; font-weight: bold; color: #f87171; margin: 10px 0; text-shadow: 0 0 10px rgba(248,113,113,0.3); }
+
+/* Cores específicas de Alerta */
+.bg-danger-highlight { background-color: rgba(248, 113, 113, 0.05) !important; }
+.text-danger { color: #f87171 !important; }
