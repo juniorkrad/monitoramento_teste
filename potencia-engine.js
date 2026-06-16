@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Sistema Híbrido (Smart Tooltip / Fast Modal) Integrado
+// Atualização: Código limpo consumindo o DataMapper
 // ==============================================================================
 
 const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO'; 
@@ -9,13 +9,6 @@ window.POTENCIA_CLIENTS_DATA = {};
 window.POTENCIA_PORT_DATA = {}; 
 window.currentPotenciaInterval = null; 
 window.CURRENT_VIEW_PLACA = null; 
-
-function parsePowerValue(powerStr) {
-    if (!powerStr) return null;
-    const cleaned = powerStr.replace(/[^\d.-]/g, '');
-    const val = parseFloat(cleaned);
-    return isNaN(val) ? null : val;
-}
 
 function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
@@ -228,33 +221,24 @@ async function runPotenciaEngine() {
             rows.forEach(columns => {
                 if (columns.length === 0) return;
 
-                let isOnline = false, pwrStr = '', porta = '', serial = '', codigo = '';
+                // USO DO DATAMAPPER: Lógica limpa
+                const isOnline = DataMapper.isOnline(columns[olt.type === 'nokia' ? 4 : 2], olt.type);
+                if (!isOnline) return;
 
-                if (olt.type === 'nokia') {
-                    isOnline = (columns[4] || '').trim().toLowerCase().includes('up');
-                    if (!isOnline) return;
-                    pwrStr = columns[5]; 
-                    porta = columns[0] || '';
-                    serial = columns[2] || ''; 
-                    codigo = columns[8] || ''; 
-                } else {
-                    isOnline = (columns[2] || '').trim().toLowerCase() === 'active';
-                    if (!isOnline) return;
-                    pwrStr = columns[5]; 
-                    porta = columns[0] || '';
-                    serial = columns[3] || ''; 
-                    codigo = columns[7] || ''; 
-                }
+                const portInfo = DataMapper.extractPort(columns[0], olt.type);
+                if (!portInfo) return;
 
-                const powerVal = parsePowerValue(pwrStr);
+                const powerVal = DataMapper.parsePowerValue(columns[5]);
                 
-                if (powerVal !== null && powerVal !== 0 && powerVal < 0 && powerVal >= -60.00) {
+                if (DataMapper.isValidPower(powerVal)) {
                     analisados++;
                     dbmSums += powerVal;
                     
                     if (powerVal <= -28.00) { 
                         criticos++; 
-                        todosClientesCriticos.push({ olt: olt.id, porta, serial, codigo, potencia: powerVal });
+                        let serial = olt.type === 'nokia' ? columns[2] : columns[3];
+                        let codigo = olt.type === 'nokia' ? columns[8] : columns[7];
+                        todosClientesCriticos.push({ olt: olt.id, porta: `${portInfo.placa}/${portInfo.porta}`, serial: serial || '', codigo: codigo || '', potencia: powerVal });
                     } 
                 }
             });
@@ -486,57 +470,41 @@ window.startPotenciaMonitoring = function(config) {
 
             rowsOlt.forEach(columns => {
                 if (columns.length === 0) return;
-                let placa, porta, isOnline;
-                let pos = '', serial = '', potencia = '', desc1 = '', desc2 = '';
 
-                if (config.type === 'nokia') {
-                    const pon = columns[0];
-                    const status = columns[4]; 
-                    if (!pon || !status) return;
-                    const match = pon.match(/(\d+)\/(\d+)\/(\d+)\/(\d+)/);
-                    if (match) { placa = match[3]; porta = match[4]; }
-                    isOnline = status.trim().toLowerCase().includes('up');
+                // USO DO DATAMAPPER: Limpeza Absoluta
+                const isOnline = DataMapper.isOnline(columns[config.type === 'nokia' ? 4 : 2], config.type);
+                if (!isOnline) return;
 
-                    pos = columns[1] || '';
-                    serial = columns[2] || '';
-                    potencia = columns[5] || ''; 
-                    desc1 = columns[7] || ''; 
-                    desc2 = columns[8] || ''; 
-                } else { 
-                    const portStr = columns[0];
-                    const status = columns[2]; 
-                    if (!portStr || !status) return;
-                    
-                    if (config.type === 'furukawa-10') {
-                        const parts = portStr.split('/');
-                        if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
-                    } else {
-                        const match = portStr.match(/GPON\s*(\d+)\/(\d+)/i);
-                        if (match) { placa = match[1]; porta = match[2]; }
-                    }
-                    isOnline = status.trim().toLowerCase() === 'active';
+                const portInfo = DataMapper.extractPort(columns[0], config.type);
+                if (!portInfo) return;
 
-                    pos = columns[1] || '';
-                    potencia = columns[5] || ''; 
-                    serial = columns[3] || ''; 
-                    desc1 = columns[7] || ''; 
-                }
+                const powerVal = DataMapper.parsePowerValue(columns[5]);
+                if (!DataMapper.isValidPower(powerVal)) return;
 
-                if (!placa || !porta || !isOnline) return;
-                
-                const powerVal = parsePowerValue(potencia);
-                if (powerVal === null || powerVal >= 0 || powerVal < -60.00) return; 
-
+                const { placa, porta } = portInfo;
                 const placaNum = parseInt(placa);
                 const portaNum = parseInt(porta);
                 const portKey = `${placaNum}/${portaNum}`;
+                
+                let pos = '', serial = '', desc1 = '', desc2 = '';
+
+                if (config.type === 'nokia') {
+                    pos = columns[1] || '';
+                    serial = columns[2] || '';
+                    desc1 = columns[7] || ''; 
+                    desc2 = columns[8] || ''; 
+                } else { 
+                    pos = columns[1] || '';
+                    serial = columns[3] || ''; 
+                    desc1 = columns[7] || ''; 
+                }
                 
                 if (!window.POTENCIA_PORT_DATA[placaNum]) {
                     window.POTENCIA_PORT_DATA[placaNum] = {};
                 }
 
                 if (!window.POTENCIA_PORT_DATA[placaNum][portaNum]) {
-                    const infoExtra = getGlobalCircuitInfo(rowsCircuitos, config.oltName || config.id, placa, porta, config.type);
+                    const infoExtra = DataMapper.getCircuitInfo(rowsCircuitos, config, placa, porta);
                     window.POTENCIA_PORT_DATA[placaNum][portaNum] = { validCount: 0, sumPower: 0, info: infoExtra };
                     window.POTENCIA_CLIENTS_DATA[portKey] = [];
                 }

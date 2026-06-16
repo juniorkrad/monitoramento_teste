@@ -1,11 +1,11 @@
 // ==============================================================================
 // data-mapper.js - O "Cérebro" de Tratamento e Cruzamento de Dados
-// Responsável por padronizar portas, status e cruzar Localidades e Circuitos.
+// Responsável por padronizar portas, status, potências e cruzar dados.
 // ==============================================================================
 
 const DataMapper = {
 
-    // 1. Dicionário de Colunas de Bairros (Tirado do layout.js)
+    // 1. Dicionário de Colunas de Bairros
     BAIRRO_COL_MAP: {
         'HEL1': 1,  'HEL2': 3,  'MGP': 5,   'PQA1': 7,  'PSV1': 9,  
         'PSV7': 11, 'SBO2': 13, 'SBO3': 15, 'SBO4': 17, 'SB1': 19,  
@@ -14,7 +14,6 @@ const DataMapper = {
     },
 
     // 2. Extrator Inteligente de Porta e Placa
-    // Limpa regex e strings sujas (Ex: "GPON 01/02" ou "1/1/3/4")
     extractPort: function(rawPortStr, oltType) {
         if (!rawPortStr) return null;
         let placa = null, porta = null;
@@ -26,7 +25,6 @@ const DataMapper = {
             const parts = String(rawPortStr).split('/');
             if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
         } else {
-            // Padrão Furukawa-2 / Outros
             const match = String(rawPortStr).match(/GPON\s*(\d+)\/(\d+)/i);
             if (match) { placa = match[1]; porta = match[2]; }
         }
@@ -38,7 +36,6 @@ const DataMapper = {
     },
 
     // 3. Normalizador de Status
-    // Transforma qualquer variação de texto em um simples Booleano (Online = true/false)
     isOnline: function(rawStatusStr, oltType) {
         const status = String(rawStatusStr || '').trim().toLowerCase();
         if (oltType === 'nokia') {
@@ -48,7 +45,20 @@ const DataMapper = {
         }
     },
 
-    // 4. Calculadora de Linha (Onde o circuito/bairro dessa porta está na planilha?)
+    // 4. Limpeza e Conversão de Potência (dBm)
+    parsePowerValue: function(powerStr) {
+        if (!powerStr) return null;
+        const cleaned = String(powerStr).replace(/[^\d.-]/g, '');
+        const val = parseFloat(cleaned);
+        return isNaN(val) ? null : val;
+    },
+
+    // 5. Validador de Leitura Óptica Real (Filtra falsos positivos)
+    isValidPower: function(powerVal) {
+        return powerVal !== null && powerVal !== 0 && powerVal < 0 && powerVal >= -60.00;
+    },
+
+    // 6. Calculadora de Linha
     calculateRowIndex: function(placa, porta, oltType) {
         const p = parseInt(porta);
         const sl = parseInt(placa);
@@ -61,7 +71,7 @@ const DataMapper = {
         return -1;
     },
 
-    // 5. Cruzamento: Busca o Circuito
+    // 7. Cruzamento: Busca o Circuito
     getCircuitInfo: function(rowsCircuitos, oltConfig, placa, porta) {
         if (!rowsCircuitos || !rowsCircuitos.length || oltConfig.circuitCol === undefined) return "-";
         
@@ -72,7 +82,7 @@ const DataMapper = {
         return "-";
     },
 
-    // 6. Cruzamento: Busca a Localidade (Bairro)
+    // 8. Cruzamento: Busca a Localidade (Bairro)
     getBairroInfo: function(rowsLocalidades, oltIdentifier, placa, porta, type) {
         if (!rowsLocalidades || !rowsLocalidades.length) return null;
 
@@ -87,5 +97,21 @@ const DataMapper = {
             return bairro ? bairro.trim() : null;
         }
         return null;
+    },
+
+    // 9. NOVO: Extrator e Formatador de Data/Hora (Centralizado)
+    parseDateTime: function(rawDateStr) {
+        let dateVal = '--/--/----';
+        let timeVal = '--:--:--';
+        if (!rawDateStr) return { date: dateVal, time: timeVal };
+        
+        const str = String(rawDateStr);
+        const dateMatch = str.match(/\d{2}\/\d{2}\/\d{2,4}/);
+        const timeMatch = str.match(/\d{2}:\d{2}(:\d{2})?/);
+        
+        if (dateMatch) dateVal = dateMatch[0];
+        if (timeMatch) timeVal = timeMatch[0];
+        
+        return { date: dateVal, time: timeVal, full: `${dateVal} ${timeVal}` };
     }
 };
