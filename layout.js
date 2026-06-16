@@ -1,5 +1,6 @@
 // ==============================================================================
 // layout.js - Construtor de Layout e Menu Inteligente (Com Busca e Emergência Autenticada)
+// Atualização: Limpeza profunda (Data Mapping movido para data-mapper.js)
 // ==============================================================================
 
 (function loadIconFont() {
@@ -30,8 +31,8 @@ function loadHeader(config) {
     `;
     
     loadSidebar(currentPage);
-    injectSearchModal(); // Injeta Modal de Busca
-    injectEmergencyModal(); // Injeta Modal de Emergência
+    injectSearchModal(); 
+    injectEmergencyModal(); 
 
     headerPlaceholder.innerHTML = `
         <header class="header">
@@ -240,12 +241,20 @@ async function executeSerialSearch() {
                             let statusClass = "status-unknown";
                             
                             let colStatus = (olt.type === 'nokia') ? 4 : 2;
-                            let statusCell = row[colStatus] ? String(row[colStatus]).toUpperCase().trim() : '';
                             
-                            if (statusCell.includes("UP") || statusCell === "ACTIVE") { 
+                            // Integração leve com o DataMapper se estiver carregado
+                            let isOnline = false;
+                            if (typeof DataMapper !== 'undefined') {
+                                isOnline = DataMapper.isOnline(row[colStatus], olt.type);
+                            } else {
+                                let statusCell = row[colStatus] ? String(row[colStatus]).toUpperCase().trim() : '';
+                                isOnline = statusCell.includes("UP") || statusCell === "ACTIVE";
+                            }
+                            
+                            if (isOnline) { 
                                 statusStr = "UP"; 
                                 statusClass = "status-up"; 
-                            } else if (statusCell.includes("DOWN") || statusCell.includes("OFFLINE") || statusCell === "INACTIVE" || statusCell === "FAIL" || statusCell === "LOS") { 
+                            } else { 
                                 statusStr = "DOWN"; 
                                 statusClass = "status-down"; 
                             }
@@ -563,7 +572,7 @@ function startEmergencyTimer(oltId, totalSeconds) {
 }
 
 // ==============================================================================
-// UTILITÁRIOS GLOBAIS RECUPERADOS E BLINDADOS (CORREÇÃO DE EXECUÇÃO FATAL)
+// UTILITÁRIOS GLOBAIS DE UI
 // ==============================================================================
 
 function checkIsHomePage() {
@@ -591,57 +600,6 @@ function updateGlobalTimestamp() {
     timestampEl.classList.add('updated-anim');
 }
 
-function getGlobalCircuitInfo(rowsCircuitos, oltIdentifier, placa, porta, type) {
-    const oltConfig = GLOBAL_MASTER_OLT_LIST.find(o => o.id === oltIdentifier || o.sheetTab === oltIdentifier);
-    if (!oltConfig || oltConfig.circuitCol === undefined) return "-";
-    
-    const colIndex = oltConfig.circuitCol;
-    if (!rowsCircuitos || !rowsCircuitos.length) return "-";
-
-    let rowIndex = -1;
-    const p = parseInt(porta);
-    const sl = parseInt(placa);
-
-    if (type === 'nokia') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
-    else if (type === 'furukawa-2') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
-    else if (type === 'furukawa-10') rowIndex = ((sl - 1) * 4) + (p - 1) + 1;
-
-    if (rowIndex > 0 && rowIndex < rowsCircuitos.length) {
-        return rowsCircuitos[rowIndex][colIndex] || "-";
-    }
-    return "-";
-}
-
-function getGlobalBairroInfo(rowsLocalidades, oltIdentifier, placa, porta, type) {
-    if (!rowsLocalidades || !rowsLocalidades.length) return null;
-
-    const cleanOlt = (oltIdentifier || "").toUpperCase().replace(/[^A-Z0-9]/g, '');
-
-    const bairroColMap = {
-        'HEL1': 1,  'HEL2': 3,  'MGP': 5,   'PQA1': 7,  'PSV1': 9,  
-        'PSV7': 11, 'SBO2': 13, 'SBO3': 15, 'SBO4': 17, 'SB1': 19,  
-        'SB2': 21,  'SB3': 23,  'PQA2': 25, 'PQA3': 27, 'LTXV2': 29,
-        'LTXV1': 31, 'SBO1': 33  
-    };
-
-    const colIndex = bairroColMap[cleanOlt];
-    if (colIndex === undefined) return null;
-
-    let rowIndex = -1;
-    const p = parseInt(porta);
-    const sl = parseInt(placa);
-
-    if (type === 'nokia') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
-    else if (type === 'furukawa-2') rowIndex = ((sl - 1) * 16) + (p - 1) + 1;
-    else if (type === 'furukawa-10') rowIndex = ((sl - 1) * 4) + (p - 1) + 1;
-
-    if (rowIndex > 0 && rowIndex < rowsLocalidades.length) {
-        const bairro = rowsLocalidades[rowIndex][colIndex];
-        return bairro ? bairro.trim() : null;
-    }
-    return null;
-}
-
 async function loadTimestamp(sheetTab, apiKey, sheetId) {
     updateGlobalTimestamp();
 }
@@ -651,7 +609,7 @@ async function loadTimestamp(sheetTab, apiKey, sheetId) {
 // ==============================================================================
 function initAutoHide() {
     let idleTimer;
-    const idleTime = 10000; // 10 segundos de inatividade para ocultar
+    const idleTime = 10000; 
 
     const resetTimer = () => {
         document.body.classList.remove('idle');

@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Sistema Híbrido (Tooltip/Modal) no Top 3 OLTs Críticas (Home)
+// Atualização: Código limpo consumindo o DataMapper + Coluna LOCALIDADE
 // ==============================================================================
 
 const TAB_CIRCUITOS = 'CIRCUITO'; 
@@ -92,7 +92,7 @@ window.handleNetClick = function(event) {
 // ==============================================================================
 
 async function fetchGlobalOltData(olt) {
-    const range = olt.type === 'nokia' ? `${olt.sheetTab}!A:K` : `${olt.sheetTab}!A:K`;
+    const range = `${olt.sheetTab}!A:K`;
     
     try {
         const data = await API.get(range);
@@ -103,33 +103,15 @@ async function fetchGlobalOltData(olt) {
 
         rows.forEach(columns => {
             if (columns.length === 0) return;
-            let placa, porta, isOnline;
-
-            if (olt.type === 'nokia') {
-                isOnline = (columns[4] || '').trim().toLowerCase().includes('up');
-                if (columns[0]) {
-                    const match = columns[0].match(/(\d+)\/(\d+)\/(\d+)\/(\d+)/);
-                    if (match) { 
-                        placa = match[3]; 
-                        porta = match[4]; 
-                    }
-                }
-            } else { 
-                isOnline = (columns[2] || '').trim().toLowerCase() === 'active';
-                if (columns[0]) {
-                    if (olt.type === 'furukawa-10') {
-                        const parts = columns[0].split('/');
-                        if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
-                    } else { 
-                        const match = columns[0].match(/GPON\s*(\d+)\/(\d+)/i);
-                        if (match) { placa = match[1]; porta = match[2]; }
-                    }
-                }
-            }
+            
+            // USO DO DATAMAPPER: Lógica limpa e direta
+            const isOnline = DataMapper.isOnline(columns[olt.type === 'nokia' ? 4 : 2], olt.type);
+            const portInfo = DataMapper.extractPort(columns[0], olt.type);
 
             if (isOnline) totalOnline++; else totalOffline++;
             
-            if (placa && porta) {
+            if (portInfo) {
+                const { placa, porta } = portInfo;
                 const portKey = `${placa}/${porta}`; 
                 if (!portData[portKey]) portData[portKey] = { off: 0, total: 0 };
                 portData[portKey].total++;
@@ -181,7 +163,6 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, top3Olts) {
             if (olt.offline === 0) return;
             const offlinePct = olt.total > 0 ? ((olt.offline / olt.total) * 100).toFixed(1) : 0;
             
-            // Container atualizado com suporte a eventos de Tooltip (Hover/Click) e transições
             rankingHtmlContent += `
                 <div style="width: 100%; margin-bottom: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background-color 0.2s ease; margin-left: -8px;"
                      data-olt="${olt.id}"
@@ -377,32 +358,14 @@ window.startOltMonitoring = function(config) {
 
             rowsOlt.forEach(columns => {
                 if (columns.length === 0) return;
-                let placa, porta, isOnline;
-
-                if (config.type === 'nokia') {
-                    const pon = columns[0];
-                    const status = columns[4]; 
-                    if (!pon || !status) return;
-                    const match = pon.match(/(\d+)\/(\d+)\/(\d+)\/(\d+)/);
-                    if (match) { placa = match[3]; porta = match[4]; }
-                    isOnline = status.trim().toLowerCase().includes('up');
-                } else { 
-                    const portStr = columns[0];
-                    const status = columns[2]; 
-                    if (!portStr || !status) return;
-                    
-                    if (config.type === 'furukawa-10') {
-                        const parts = portStr.split('/');
-                        if (parts.length >= 2) { placa = parts[0]; porta = parts[1]; }
-                    } else {
-                        const match = portStr.match(/GPON\s*(\d+)\/(\d+)/i);
-                        if (match) { placa = match[1]; porta = match[2]; }
-                    }
-                    isOnline = status.trim().toLowerCase() === 'active';
-                }
-
-                if (!placa || !porta) return;
                 
+                // USO DO DATAMAPPER: Lógica limpa
+                const isOnline = DataMapper.isOnline(columns[config.type === 'nokia' ? 4 : 2], config.type);
+                const portInfo = DataMapper.extractPort(columns[0], config.type);
+                
+                if (!portInfo) return;
+                
+                const { placa, porta } = portInfo;
                 const placaNum = parseInt(placa);
                 const portaNum = parseInt(porta);
                 const portKey = `${placaNum}/${portaNum}`;
@@ -412,8 +375,11 @@ window.startOltMonitoring = function(config) {
                 }
 
                 if (!window.CURRENT_OLT_PORT_DATA[placaNum][portaNum]) {
-                    const infoExtra = getGlobalCircuitInfo(rowsCircuitos, config.oltName || config.id, placa, porta, config.type);
-                    window.CURRENT_OLT_PORT_DATA[placaNum][portaNum] = { online: 0, offline: 0, info: infoExtra };
+                    // USO DO DATAMAPPER: Busca Circuito e Bairro
+                    const infoExtra = DataMapper.getCircuitInfo(rowsCircuitos, config, placa, porta);
+                    const bairroExtra = DataMapper.getBairroInfo(rowsLocalidades, config.oltName || config.id, placa, porta, config.type);
+                    
+                    window.CURRENT_OLT_PORT_DATA[placaNum][portaNum] = { online: 0, offline: 0, info: infoExtra, bairro: bairroExtra };
                     window.OLT_CLIENTS_DATA[portKey] = [];
                 }
 
@@ -509,12 +475,13 @@ window.openOltPlacaDetails = function(placa, oltType) {
     const sortedPorts = Object.keys(ports).sort((a, b) => parseInt(a) - parseInt(b));
     
     if (sortedPorts.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 20px; color: var(--m3-on-surface-variant);">Nenhuma porta ativa com clientes encontrada nesta placa.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--m3-on-surface-variant);">Nenhuma porta ativa com clientes encontrada nesta placa.</td></tr>`;
         return;
     }
 
     sortedPorts.forEach(pt => {
-        const { online, offline, info } = ports[pt];
+        // Agora extraímos também o Bairro do nosso objeto processado!
+        const { online, offline, info, bairro } = ports[pt];
         const total = online + offline;
         
         let statusClass = 'status-normal';
@@ -528,7 +495,9 @@ window.openOltPlacaDetails = function(placa, oltType) {
         }
 
         const safeInfo = info.replace(/'/g, "\\'");
+        const textoBairro = bairro && bairro !== '-' ? bairro : 'N/A';
 
+        // Linha com a nova coluna de LOCALIDADE incluída
         tbody.innerHTML += `
             <tr>
                 <td>Porta ${String(pt).padStart(2, '0')}</td>
@@ -538,6 +507,9 @@ window.openOltPlacaDetails = function(placa, oltType) {
                           title="Ver clientes deste circuito">
                         ${info}
                     </span>
+                </td>
+                <td style="font-family: var(--font-family-mono); font-size: 0.9rem; color: var(--m3-on-surface-variant); text-align: center;">
+                    ${textoBairro}
                 </td>
                 <td>
                     <button class="status ${statusClass} status-btn" style="cursor: pointer;"
@@ -573,12 +545,13 @@ window.exportPlacaToTXT = function() {
     
     rows.forEach(row => {
         const cols = row.querySelectorAll('td');
-        if (cols.length >= 3) {
+        if (cols.length >= 4) { // Atualizado para suportar a nova coluna
             const porta = cols[0].innerText.trim();
             const circuito = cols[1].innerText.trim();
-            const status = cols[2].innerText.trim();
+            const localidade = cols[2].innerText.trim();
+            const status = cols[3].innerText.trim();
             
-            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(25, ' ')} | Status: ${status}\n`;
+            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(20, ' ')} | Local: ${localidade.padEnd(20, ' ')} | Status: ${status}\n`;
         }
     });
     
