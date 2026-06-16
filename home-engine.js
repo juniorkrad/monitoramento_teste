@@ -1,15 +1,17 @@
 /* ==========================================================================
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
-   Atualização: Regra do Híbrido ajustada para >= 32 clientes
+   Atualização: Código otimizado e preparado para a futura Unificação de Alarmes
    ========================================================================== */
 
 let lastNotifiedState = ""; 
 
 function watchHomeAlarms() {
+    // 1. Coleta os alarmes gerais já mastigados pelo olt-engine.js
     let networkProblems = new Set(window.NETWORK_PROBLEMS_STORE || []);
     let backboneProblems = new Set(window.NETWORK_BACKBONE_STORE || []);
     let hybridProblems = new Set(); 
 
+    // 2. Coleta e atualiza a interface Global de Energia (Se os dados existirem)
     if (window.ENERGY_DATA_STORE && window.ENERGY_DATA_STORE.global) {
         const globalData = window.ENERGY_DATA_STORE.global;
 
@@ -40,20 +42,20 @@ function watchHomeAlarms() {
         }
 
         // ============================================================
-        // A REGRA DOS 70% (ATUALIZADA PARA 32 CLIENTES)
+        // A REGRA DOS HÍBRIDOS: >= 32 clientes offline e >= 70% de energia
         // ============================================================
         for (const oltId in window.ENERGY_DATA_STORE.olts) {
             const oltData = window.ENERGY_DATA_STORE.olts[oltId];
+            
             for (const placa in oltData.ports) {
                 for (const porta in oltData.ports[placa]) {
                     const pData = oltData.ports[placa][porta];
                     const pt = `${placa}/${porta}`;
 
-                    // Gatilho: Mínimo de 32 offline E Energia representa >= 70% do problema
                     if (pData.offline >= 32 && pData.powerOff > 0) {
                         const overlap = pData.powerOff / pData.offline;
                         if (overlap >= 0.70) {
-                            // O formato exato que a RegEx do notifications-old espera
+                            // TODO Futuro: Injetar a Localidade (Bairro) aqui para unificação
                             hybridProblems.add(`[${oltId}] HIBRIDO::${pt}::${pData.offline}::${pData.powerOff}`);
                         }
                     }
@@ -62,10 +64,11 @@ function watchHomeAlarms() {
         }
     }
 
-    // Exporta os híbridos
+    // Exporta os híbridos para a memória global
     window.NETWORK_HYBRID_STORE = hybridProblems;
 
-    // Disparo sincronizado com trava protetora original
+    // 3. Disparo sincronizado para o sistema de Notificações
+    // Cria uma "assinatura" do estado atual para não disparar alertas repetidos
     const currentStateStr = 
         Array.from(networkProblems).sort().join('|') + "||" + 
         Array.from(backboneProblems).sort().join('|') + "||" + 
@@ -75,18 +78,21 @@ function watchHomeAlarms() {
         lastNotifiedState = currentStateStr;
         
         if (typeof checkAndNotifyForNewProblems === 'function') {
+            // Repassa os problemas para o motor de pop-ups/alertas na tela
             checkAndNotifyForNewProblems(networkProblems, backboneProblems, new Set(), hybridProblems);
         }
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Só inicia o vigilante se estiver na tela inicial
     if (checkIsHomePage()) {
         if (typeof loadHeader === 'function') loadHeader({ title: "Dashboard Gerencial", exactTitle: true });
         if (typeof loadFooter === 'function') loadFooter();
         
         setTimeout(updateGlobalTimestamp, 500);
         
+        // Roda a vigilância a cada 2 segundos (Não gasta internet, apenas lê a memória)
         setInterval(watchHomeAlarms, 2000); 
     }
 });

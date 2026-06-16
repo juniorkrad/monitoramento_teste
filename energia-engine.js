@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Código limpo consumindo o DataMapper
+// Atualização: Código limpo consumindo o DataMapper + Leitura Dinâmica de Colunas (Defesa)
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
@@ -10,6 +10,22 @@ window.NETWORK_ENERGY_STORE = new Set();
 window.CURRENT_ENERGY_OLT = null; 
 window.CURRENT_ENERGY_PLACA = null; 
 let energyChartInstance = null; 
+
+// Helper exclusivo para a aba ENERGIA (Trata strings sujas e simplificadas do Python)
+function extractEnergyPort(val) {
+    if (!val) return null;
+    let s = String(val).replace(/gpon/i, '').replace(/\\/g, '/').trim();
+    s = s.replace(/[^0-9]+$/, ''); 
+    let parts = s.split('/');
+    if (parts.length >= 2) {
+        let placa = parseInt(parts[parts.length - 2], 10);
+        let porta = parseInt(parts[parts.length - 1], 10);
+        if (!isNaN(placa) && !isNaN(porta)) {
+            return { placa: placa.toString(), porta: porta.toString() };
+        }
+    }
+    return null;
+}
 
 window.exportCardToImage = function(event, cardId, oltName) {
     if (event) event.stopPropagation();
@@ -226,9 +242,8 @@ window.startEnergyMonitoring = async function() {
             rows.forEach(col => {
                 if(col.length === 0) return;
                 
-                // DATAMAPPER EM AÇÃO: Limpeza imediata
                 const isOnline = DataMapper.isOnline(oltDef.type === 'nokia' ? col[4] : col[2], oltDef.type);
-                const portInfo = DataMapper.extractPort(col[0], oltDef.type);
+                const portInfo = DataMapper.extractPort(col[0], oltDef.type); // Aqui mantemos o DataMapper pois são as abas das OLTs
                 
                 if (portInfo) {
                     const { placa, porta } = portInfo;
@@ -269,26 +284,33 @@ window.startEnergyMonitoring = async function() {
             }
 
             rowsEnergia.forEach(row => {
-                if (row.length > colIndex + 2) {
-                    const portaFull = row[colIndex + 1];
-                    const qtd = parseInt(row[colIndex + 2]) || 0;
+                let portaFull = null;
+                let qtd = 0;
 
-                    if (portaFull && qtd > 0) {
-                        const portInfo = DataMapper.extractPort(portaFull, oltDef.type);
+                // Defesa contra o deslocamento de colunas da aba ENERGIA
+                for (let i = colIndex; i <= colIndex + 2; i++) {
+                    if (row[i] && String(row[i]).includes('/')) {
+                        const portInfo = extractEnergyPort(row[i]);
                         if (portInfo) {
-                            const { placa, porta } = portInfo;
-
-                            if (!oltData.ports[placa]) oltData.ports[placa] = {};
-                            if (!oltData.ports[placa][porta]) {
-                                const circ = DataMapper.getCircuitInfo(rowsCircuitos, oltDef, placa, porta);
-                                oltData.ports[placa][porta] = { total: qtd, online: 0, offline: qtd, powerOff: 0, circuit: circ };
-                            }
-
-                            oltData.ports[placa][porta].powerOff = qtd;
-                            oltData.powerOff += qtd;
-                            window.ENERGY_DATA_STORE.global.powerOff += qtd;
+                            portaFull = portInfo;
+                            qtd = parseInt(row[i + 1], 10) || 0;
+                            break;
                         }
                     }
+                }
+
+                if (portaFull && qtd > 0) {
+                    const { placa, porta } = portaFull;
+
+                    if (!oltData.ports[placa]) oltData.ports[placa] = {};
+                    if (!oltData.ports[placa][porta]) {
+                        const circ = DataMapper.getCircuitInfo(rowsCircuitos, oltDef, placa, porta);
+                        oltData.ports[placa][porta] = { total: qtd, online: 0, offline: qtd, powerOff: 0, circuit: circ };
+                    }
+
+                    oltData.ports[placa][porta].powerOff = qtd;
+                    oltData.powerOff += qtd;
+                    window.ENERGY_DATA_STORE.global.powerOff += qtd;
                 }
             });
         });
@@ -332,7 +354,6 @@ window.startEnergyMonitoring = async function() {
                 for(let i=0; i<offlineBlocks; i++) blocksHtml += `<div class="block" style="background: #f87171;" title="Sem Sinal"></div>`;
                 blocksHtml += '</div>';
 
-                // DATAMAPPER EM AÇÃO: Extração limpa da Data/Hora
                 const dt = DataMapper.parseDateTime(oData.lastUpdate);
                 
                 gridEl.innerHTML += `
