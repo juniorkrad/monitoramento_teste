@@ -21,66 +21,63 @@
 </head>
 <body>
 
-    <div id="toast-container"></div>
-
     <div class="page-container">
         <div id="header-placeholder"></div>
 
         <main class="main-content" style="flex-direction: column;">
             
-            <div id="temperatura-grid" class="grid-container">
+            <div id="global-temperatura-body" class="energy-master-card" style="border-left: 6px solid #f87171; margin-bottom: 24px;">
+                <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 25px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="material-symbols-rounded" style="font-size: 24px; color: #f87171;">thermostat</span>
+                        <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;">TEMPERATURA DAS OLTS</span>
+                    </div>
+                    <div class="spinner"></div>
+                </div>
             </div>
 
+            <div id="temperatura-grid" class="grid-container">
+                </div>
         </main>
+    </div>
 
-        <div id="super-modal" class="modal-overlay" style="display: none;" onclick="closeSuperModal(event)">
-            <div class="modal-content modal-large">
+    <div id="super-modal" class="modal-overlay" onclick="closeSuperModal(event)">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 id="super-modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-rounded">dns</span> Detalhes Térmicos
+                </h3>
+                <button class="close-modal" onclick="closeSuperModal()">&times;</button>
+            </div>
+            <div class="modal-body">
                 
-                <div class="modal-header">
-                    <h3 id="super-modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                        <span class="material-symbols-rounded">device_thermostat</span> OLT
-                    </h3>
-                    <button class="close-modal" onclick="closeSuperModal()" title="Fechar">&times;</button>
+                <div id="temperatura-view-slots">
+                    <div id="temperatura-slots-list" class="placas-grid"></div>
                 </div>
 
-                <div class="modal-body" style="position: relative; min-height: 300px;">
-
-                    <div id="temperatura-view-slots">
-                        <div id="temperatura-slots-list" class="placas-grid">
-                            </div>
+                <div id="temperatura-view-detalhes" style="display: none;">
+                    <button class="btn-voltar-placas" style="margin-bottom: 15px;" onclick="backToTemperaturaSlots()">
+                        <span class="material-symbols-rounded">arrow_back</span> Voltar para Slots
+                    </button>
+                    
+                    <div class="table-container">
+                        <table class="temperatura-table">
+                            <thead>
+                                <tr class="table-header-row">
+                                    <th>SENSOR</th>
+                                    <th>TEMP ATUAL</th>
+                                    <th>LIMITES (ALTA / CRÍTICO)</th>
+                                    <th>STATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="temperatura-detalhes-tbody">
+                                </tbody>
+                        </table>
                     </div>
-
-                    <div id="temperatura-view-detalhes" style="display: none;">
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <button class="btn-voltar-placas" style="margin-bottom: 0;" onclick="backToTemperaturaSlots()">
-                                <span class="material-symbols-rounded">arrow_back</span> Voltar para Slots
-                            </button>
-                            <button class="btn-voltar-placas" style="margin-bottom: 0; padding: 10px;" onclick="exportTemperaturaSlotToTXT()" title="Exportar para TXT">
-                                <span class="material-symbols-rounded">download</span>
-                            </button>
-                        </div>
-                        
-                        <div class="table-container">
-                            <table>
-                                <thead>
-                                    <tr class="table-header-row">
-                                        <th style="text-align: center;">SENSOR</th>
-                                        <th style="text-align: center;">TEMP ATUAL</th>
-                                        <th style="text-align: center;">LIMITES (ALTA / CRÍTICO)</th>
-                                        <th style="text-align: center;">STATUS</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="temperatura-detalhes-tbody">
-                                    </tbody>
-                            </table>
-                        </div>
-                    </div>
-
                 </div>
+
             </div>
         </div>
-
     </div>
 
     <div id="footer-placeholder"></div>
