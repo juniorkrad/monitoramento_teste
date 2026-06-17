@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Trava invertida (Renderiza Card Global APENAS na Home)
+// Atualização: Trava invertida (Renderiza Card Global APENAS na Home) e Delay Inicial Removido
 // ==============================================================================
 
 const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO'; 
@@ -729,7 +729,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     if (isPotenciaPage || typeof checkIsHomePage === 'function' && checkIsHomePage()) {
-        setTimeout(runPotenciaEngine, 1000);
+        // Chamada imediata, removendo o delay visual
+        runPotenciaEngine();
         setInterval(runPotenciaEngine, GLOBAL_REFRESH_SECONDS * 1000);
     }
 });

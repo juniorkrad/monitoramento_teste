@@ -386,7 +386,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (isEqpPage || isHomePage) {
-        setTimeout(runEquipamentosEngine, 1000);
+        // Chamada imediata, substituindo o setTimeout de 1000ms
+        runEquipamentosEngine();
         setInterval(runEquipamentosEngine, GLOBAL_REFRESH_SECONDS * 1000);
     }
 });

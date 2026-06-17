@@ -1,6 +1,6 @@
 // ==============================================================================
 // temperatura-engine.js - Motor Dedicado para Análise Térmica das OLTs
-// Atualização: Trava invertida inserida
+// Atualização: Trava invertida inserida e Delay Inicial Removido
 // ==============================================================================
 
 const TAB_TEMPERATURA = 'TEMPERATURA'; 
@@ -518,7 +518,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     if (isTemperaturaPage || checkIsHomePage()) {
-        setTimeout(runTemperaturaEngine, 1000);
+        // Chamada imediata, removendo o delay visual
+        runTemperaturaEngine();
         setInterval(runTemperaturaEngine, GLOBAL_REFRESH_SECONDS * 1000);
     }
 });

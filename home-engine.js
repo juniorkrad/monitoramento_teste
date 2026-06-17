@@ -92,6 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         setTimeout(updateGlobalTimestamp, 500);
         
+        // Chamada imediata para remover o delay inicial
+        watchHomeAlarms();
         // Roda a vigilância a cada 2 segundos (Não gasta internet, apenas lê a memória)
         setInterval(watchHomeAlarms, 2000); 
     }
