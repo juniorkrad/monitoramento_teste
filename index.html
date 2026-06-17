@@ -23,102 +23,84 @@
 </head>
 <body>
 
-    <div id="toast-container"></div>
-
     <div class="page-container">
         <div id="header-placeholder"></div>
 
-        <main class="main-content" style="flex-direction: column;">
-
-            <div class="global-grid">
+        <main class="main-content">
+            <div class="split-grid">
                 
-                <div class="split-grid">
-                    <div class="global-card">
+                <div class="left-column" style="display: flex; flex-direction: column; gap: 24px;">
+                    
+                    <div class="global-card" id="card-global">
                         <div class="card-header">
-                            <h3>
-                                <span class="material-symbols-rounded" style="color: var(--m3-color-success);">public</span> MONITORAMENTO DA REDE
-                            </h3>
-                            <a href="olt.html" class="card-header-button" title="Ver Painel Completo">
-                                <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
-                            </a>
+                            <h3><span class="material-symbols-rounded">hub</span> Status Geral da Rede</h3>
                         </div>
-                        <div class="card-body" id="card-global">
-                            <div class="card-body" style="width: 100%;">
-                                <p style="color: var(--m3-on-surface-variant);">Conectando aos equipamentos...</p>
+                        <div class="card-body">
+                            <div style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
+                                <div class="spinner"></div>
+                                <p style="margin-top: 10px; font-size: 0.9rem;">Processando topologia de rede...</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="global-card">
+                    <div class="global-card" id="global-energia-body">
                         <div class="card-header">
-                            <h3>
-                                <span class="material-symbols-rounded" style="color: #f87171;">sensors</span> MONITORAMENTO DE POTÊNCIA
-                            </h3>
-                            <a href="potencia.html" class="card-header-button" title="Ver Painel Completo">
-                                <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
-                            </a>
+                            <h3><span class="material-symbols-rounded">electric_bolt</span> Monitoramento de Energia</h3>
                         </div>
-                        <div class="card-body" id="global-potencia-body">
-                            <p style="color: var(--m3-on-surface-variant);">Processando dados de sinais e potência óptica...</p>
+                        <div class="card-body">
+                            <div style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
+                                <div class="spinner"></div>
+                                <p style="margin-top: 10px; font-size: 0.9rem;">Consultando telemetria de energia (Dying Gasp)...</p>
+                            </div>
                         </div>
                     </div>
+
+                    <div class="global-card" id="global-potencia-body">
+                        <div class="card-header">
+                            <h3><span class="material-symbols-rounded">insights</span> Análise de Nível de Sinal</h3>
+                        </div>
+                        <div class="card-body">
+                            <div style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
+                                <div class="spinner"></div>
+                                <p style="margin-top: 10px; font-size: 0.9rem;">Avaliando atenuação óptica da rede...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="global-card" id="global-temperatura-body">
+                        <div class="card-header">
+                            <h3><span class="material-symbols-rounded">thermostat</span> Estado Térmico das Chassi</h3>
+                        </div>
+                        <div class="card-body">
+                            <div style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
+                                <div class="spinner"></div>
+                                <p style="margin-top: 10px; font-size: 0.9rem;">Coletando sensores térmicos...</p>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
-                <div class="global-card">
-                    <div class="card-header">
-                        <h3>
-                            <span class="material-symbols-rounded" style="color: #fbbf24;">bolt</span> MONITORAMENTO DE ENERGIA
-                        </h3>
-                        <a href="energia.html" class="card-header-button" title="Ver Painel Completo">
-                            <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
-                        </a>
-                    </div>
-                    <div class="card-body" id="global-energia-body">
-                        <p style="color: var(--m3-on-surface-variant);">Calculando taxa de falha de energia (Dying Gasp)...</p>
-                    </div>
-                </div>
-
-                <div class="global-card">
-                    <div class="card-header">
-                        <h3>
-                            <span class="material-symbols-rounded" style="color: #f97316;">device_thermostat</span> MONITORAMENTO TÉRMICO
-                        </h3>
-                        <a href="temperatura.html" class="card-header-button" title="Ver Painel Completo">
-                            <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
-                        </a>
-                    </div>
-                    <div class="card-body" id="global-temperatura-body">
-                        <p style="color: var(--m3-on-surface-variant);">Processando dados térmicos e ranking de sensores...</p>
-                    </div>
-                </div>
-
-                <div class="global-card">
-                    <div class="card-header">
-                        <h3>
-                            <span class="material-symbols-rounded" style="color: #60a5fa;">router</span> MONITORAMENTO DE EQUIPAMENTOS
-                        </h3>
-                        <a href="equipamentos.html" class="card-header-button" title="Ver Painel Completo">
-                            <span class="material-symbols-rounded" style="font-size: 22px;">open_in_new</span>
-                        </a>
-                    </div>
-                    <div class="card-body" id="global-equipamentos-body">
-                        <p style="color: var(--m3-on-surface-variant);">Processando fabricantes...</p>
+                <div class="right-column">
+                    <div class="global-card" id="card-fabricantes">
+                        <div class="card-header">
+                            <h3><span class="material-symbols-rounded">precision_manufacturing</span> Status por Fabricante</h3>
+                        </div>
+                        <div class="card-body">
+                            <div style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
+                                <div class="spinner"></div>
+                                <p style="margin-top: 10px; font-size: 0.9rem;">Agrupando parque tecnológico...</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
             </div>
-
-            <div id="energy-olt-grid" style="display: none;"></div>
-            <div id="potencia-grid" style="display: none;"></div>
-            <div id="temperatura-grid" style="display: none;"></div>
-
         </main>
     </div>
 
-    <div id="smart-tooltip"></div>
-
-    <div class="fast-modal-overlay" id="mobile-fast-modal" onclick="closeFastModal(event)">
-        <div class="fast-modal-box" onclick="event.stopPropagation()">
+    <div id="mobile-fast-modal" class="fast-modal-overlay" onclick="closeFastModal(event)">
+        <div class="fast-modal-box">
             <button class="close-btn" onclick="closeFastModal()">&times;</button>
             <div id="fast-modal-content"></div>
         </div>
@@ -140,7 +122,6 @@
     <script src="home-engine.js"></script>
 
     <script>
-        // Função Global para fechar o Modal Mobile
         function closeFastModal(event) {
             if (event && event.target.id !== 'mobile-fast-modal' && !event.target.classList.contains('close-btn')) return;
             const modal = document.getElementById('mobile-fast-modal');
