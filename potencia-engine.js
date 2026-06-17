@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Função de circuitos recriada e trava visual para ocultar card na Home
+// Atualização: Trava invertida (Renderiza Card Global APENAS na Home)
 // ==============================================================================
 
 const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO'; 
@@ -170,10 +170,15 @@ async function runPotenciaEngine() {
     const timestampEl = document.getElementById('update-timestamp');
     
     const isPotenciaPage = window.location.pathname.includes('potencia.html');
+    const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
     
-    // Se não estiver na página de potência, ele apenas coleta os dados na memória (para os alertas),
-    // sem tentar desenhar elementos visuais de rank na Home
-    if (!isPotenciaPage && !globalBody && !gridEl) return; 
+    // TRAVA: Se NÃO estiver na Home, oculta a div explicitamente para não poluir a tela específica
+    if (!isHomePage && globalBody) {
+        globalBody.style.display = 'none';
+    }
+
+    // Se não for nem a página de potência, nem a home, não há motivo para a engine rodar
+    if (!isPotenciaPage && !isHomePage) return;
 
     if (timestampEl && timestampEl.textContent.includes('Aguardando')) {
         timestampEl.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Buscando dados...';
@@ -261,8 +266,12 @@ async function runPotenciaEngine() {
             globalAnalisados += analisados;
         });
 
-        // TRAVA: Só injeta o card de ranking se estiver explicitamente na página de potência
-        if (globalBody && isPotenciaPage) {
+        // TRAVA: Só injeta o card de ranking de Piores Médias se estiver explicitamente na HOME
+        if (globalBody && isHomePage) {
+            
+            // Garante que o card fique visível caso esteja oculto
+            globalBody.style.display = 'flex';
+            
             const validOlts = oltStats.filter(o => o.analisados > 0);
             validOlts.sort((a, b) => parseFloat(a.media) - parseFloat(b.media));
             const top3Olts = validOlts.slice(0, 3);
@@ -391,7 +400,7 @@ async function fetchLocalidadeData() {
     } catch (e) { return []; }
 }
 
-// NOVO: Função de buscar circuitos restaurada para abrir o modal sem travar
+// Restauração da função de busca de circuitos para evitar o travamento do modal!
 async function fetchCircuitosData() {
     const range = `${TAB_CIRCUITOS_POTENCIA}!A:AK`;
     try {
@@ -714,7 +723,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(updateGlobalTimestamp, 500);
     }
     
-    if (isPotenciaPage || checkIsHomePage()) {
+    if (isPotenciaPage || typeof checkIsHomePage === 'function' && checkIsHomePage()) {
         setTimeout(runPotenciaEngine, 1000);
         setInterval(runPotenciaEngine, GLOBAL_REFRESH_SECONDS * 1000);
     }

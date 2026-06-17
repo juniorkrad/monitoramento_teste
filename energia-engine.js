@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Trava visual adicionada para ocultar o card global na Home
+// Atualização: Trava invertida (Renderiza Card Global APENAS na Home e oculta nas demais)
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
@@ -11,7 +11,6 @@ window.CURRENT_ENERGY_OLT = null;
 window.CURRENT_ENERGY_PLACA = null; 
 let energyChartInstance = null; 
 
-// Helper exclusivo para a aba ENERGIA (Trata strings sujas e simplificadas do Python)
 function extractEnergyPort(val) {
     if (!val) return null;
     let s = String(val).replace(/gpon/i, '').replace(/\\/g, '/').trim();
@@ -168,20 +167,27 @@ function drawEnergyChart(oltsData) {
 }
 
 function updateGlobalEnergyCard() {
-    // TRAVA: Só desenha o card de energia global se estivermos na página de energia
-    const isEnergyPage = window.location.pathname.includes('energia.html');
-    if (!isEnergyPage) return;
-
-    const globalData = window.ENERGY_DATA_STORE.global;
-    const oltsData = window.ENERGY_DATA_STORE.olts;
+    const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
 
     let cardBody = document.getElementById('global-energia-body');
     if (!cardBody) {
         const chartCanvas = document.getElementById('energyChartOlt');
         if (chartCanvas) cardBody = chartCanvas.closest('.card-body');
     }
-    
+
+    // TRAVA: Se NÃO estiver na Home, oculta a div (evitando aparecer na página de energia) e aborta o render gráfico.
+    if (!isHomePage) {
+        if (cardBody) cardBody.style.display = 'none';
+        return;
+    }
+
     if (!cardBody) return; 
+    
+    // Garante que o card fique visível caso esteja na Home
+    cardBody.style.display = 'flex';
+
+    const globalData = window.ENERGY_DATA_STORE.global;
+    const oltsData = window.ENERGY_DATA_STORE.olts;
 
     let impactoPerc = "0%";
     if (globalData.totalClients > 0) impactoPerc = ((globalData.powerOff / globalData.totalClients) * 100).toFixed(1) + '%';
@@ -452,7 +458,7 @@ window.openEnergyPlacaDetails = function(oltId, placa) {
     const ports = window.ENERGY_DATA_STORE.olts[oltId].ports[placa];
     
     if (!ports || Object.keys(ports).length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--m3-on-surface-variant);">Nenhuma porta encontrada nesta placa.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan=\"4\" style=\"text-align:center; padding: 20px; color: var(--m3-on-surface-variant);\">Nenhuma porta encontrada nesta placa.</td></tr>`;
         return;
     }
 
@@ -529,7 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(updateGlobalTimestamp, 500);
     }
     
-    if (isEnergyPage || checkIsHomePage()) {
+    if (isEnergyPage || typeof checkIsHomePage === 'function' && checkIsHomePage()) {
         startEnergyMonitoring();
         setInterval(startEnergyMonitoring, GLOBAL_REFRESH_SECONDS * 1000);
     }
