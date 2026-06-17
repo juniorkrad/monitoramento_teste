@@ -134,9 +134,17 @@ window.handleEqpClick = function(event) {
 };
 
 async function runEquipamentosEngine() {
-    const globalBody = document.getElementById('global-equipamentos-body');
+    // CORREÇÃO DE ID: Mirando no ID que configuramos na Home (index.html)
+    const globalBody = document.getElementById('card-fabricantes');
     const gridEqpPage = document.getElementById('equipamentos-grid');
+    
     const isEqpPage = window.location.pathname.includes('equipamentos.html');
+    const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
+
+    // TRAVA: Se NÃO estiver na Home, oculta a div explícitamente.
+    if (!isHomePage && globalBody) {
+        globalBody.style.display = 'none';
+    }
 
     if (!globalBody && !isEqpPage) return;
 
@@ -190,7 +198,12 @@ async function runEquipamentosEngine() {
             });
         });
 
-        if (globalBody) {
+        if (globalBody && isHomePage) {
+            globalBody.style.display = 'flex';
+            
+            // CORREÇÃO: Mirar na .card-body para não destruir o título!
+            const cardBody = globalBody.querySelector('.card-body');
+            
             let eqpHtml = `<div class="eqp-badge-grid">`;
             todasMarcas.map(nome => ({ nome, ...brandData[nome] }))
                 .sort((a, b) => b.total - a.total)
@@ -220,7 +233,10 @@ async function runEquipamentosEngine() {
                     `;
                 });
             eqpHtml += `</div>`;
-            globalBody.innerHTML = `<div style="width:100%"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><span class="material-symbols-rounded" style="color:#60a5fa;font-size:20px">inventory_2</span><h3 style="margin:0;font-size:1rem;color:var(--m3-on-surface)">Fabricantes na Rede</h3></div>${eqpHtml}</div>`;
+            
+            if (cardBody) {
+                cardBody.innerHTML = `<div style="width:100%"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><span class="material-symbols-rounded" style="color:#60a5fa;font-size:20px">inventory_2</span><h3 style="margin:0;font-size:1rem;color:var(--m3-on-surface)">Fabricantes na Rede</h3></div>${eqpHtml}</div>`;
+            }
         }
 
         if (isEqpPage && gridEqpPage) {

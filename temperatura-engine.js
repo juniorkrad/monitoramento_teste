@@ -171,7 +171,7 @@ async function runTemperaturaEngine() {
     const isTemperaturaPage = window.location.pathname.includes('temperatura.html');
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
 
-    // TRAVA: Se NÃO estiver na Home, oculta a div explícitamente.
+    // TRAVA: Se NÃO estiver na Home, oculta a div explicitamente
     if (!isHomePage && globalBody) {
         globalBody.style.display = 'none';
     }
@@ -258,6 +258,10 @@ async function runTemperaturaEngine() {
         // TRAVA: Só renderiza se for na HOME
         if (globalBody && isHomePage) {
             globalBody.style.display = 'flex';
+            
+            // CORREÇÃO: Mirar na .card-body para não destruir o título!
+            const cardBody = globalBody.querySelector('.card-body');
+            
             let badgesHtml = '';
             
             GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {
@@ -314,17 +318,19 @@ async function runTemperaturaEngine() {
                 `;
             });
 
-            globalBody.innerHTML = `
-                <div style="width: 100%; display: flex; flex-direction: column; justify-content: stretch; height: 100%;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
-                        <span class="material-symbols-rounded" style="color: #f97316; font-size: 20px;">grid_view</span>
-                        <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Pico Térmico Global</h3>
+            if (cardBody) {
+                cardBody.innerHTML = `
+                    <div style="width: 100%; display: flex; flex-direction: column; justify-content: stretch; height: 100%;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                            <span class="material-symbols-rounded" style="color: #f97316; font-size: 20px;">grid_view</span>
+                            <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Pico Térmico Global</h3>
+                        </div>
+                        <div class="temp-badge-grid">
+                            ${badgesHtml}
+                        </div>
                     </div>
-                    <div class="temp-badge-grid">
-                        ${badgesHtml}
-                    </div>
-                </div>
-            `;
+                `;
+            }
         }
 
         if (isTemperaturaPage && gridEl) {
