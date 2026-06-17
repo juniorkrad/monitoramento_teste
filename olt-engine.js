@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Código limpo consumindo o DataMapper + Coluna LOCALIDADE
+// Atualização: Alinhamento da coluna BAIRROS ajustado para o padrão global (Left)
 // ==============================================================================
 
 const TAB_CIRCUITOS = 'CIRCUITO'; 
@@ -104,7 +104,6 @@ async function fetchGlobalOltData(olt) {
         rows.forEach(columns => {
             if (columns.length === 0) return;
             
-            // USO DO DATAMAPPER: Lógica limpa e direta
             const isOnline = DataMapper.isOnline(columns[olt.type === 'nokia' ? 4 : 2], olt.type);
             const portInfo = DataMapper.extractPort(columns[0], olt.type);
 
@@ -359,7 +358,6 @@ window.startOltMonitoring = function(config) {
             rowsOlt.forEach(columns => {
                 if (columns.length === 0) return;
                 
-                // USO DO DATAMAPPER: Lógica limpa
                 const isOnline = DataMapper.isOnline(columns[config.type === 'nokia' ? 4 : 2], config.type);
                 const portInfo = DataMapper.extractPort(columns[0], config.type);
                 
@@ -375,7 +373,6 @@ window.startOltMonitoring = function(config) {
                 }
 
                 if (!window.CURRENT_OLT_PORT_DATA[placaNum][portaNum]) {
-                    // USO DO DATAMAPPER: Busca Circuito e Bairro
                     const infoExtra = DataMapper.getCircuitInfo(rowsCircuitos, config, placa, porta);
                     const bairroExtra = DataMapper.getBairroInfo(rowsLocalidades, config.oltName || config.id, placa, porta, config.type);
                     
@@ -480,7 +477,6 @@ window.openOltPlacaDetails = function(placa, oltType) {
     }
 
     sortedPorts.forEach(pt => {
-        // Agora extraímos também o Bairro do nosso objeto processado!
         const { online, offline, info, bairro } = ports[pt];
         const total = online + offline;
         
@@ -497,7 +493,7 @@ window.openOltPlacaDetails = function(placa, oltType) {
         const safeInfo = info.replace(/'/g, "\\'");
         const textoBairro = bairro && bairro !== '-' ? bairro : 'N/A';
 
-        // Linha com a nova coluna de LOCALIDADE incluída
+        // Linha com a coluna de Bairros formatada para alinhar à esquerda
         tbody.innerHTML += `
             <tr>
                 <td>Porta ${String(pt).padStart(2, '0')}</td>
@@ -508,7 +504,7 @@ window.openOltPlacaDetails = function(placa, oltType) {
                         ${info}
                     </span>
                 </td>
-                <td style="font-family: var(--font-family-mono); font-size: 0.9rem; color: var(--m3-on-surface-variant); text-align: center;">
+                <td style="font-family: var(--font-family-mono); font-size: 0.9rem; color: var(--m3-on-surface-variant);">
                     ${textoBairro}
                 </td>
                 <td>
@@ -545,7 +541,7 @@ window.exportPlacaToTXT = function() {
     
     rows.forEach(row => {
         const cols = row.querySelectorAll('td');
-        if (cols.length >= 4) { // Atualizado para suportar a nova coluna
+        if (cols.length >= 4) { 
             const porta = cols[0].innerText.trim();
             const circuito = cols[1].innerText.trim();
             const localidade = cols[2].innerText.trim();

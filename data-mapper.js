@@ -5,7 +5,7 @@
 
 const DataMapper = {
 
-    // 1. Dicionário de Colunas de Bairros
+    // 1. Dicionário de Colunas de Bairros E Circuitos
     BAIRRO_COL_MAP: {
         'HEL1': 1,  'HEL2': 3,  'MGP': 5,   'PQA1': 7,  'PSV1': 9,  
         'PSV7': 11, 'SBO2': 13, 'SBO3': 15, 'SBO4': 17, 'SB1': 19,  
@@ -71,28 +71,22 @@ const DataMapper = {
         return -1;
     },
 
-    // 7. Cruzamento: Busca o Circuito (ATUALIZADO)
+    // 7. Cruzamento: Busca o Circuito (Agora usando o BAIRRO_COL_MAP)
     getCircuitInfo: function(rowsCircuitos, oltConfig, placa, porta) {
         if (!rowsCircuitos || !rowsCircuitos.length) return "-";
         
-        let circuitCol = oltConfig.circuitCol;
-        let type = oltConfig.type;
+        const identifier = typeof oltConfig === 'string' ? oltConfig : (oltConfig.oltName || oltConfig.id || oltConfig.sheetTab || "");
+        const cleanOlt = identifier.toUpperCase().replace(/[^A-Z0-9]/g, '');
         
-        // Pesca a coluna de circuito diretamente da lista global se não foi enviada no pacote reduzido
-        if (circuitCol === undefined && typeof GLOBAL_MASTER_OLT_LIST !== 'undefined') {
-            const identifier = (typeof oltConfig === 'string') ? oltConfig : (oltConfig.oltName || oltConfig.id || oltConfig.sheetTab);
-            const fullConfig = GLOBAL_MASTER_OLT_LIST.find(o => o.id === identifier || o.sheetTab === identifier);
-            if (fullConfig) {
-                circuitCol = fullConfig.circuitCol;
-                type = type || fullConfig.type;
-            }
-        }
-
-        if (circuitCol === undefined) return "-";
+        const colIndex = this.BAIRRO_COL_MAP[cleanOlt];
+        
+        if (colIndex === undefined) return "-";
+        
+        const type = typeof oltConfig === 'string' ? null : oltConfig.type;
         
         const rowIndex = this.calculateRowIndex(placa, porta, type);
         if (rowIndex > 0 && rowIndex < rowsCircuitos.length) {
-            return rowsCircuitos[rowIndex][circuitCol] || "-";
+            return rowsCircuitos[rowIndex][colIndex] || "-";
         }
         return "-";
     },
