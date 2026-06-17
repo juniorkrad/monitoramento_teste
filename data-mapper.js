@@ -71,13 +71,28 @@ const DataMapper = {
         return -1;
     },
 
-    // 7. Cruzamento: Busca o Circuito
+    // 7. Cruzamento: Busca o Circuito (ATUALIZADO)
     getCircuitInfo: function(rowsCircuitos, oltConfig, placa, porta) {
-        if (!rowsCircuitos || !rowsCircuitos.length || oltConfig.circuitCol === undefined) return "-";
+        if (!rowsCircuitos || !rowsCircuitos.length) return "-";
         
-        const rowIndex = this.calculateRowIndex(placa, porta, oltConfig.type);
+        let circuitCol = oltConfig.circuitCol;
+        let type = oltConfig.type;
+        
+        // Pesca a coluna de circuito diretamente da lista global se não foi enviada no pacote reduzido
+        if (circuitCol === undefined && typeof GLOBAL_MASTER_OLT_LIST !== 'undefined') {
+            const identifier = (typeof oltConfig === 'string') ? oltConfig : (oltConfig.oltName || oltConfig.id || oltConfig.sheetTab);
+            const fullConfig = GLOBAL_MASTER_OLT_LIST.find(o => o.id === identifier || o.sheetTab === identifier);
+            if (fullConfig) {
+                circuitCol = fullConfig.circuitCol;
+                type = type || fullConfig.type;
+            }
+        }
+
+        if (circuitCol === undefined) return "-";
+        
+        const rowIndex = this.calculateRowIndex(placa, porta, type);
         if (rowIndex > 0 && rowIndex < rowsCircuitos.length) {
-            return rowsCircuitos[rowIndex][oltConfig.circuitCol] || "-";
+            return rowsCircuitos[rowIndex][circuitCol] || "-";
         }
         return "-";
     },
@@ -99,7 +114,7 @@ const DataMapper = {
         return null;
     },
 
-    // 9. NOVO: Extrator e Formatador de Data/Hora (Centralizado)
+    // 9. Extrator e Formatador de Data/Hora (Centralizado)
     parseDateTime: function(rawDateStr) {
         let dateVal = '--/--/----';
         let timeVal = '--:--:--';
