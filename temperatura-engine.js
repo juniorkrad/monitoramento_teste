@@ -1,6 +1,6 @@
 // ==============================================================================
 // temperatura-engine.js - Motor Dedicado para Análise Térmica das OLTs
-// Atualização: Sistema Híbrido (Smart Tooltip / Fast Modal) Integrado
+// Atualização: Trava invertida inserida
 // ==============================================================================
 
 const TAB_TEMPERATURA = 'TEMPERATURA'; 
@@ -169,8 +169,15 @@ async function runTemperaturaEngine() {
     const timestampEl = document.getElementById('update-timestamp');
     
     const isTemperaturaPage = window.location.pathname.includes('temperatura.html');
-    
-    if (!globalBody && !gridEl) return; 
+    const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
+
+    // TRAVA: Se NÃO estiver na Home, oculta a div explícitamente.
+    if (!isHomePage && globalBody) {
+        globalBody.style.display = 'none';
+    }
+
+    // Se não for a página de temperatura, nem a home, não faz sentido buscar os dados.
+    if (!isTemperaturaPage && !isHomePage) return;
 
     if (timestampEl && timestampEl.textContent.includes('Aguardando')) {
         timestampEl.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Buscando dados...';
@@ -248,7 +255,9 @@ async function runTemperaturaEngine() {
             });
         });
 
-        if (globalBody) {
+        // TRAVA: Só renderiza se for na HOME
+        if (globalBody && isHomePage) {
+            globalBody.style.display = 'flex';
             let badgesHtml = '';
             
             GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {

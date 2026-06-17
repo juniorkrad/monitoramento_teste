@@ -24,29 +24,7 @@
     border: 1px solid var(--m3-outline); 
 }
 
-.temperatura-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    font-size: 0.9rem; 
-}
-
-.temperatura-table th { 
-    background-color: var(--m3-surface-container-high); 
-    color: var(--m3-on-surface); 
-    padding: 15px 12px; 
-    position: sticky; 
-    top: 0; 
-    z-index: 10; 
-    font-family: 'Montserrat', sans-serif; 
-    font-weight: 700; 
-}
-
-.temperatura-table td { 
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
-    padding: 12px 10px; 
-    color: var(--m3-on-surface); 
-    font-family: var(--font-family-mono); 
-}
+/* Regras residuais de .temperatura-table removidas para herdar do global */
 
 /* Badges de Status de Temperatura */
 .temp-critico { 
