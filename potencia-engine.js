@@ -272,6 +272,9 @@ async function runPotenciaEngine() {
             // Garante que o card fique visível caso esteja oculto
             globalBody.style.display = 'flex';
             
+            // CORREÇÃO: Pega apenas o corpo interno para não apagar o header
+            const cardBody = globalBody.querySelector('.card-body');
+            
             const validOlts = oltStats.filter(o => o.analisados > 0);
             validOlts.sort((a, b) => parseFloat(a.media) - parseFloat(b.media));
             const top3Olts = validOlts.slice(0, 3);
@@ -312,17 +315,19 @@ async function runPotenciaEngine() {
                 rankingHtml = `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px; width: 100%;"><span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Rede sem clientes online lidos!</div>`;
             }
 
-            globalBody.innerHTML = `
-                <div style="width: 100%; display: flex; flex-direction: column; justify-content: stretch; height: 100%;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
-                        <span class="material-symbols-rounded" style="color: #f87171; font-size: 20px;">insights</span>
-                        <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Piores Médias (OLTs)</h3>
+            if (cardBody) {
+                cardBody.innerHTML = `
+                    <div style="width: 100%; display: flex; flex-direction: column; justify-content: stretch; height: 100%;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                            <span class="material-symbols-rounded" style="color: #f87171; font-size: 20px;">insights</span>
+                            <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Piores Médias (OLTs)</h3>
+                        </div>
+                        <div style="flex: 1; width: 100%; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                            ${rankingHtml}
+                        </div>
                     </div>
-                    <div style="flex: 1; width: 100%; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                        ${rankingHtml}
-                    </div>
-                </div>
-            `;
+                `;
+            }
         }
 
         if (isPotenciaPage && gridEl) {

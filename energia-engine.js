@@ -169,22 +169,22 @@ function drawEnergyChart(oltsData) {
 function updateGlobalEnergyCard() {
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
 
-    let cardBody = document.getElementById('global-energia-body');
-    if (!cardBody) {
-        const chartCanvas = document.getElementById('energyChartOlt');
-        if (chartCanvas) cardBody = chartCanvas.closest('.card-body');
-    }
+    const cardWrapper = document.getElementById('global-energia-body');
 
-    // TRAVA: Se NÃO estiver na Home, oculta a div (evitando aparecer na página de energia) e aborta o render gráfico.
+    // TRAVA: Se NÃO estiver na Home, oculta a div inteira e aborta
     if (!isHomePage) {
-        if (cardBody) cardBody.style.display = 'none';
+        if (cardWrapper) cardWrapper.style.display = 'none';
         return;
     }
 
-    if (!cardBody) return; 
+    if (!cardWrapper) return; 
     
-    // Garante que o card fique visível caso esteja na Home
-    cardBody.style.display = 'flex';
+    // Garante que o card fique visível na Home
+    cardWrapper.style.display = 'flex';
+
+    // CORREÇÃO: Mirar apenas na área de conteúdo para não apagar o título do card!
+    const cardBody = cardWrapper.querySelector('.card-body');
+    if (!cardBody) return;
 
     const globalData = window.ENERGY_DATA_STORE.global;
     const oltsData = window.ENERGY_DATA_STORE.olts;
