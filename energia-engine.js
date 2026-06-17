@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Inclusão do mapeamento de BAIRROS no modal e exportação TXT
+// Atualização: Trava visual adicionada para ocultar o card global na Home
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
@@ -168,6 +168,10 @@ function drawEnergyChart(oltsData) {
 }
 
 function updateGlobalEnergyCard() {
+    // TRAVA: Só desenha o card de energia global se estivermos na página de energia
+    const isEnergyPage = window.location.pathname.includes('energia.html');
+    if (!isEnergyPage) return;
+
     const globalData = window.ENERGY_DATA_STORE.global;
     const oltsData = window.ENERGY_DATA_STORE.olts;
 
@@ -228,7 +232,6 @@ window.startEnergyMonitoring = async function() {
             };
         });
 
-        // Inclusão da aba LOCALIDADE no lote
         const ranges = ['ENERGIA!A:BP', `${TAB_CIRCUITOS_ENERGIA}!A:AK`, 'LOCALIDADE!A:AH'].concat(GLOBAL_MASTER_OLT_LIST.map(o => o.type === 'nokia' ? `${o.sheetTab}!A:E` : `${o.sheetTab}!A:C`));
         
         const dataBatch = await API.getBatch(ranges);
@@ -239,7 +242,7 @@ window.startEnergyMonitoring = async function() {
         const rowsLocalidades = dataBatch.valueRanges[2].values || [];
 
         GLOBAL_MASTER_OLT_LIST.forEach((oltDef, index) => {
-            const vrIndex = index + 3; // Deslocado para +3 devido à entrada de LOCALIDADE
+            const vrIndex = index + 3;
             const rows = dataBatch.valueRanges[vrIndex].values ? dataBatch.valueRanges[vrIndex].values.slice(1) : [];
             const oltData = window.ENERGY_DATA_STORE.olts[oltDef.id];
 

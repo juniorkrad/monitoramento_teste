@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Inclusão do mapeamento de BAIRROS no modal e exportação TXT
+// Atualização: Função de circuitos recriada e trava visual para ocultar card na Home
 // ==============================================================================
 
 const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO'; 
@@ -171,7 +171,9 @@ async function runPotenciaEngine() {
     
     const isPotenciaPage = window.location.pathname.includes('potencia.html');
     
-    if (!globalBody && !gridEl) return; 
+    // Se não estiver na página de potência, ele apenas coleta os dados na memória (para os alertas),
+    // sem tentar desenhar elementos visuais de rank na Home
+    if (!isPotenciaPage && !globalBody && !gridEl) return; 
 
     if (timestampEl && timestampEl.textContent.includes('Aguardando')) {
         timestampEl.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Buscando dados...';
@@ -259,7 +261,8 @@ async function runPotenciaEngine() {
             globalAnalisados += analisados;
         });
 
-        if (globalBody) {
+        // TRAVA: Só injeta o card de ranking se estiver explicitamente na página de potência
+        if (globalBody && isPotenciaPage) {
             const validOlts = oltStats.filter(o => o.analisados > 0);
             validOlts.sort((a, b) => parseFloat(a.media) - parseFloat(b.media));
             const top3Olts = validOlts.slice(0, 3);
@@ -382,6 +385,15 @@ async function runPotenciaEngine() {
 
 async function fetchLocalidadeData() {
     const range = 'LOCALIDADE!A:AH';
+    try {
+        const data = await API.get(range);
+        return data.values || [];
+    } catch (e) { return []; }
+}
+
+// NOVO: Função de buscar circuitos restaurada para abrir o modal sem travar
+async function fetchCircuitosData() {
+    const range = `${TAB_CIRCUITOS_POTENCIA}!A:AK`;
     try {
         const data = await API.get(range);
         return data.values || [];
