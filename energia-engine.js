@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Código limpo consumindo o DataMapper + Leitura Dinâmica de Colunas (Defesa)
+// Atualização: Inclusão do mapeamento de BAIRROS no modal e exportação TXT
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
@@ -84,7 +84,9 @@ window.exportEnergyPlacaToTXT = function() {
             if ((perc >= 0.5 && pData.powerOff >= 10) || (perc === 1 && pData.total >= 5)) status = 'Crítico';
             else if (perc >= 0.15 && pData.powerOff >= 5) status = 'Atenção';
 
-            txtContent += `• Porta ${String(pt).padStart(2, '0').padEnd(8, ' ')} | Circuito: ${pData.circuit.padEnd(20, ' ')} | OFF(Energia): ${pData.powerOff} de ${pData.total} (${impacto}) | Status: ${status}\n`;
+            const textoBairro = pData.bairro && pData.bairro !== '-' ? pData.bairro : 'N/A';
+
+            txtContent += `• Porta ${String(pt).padStart(2, '0').padEnd(8, ' ')} | Circuito: ${pData.circuit.padEnd(20, ' ')} | Bairro: ${textoBairro.padEnd(20, ' ')} | OFF(Energia): ${pData.powerOff} de ${pData.total} (${impacto}) | Status: ${status}\n`;
         }
     });
     
@@ -226,16 +228,18 @@ window.startEnergyMonitoring = async function() {
             };
         });
 
-        const ranges = ['ENERGIA!A:BP', `${TAB_CIRCUITOS_ENERGIA}!A:AK`].concat(GLOBAL_MASTER_OLT_LIST.map(o => o.type === 'nokia' ? `${o.sheetTab}!A:E` : `${o.sheetTab}!A:C`));
+        // Inclusão da aba LOCALIDADE no lote
+        const ranges = ['ENERGIA!A:BP', `${TAB_CIRCUITOS_ENERGIA}!A:AK`, 'LOCALIDADE!A:AH'].concat(GLOBAL_MASTER_OLT_LIST.map(o => o.type === 'nokia' ? `${o.sheetTab}!A:E` : `${o.sheetTab}!A:C`));
         
         const dataBatch = await API.getBatch(ranges);
 
         if (!dataBatch.valueRanges) throw new Error("Falha na estrutura de retorno da API");
 
         const rowsCircuitos = dataBatch.valueRanges[1].values || [];
+        const rowsLocalidades = dataBatch.valueRanges[2].values || [];
 
         GLOBAL_MASTER_OLT_LIST.forEach((oltDef, index) => {
-            const vrIndex = index + 2;
+            const vrIndex = index + 3; // Deslocado para +3 devido à entrada de LOCALIDADE
             const rows = dataBatch.valueRanges[vrIndex].values ? dataBatch.valueRanges[vrIndex].values.slice(1) : [];
             const oltData = window.ENERGY_DATA_STORE.olts[oltDef.id];
 
@@ -243,7 +247,7 @@ window.startEnergyMonitoring = async function() {
                 if(col.length === 0) return;
                 
                 const isOnline = DataMapper.isOnline(oltDef.type === 'nokia' ? col[4] : col[2], oltDef.type);
-                const portInfo = DataMapper.extractPort(col[0], oltDef.type); // Aqui mantemos o DataMapper pois são as abas das OLTs
+                const portInfo = DataMapper.extractPort(col[0], oltDef.type);
                 
                 if (portInfo) {
                     const { placa, porta } = portInfo;
@@ -251,7 +255,8 @@ window.startEnergyMonitoring = async function() {
                     if (!oltData.ports[placa]) oltData.ports[placa] = {};
                     if (!oltData.ports[placa][porta]) {
                         const circ = DataMapper.getCircuitInfo(rowsCircuitos, oltDef, placa, porta);
-                        oltData.ports[placa][porta] = { total: 0, online: 0, offline: 0, powerOff: 0, circuit: circ };
+                        const bairro = DataMapper.getBairroInfo(rowsLocalidades, oltDef.id, placa, porta, oltDef.type);
+                        oltData.ports[placa][porta] = { total: 0, online: 0, offline: 0, powerOff: 0, circuit: circ, bairro: bairro };
                     }
 
                     oltData.ports[placa][porta].total++;
@@ -287,7 +292,6 @@ window.startEnergyMonitoring = async function() {
                 let portaFull = null;
                 let qtd = 0;
 
-                // Defesa contra o deslocamento de colunas da aba ENERGIA
                 for (let i = colIndex; i <= colIndex + 2; i++) {
                     if (row[i] && String(row[i]).includes('/')) {
                         const portInfo = extractEnergyPort(row[i]);
@@ -305,7 +309,8 @@ window.startEnergyMonitoring = async function() {
                     if (!oltData.ports[placa]) oltData.ports[placa] = {};
                     if (!oltData.ports[placa][porta]) {
                         const circ = DataMapper.getCircuitInfo(rowsCircuitos, oltDef, placa, porta);
-                        oltData.ports[placa][porta] = { total: qtd, online: 0, offline: qtd, powerOff: 0, circuit: circ };
+                        const bairro = DataMapper.getBairroInfo(rowsLocalidades, oltDef.id, placa, porta, oltDef.type);
+                        oltData.ports[placa][porta] = { total: qtd, online: 0, offline: qtd, powerOff: 0, circuit: circ, bairro: bairro };
                     }
 
                     oltData.ports[placa][porta].powerOff = qtd;
@@ -444,7 +449,7 @@ window.openEnergyPlacaDetails = function(oltId, placa) {
     const ports = window.ENERGY_DATA_STORE.olts[oltId].ports[placa];
     
     if (!ports || Object.keys(ports).length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 20px; color: var(--m3-on-surface-variant);">Nenhuma porta encontrada nesta placa.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--m3-on-surface-variant);">Nenhuma porta encontrada nesta placa.</td></tr>`;
         return;
     }
 
@@ -464,11 +469,13 @@ window.openEnergyPlacaDetails = function(oltId, placa) {
             }
 
             const safeInfo = pData.circuit.replace(/'/g, "\\'");
+            const textoBairro = pData.bairro && pData.bairro !== '-' ? pData.bairro : 'N/A';
 
             tbody.innerHTML += `
                 <tr>
                     <td>Porta ${String(pt).padStart(2, '0')}</td>
                     <td><span class="circuit-badge">${pData.circuit}</span></td>
+                    <td style="font-family: var(--font-family-mono); font-size: 0.9rem; color: var(--m3-on-surface-variant);">${textoBairro}</td>
                     <td>
                         <button class="status ${statusClass} status-btn" style="cursor: pointer;"
                             onclick="openEnergyPortDetails('${placa}', '${pt}', '${safeInfo}', ${pData.total}, ${pData.offline}, ${pData.powerOff})">

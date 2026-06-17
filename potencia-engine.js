@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Código limpo consumindo o DataMapper
+// Atualização: Inclusão do mapeamento de BAIRROS no modal e exportação TXT
 // ==============================================================================
 
 const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO'; 
@@ -143,12 +143,13 @@ window.exportPotenciaPlacaToTXT = function() {
     
     rows.forEach(row => {
         const cols = row.querySelectorAll('td');
-        if (cols.length >= 3) {
+        if (cols.length >= 4) {
             const porta = cols[0].innerText.trim();
             const circuito = cols[1].innerText.trim();
-            const media = cols[2].innerText.trim();
+            const bairro = cols[2].innerText.trim();
+            const media = cols[3].innerText.trim();
             
-            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(25, ' ')} | Média: ${media}\n`;
+            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(25, ' ')} | Bairro: ${bairro.padEnd(20, ' ')} | Média: ${media}\n`;
         }
     });
     
@@ -221,7 +222,6 @@ async function runPotenciaEngine() {
             rows.forEach(columns => {
                 if (columns.length === 0) return;
 
-                // USO DO DATAMAPPER: Lógica limpa
                 const isOnline = DataMapper.isOnline(columns[olt.type === 'nokia' ? 4 : 2], olt.type);
                 if (!isOnline) return;
 
@@ -306,7 +306,7 @@ async function runPotenciaEngine() {
                         <span class="material-symbols-rounded" style="color: #f87171; font-size: 20px;">insights</span>
                         <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Piores Médias (OLTs)</h3>
                     </div>
-                    <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div style="flex: 1; width: 100%; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                         ${rankingHtml}
                     </div>
                 </div>
@@ -380,12 +380,8 @@ async function runPotenciaEngine() {
     }
 }
 
-// ==============================================================================
-// SISTEMA DE NAVEGAÇÃO DE MODAIS (PLACA -> PORTA -> CLIENTES)
-// ==============================================================================
-
-async function fetchCircuitosData() {
-    const range = `${TAB_CIRCUITOS_POTENCIA}!A:AK`;
+async function fetchLocalidadeData() {
+    const range = 'LOCALIDADE!A:AH';
     try {
         const data = await API.get(range);
         return data.values || [];
@@ -465,13 +461,17 @@ window.startPotenciaMonitoring = function(config) {
         const rangeOlt = `${config.id}!A:K`; 
 
         try {
-            const [dataOlt, rowsCircuitos] = await Promise.all([API.get(rangeOlt), fetchCircuitosData()]);
+            const [dataOlt, rowsCircuitos, rowsLocalidades] = await Promise.all([
+                API.get(rangeOlt), 
+                fetchCircuitosData(),
+                fetchLocalidadeData()
+            ]);
+            
             const rowsOlt = (dataOlt.values || []).slice(1);
 
             rowsOlt.forEach(columns => {
                 if (columns.length === 0) return;
 
-                // USO DO DATAMAPPER: Limpeza Absoluta
                 const isOnline = DataMapper.isOnline(columns[config.type === 'nokia' ? 4 : 2], config.type);
                 if (!isOnline) return;
 
@@ -505,7 +505,9 @@ window.startPotenciaMonitoring = function(config) {
 
                 if (!window.POTENCIA_PORT_DATA[placaNum][portaNum]) {
                     const infoExtra = DataMapper.getCircuitInfo(rowsCircuitos, config, placa, porta);
-                    window.POTENCIA_PORT_DATA[placaNum][portaNum] = { validCount: 0, sumPower: 0, info: infoExtra };
+                    const bairroExtra = DataMapper.getBairroInfo(rowsLocalidades, config.oltName || config.id, placa, porta, config.type);
+                    
+                    window.POTENCIA_PORT_DATA[placaNum][portaNum] = { validCount: 0, sumPower: 0, info: infoExtra, bairro: bairroExtra };
                     window.POTENCIA_CLIENTS_DATA[portKey] = [];
                 }
 
@@ -575,12 +577,12 @@ window.openPotenciaPlacaDetails = function(placa, oltType) {
     const sortedPorts = Object.keys(ports).sort((a, b) => parseInt(a) - parseInt(b));
     
     if (sortedPorts.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 20px; color: var(--m3-on-surface-variant);">Nenhuma porta com leituras de potência nesta placa.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--m3-on-surface-variant);">Nenhuma porta com leituras de potência nesta placa.</td></tr>`;
         return;
     }
 
     sortedPorts.forEach(pt => {
-        const { validCount, sumPower, info } = ports[pt];
+        const { validCount, sumPower, info, bairro } = ports[pt];
         const media = validCount > 0 ? (sumPower / validCount).toFixed(2) : 0;
         
         let mediaColor = 'var(--m3-on-surface)';
@@ -588,6 +590,7 @@ window.openPotenciaPlacaDetails = function(placa, oltType) {
         else if (media <= -26.00) mediaColor = '#fbbf24'; 
 
         const safeInfo = info.replace(/'/g, "\\'");
+        const textoBairro = bairro && bairro !== '-' ? bairro : 'N/A';
 
         tbody.innerHTML += `
             <tr>
@@ -599,6 +602,7 @@ window.openPotenciaPlacaDetails = function(placa, oltType) {
                         ${info}
                     </span>
                 </td>
+                <td style="font-family: var(--font-family-mono); font-size: 0.9rem; color: var(--m3-on-surface-variant);">${textoBairro}</td>
                 <td>
                     <strong style="color: ${mediaColor};">${media} dBm</strong>
                 </td>

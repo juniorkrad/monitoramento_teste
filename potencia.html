@@ -21,65 +21,67 @@
 </head>
 <body>
 
-    <div id="toast-container"></div>
-
     <div class="page-container">
         <div id="header-placeholder"></div>
 
         <main class="main-content" style="flex-direction: column;">
             
-            <div id="potencia-grid" class="grid-container">
+            <div id="global-potencia-body" class="energy-master-card" style="border-left: 6px solid #f87171; margin-bottom: 24px;">
+                <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 25px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="material-symbols-rounded" style="font-size: 24px; color: #f87171;">insights</span>
+                        <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;">POTÊNCIA ÓPTICA</span>
+                    </div>
+                    <div class="spinner"></div>
+                </div>
             </div>
 
+            <div id="potencia-grid" class="grid-container">
+                </div>
         </main>
+    </div>
 
-        <div id="super-modal" class="modal-overlay" style="display: none;" onclick="closeSuperModal(event)">
-            <div class="modal-content modal-large">
+    <div id="super-modal" class="modal-overlay" onclick="closeSuperModal(event)">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 id="super-modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-rounded">dns</span> Detalhes de Sinal
+                </h3>
+                <button class="close-modal" onclick="closeSuperModal()">&times;</button>
+            </div>
+            <div class="modal-body">
                 
-                <div class="modal-header">
-                    <h3 id="super-modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                        <span class="material-symbols-rounded">dns</span> OLT
-                    </h3>
-                    <button class="close-modal" onclick="closeSuperModal()" title="Fechar">&times;</button>
+                <div id="potencia-view-placas">
+                    <div id="potencia-placas-list" class="placas-grid"></div>
                 </div>
 
-                <div class="modal-body" style="position: relative; min-height: 300px;">
-
-                    <div id="potencia-view-placas">
-                        <div id="potencia-placas-list" class="placas-grid">
-                            </div>
+                <div id="potencia-view-detalhes" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <button class="btn-voltar-placas" style="margin-bottom: 0;" onclick="backToPotenciaPlacas()">
+                            <span class="material-symbols-rounded">arrow_back</span> Voltar para Placas
+                        </button>
+                        <button class="btn-voltar-placas" style="margin-bottom: 0; padding: 10px;" onclick="exportPotenciaPlacaToTXT()" title="Exportar para TXT">
+                            <span class="material-symbols-rounded">download</span>
+                        </button>
                     </div>
-
-                    <div id="potencia-view-detalhes" style="display: none;">
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <button class="btn-voltar-placas" style="margin-bottom: 0;" onclick="backToPotenciaPlacas()">
-                                <span class="material-symbols-rounded">arrow_back</span> Voltar para Placas
-                            </button>
-                            <button class="btn-voltar-placas" style="margin-bottom: 0; padding: 10px;" onclick="exportPotenciaPlacaToTXT()" title="Exportar para TXT">
-                                <span class="material-symbols-rounded">download</span>
-                            </button>
-                        </div>
-                        
-                        <div class="table-container">
-                            <table>
-                                <thead>
-                                    <tr class="table-header-row">
-                                        <th>PORTAS</th>
-                                        <th>Circuitos</th>
-                                        <th>Média de Potência</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="potencia-detalhes-tbody">
-                                    </tbody>
-                            </table>
-                        </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr class="table-header-row">
+                                    <th>PORTAS</th>
+                                    <th>CIRCUITOS</th>
+                                    <th>BAIRROS</th>
+                                    <th>MÉDIA DE POTÊNCIA</th>
+                                </tr>
+                            </thead>
+                            <tbody id="potencia-detalhes-tbody"></tbody>
+                        </table>
                     </div>
-
                 </div>
+
             </div>
         </div>
-
     </div>
 
     <div id="footer-placeholder"></div>
