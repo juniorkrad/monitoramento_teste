@@ -1,140 +1,93 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Gerencial - Monitoramento</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">    
-    
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="layout.css">
-    <link rel="stylesheet" href="home.css">
-    <link rel="stylesheet" href="notifications.css"> 
-    <link rel="icon" type="image/png" href="favicon.png">
-
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#67079f">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-</head>
-<body>
-
-    <div class="page-container">
-        <div id="header-placeholder"></div>
-
-        <main class="main-content">
-            <div class="split-grid">
-                
-                <div class="left-column" style="display: flex; flex-direction: column; gap: 24px;">
-                    
-                    <div class="global-card" id="card-global">
+<div class="global-card" id="card-global">
                         <div class="card-header">
                             <h3><span class="material-symbols-rounded">public</span> MONITORAMENTO DA REDE</h3>
                         </div>
-                        <div class="card-body">
-                            <div style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
+                        <div class="card-body" id="card-global-body">
+                            
+                            <div id="global-net-loading" style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
                                 <div class="spinner"></div>
                                 <p style="margin-top: 10px; font-size: 0.9rem;">Processando topologia de rede...</p>
                             </div>
-                        </div>
-                    </div>
 
-                    <div class="global-card" id="global-energia-body">
-                        <div class="card-header">
-                            <h3><span class="material-symbols-rounded">electric_bolt</span> MONITORAMENTO DE ENERGIA</h3>
-                        </div>
-                        <div class="card-body">
-                            <div style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
-                                <div class="spinner"></div>
-                                <p style="margin-top: 10px; font-size: 0.9rem;">Consultando telemetria de energia (Dying Gasp)...</p>
+                            <div id="global-net-content" style="display: none; width: 100%; justify-content: space-between; align-items: stretch; flex-wrap: wrap; gap: 10px; height: 100%;">
+                                
+                                <div class="card-stats" style="flex: 1; padding-right: 15px; min-width: 200px;">
+                                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px">
+                                        <span class="material-symbols-rounded" style="color:#60a5fa; font-size:20px;">visibility</span>
+                                        <h3 style="margin:0; font-size:1rem; color:var(--m3-on-surface);">Visão Geral</h3>
+                                    </div>
+                                    <div class="global-stat stat-item">
+                                        <span class="stat-number" id="net-total-geral">--</span>
+                                        <label><span class="material-symbols-rounded icon-total" style="font-size: 18px;">router</span> Total Geral</label>
+                                    </div>
+                                    <div class="global-stat stat-item online">
+                                        <span class="stat-number" id="net-total-online">--</span>
+                                        <label><span class="material-symbols-rounded icon-up" style="font-size: 18px;">check_circle</span> Total Online</label>
+                                    </div>
+                                    <div class="global-stat stat-item offline">
+                                        <span class="stat-number" id="net-total-offline">--</span>
+                                        <label><span class="material-symbols-rounded icon-down" style="font-size: 18px;">error</span> Total Offline</label>
+                                    </div>
+                                </div>
+                                
+                                <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 20px; min-width: 200px;">
+                                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px">
+                                        <span class="material-symbols-rounded" style="color:#f87171; font-size:20px;">warning</span>
+                                        <h3 style="margin:0; font-size:1rem; color:var(--m3-on-surface);">Top 3 OLTs Críticas</h3>
+                                    </div>
+                                    <div id="net-ranking-container" style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center;">
+                                        
+                                        <div id="net-top-1" class="ranking-row" style="display: none; margin-bottom: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background-color 0.2s ease; margin-left: -8px;"
+                                             onmouseenter="handleNetHover(event)"
+                                             onmouseleave="handleNetLeave()"
+                                             onclick="handleNetClick(event)"
+                                             onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'"
+                                             onmouseout="this.style.backgroundColor='transparent'">
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline; pointer-events: none;">
+                                                <strong id="net-top-1-name" style="color: var(--m3-on-surface); font-size: 1rem;"></strong>
+                                                <span id="net-top-1-off" class="stat-number" style="font-size: 1rem; color: var(--m3-color-error); width: auto;"></span>
+                                            </div>
+                                            <div style="height: 8px; background: var(--m3-surface-container-high); border-radius: 4px; overflow: hidden; width: 100%; pointer-events: none;">
+                                                <div id="net-top-1-bar" style="height: 100%; width: 0%; background: var(--m3-color-error); border-radius: 4px; transition: width 0.5s ease;"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div id="net-top-2" class="ranking-row" style="display: none; margin-bottom: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background-color 0.2s ease; margin-left: -8px;"
+                                             onmouseenter="handleNetHover(event)"
+                                             onmouseleave="handleNetLeave()"
+                                             onclick="handleNetClick(event)"
+                                             onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'"
+                                             onmouseout="this.style.backgroundColor='transparent'">
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline; pointer-events: none;">
+                                                <strong id="net-top-2-name" style="color: var(--m3-on-surface); font-size: 1rem;"></strong>
+                                                <span id="net-top-2-off" class="stat-number" style="font-size: 1rem; color: var(--m3-color-error); width: auto;"></span>
+                                            </div>
+                                            <div style="height: 8px; background: var(--m3-surface-container-high); border-radius: 4px; overflow: hidden; width: 100%; pointer-events: none;">
+                                                <div id="net-top-2-bar" style="height: 100%; width: 0%; background: var(--m3-color-error); border-radius: 4px; transition: width 0.5s ease;"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div id="net-top-3" class="ranking-row" style="display: none; margin-bottom: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background-color 0.2s ease; margin-left: -8px;"
+                                             onmouseenter="handleNetHover(event)"
+                                             onmouseleave="handleNetLeave()"
+                                             onclick="handleNetClick(event)"
+                                             onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'"
+                                             onmouseout="this.style.backgroundColor='transparent'">
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline; pointer-events: none;">
+                                                <strong id="net-top-3-name" style="color: var(--m3-on-surface); font-size: 1rem;"></strong>
+                                                <span id="net-top-3-off" class="stat-number" style="font-size: 1rem; color: var(--m3-color-error); width: auto;"></span>
+                                            </div>
+                                            <div style="height: 8px; background: var(--m3-surface-container-high); border-radius: 4px; overflow: hidden; width: 100%; pointer-events: none;">
+                                                <div id="net-top-3-bar" style="height: 100%; width: 0%; background: var(--m3-color-error); border-radius: 4px; transition: width 0.5s ease;"></div>
+                                            </div>
+                                        </div>
+
+                                        <div id="net-no-issues" style="display: none; text-align: center; color: var(--m3-color-success); font-weight: 700; width: 100%;">
+                                            <span class="material-symbols-rounded" style="font-size: 40px;">sentiment_very_satisfied</span><br>Rede 100% Online!
+                                        </div>
+                                        
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <div class="global-card" id="global-potencia-body">
-                        <div class="card-header">
-                            <h3><span class="material-symbols-rounded">insights</span> MONITORAMENTO DE POTÊNCIA</h3>
-                        </div>
-                        <div class="card-body">
-                            <div style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
-                                <div class="spinner"></div>
-                                <p style="margin-top: 10px; font-size: 0.9rem;">Avaliando atenuação óptica da rede...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="global-card" id="global-temperatura-body">
-                        <div class="card-header">
-                            <h3><span class="material-symbols-rounded">thermostat</span> MONITORAMENTO DE TEMPERATURA</h3>
-                        </div>
-                        <div class="card-body">
-                            <div style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
-                                <div class="spinner"></div>
-                                <p style="margin-top: 10px; font-size: 0.9rem;">Coletando sensores térmicos...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="right-column">
-                    <div class="global-card" id="card-fabricantes">
-                        <div class="card-header">
-                            <h3><span class="material-symbols-rounded">precision_manufacturing</span> MONITORAMENTO DE EQUIPAMENTOS</h3>
-                        </div>
-                        <div class="card-body">
-                            <div style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
-                                <div class="spinner"></div>
-                                <p style="margin-top: 10px; font-size: 0.9rem;">Agrupando parque tecnológico...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </main>
-    </div>
-
-    <div id="mobile-fast-modal" class="fast-modal-overlay" onclick="closeFastModal(event)">
-        <div class="fast-modal-box">
-            <button class="close-btn" onclick="closeFastModal()">&times;</button>
-            <div id="fast-modal-content"></div>
-        </div>
-    </div>
-
-    <div id="footer-placeholder"></div>
-
-    <script src="config.js"></script>
-    <script src="api-service.js"></script>
-    <script src="data-mapper.js"></script>
-    <script src="layout.js"></script>
-    <script src="notifications.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
-    <script src="olt-engine.js"></script>
-    <script src="energia-engine.js"></script>
-    <script src="equipamentos-engine.js"></script>
-    <script src="potencia-engine.js"></script>
-    <script src="temperatura-engine.js"></script>
-    <script src="home-engine.js"></script>
-
-    <script>
-        function closeFastModal(event) {
-            if (event && event.target.id !== 'mobile-fast-modal' && !event.target.classList.contains('close-btn')) return;
-            const modal = document.getElementById('mobile-fast-modal');
-            if (modal) modal.style.display = 'none';
-        }
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-            navigator.serviceWorker.register('service-worker.js')
-                .then(reg => console.log('Service Worker registrado com sucesso!'))
-                .catch(err => console.error('Erro ao registrar Service Worker:', err));
-            });
-        }
-    </script>
-</body>
-</html>

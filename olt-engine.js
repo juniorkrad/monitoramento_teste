@@ -125,80 +125,66 @@ async function fetchGlobalOltData(olt) {
 }
 
 function updateGlobalNetworkCard(globalOnline, globalOffline, top3Olts) {
-    const cardBody = document.querySelector('#card-global .card-body');
-    if (!cardBody) return;
-    
+    const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
+    if (!isHomePage) return;
+
+    // 1. Oculta o loading e exibe o container estruturado
+    const loadingEl = document.getElementById('global-net-loading');
+    const contentEl = document.getElementById('global-net-content');
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (contentEl) contentEl.style.display = 'flex';
+
+    // 2. Atualiza Estatísticas Gerais (Textos)
     const total = globalOnline + globalOffline;
+    const elTotal = document.getElementById('net-total-geral');
+    const elOnline = document.getElementById('net-total-online');
+    const elOffline = document.getElementById('net-total-offline');
     
-    // HTML limpo, dependendo inteiramente do home.css para a estilização
-    const statsHtml = `
-        <div class="global-stat stat-item">
-            <span class="stat-number">${total}</span>
-            <label><span class="material-symbols-rounded icon-total" style="font-size: 18px;">router</span> Total Geral</label>
-        </div>
-        <div class="global-stat stat-item online">
-            <span class="stat-number">${globalOnline}</span>
-            <label><span class="material-symbols-rounded icon-up" style="font-size: 18px;">check_circle</span> Total Online</label>
-        </div>
-        <div class="global-stat stat-item offline">
-            <span class="stat-number">${globalOffline}</span>
-            <label><span class="material-symbols-rounded icon-down" style="font-size: 18px;">error</span> Total Offline</label>
-        </div>
-    `;
+    if (elTotal) elTotal.textContent = total;
+    if (elOnline) elOnline.textContent = globalOnline;
+    if (elOffline) elOffline.textContent = globalOffline;
 
-    let rankingHtmlContent = `<div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center;">`;
+    // 3. Atualiza Ranking Top 3 (Sem injetar HTML)
+    const hasIssues = top3Olts.some(olt => olt.offline > 0);
+    const noIssuesEl = document.getElementById('net-no-issues');
     
-    if (top3Olts.some(olt => olt.offline > 0)) {
-        top3Olts.forEach((olt, index) => {
-            if (olt.offline === 0) return;
-            const offlinePct = olt.total > 0 ? ((olt.offline / olt.total) * 100).toFixed(1) : 0;
-            
-            rankingHtmlContent += `
-                <div style="width: 100%; margin-bottom: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background-color 0.2s ease; margin-left: -8px;"
-                     data-olt="${olt.id}"
-                     data-off="${olt.offline}"
-                     data-total="${olt.total}"
-                     data-pct="${offlinePct}"
-                     onmouseenter="handleNetHover(event)"
-                     onmouseleave="handleNetLeave()"
-                     onclick="handleNetClick(event)"
-                     onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'"
-                     onmouseout="this.style.backgroundColor='transparent'">
-                     
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline; pointer-events: none;">
-                        <strong style="color: var(--m3-on-surface); font-size: 1rem;">${index + 1}º ${olt.id}</strong>
-                        <span class="stat-number" style="font-size: 1rem; color: var(--m3-color-error); width: auto;">${olt.offline} OFF</span>
-                    </div>
-                    <div style="height: 8px; background: var(--m3-surface-container-high); border-radius: 4px; overflow: hidden; width: 100%; pointer-events: none;">
-                        <div style="height: 100%; width: ${offlinePct}%; background: var(--m3-color-error); border-radius: 4px;"></div>
-                    </div>
-                </div>
-            `;
-        });
+    if (!hasIssues) {
+        if (noIssuesEl) noIssuesEl.style.display = 'block';
+        for (let i = 1; i <= 3; i++) {
+            const row = document.getElementById(`net-top-${i}`);
+            if (row) row.style.display = 'none';
+        }
     } else {
-        rankingHtmlContent += `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; width: 100%;"><span class="material-symbols-rounded" style="font-size: 40px;">sentiment_very_satisfied</span><br>Rede 100% Online!</div>`;
-    }
-    rankingHtmlContent += `</div>`; 
+        if (noIssuesEl) noIssuesEl.style.display = 'none';
+        
+        for (let i = 1; i <= 3; i++) {
+            const row = document.getElementById(`net-top-${i}`);
+            const nameEl = document.getElementById(`net-top-${i}-name`);
+            const offEl = document.getElementById(`net-top-${i}-off`);
+            const barEl = document.getElementById(`net-top-${i}-bar`);
+            
+            const olt = top3Olts[i - 1]; 
+            
+            if (olt && olt.offline > 0 && row) {
+                const offlinePct = olt.total > 0 ? ((olt.offline / olt.total) * 100).toFixed(1) : 0;
+                
+                // Atualiza Dataset para manter a compatibilidade com o Hover/Click (Tooltips e Modais)
+                row.dataset.olt = olt.id;
+                row.dataset.off = olt.offline;
+                row.dataset.total = olt.total;
+                row.dataset.pct = offlinePct;
 
-    // Injeção limpa no grid global com a reinserção dos subtítulos
-    cardBody.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 10px; height: 100%;">
-            <div class="card-stats" style="flex: 1; padding-right: 15px; min-width: 200px;">
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px">
-                    <span class="material-symbols-rounded" style="color:#60a5fa; font-size:20px;">visibility</span>
-                    <h3 style="margin:0; font-size:1rem; color:var(--m3-on-surface);">Visão Geral</h3>
-                </div>
-                ${statsHtml}
-            </div>
-            <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 20px; min-width: 200px;">
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px">
-                    <span class="material-symbols-rounded" style="color:#f87171; font-size:20px;">warning</span>
-                    <h3 style="margin:0; font-size:1rem; color:var(--m3-on-surface);">Top 3 OLTs Críticas</h3>
-                </div>
-                ${rankingHtmlContent}
-            </div>
-        </div>
-    `;
+                // Preenche os dados nos placeholders
+                if (nameEl) nameEl.textContent = `${i}º ${olt.id}`;
+                if (offEl) offEl.textContent = `${olt.offline} OFF`;
+                if (barEl) barEl.style.width = `${offlinePct}%`;
+                
+                row.style.display = 'block';
+            } else {
+                if (row) row.style.display = 'none';
+            }
+        }
+    }
 }
 
 async function runGlobalNetworkOverview() {
