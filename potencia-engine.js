@@ -1,14 +1,12 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Separação Estrita (Caminho 2) - Injeção exclusiva de Badges
+// Atualização: Separação Estrita (Caminho 2) e Integração com Buscador Central
 // ==============================================================================
-
-const TAB_CIRCUITOS_POTENCIA = 'CIRCUITO'; 
 
 window.POTENCIA_CLIENTS_DATA = {};
 window.POTENCIA_PORT_DATA = {}; 
-window.currentPotenciaInterval = null; 
 window.CURRENT_VIEW_PLACA = null; 
+window.CURRENT_POTENCIA_CONFIG = null;
 
 function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
@@ -164,10 +162,11 @@ window.exportPotenciaPlacaToTXT = function() {
     document.body.removeChild(link);
 };
 
-async function runPotenciaEngine() {
+function runPotenciaEngine() {
+    if (!window.DATA_STORE || !window.DATA_STORE.isReady) return;
+
     const gridEl = document.getElementById('potencia-grid');
     const globalBody = document.getElementById('global-potencia-body');
-    const timestampEl = document.getElementById('update-timestamp');
     
     const isPotenciaPage = window.location.pathname.includes('potencia.html');
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
@@ -178,10 +177,6 @@ async function runPotenciaEngine() {
 
     if (!isPotenciaPage && !isHomePage) return;
 
-    if (timestampEl && timestampEl.textContent.includes('Aguardando')) {
-        timestampEl.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Buscando dados...';
-    }
-
     try {
         let globalCriticos = 0;
         let globalAnalisados = 0;
@@ -191,21 +186,17 @@ async function runPotenciaEngine() {
         window.POTENCIA_CLIENTS_DATA = {};
         window.POTENCIA_LAST_UPDATES = {};
 
-        const ranges = GLOBAL_MASTER_OLT_LIST.map(o => `${o.sheetTab}!A:K`);
-        const dataBatch = await API.getBatch(ranges);
-
-        if (!dataBatch.valueRanges) throw new Error("Falha na estrutura de retorno da API de Potência");
-
-        GLOBAL_MASTER_OLT_LIST.forEach((olt, index) => {
-            const rows = dataBatch.valueRanges[index].values ? dataBatch.valueRanges[index].values.slice(1) : [];
+        GLOBAL_MASTER_OLT_LIST.forEach((olt) => {
+            const values = window.DATA_STORE.olts[olt.id] || [];
+            const rows = values.slice(1);
             
             let analisados = 0;
             let criticos = 0;
             let dbmSums = 0;
             let lastUpdateStr = '--/--/---- --:--:--'; 
 
-            if (dataBatch.valueRanges[index].values && dataBatch.valueRanges[index].values.length > 0) {
-                const firstRow = dataBatch.valueRanges[index].values[0];
+            if (values.length > 0) {
+                const firstRow = values[0];
                 let cellData = firstRow[10] ? String(firstRow[10]) : '';
                 if (!cellData) {
                     for (let i = firstRow.length - 1; i >= 0; i--) {
@@ -264,7 +255,7 @@ async function runPotenciaEngine() {
             globalAnalisados += analisados;
         });
 
-        // SEPARAÇÃO ESTRITA: O JS manipula apenas os dados, nunca injetando títulos ou layouts no HTML
+        // Atualização Global na Home
         if (globalBody && isHomePage) {
             globalBody.style.display = 'flex';
             
@@ -317,6 +308,7 @@ async function runPotenciaEngine() {
             }
         }
 
+        // Atualização da Grade na Página de Potência
         if (isPotenciaPage && gridEl) {
             gridEl.innerHTML = '';
             
@@ -384,29 +376,6 @@ async function runPotenciaEngine() {
     }
 }
 
-async function fetchLocalidadeData() {
-    const range = 'LOCALIDADE!A:AH';
-    try {
-        const data = await API.get(range);
-        return data.values || [];
-    } catch (e) { return []; }
-}
-
-async function fetchCircuitosData() {
-    const range = `${TAB_CIRCUITOS_POTENCIA}!A:AK`;
-    try {
-        const data = await API.get(range);
-        return data.values || [];
-    } catch (e) { return []; }
-}
-
-window.stopPotenciaMonitoring = function() {
-    if (window.currentPotenciaInterval) {
-        clearInterval(window.currentPotenciaInterval);
-        window.currentPotenciaInterval = null;
-    }
-};
-
 window.openPotenciaSuperModal = function(id, sheetTab, type, boards) {
     try {
         const modal = document.getElementById('super-modal');
@@ -416,25 +385,16 @@ window.openPotenciaSuperModal = function(id, sheetTab, type, boards) {
         document.getElementById('potencia-view-detalhes').style.display = 'none';
         document.getElementById('potencia-view-placas').style.display = 'block';
         
-        document.getElementById('potencia-placas-list').innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                <span class="material-symbols-rounded" style="font-size: 48px; display: block; margin-bottom: 10px;">hourglass_top</span>
-                <h2>Lendo potências da OLT...</h2>
-            </div>
-        `;
-        
         modal.style.display = 'flex';
         
-        if (typeof window.startPotenciaMonitoring === 'function') {
-            window.startPotenciaMonitoring({ id: sheetTab, type: type, boards: boards, oltName: id });
-        }
+        window.startPotenciaMonitoring({ id: sheetTab, type: type, boards: boards, oltName: id });
     } catch (e) {
         console.error("Erro ao abrir o modal das OLTs:", e);
     }
 }
 
 window.startPotenciaMonitoring = function(config) {
-    window.stopPotenciaMonitoring(); 
+    window.CURRENT_POTENCIA_CONFIG = config;
 
     if (!document.getElementById('detail-modal')) {
         const modalHTML = `
@@ -467,19 +427,18 @@ window.startPotenciaMonitoring = function(config) {
         document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
 
-    async function populateTables() {
+    function populateTables() {
+        if (!window.DATA_STORE || !window.DATA_STORE.isReady) return;
+
         window.POTENCIA_PORT_DATA = {}; 
         window.POTENCIA_CLIENTS_DATA = {}; 
-        const rangeOlt = `${config.id}!A:K`; 
 
         try {
-            const [dataOlt, rowsCircuitos, rowsLocalidades] = await Promise.all([
-                API.get(rangeOlt), 
-                fetchCircuitosData(),
-                fetchLocalidadeData()
-            ]);
+            const rowsCircuitos = window.DATA_STORE.circuitos || [];
+            const rowsLocalidades = window.DATA_STORE.localidades || [];
+            const dataOlt = window.DATA_STORE.olts[config.oltName || config.id] || [];
             
-            const rowsOlt = (dataOlt.values || []).slice(1);
+            const rowsOlt = dataOlt.slice(1);
 
             rowsOlt.forEach(columns => {
                 if (columns.length === 0) return;
@@ -571,9 +530,8 @@ window.startPotenciaMonitoring = function(config) {
         }
     }
 
-    const runUpdate = async () => { await populateTables(); };
-    runUpdate(); 
-    window.currentPotenciaInterval = setInterval(runUpdate, GLOBAL_REFRESH_SECONDS * 1000); 
+    window.updatePotenciaModal = populateTables;
+    populateTables();
 }
 
 window.openPotenciaPlacaDetails = function(placa, oltType) {
@@ -691,7 +649,7 @@ window.filterClients = function() {
 window.closeSuperModal = function(event) {
     if (event && event.target.id !== 'super-modal' && !event.target.classList.contains('close-modal')) return;
     document.getElementById('super-modal').style.display = 'none';
-    if (typeof window.stopPotenciaMonitoring === 'function') window.stopPotenciaMonitoring();
+    window.CURRENT_POTENCIA_CONFIG = null;
 }
 
 window.backToPotenciaPlacas = function() {
@@ -713,9 +671,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof loadFooter === 'function') loadFooter();
         setTimeout(updateGlobalTimestamp, 500);
     }
-    
-    if (isPotenciaPage || typeof checkIsHomePage === 'function' && checkIsHomePage()) {
-        runPotenciaEngine();
-        setInterval(runPotenciaEngine, GLOBAL_REFRESH_SECONDS * 1000);
+});
+
+// OUVINTE DO BUSCADOR CENTRAL
+window.addEventListener('dadosAtualizados', () => {
+    runPotenciaEngine();
+
+    // Atualização síncrona do Modal caso esteja aberto
+    if (window.CURRENT_POTENCIA_CONFIG && typeof window.updatePotenciaModal === 'function') {
+        window.updatePotenciaModal();
+        
+        // Se a visualização de detalhes (tabela de portas) estiver aberta, re-renderiza ela
+        if (document.getElementById('potencia-view-detalhes') && document.getElementById('potencia-view-detalhes').style.display === 'block' && window.CURRENT_VIEW_PLACA) {
+            window.openPotenciaPlacaDetails(window.CURRENT_VIEW_PLACA, window.CURRENT_POTENCIA_CONFIG.type);
+        }
     }
 });

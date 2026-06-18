@@ -1,6 +1,6 @@
 // ==============================================================================
 // temperatura-engine.js - Motor Dedicado para Análise Térmica das OLTs
-// Atualização: Separação Estrita (Caminho 2) - Injeção exclusiva de Badges
+// Atualização: Separação Estrita (Caminho 2) e Integração com Buscador Central
 // ==============================================================================
 
 const TAB_TEMPERATURA = 'TEMPERATURA'; 
@@ -13,6 +13,7 @@ const MAPA_COLUNAS_TEMP = {
 
 window.TEMP_DATA_STORE = {}; 
 window.CURRENT_VIEW_SLOT = null; 
+window.CURRENT_TEMP_OLT = null; // Rastreia a OLT aberta no modal para auto-update
 
 function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
@@ -163,7 +164,9 @@ window.exportTemperaturaSlotToTXT = function() {
     document.body.removeChild(link);
 };
 
-async function runTemperaturaEngine() {
+function runTemperaturaEngine() {
+    if (!window.DATA_STORE || !window.DATA_STORE.isReady) return;
+
     const gridEl = document.getElementById('temperatura-grid');
     const globalBody = document.getElementById('global-temperatura-body');
     const timestampEl = document.getElementById('update-timestamp');
@@ -185,15 +188,14 @@ async function runTemperaturaEngine() {
         let oltStats = [];
         window.TEMP_DATA_STORE = {};
 
-        const range = `${TAB_TEMPERATURA}!A:CX`;
-        const dataBatch = await API.get(range);
+        const values = window.DATA_STORE.temperatura || [];
         
-        if (!dataBatch.values || dataBatch.values.length < 2) {
-            console.warn("Aba de Temperatura sem dados estruturados.");
+        if (values.length < 2) {
+            console.warn("Aba de Temperatura sem dados estruturados na memória.");
             return;
         }
 
-        const rows = dataBatch.values.slice(2); 
+        const rows = values.slice(2); 
 
         GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {
             const oltId = oltDef.id;
@@ -253,7 +255,7 @@ async function runTemperaturaEngine() {
             });
         });
 
-        // SEPARAÇÃO ESTRITA: JS só injeta Badges
+        // Atualização Global na Home
         if (globalBody && isHomePage) {
             globalBody.style.display = 'flex';
             
@@ -323,6 +325,7 @@ async function runTemperaturaEngine() {
             }
         }
 
+        // Atualização da Grade na Página de Temperatura
         if (isTemperaturaPage && gridEl) {
             gridEl.innerHTML = '';
             
@@ -395,6 +398,8 @@ async function runTemperaturaEngine() {
 window.openTemperaturaSuperModal = function(oltId) {
     const modal = document.getElementById('super-modal');
     if (!modal) return;
+    
+    window.CURRENT_TEMP_OLT = oltId;
     
     document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">device_thermostat</span> ${oltId}`;
     document.getElementById('temperatura-view-detalhes').style.display = 'none';
@@ -491,6 +496,8 @@ window.openTemperaturaSlotDetails = function(oltId, slot) {
 window.closeSuperModal = function(event) {
     if (event && event.target.id !== 'super-modal' && !event.target.classList.contains('close-modal')) return;
     document.getElementById('super-modal').style.display = 'none';
+    window.CURRENT_TEMP_OLT = null;
+    window.CURRENT_VIEW_SLOT = null;
 }
 
 window.backToTemperaturaSlots = function() {
@@ -498,6 +505,7 @@ window.backToTemperaturaSlots = function() {
     document.getElementById('temperatura-view-slots').style.display = 'block';
 }
 
+// Inicialização e Carregamento Base
 document.addEventListener('DOMContentLoaded', () => {
     const isTemperaturaPage = window.location.pathname.includes('temperatura.html');
     
@@ -506,9 +514,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof loadFooter === 'function') loadFooter();
         setTimeout(updateGlobalTimestamp, 500);
     }
-    
-    if (isTemperaturaPage || typeof checkIsHomePage === 'function' && checkIsHomePage()) {
-        runTemperaturaEngine();
-        setInterval(runTemperaturaEngine, GLOBAL_REFRESH_SECONDS * 1000);
+});
+
+// OUVINTE DO BUSCADOR CENTRAL (Reage aos dados na memória)
+window.addEventListener('dadosAtualizados', () => {
+    runTemperaturaEngine();
+
+    // Auto-atualização se o modal de uma OLT estiver aberto
+    const modal = document.getElementById('super-modal');
+    if (modal && modal.style.display === 'flex' && window.CURRENT_TEMP_OLT) {
+        window.openTemperaturaSuperModal(window.CURRENT_TEMP_OLT);
+        
+        // Se a visualização da tabela de sensores (detalhes) estiver aberta, re-renderiza ela
+        if (document.getElementById('temperatura-view-detalhes') && document.getElementById('temperatura-view-detalhes').style.display === 'block' && window.CURRENT_VIEW_SLOT) {
+            window.openTemperaturaSlotDetails(window.CURRENT_TEMP_OLT, window.CURRENT_VIEW_SLOT);
+        }
     }
 });

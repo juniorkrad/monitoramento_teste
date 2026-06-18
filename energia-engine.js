@@ -1,9 +1,7 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Separação Estrita (Caminho 2) e ID da Grade Corrigido
+// Atualização: Separação Estrita (Caminho 2) e Integração com Buscador Central
 // ==============================================================================
-
-const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
 
 window.ENERGY_DATA_STORE = {};
 window.NETWORK_ENERGY_STORE = new Set(); 
@@ -80,7 +78,7 @@ window.exportEnergiaPlacaToTXT = function() {
     
     rows.forEach(row => {
         const cols = row.querySelectorAll('td');
-        if (cols.length >= 4) {
+        if (cols.length >= 5) {
             const porta = cols[0].innerText.trim();
             const circuito = cols[1].innerText.trim();
             const online = cols[2].innerText.trim();
@@ -102,11 +100,11 @@ window.exportEnergiaPlacaToTXT = function() {
     document.body.removeChild(link);
 };
 
-async function runEnergyMonitoring() {
-    // CORREÇÃO: ID exato da página de energia para os cards renderizarem
+function runEnergyMonitoring() {
+    if (!window.DATA_STORE || !window.DATA_STORE.isReady) return;
+
     const gridEnergyPage = document.getElementById('energy-olt-grid');
     const globalBody = document.getElementById('global-energia-body');
-    const timestampEl = document.getElementById('update-timestamp');
     
     const isEnergyPage = window.location.pathname.includes('energia.html');
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
@@ -116,10 +114,6 @@ async function runEnergyMonitoring() {
     }
 
     if (!isEnergyPage && !isHomePage) return;
-
-    if (timestampEl && timestampEl.textContent.includes('Aguardando')) {
-        timestampEl.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Buscando dados...';
-    }
 
     try {
         let globalPowerOff = 0;
@@ -131,20 +125,16 @@ async function runEnergyMonitoring() {
         window.ENERGY_DATA_STORE = { global: null, olts: {} };
         window.NETWORK_ENERGY_STORE.clear(); 
 
-        const ranges = GLOBAL_MASTER_OLT_LIST.map(o => `${o.sheetTab}!A:K`);
-        const dataBatch = await API.getBatch(ranges);
-
-        if (!dataBatch.valueRanges) return;
-
-        GLOBAL_MASTER_OLT_LIST.forEach((olt, index) => {
-            const rows = dataBatch.valueRanges[index].values ? dataBatch.valueRanges[index].values.slice(1) : [];
+        GLOBAL_MASTER_OLT_LIST.forEach((olt) => {
+            const values = window.DATA_STORE.olts[olt.id] || [];
+            const rows = values.slice(1);
             let oltPowerOff = 0, oltOnline = 0, oltOffline = 0;
             let lastUpdateStr = '--/--/---- --:--:--';
             
             const portDataTemp = {}; 
 
-            if (dataBatch.valueRanges[index].values && dataBatch.valueRanges[index].values.length > 0) {
-                const firstRow = dataBatch.valueRanges[index].values[0];
+            if (values.length > 0) {
+                const firstRow = values[0];
                 let cellData = firstRow[10] ? String(firstRow[10]) : '';
                 if (!cellData) {
                     for (let i = firstRow.length - 1; i >= 0; i--) {
@@ -303,38 +293,25 @@ async function runEnergyMonitoring() {
     }
 }
 
-async function fetchCircuitosData() {
-    const range = `${TAB_CIRCUITOS_ENERGIA}!A:AK`;
-    try {
-        const data = await API.get(range);
-        return data.values || [];
-    } catch (e) { return []; }
-}
-
 window.openEnergySuperModal = function(id, sheetTab, type, boards) {
     const modal = document.getElementById('energy-super-modal');
     if (!modal) return;
+    
+    window.CURRENT_ENERGY_OLT = id; // Salva o ID monitorado globalmente
     
     document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">electric_bolt</span> ${id}`;
     document.getElementById('energy-view-detalhes').style.display = 'none';
     document.getElementById('energy-view-placas').style.display = 'block';
     
-    const placasList = document.getElementById('energy-placas-list');
-    placasList.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-            <span class="material-symbols-rounded" style="font-size: 48px; display: block; margin-bottom: 10px;">hourglass_top</span>
-            <h2>Analisando Quedas de Energia...</h2>
-        </div>
-    `;
-    
     modal.style.display = 'flex';
-    
     populateEnergyModal(id, sheetTab, type, boards);
 }
 
-async function populateEnergyModal(oltId, sheetTab, type, boards) {
+function populateEnergyModal(oltId, sheetTab, type, boards) {
+    if (!window.DATA_STORE || !window.DATA_STORE.isReady) return;
+
     try {
-        const rowsCircuitos = await fetchCircuitosData();
+        const rowsCircuitos = window.DATA_STORE.circuitos || [];
         const pltData = window.ENERGY_DATA_STORE.olts[oltId]?.ports || {};
 
         const placasList = document.getElementById('energy-placas-list');
@@ -372,7 +349,7 @@ async function populateEnergyModal(oltId, sheetTab, type, boards) {
     }
 }
 
-window.openEnergyPlacaDetails = async function(oltId, placa, type) {
+window.openEnergyPlacaDetails = function(oltId, placa, type) {
     window.CURRENT_ENERGY_PLACA = placa;
     
     document.getElementById('energy-view-placas').style.display = 'none';
@@ -389,7 +366,7 @@ window.openEnergyPlacaDetails = async function(oltId, placa, type) {
         return;
     }
 
-    const rowsCircuitos = await fetchCircuitosData();
+    const rowsCircuitos = window.DATA_STORE.circuitos || [];
 
     sortedPorts.forEach(pt => {
         const { online, offline, powerOff } = ports[pt];
@@ -446,17 +423,19 @@ window.backToEnergyPlacas = function() {
     document.getElementById('energy-view-placas').style.display = 'block';
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    const isEnergyPage = window.location.pathname.includes('energia.html');
-    
-    if (isEnergyPage) {
-        if (typeof loadHeader === 'function') loadHeader({ title: "Alarmes de Energia", exactTitle: true });
-        if (typeof loadFooter === 'function') loadFooter();
-        setTimeout(updateGlobalTimestamp, 500);
-    }
-    
-    if (isEnergyPage || typeof checkIsHomePage === 'function' && checkIsHomePage()) {
-        runEnergyMonitoring();
-        setInterval(runEnergyMonitoring, GLOBAL_REFRESH_SECONDS * 1000);
+// OUVINTE DO BUSCADOR CENTRAL
+window.addEventListener('dadosAtualizados', () => {
+    runEnergyMonitoring();
+
+    // Atualização em tempo real do modal de sub-placas caso esteja aberto
+    const modal = document.getElementById('energy-super-modal');
+    if (modal && modal.style.display === 'flex' && window.CURRENT_ENERGY_OLT) {
+        const oltDef = GLOBAL_MASTER_OLT_LIST.find(o => o.id === window.CURRENT_ENERGY_OLT);
+        if (oltDef) {
+            populateEnergyModal(oltDef.id, oltDef.sheetTab, oltDef.type, oltDef.boards);
+            if (document.getElementById('energy-view-detalhes').style.display === 'block' && window.CURRENT_ENERGY_PLACA) {
+                window.openEnergyPlacaDetails(oltDef.id, window.CURRENT_ENERGY_PLACA, oltDef.type);
+            }
+        }
     }
 });

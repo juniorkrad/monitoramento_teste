@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor de Fabricantes (Visão por Marca)
-// Atualização: Separação Estrita (Caminho 2) - Geração de Badges no Container Fixo
+// Atualização: Separação Estrita (Caminho 2) e Integração com Buscador Central
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -133,7 +133,10 @@ window.handleEqpClick = function(event) {
     modal.style.display = 'flex';
 };
 
-async function runEquipamentosEngine() {
+function runEquipamentosEngine() {
+    // ABORTA SE OS DADOS AINDA NÃO ESTIVEREM NA MEMÓRIA
+    if (!window.DATA_STORE || !window.DATA_STORE.isReady) return;
+
     const globalBody = document.getElementById('card-fabricantes');
     const gridEqpPage = document.getElementById('equipamentos-grid');
     
@@ -156,13 +159,12 @@ async function runEquipamentosEngine() {
             brandData[m] = { total: 0, online: 0, offline: 0, olts: {} };
         });
 
-        const ranges = GLOBAL_MASTER_OLT_LIST.map(o => `${o.sheetTab}!A:K`);
-        const dataBatch = await API.getBatch(ranges);
-
-        if (!dataBatch.valueRanges) return;
-
-        GLOBAL_MASTER_OLT_LIST.forEach((olt, index) => {
-            const rows = dataBatch.valueRanges[index].values ? dataBatch.valueRanges[index].values.slice(1) : [];
+        // ==========================================
+        // DADOS PUXADOS DIRETAMENTE DA MEMÓRIA
+        // ==========================================
+        GLOBAL_MASTER_OLT_LIST.forEach((olt) => {
+            const values = window.DATA_STORE.olts[olt.id] || [];
+            const rows = values.slice(1); // Ignora o cabeçalho
 
             rows.forEach(columns => {
                 if (columns.length === 0) return;
@@ -196,7 +198,6 @@ async function runEquipamentosEngine() {
             });
         });
 
-        // SEPARAÇÃO ESTRITA: O JS não injeta mais o Layout, apenas as Tags dos Badges na grade
         if (globalBody && isHomePage) {
             globalBody.style.display = 'flex';
             
@@ -208,7 +209,7 @@ async function runEquipamentosEngine() {
             if (contentEl) contentEl.style.display = 'flex';
             
             if (container) {
-                container.innerHTML = ''; // Limpa antes de gerar os novos
+                container.innerHTML = ''; 
                 todasMarcas.map(nome => ({ nome, ...brandData[nome] }))
                     .sort((a, b) => b.total - a.total)
                     .forEach(marca => {
@@ -363,7 +364,7 @@ window.openDistribuicaoModal = function(marca) {
 
     if (modal && titulo && container) {
         titulo.innerText = marca;
-        container.innerHTML = window.BRAND_OLT_HTML[marca] || '<p style="text-align:center; color:var(--m3-on-surface-variant);">Sem dados de distribuição para este fabricante.</p>';
+        container.innerHTML = window.BRAND_OLT_HTML[marca] || '<p style="text-align:center; color:var(--m3-on-surface-variant);\">Sem dados de distribuição para este fabricante.</p>';
         modal.style.display = 'flex';
     }
 };
@@ -374,19 +375,18 @@ window.closeDistribuicaoModal = function(event) {
     if (modal) modal.style.display = 'none';
 };
 
+// Carregamento exclusivo de Cabeçalho e Rodapé para a página individual
 document.addEventListener('DOMContentLoaded', () => {
     const isEqpPage = window.location.pathname.includes('equipamentos.html');
-    const isHomePage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html');
     
     if (isEqpPage) {
         if (typeof loadHeader === 'function') loadHeader({ title: "Equipamentos por Fabricante", exactTitle: true });
         if (typeof loadFooter === 'function') loadFooter();
-        
         setTimeout(updateGlobalTimestamp, 500); 
     }
+});
 
-    if (isEqpPage || isHomePage) {
-        runEquipamentosEngine();
-        setInterval(runEquipamentosEngine, GLOBAL_REFRESH_SECONDS * 1000);
-    }
+// OUVINTE DO MAESTRO: Renderiza os dados apenas quando o Buscador Central gritar!
+window.addEventListener('dadosAtualizados', () => {
+    runEquipamentosEngine();
 });

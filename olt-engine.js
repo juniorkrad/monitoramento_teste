@@ -1,17 +1,14 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Limpeza de injeção HTML para Home e Reinserção dos Subtítulos
+// Atualização: Separação Estrita (Caminho 2) e Integração com Buscador Central
 // ==============================================================================
-
-const TAB_CIRCUITOS = 'CIRCUITO'; 
-const TAB_LOCALIDADE = 'LOCALIDADE'; 
 
 window.OLT_CLIENTS_DATA = {};
 window.CURRENT_OLT_PORT_DATA = {}; 
 window.NETWORK_PROBLEMS_STORE = new Set();
 window.NETWORK_BACKBONE_STORE = new Set();
-window.currentOltInterval = null; 
 window.CURRENT_VIEW_PLACA = null; 
+window.CURRENT_MONITORING_CONFIG = null;
 
 // ==============================================================================
 // FUNÇÕES DO SISTEMA HÍBRIDO (TOOLTIP PC / MODAL MOBILE)
@@ -91,12 +88,14 @@ window.handleNetClick = function(event) {
 
 // ==============================================================================
 
-async function fetchGlobalOltData(olt) {
-    const range = `${olt.sheetTab}!A:K`;
-    
+function fetchGlobalOltData(olt) {
+    if (!window.DATA_STORE || !window.DATA_STORE.isReady) {
+        return { id: olt.id, onlineCount: 0, offlineCount: 0, type: olt.type, portData: {} };
+    }
+
     try {
-        const data = await API.get(range);
-        const rows = (data.values || []).slice(1);
+        const values = window.DATA_STORE.olts[olt.id] || [];
+        const rows = values.slice(1);
         
         let totalOnline = 0, totalOffline = 0;
         const portData = {};
@@ -128,13 +127,11 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, top3Olts) {
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
     if (!isHomePage) return;
 
-    // 1. Oculta o loading e exibe o container estruturado
     const loadingEl = document.getElementById('global-net-loading');
     const contentEl = document.getElementById('global-net-content');
     if (loadingEl) loadingEl.style.display = 'none';
     if (contentEl) contentEl.style.display = 'flex';
 
-    // 2. Atualiza Estatísticas Gerais (Textos)
     const total = globalOnline + globalOffline;
     const elTotal = document.getElementById('net-total-geral');
     const elOnline = document.getElementById('net-total-online');
@@ -144,7 +141,6 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, top3Olts) {
     if (elOnline) elOnline.textContent = globalOnline;
     if (elOffline) elOffline.textContent = globalOffline;
 
-    // 3. Atualiza Ranking Top 3 (Sem injetar HTML)
     const hasIssues = top3Olts.some(olt => olt.offline > 0);
     const noIssuesEl = document.getElementById('net-no-issues');
     
@@ -168,13 +164,11 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, top3Olts) {
             if (olt && olt.offline > 0 && row) {
                 const offlinePct = olt.total > 0 ? ((olt.offline / olt.total) * 100).toFixed(1) : 0;
                 
-                // Atualiza Dataset para manter a compatibilidade com o Hover/Click (Tooltips e Modais)
                 row.dataset.olt = olt.id;
                 row.dataset.off = olt.offline;
                 row.dataset.total = olt.total;
                 row.dataset.pct = offlinePct;
 
-                // Preenche os dados nos placeholders
                 if (nameEl) nameEl.textContent = `${i}º ${olt.id}`;
                 if (offEl) offEl.textContent = `${olt.offline} OFF`;
                 if (barEl) barEl.style.width = `${offlinePct}%`;
@@ -187,9 +181,8 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, top3Olts) {
     }
 }
 
-async function runGlobalNetworkOverview() {
-    const oltPromises = GLOBAL_MASTER_OLT_LIST.map(olt => fetchGlobalOltData(olt));
-    const results = await Promise.all(oltPromises);
+function runGlobalNetworkOverview() {
+    const results = GLOBAL_MASTER_OLT_LIST.map(olt => fetchGlobalOltData(olt));
     
     let globalOnline = 0, globalOffline = 0;
     let oltStatsList = [], currentBackbones = new Set();
@@ -251,33 +244,12 @@ async function runGlobalNetworkOverview() {
 }
 
 window.stopOltMonitoring = function() {
-    if (window.currentOltInterval) {
-        clearInterval(window.currentOltInterval);
-        window.currentOltInterval = null;
-    }
+    window.CURRENT_MONITORING_CONFIG = null;
 };
-
-async function fetchCircuitosData() {
-    const range = `${TAB_CIRCUITOS}!A:AK`;
-    try {
-        const data = await API.get(range);
-        return data.values || [];
-    } catch (e) { return []; }
-}
-
-async function fetchLocalidadeData() {
-    const range = `${TAB_LOCALIDADE}!A:AH`;
-    try {
-        const data = await API.get(range);
-        return data.values || [];
-    } catch (e) { 
-        console.error('Erro ao baixar aba LOCALIDADE:', e);
-        return []; 
-    }
-}
 
 window.startOltMonitoring = function(config) {
     window.stopOltMonitoring(); 
+    window.CURRENT_MONITORING_CONFIG = config;
     
     if (!document.getElementById('detail-modal')) {
         const modalHTML = `
@@ -327,21 +299,20 @@ window.startOltMonitoring = function(config) {
         document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
 
-    async function populateTables() {
+    function populateTables() {
+        if (!window.DATA_STORE || !window.DATA_STORE.isReady) return;
+
         window.CURRENT_OLT_PORT_DATA = {}; 
         window.OLT_CLIENTS_DATA = {}; 
-        const rangeOlt = `${config.id}!A:K`; 
 
         try {
-            const [dataOlt, rowsCircuitos, rowsLocalidades] = await Promise.all([
-                API.get(rangeOlt), 
-                fetchCircuitosData(),
-                fetchLocalidadeData()
-            ]);
+            const rowsCircuitos = window.DATA_STORE.circuitos || [];
+            const rowsLocalidades = window.DATA_STORE.localidades || [];
+            const dataOlt = window.DATA_STORE.olts[config.id] || [];
 
             window.GLOBAL_BAIRROS_DATA = rowsLocalidades;
 
-            const rowsOlt = (dataOlt.values || []).slice(1);
+            const rowsOlt = dataOlt.slice(1);
 
             rowsOlt.forEach(columns => {
                 if (columns.length === 0) return;
@@ -442,9 +413,8 @@ window.startOltMonitoring = function(config) {
         }
     }
 
-    const runUpdate = async () => { await populateTables(); };
-    runUpdate(); 
-    window.currentOltInterval = setInterval(runUpdate, GLOBAL_REFRESH_SECONDS * 1000); 
+    window.updateOltModal = populateTables; 
+    populateTables(); 
 }
 
 window.openOltPlacaDetails = function(placa, oltType) {
@@ -481,7 +451,6 @@ window.openOltPlacaDetails = function(placa, oltType) {
         const safeInfo = info.replace(/'/g, "\\'");
         const textoBairro = bairro && bairro !== '-' ? bairro : 'N/A';
 
-        // Linha com a coluna de Bairros formatada para alinhar à esquerda
         tbody.innerHTML += `
             <tr>
                 <td>Porta ${String(pt).padStart(2, '0')}</td>
@@ -687,9 +656,15 @@ window.filterClients = function() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    if (checkIsHomePage()) {
+// OUVINTE DO MAESTRO CENTRAL (data-store.js)
+window.addEventListener('dadosAtualizados', () => {
+    const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
+    
+    if (isHomePage) {
         runGlobalNetworkOverview();
-        setInterval(runGlobalNetworkOverview, GLOBAL_REFRESH_SECONDS * 1000);
+    }
+    
+    if (window.CURRENT_MONITORING_CONFIG && typeof window.updateOltModal === 'function') {
+        window.updateOltModal();
     }
 });
