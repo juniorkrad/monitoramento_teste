@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Limpeza de injeção HTML para Home (Remoção de títulos duplicados e estilos inline conflitantes)
+// Atualização: Limpeza de injeção HTML para Home e Reinserção dos Subtítulos
 // ==============================================================================
 
 const TAB_CIRCUITOS = 'CIRCUITO'; 
@@ -180,13 +180,23 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, top3Olts) {
     }
     rankingHtmlContent += `</div>`; 
 
-    // Injeção limpa no grid global
+    // Injeção limpa no grid global com a reinserção dos subtítulos
     cardBody.innerHTML = `
-        <div class="card-stats" style="flex: 1; padding-right: 15px;">
-            ${statsHtml}
-        </div>
-        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 20px;">
-            ${rankingHtmlContent}
+        <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 10px; height: 100%;">
+            <div class="card-stats" style="flex: 1; padding-right: 15px; min-width: 200px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px">
+                    <span class="material-symbols-rounded" style="color:#60a5fa; font-size:20px;">visibility</span>
+                    <h3 style="margin:0; font-size:1rem; color:var(--m3-on-surface);">Visão Geral</h3>
+                </div>
+                ${statsHtml}
+            </div>
+            <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 20px; min-width: 200px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px">
+                    <span class="material-symbols-rounded" style="color:#f87171; font-size:20px;">warning</span>
+                    <h3 style="margin:0; font-size:1rem; color:var(--m3-on-surface);">Top 3 OLTs Críticas</h3>
+                </div>
+                ${rankingHtmlContent}
+            </div>
         </div>
     `;
 }
@@ -570,7 +580,7 @@ window.exportDetailModalToImage = function(event) {
     const titleEl = document.getElementById('modal-title');
     let titleName = 'Detalhes';
     if (titleEl) {
-        titleName = titleEl.innerText.replace(/[^a-zA-Z0-9-]/g, '_');
+        titleName = titleName.replace(/[^a-zA-Z0-9-]/g, '_');
     }
 
     html2canvas(modalContent, {
