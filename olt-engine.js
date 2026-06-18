@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Alinhamento da coluna BAIRROS ajustado para o padrão global (Left)
+// Atualização: Limpeza de injeção HTML para Home (Remoção de títulos duplicados e estilos inline conflitantes)
 // ==============================================================================
 
 const TAB_CIRCUITOS = 'CIRCUITO'; 
@@ -130,32 +130,23 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, top3Olts) {
     
     const total = globalOnline + globalOffline;
     
+    // HTML limpo, dependendo inteiramente do home.css para a estilização
     const statsHtml = `
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; width: 100%;">
-            <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">analytics</span>
-            <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Visão Geral</h3>
+        <div class="global-stat stat-item">
+            <span class="stat-number">${total}</span>
+            <label><span class="material-symbols-rounded icon-total" style="font-size: 18px;">router</span> Total Geral</label>
         </div>
-        <div class="stat-item" style="display: grid; grid-template-columns: 120px 1fr; gap: 10px; margin-bottom: 10px; align-items: center;">
-            <span class="stat-number" style="font-size: 2.3rem; display: block; text-align: left;">${total}</span>
-            <label style="font-size: 1.4rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-rounded icon-total" style="font-size: 24px;">router</span> Total Geral</label>
+        <div class="global-stat stat-item online">
+            <span class="stat-number">${globalOnline}</span>
+            <label><span class="material-symbols-rounded icon-up" style="font-size: 18px;">check_circle</span> Total Online</label>
         </div>
-        <div class="stat-item online" style="display: grid; grid-template-columns: 120px 1fr; gap: 10px; margin-bottom: 8px; align-items: center;">
-            <span class="stat-number" style="font-size: 1.8rem; display: block; text-align: left; color: var(--m3-color-success);">${globalOnline}</span>
-            <label style="font-size: 1.3rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px; color: var(--m3-color-success);"><span class="material-symbols-rounded icon-up" style="font-size: 22px;">check_circle</span> Total Online</label>
-        </div>
-        <div class="stat-item offline" style="display: grid; grid-template-columns: 120px 1fr; gap: 10px; align-items: center;">
-            <span class="stat-number" style="font-size: 1.8rem; display: block; text-align: left; color: var(--m3-color-error);">${globalOffline}</span>
-            <label style="font-size: 1.3rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 8px; color: var(--m3-color-error);"><span class="material-symbols-rounded icon-down" style="font-size: 22px;">error</span> Total Offline</label>
+        <div class="global-stat stat-item offline">
+            <span class="stat-number">${globalOffline}</span>
+            <label><span class="material-symbols-rounded icon-down" style="font-size: 18px;">error</span> Total Offline</label>
         </div>
     `;
 
-    let rankingHtmlContent = `
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; width: 100%;">
-            <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">warning</span>
-            <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Top 3 OLTs Críticas</h3>
-        </div>
-        <div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: space-between;">
-    `;
+    let rankingHtmlContent = `<div style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center;">`;
     
     if (top3Olts.some(olt => olt.offline > 0)) {
         top3Olts.forEach((olt, index) => {
@@ -175,25 +166,26 @@ function updateGlobalNetworkCard(globalOnline, globalOffline, top3Olts) {
                      onmouseout="this.style.backgroundColor='transparent'">
                      
                     <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline; pointer-events: none;">
-                        <strong style="color: var(--m3-on-surface); font-size: 1.1rem;">${index + 1}º ${olt.id}</strong>
-                        <span class="stat-number" style="font-size: 1.2rem; color: var(--m3-color-error); width: auto;">${olt.offline} OFF</span>
+                        <strong style="color: var(--m3-on-surface); font-size: 1rem;">${index + 1}º ${olt.id}</strong>
+                        <span class="stat-number" style="font-size: 1rem; color: var(--m3-color-error); width: auto;">${olt.offline} OFF</span>
                     </div>
-                    <div style="height: 10px; background: var(--m3-surface-container-high); border-radius: 5px; overflow: hidden; width: 100%; pointer-events: none;">
-                        <div style="height: 100%; width: ${offlinePct}%; background: var(--m3-color-error); border-radius: 5px;"></div>
+                    <div style="height: 8px; background: var(--m3-surface-container-high); border-radius: 4px; overflow: hidden; width: 100%; pointer-events: none;">
+                        <div style="height: 100%; width: ${offlinePct}%; background: var(--m3-color-error); border-radius: 4px;"></div>
                     </div>
                 </div>
             `;
         });
     } else {
-        rankingHtmlContent += `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 10px; width: 100%;"><span class="material-symbols-rounded" style="font-size: 40px;">sentiment_very_satisfied</span><br>Rede 100% Online!</div>`;
+        rankingHtmlContent += `<div style="text-align: center; color: var(--m3-color-success); font-weight: 700; width: 100%;"><span class="material-symbols-rounded" style="font-size: 40px;">sentiment_very_satisfied</span><br>Rede 100% Online!</div>`;
     }
     rankingHtmlContent += `</div>`; 
 
+    // Injeção limpa no grid global
     cardBody.innerHTML = `
-        <div class="card-stats" style="padding-right: 15px; flex: 1; min-width: 250px; align-items: flex-start !important; text-align: left !important;">
+        <div class="card-stats" style="flex: 1; padding-right: 15px;">
             ${statsHtml}
         </div>
-        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 20px; display: flex; flex-direction: column; align-items: flex-start !important; text-align: left !important; min-width: 250px;">
+        <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 20px;">
             ${rankingHtmlContent}
         </div>
     `;
