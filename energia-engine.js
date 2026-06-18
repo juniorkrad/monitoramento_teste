@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Separação Estrita (Caminho 2) e Integração com Buscador Central
+// Atualização: Correção do Filtro Dying Gasp (Regex) e Novo Layout de Cards
 // ==============================================================================
 
 window.ENERGY_DATA_STORE = {};
@@ -161,10 +161,12 @@ function runEnergyMonitoring() {
 
                 if (isOnline) oltOnline++; else oltOffline++;
 
-                const desc1 = (columns[7] || '').toLowerCase();
-                const desc2 = (columns[8] || '').toLowerCase();
-                const isDyingGasp = desc1.includes('dyinggasp') || desc1.includes('dying gasp') || 
-                                    desc2.includes('dyinggasp') || desc2.includes('dying gasp');
+                // Lógica de Filtro Aprimorada (Remove espaços, hifens e underlines antes de checar)
+                const cleanDesc1 = (columns[7] || '').toLowerCase().replace(/[\s\-_]/g, '');
+                const cleanDesc2 = (columns[8] || '').toLowerCase().replace(/[\s\-_]/g, '');
+                
+                const isDyingGasp = cleanDesc1.includes('dyinggasp') || cleanDesc1.includes('poweroff') || 
+                                    cleanDesc2.includes('dyinggasp') || cleanDesc2.includes('poweroff');
 
                 if (isDyingGasp && !isOnline) {
                     oltPowerOff++;
@@ -251,27 +253,35 @@ function runEnergyMonitoring() {
                 
                 const showPulse = o.powerOff >= 10 ? 'pulse-energy' : '';
 
+                // Lógica dos novos ícones e contagens
+                const semSinalOptico = o.offline - o.powerOff;
+
                 gridEnergyPage.innerHTML += `
                     <div class="overview-card ${showPulse}" id="card-${o.id}" style="display: flex; flex-direction: column; width: 100%;">
                         <div class="card-header" style="justify-content: space-between; width: 100%; box-sizing: border-box;">
-                            <h3><span class="material-symbols-rounded">electric_bolt</span> ${o.id}</h3>
+                            <h3><span class="material-symbols-rounded">dns</span> ${o.id}</h3>
                             ${btnHtml}
                         </div>
                         <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
                                 <div style="display: flex; flex-direction: column; gap: 8px;">
-                                    <div style="display: flex; align-items: center; gap: 8px;" title="Online">
-                                        <span class="material-symbols-rounded" style="color:var(--m3-color-success); font-size: 18px;">check_circle</span>
-                                        <span style="font-size: 1.1rem; color:var(--m3-on-surface); font-weight: 500;">${o.online}</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; gap: 8px;" title="Offline Geral">
+                                    <div style="display: flex; align-items: center; gap: 8px;" title="Total Offline Geral">
                                         <span class="material-symbols-rounded" style="color:#f87171; font-size: 18px;">router_off</span>
                                         <span style="font-size: 1.1rem; color:var(--m3-on-surface); font-weight: 500;">${o.offline}</span>
+                                        <span style="font-size: 0.75rem; color:var(--m3-on-surface-variant); text-transform: uppercase; margin-left: 4px;">Total Offline</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;" title="Falta de Sinal Óptico">
+                                        <span class="material-symbols-rounded" style="color:#f97316; font-size: 18px;">wifi_off</span>
+                                        <span style="font-size: 1.1rem; color:var(--m3-on-surface); font-weight: 500;">${semSinalOptico}</span>
+                                        <span style="font-size: 0.75rem; color:var(--m3-on-surface-variant); text-transform: uppercase; margin-left: 4px;">Sem Sinal</span>
                                     </div>
                                 </div>
                                 <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;">
                                     <span style="font-size: 2.5rem; font-family: var(--font-family-mono); font-weight: bold; color: #fbbf24; line-height: 1;">${o.powerOff}</span>
-                                    <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 5px;">Power Off</span>
+                                    <div style="display: flex; align-items: center; gap: 4px; margin-top: 5px;">
+                                        <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 14px;">power_off</span>
+                                        <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); text-transform: uppercase;">Sem Energia</span>
+                                    </div>
                                 </div>
                             </div>
                             <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%;">
@@ -297,9 +307,9 @@ window.openEnergySuperModal = function(id, sheetTab, type, boards) {
     const modal = document.getElementById('energy-super-modal');
     if (!modal) return;
     
-    window.CURRENT_ENERGY_OLT = id; // Salva o ID monitorado globalmente
+    window.CURRENT_ENERGY_OLT = id; 
     
-    document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">electric_bolt</span> ${id}`;
+    document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${id}`; // Atualizado para DNS no Modal também
     document.getElementById('energy-view-detalhes').style.display = 'none';
     document.getElementById('energy-view-placas').style.display = 'block';
     
