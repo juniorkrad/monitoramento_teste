@@ -1,6 +1,6 @@
 /* ==========================================================================
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
-   Atualização: Código otimizado e preparado para a futura Unificação de Alarmes
+   Atualização: Limpeza de UI redundante, focando apenas na emissão do Alarme Híbrido
    ========================================================================== */
 
 let lastNotifiedState = ""; 
@@ -11,36 +11,9 @@ function watchHomeAlarms() {
     let backboneProblems = new Set(window.NETWORK_BACKBONE_STORE || []);
     let hybridProblems = new Set(); 
 
-    // 2. Coleta e atualiza a interface Global de Energia (Se os dados existirem)
+    // 2. Avalia a Regra dos Híbridos (Se os dados de energia existirem)
+    // O desenho na tela da Home agora é responsabilidade do energia-engine.js!
     if (window.ENERGY_DATA_STORE && window.ENERGY_DATA_STORE.global) {
-        const globalData = window.ENERGY_DATA_STORE.global;
-
-        const totalPowerOffEl = document.getElementById('global-poweroff-total');
-        if (totalPowerOffEl) {
-            totalPowerOffEl.innerText = globalData.powerOff;
-            totalPowerOffEl.style.display = 'block';
-        }
-
-        const contextEl = document.getElementById('global-poweroff-context');
-        if (contextEl) {
-            const impacto = globalData.totalClients > 0 
-                ? ((globalData.powerOff / globalData.totalClients) * 100).toFixed(1) 
-                : 0;
-                
-            const relativo = globalData.totalOffline > 0 
-                ? ((globalData.powerOff / globalData.totalOffline) * 100).toFixed(1) 
-                : 0;
-
-            contextEl.innerHTML = `
-                <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">dns</span> 
-                <strong style="color: var(--m3-on-surface);">${globalData.oltsAffected}</strong> de 17 OLTs afetadas.<br>
-                <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">public</span> 
-                Impacto rede: <strong style="color: var(--m3-on-surface);">${impacto}%</strong><br>
-                <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">pie_chart</span> 
-                Relativo OFF: <strong style="color: #f87171;">${relativo}%</strong>
-            `;
-        }
-
         // ============================================================
         // A REGRA DOS HÍBRIDOS: >= 32 clientes offline e >= 70% de energia
         // ============================================================

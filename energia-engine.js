@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Separação Estrita (Caminho 2) - Nenhuma injeção de HTML Global
+// Atualização: Separação Estrita (Caminho 2) e ID da Grade Corrigido
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
@@ -103,7 +103,8 @@ window.exportEnergiaPlacaToTXT = function() {
 };
 
 async function runEnergyMonitoring() {
-    const gridEnergyPage = document.getElementById('energy-grid');
+    // CORREÇÃO: ID exato da página de energia para os cards renderizarem
+    const gridEnergyPage = document.getElementById('energy-olt-grid');
     const globalBody = document.getElementById('global-energia-body');
     const timestampEl = document.getElementById('update-timestamp');
     
@@ -208,7 +209,6 @@ async function runEnergyMonitoring() {
             totalOffline: globalTotalOffline, oltsAffected: oltsAffected
         };
 
-        // SEPARAÇÃO ESTRITA: O JS não injeta mais o layout inteiro, apenas manipula os IDs definidos no index.html
         if (globalBody && isHomePage) {
             globalBody.style.display = 'flex'; 
             
