@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Trava invertida (Renderiza Card Global APENAS na Home e oculta nas demais)
+// Atualização: Separação Estrita (Caminho 2) - Nenhuma injeção de HTML Global
 // ==============================================================================
 
 const TAB_CIRCUITOS_ENERGIA = 'CIRCUITO'; 
@@ -40,7 +40,7 @@ window.exportCardToImage = function(event, cardId, oltName) {
     }
 
     html2canvas(card, {
-        backgroundColor: null, 
+        backgroundColor: null,
         scale: 2, 
         useCORS: true,
         logging: false
@@ -57,8 +57,12 @@ window.exportCardToImage = function(event, cardId, oltName) {
     });
 };
 
-window.exportEnergyPlacaToTXT = function() {
-    const oltName = window.CURRENT_ENERGY_OLT || 'OLT_Desconhecida';
+window.exportEnergiaPlacaToTXT = function() {
+    const titleEl = document.getElementById('super-modal-title');
+    let oltName = 'OLT_Desconhecida';
+    if (titleEl) {
+        oltName = titleEl.innerText.replace('electric_bolt', '').trim();
+    }
     const placa = window.CURRENT_ENERGY_PLACA || '?';
     
     let txtContent = `=================================================\n`;
@@ -66,26 +70,24 @@ window.exportEnergyPlacaToTXT = function() {
     txtContent += `   Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
     txtContent += `=================================================\n\n`;
     
-    const ports = window.ENERGY_DATA_STORE.olts[oltName]?.ports[placa];
+    const tbody = document.getElementById('energy-detalhes-tbody');
+    const rows = tbody.querySelectorAll('tr');
     
-    if (!ports || Object.keys(ports).length === 0) {
-        alert('Nenhum dado disponível para exportação nesta placa.');
+    if (rows.length === 0 || rows[0].innerText.includes('Nenhuma porta')) {
+        alert('Nenhum dado disponível para exportação.');
         return;
     }
     
-    Object.keys(ports).sort((a, b) => parseInt(a) - parseInt(b)).forEach(pt => {
-        const pData = ports[pt];
-        if (pData.total > 0) {
-            const impacto = Math.round((pData.powerOff / pData.total) * 100) + '%';
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('td');
+        if (cols.length >= 4) {
+            const porta = cols[0].innerText.trim();
+            const circuito = cols[1].innerText.trim();
+            const online = cols[2].innerText.trim();
+            const offline = cols[3].innerText.trim();
+            const powerOff = cols[4].innerText.trim();
             
-            let status = 'Normal';
-            const perc = pData.powerOff / pData.total;
-            if ((perc >= 0.5 && pData.powerOff >= 10) || (perc === 1 && pData.total >= 5)) status = 'Crítico';
-            else if (perc >= 0.15 && pData.powerOff >= 5) status = 'Atenção';
-
-            const textoBairro = pData.bairro && pData.bairro !== '-' ? pData.bairro : 'N/A';
-
-            txtContent += `• Porta ${String(pt).padStart(2, '0').padEnd(8, ' ')} | Circuito: ${pData.circuit.padEnd(20, ' ')} | Bairro: ${textoBairro.padEnd(20, ' ')} | OFF(Energia): ${pData.powerOff} de ${pData.total} (${impacto}) | Status: ${status}\n`;
+            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(20, ' ')} | ON: ${online.padEnd(4, ' ')} | OFF: ${offline.padEnd(4, ' ')} | PowerOff: ${powerOff}\n`;
         }
     });
     
@@ -100,410 +102,328 @@ window.exportEnergyPlacaToTXT = function() {
     document.body.removeChild(link);
 };
 
-function drawEnergyChart(oltsData) {
-    let chartData = [];
-    for (const key in oltsData) {
-        if (oltsData[key].powerOff > 0) {
-            chartData.push({ label: key, value: oltsData[key].powerOff });
-        }
-    }
-
-    if (chartData.length === 0) {
-        chartData.push({ label: 'Nenhuma OLT', value: 0 });
-    } else {
-        chartData.sort((a, b) => b.value - a.value); 
-    }
-
-    const labels = chartData.map(item => item.label);
-    const data = chartData.map(item => item.value);
-
-    const ctx = document.getElementById('energyChartOlt');
-    if (!ctx) return; 
-
-    if (energyChartInstance) {
-        energyChartInstance.destroy();
-    }
-
-    if (typeof Chart !== 'undefined') {
-        energyChartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Clientes Offline (Energia)',
-                    data: data,
-                    backgroundColor: '#fbbf24', 
-                    borderRadius: 6,
-                    borderSkipped: false
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false, 
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(47, 14, 81, 0.9)',
-                        titleFont: { family: 'Montserrat', size: 14 },
-                        bodyFont: { family: 'Roboto Mono', size: 13, weight: 'bold' },
-                        padding: 10,
-                        cornerRadius: 8
-                    }
-                },
-                scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        grid: { color: 'rgba(255,255,255,0.05)' }, 
-                        ticks: { color: '#CAC4D0', font: { family: 'Roboto Mono' } } 
-                    },
-                    x: { 
-                        grid: { display: false }, 
-                        ticks: { color: '#EADDFF', font: { family: 'Montserrat', weight: '600' } } 
-                    }
-                }
-            }
-        });
-    }
-}
-
-function updateGlobalEnergyCard() {
+async function runEnergyMonitoring() {
+    const gridEnergyPage = document.getElementById('energy-grid');
+    const globalBody = document.getElementById('global-energia-body');
+    const timestampEl = document.getElementById('update-timestamp');
+    
+    const isEnergyPage = window.location.pathname.includes('energia.html');
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
 
-    const cardWrapper = document.getElementById('global-energia-body');
-
-    // TRAVA: Se NÃO estiver na Home, oculta a div inteira e aborta
-    if (!isHomePage) {
-        if (cardWrapper) cardWrapper.style.display = 'none';
-        return;
+    if (!isHomePage && globalBody) {
+        globalBody.style.display = 'none';
     }
 
-    if (!cardWrapper) return; 
-    
-    // Garante que o card fique visível na Home
-    cardWrapper.style.display = 'flex';
+    if (!isEnergyPage && !isHomePage) return;
 
-    // CORREÇÃO: Mirar apenas na área de conteúdo para não apagar o título do card!
-    const cardBody = cardWrapper.querySelector('.card-body');
-    if (!cardBody) return;
+    if (timestampEl && timestampEl.textContent.includes('Aguardando')) {
+        timestampEl.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Buscando dados...';
+    }
 
-    const globalData = window.ENERGY_DATA_STORE.global;
-    const oltsData = window.ENERGY_DATA_STORE.olts;
-
-    let impactoPerc = "0%";
-    if (globalData.totalClients > 0) impactoPerc = ((globalData.powerOff / globalData.totalClients) * 100).toFixed(1) + '%';
-
-    let relativoPerc = "0%";
-    if (globalData.totalOffline > 0) relativoPerc = ((globalData.powerOff / globalData.totalOffline) * 100).toFixed(1) + '%';
-
-    cardBody.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%; flex-wrap: wrap; gap: 10px; height: 100%;">
-            <div class="card-stats global-stat" style="padding-right: 15px; min-width: 200px; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start !important; text-align: left !important;">
-                <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 5px; gap: 8px;">
-                    <span class="material-symbols-rounded" style="font-size: 24px; color: #fbbf24; opacity: 0.9;">power_off</span>
-                    <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;">CLIENTES SEM ENERGIA</span>
-                </div>
-                <h2 id="global-poweroff-total" class="stat-number" style="margin: 0; color: #fbbf24; line-height: 1;">${globalData.powerOff}</h2>
-                <div id="global-poweroff-context" style="margin-top: 6px; color: var(--m3-on-surface-variant); font-size: 0.85rem; line-height: 1.4;">
-                    <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">dns</span> <strong id="global-olts-afetadas" style="color: var(--m3-on-surface);">${globalData.oltsAffected}</strong> de 17 OLTs afetadas.<br>
-                    <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">public</span> Impacto rede: <strong id="global-impacto-perc" style="color: var(--m3-on-surface);">${impactoPerc}</strong><br>
-                    <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">pie_chart</span> Relativo OFF: <strong id="global-offline-relativo-perc" style="color: #fbbf24;">${relativoPerc}</strong>
-                </div>
-            </div>
-            <div style="flex: 3; border-left: 1px solid var(--m3-outline); padding-left: 20px; display: flex; flex-direction: column; min-width: 300px; justify-content: stretch;">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                    <span class="material-symbols-rounded" style="color: #fbbf24; font-size: 20px;">bar_chart</span>
-                    <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Ranking de OLTs Críticas</h3>
-                </div>
-                <div style="flex: 1; width: 100%; position: relative; min-height: 110px; display: flex; flex-direction: column;">
-                    <canvas id="energyChartOlt" style="flex: 1;"></canvas>
-                </div>
-            </div>
-        </div>
-    `;
-
-    drawEnergyChart(oltsData);
-}
-
-window.startEnergyMonitoring = async function() {
     try {
-        window.ENERGY_DATA_STORE = {
-            global: { powerOff: 0, totalClients: 0, oltsAffected: 0, totalOffline: 0 },
-            olts: {} 
-        };
+        let globalPowerOff = 0;
+        let globalTotalClients = 0;
+        let globalTotalOffline = 0;
+        let oltsAffected = 0;
+        let oltStats = [];
 
-        GLOBAL_MASTER_OLT_LIST.forEach(olt => {
-            window.ENERGY_DATA_STORE.olts[olt.id] = {
-                id: olt.id, type: olt.type, totalClients: 0, online: 0, offline: 0, powerOff: 0, offlineOther: 0, lastUpdate: '--/--/---- --:--:--',
-                ports: {}
-            };
-        });
+        window.ENERGY_DATA_STORE = { global: null, olts: {} };
+        window.NETWORK_ENERGY_STORE.clear(); 
 
-        const ranges = ['ENERGIA!A:BP', `${TAB_CIRCUITOS_ENERGIA}!A:AK`, 'LOCALIDADE!A:AH'].concat(GLOBAL_MASTER_OLT_LIST.map(o => o.type === 'nokia' ? `${o.sheetTab}!A:E` : `${o.sheetTab}!A:C`));
-        
+        const ranges = GLOBAL_MASTER_OLT_LIST.map(o => `${o.sheetTab}!A:K`);
         const dataBatch = await API.getBatch(ranges);
 
-        if (!dataBatch.valueRanges) throw new Error("Falha na estrutura de retorno da API");
+        if (!dataBatch.valueRanges) return;
 
-        const rowsCircuitos = dataBatch.valueRanges[1].values || [];
-        const rowsLocalidades = dataBatch.valueRanges[2].values || [];
+        GLOBAL_MASTER_OLT_LIST.forEach((olt, index) => {
+            const rows = dataBatch.valueRanges[index].values ? dataBatch.valueRanges[index].values.slice(1) : [];
+            let oltPowerOff = 0, oltOnline = 0, oltOffline = 0;
+            let lastUpdateStr = '--/--/---- --:--:--';
+            
+            const portDataTemp = {}; 
 
-        GLOBAL_MASTER_OLT_LIST.forEach((oltDef, index) => {
-            const vrIndex = index + 3;
-            const rows = dataBatch.valueRanges[vrIndex].values ? dataBatch.valueRanges[vrIndex].values.slice(1) : [];
-            const oltData = window.ENERGY_DATA_STORE.olts[oltDef.id];
-
-            rows.forEach(col => {
-                if(col.length === 0) return;
-                
-                const isOnline = DataMapper.isOnline(oltDef.type === 'nokia' ? col[4] : col[2], oltDef.type);
-                const portInfo = DataMapper.extractPort(col[0], oltDef.type);
-                
-                if (portInfo) {
-                    const { placa, porta } = portInfo;
-                    
-                    if (!oltData.ports[placa]) oltData.ports[placa] = {};
-                    if (!oltData.ports[placa][porta]) {
-                        const circ = DataMapper.getCircuitInfo(rowsCircuitos, oltDef, placa, porta);
-                        const bairro = DataMapper.getBairroInfo(rowsLocalidades, oltDef.id, placa, porta, oltDef.type);
-                        oltData.ports[placa][porta] = { total: 0, online: 0, offline: 0, powerOff: 0, circuit: circ, bairro: bairro };
-                    }
-
-                    oltData.ports[placa][porta].total++;
-                    if (isOnline) {
-                        oltData.ports[placa][porta].online++;
-                        oltData.online++;
-                    } else {
-                        oltData.ports[placa][porta].offline++;
-                        oltData.offline++;
-                        window.ENERGY_DATA_STORE.global.totalOffline++;
-                    }
-                    
-                    oltData.totalClients++;
-                    window.ENERGY_DATA_STORE.global.totalClients++;
-                }
-            });
-        });
-
-        const rowsEnergia = dataBatch.valueRanges[0].values ? dataBatch.valueRanges[0].values.slice(1) : [];
-        
-        GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {
-            if (oltDef.energyCol === undefined) return;
-            const oltId = oltDef.id;
-            const colIndex = oltDef.energyCol;
-            const oltData = window.ENERGY_DATA_STORE.olts[oltId];
-            if (!oltData) return;
-
-            if (rowsEnergia.length > 0 && rowsEnergia[0][colIndex + 3]) {
-                oltData.lastUpdate = rowsEnergia[0][colIndex + 3];
-            }
-
-            rowsEnergia.forEach(row => {
-                let portaFull = null;
-                let qtd = 0;
-
-                for (let i = colIndex; i <= colIndex + 2; i++) {
-                    if (row[i] && String(row[i]).includes('/')) {
-                        const portInfo = extractEnergyPort(row[i]);
-                        if (portInfo) {
-                            portaFull = portInfo;
-                            qtd = parseInt(row[i + 1], 10) || 0;
-                            break;
+            if (dataBatch.valueRanges[index].values && dataBatch.valueRanges[index].values.length > 0) {
+                const firstRow = dataBatch.valueRanges[index].values[0];
+                let cellData = firstRow[10] ? String(firstRow[10]) : '';
+                if (!cellData) {
+                    for (let i = firstRow.length - 1; i >= 0; i--) {
+                        let val = firstRow[i] ? String(firstRow[i]) : '';
+                        if (val.match(/\d{2}\/\d{2}/) && val.match(/\d{2}:\d{2}/)) {
+                            cellData = val; break;
                         }
                     }
                 }
+                if (cellData) {
+                    const dateMatch = cellData.match(/\d{2}\/\d{2}\/\d{2,4}/);
+                    const timeMatch = cellData.match(/\d{2}:\d{2}(:\d{2})?/);
+                    if (dateMatch && timeMatch) lastUpdateStr = `${dateMatch[0]} ${timeMatch[0]}`;
+                }
+            }
 
-                if (portaFull && qtd > 0) {
-                    const { placa, porta } = portaFull;
+            rows.forEach(columns => {
+                if (columns.length === 0) return;
+                
+                const isOnline = DataMapper.isOnline(columns[olt.type === 'nokia' ? 4 : 2], olt.type);
+                const portInfo = extractEnergyPort(columns[0]);
+                
+                if (!portInfo) return;
 
-                    if (!oltData.ports[placa]) oltData.ports[placa] = {};
-                    if (!oltData.ports[placa][porta]) {
-                        const circ = DataMapper.getCircuitInfo(rowsCircuitos, oltDef, placa, porta);
-                        const bairro = DataMapper.getBairroInfo(rowsLocalidades, oltDef.id, placa, porta, oltDef.type);
-                        oltData.ports[placa][porta] = { total: qtd, online: 0, offline: qtd, powerOff: 0, circuit: circ, bairro: bairro };
-                    }
+                if (isOnline) oltOnline++; else oltOffline++;
 
-                    oltData.ports[placa][porta].powerOff = qtd;
-                    oltData.powerOff += qtd;
-                    window.ENERGY_DATA_STORE.global.powerOff += qtd;
+                const desc1 = (columns[7] || '').toLowerCase();
+                const desc2 = (columns[8] || '').toLowerCase();
+                const isDyingGasp = desc1.includes('dyinggasp') || desc1.includes('dying gasp') || 
+                                    desc2.includes('dyinggasp') || desc2.includes('dying gasp');
+
+                if (isDyingGasp && !isOnline) {
+                    oltPowerOff++;
+                }
+
+                if (!portDataTemp[portInfo.placa]) portDataTemp[portInfo.placa] = {};
+                if (!portDataTemp[portInfo.placa][portInfo.porta]) {
+                    portDataTemp[portInfo.placa][portInfo.porta] = { online: 0, offline: 0, powerOff: 0 };
+                }
+
+                if (isOnline) portDataTemp[portInfo.placa][portInfo.porta].online++;
+                else {
+                    portDataTemp[portInfo.placa][portInfo.porta].offline++;
+                    if (isDyingGasp) portDataTemp[portInfo.placa][portInfo.porta].powerOff++;
                 }
             });
+
+            globalPowerOff += oltPowerOff;
+            globalTotalClients += (oltOnline + oltOffline);
+            globalTotalOffline += oltOffline;
+            if (oltPowerOff > 0) oltsAffected++;
+
+            oltStats.push({ id: olt.id, online: oltOnline, offline: oltOffline, powerOff: oltPowerOff, lastUpdate: lastUpdateStr });
+            
+            window.ENERGY_DATA_STORE.olts[olt.id] = {
+                powerOff: oltPowerOff, totalClients: (oltOnline + oltOffline), ports: portDataTemp
+            };
         });
 
-        GLOBAL_MASTER_OLT_LIST.forEach(olt => {
-            const oData = window.ENERGY_DATA_STORE.olts[olt.id];
-            oData.offlineOther = Math.max(0, oData.offline - oData.powerOff);
-            if (oData.powerOff > 0) window.ENERGY_DATA_STORE.global.oltsAffected++;
-        });
+        window.ENERGY_DATA_STORE.global = {
+            powerOff: globalPowerOff, totalClients: globalTotalClients,
+            totalOffline: globalTotalOffline, oltsAffected: oltsAffected
+        };
 
-        updateGlobalEnergyCard();
-        window.NETWORK_ENERGY_STORE = new Set();
+        // SEPARAÇÃO ESTRITA: O JS não injeta mais o layout inteiro, apenas manipula os IDs definidos no index.html
+        if (globalBody && isHomePage) {
+            globalBody.style.display = 'flex'; 
+            
+            const loadingEl = document.getElementById('global-energia-loading');
+            const contentEl = document.getElementById('global-energia-content');
+            
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (contentEl) contentEl.style.display = 'flex';
 
-        const gridEl = document.getElementById('energy-olt-grid');
-        const isEnergyPage = window.location.pathname.includes('energia.html');
+            const impactoRede = globalTotalClients > 0 
+                ? ((globalPowerOff / globalTotalClients) * 100).toFixed(1) 
+                : 0;
+            const relativoOff = globalTotalOffline > 0 
+                ? ((globalPowerOff / globalTotalOffline) * 100).toFixed(1) 
+                : 0;
 
-        if (isEnergyPage && gridEl) {
-            gridEl.innerHTML = '';
+            const poEl = document.getElementById('energia-global-poweroff');
+            const afEl = document.getElementById('energia-olts-afetadas');
+            const toEl = document.getElementById('energia-olts-total');
+            const irEl = document.getElementById('energia-impacto-rede');
+            const roEl = document.getElementById('energia-relativo-off');
+
+            if (poEl) poEl.textContent = globalPowerOff;
+            if (afEl) afEl.textContent = oltsAffected;
+            if (toEl) toEl.textContent = GLOBAL_MASTER_OLT_LIST.length;
+            if (irEl) irEl.textContent = `${impactoRede}%`;
+            if (roEl) roEl.textContent = `${relativoOff}%`;
+        }
+
+        if (isEnergyPage && gridEnergyPage) {
+            gridEnergyPage.innerHTML = '';
+            
             GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {
-                const oData = window.ENERGY_DATA_STORE.olts[oltDef.id];
-                
-                const pctPowerOff = oData.totalClients ? (oData.powerOff / oData.totalClients * 100) : 0;
-                const pctOfflineOther = oData.totalClients ? (oData.offlineOther / oData.totalClients * 100) : 0;
-                
-                let powerBlocks = Math.round(pctPowerOff / 10);
-                let offlineBlocks = Math.round(pctOfflineOther / 10);
-                let onlineBlocks = 10 - powerBlocks - offlineBlocks;
-                
-                if (onlineBlocks < 0) {
-                    onlineBlocks = 0;
-                    const totalOff = powerBlocks + offlineBlocks;
-                    if (totalOff > 10) {
-                        powerBlocks = Math.round((powerBlocks / totalOff) * 10);
-                        offlineBlocks = 10 - powerBlocks;
-                    }
-                }
+                const o = oltStats.find(stats => stats.id === oltDef.id);
+                if(!o) return;
 
-                let blocksHtml = '<div class="opt5-container">';
-                for(let i=0; i<onlineBlocks; i++) blocksHtml += `<div class="block" style="background: var(--m3-color-success);" title="Online"></div>`;
-                for(let i=0; i<powerBlocks; i++) blocksHtml += `<div class="block" style="background: #fbbf24;" title="Sem Energia"></div>`;
-                for(let i=0; i<offlineBlocks; i++) blocksHtml += `<div class="block" style="background: #f87171;" title="Sem Sinal"></div>`;
-                blocksHtml += '</div>';
-
-                const dt = DataMapper.parseDateTime(oData.lastUpdate);
+                const btnHtml = `
+                    <div style="display: flex; gap: 8px;">
+                        <button class="card-header-button" onclick="exportCardToImage(event, 'card-${o.id}', '${o.id}')" title="Exportar Card">
+                            <span class="material-symbols-rounded">photo_camera</span>
+                        </button>
+                        <button class="card-header-button" onclick="window.openEnergySuperModal('${o.id}', '${oltDef.sheetTab}', '${oltDef.type}', ${oltDef.boards})" title="Detalhes de Energia">
+                            <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
+                        </button>
+                    </div>`;
                 
-                gridEl.innerHTML += `
-                    <div class="overview-card" id="card-${oData.id}" style="display: flex; flex-direction: column; width: 100%;">
+                const dateParts = o.lastUpdate ? o.lastUpdate.split(' ') : ['--/--/----', '--:--:--'];
+                const dateVal = dateParts[0] || '--/--/----';
+                const timeVal = dateParts[1] || '--:--:--';
+                
+                const showPulse = o.powerOff >= 10 ? 'pulse-energy' : '';
+
+                gridEnergyPage.innerHTML += `
+                    <div class="overview-card ${showPulse}" id="card-${o.id}" style="display: flex; flex-direction: column; width: 100%;">
                         <div class="card-header" style="justify-content: space-between; width: 100%; box-sizing: border-box;">
-                            <h3><span class="material-symbols-rounded">dns</span> ${oData.id}</h3>
-                            <div style="display: flex; gap: 8px;">
-                                <button class="card-header-button" onclick="exportCardToImage(event, 'card-${oData.id}', '${oData.id}')" title="Exportar Card">
-                                    <span class="material-symbols-rounded">photo_camera</span>
-                                </button>
-                                <button class="card-header-button" onclick="window.openEnergyModal('${oData.id}')" title="Ver Detalhes">
-                                    <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
-                                </button>
-                            </div>
+                            <h3><span class="material-symbols-rounded">electric_bolt</span> ${o.id}</h3>
+                            ${btnHtml}
                         </div>
                         <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; text-align: center; margin-bottom: 12px;">
-                                <div style="flex: 1;" title="Total Offline">
-                                    <span class="material-symbols-outlined" style="color:#9ca3af; font-size: 26px;">router_off</span><br>
-                                    <strong style="color:#9ca3af; font-size: 1.3rem;">${oData.offline}</strong>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;" title="Online">
+                                        <span class="material-symbols-rounded" style="color:var(--m3-color-success); font-size: 18px;">check_circle</span>
+                                        <span style="font-size: 1.1rem; color:var(--m3-on-surface); font-weight: 500;">${o.online}</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;" title="Offline Geral">
+                                        <span class="material-symbols-rounded" style="color:#f87171; font-size: 18px;">router_off</span>
+                                        <span style="font-size: 1.1rem; color:var(--m3-on-surface); font-weight: 500;">${o.offline}</span>
+                                    </div>
                                 </div>
-                                <div style="flex: 1;" title="Sem Energia">
-                                    <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 26px;">power_off</span><br>
-                                    <strong style="color:#fbbf24; font-size: 1.3rem;">${oData.powerOff}</strong>
-                                </div>
-                                <div style="flex: 1;" title="Sem Sinal Fibra">
-                                    <span class="material-symbols-rounded" style="color:#f87171; font-size: 26px;">wifi_off</span><br>
-                                    <strong style="color:#f87171; font-size: 1.3rem;">${oData.offlineOther}</strong>
+                                <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;">
+                                    <span style="font-size: 2.5rem; font-family: var(--font-family-mono); font-weight: bold; color: #fbbf24; line-height: 1;">${o.powerOff}</span>
+                                    <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 5px;">Power Off</span>
                                 </div>
                             </div>
-                            
-                            ${blocksHtml}
-                            
-                            <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%;">
+                            <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%;">
                                 <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
-                                    <span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span> ${dt.date}
+                                    <span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span> ${dateVal}
                                 </div>
                                 <span style="color: rgba(255,255,255,0.1);">|</span>
                                 <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
-                                    <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span> ${dt.time}
+                                    <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span> ${timeVal}
                                 </div>
                             </div>
                         </div>
                     </div>`;
             });
         }
+
     } catch (e) {
-        console.error("Erro na Engine de Energia:", e);
+        console.error("Erro no motor de energia:", e);
     }
-};
+}
 
-window.openEnergyModal = function(oltId) {
-    const modal = document.getElementById('energy-detail-modal');
+async function fetchCircuitosData() {
+    const range = `${TAB_CIRCUITOS_ENERGIA}!A:AK`;
+    try {
+        const data = await API.get(range);
+        return data.values || [];
+    } catch (e) { return []; }
+}
+
+window.openEnergySuperModal = function(id, sheetTab, type, boards) {
+    const modal = document.getElementById('energy-super-modal');
     if (!modal) return;
-    const oData = window.ENERGY_DATA_STORE.olts[oltId];
     
-    document.getElementById('energy-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${oltId}`;
-
-    const placasGrid = document.getElementById('energy-placas-list');
-    placasGrid.innerHTML = '';
-    const placas = Object.keys(oData.ports).sort((a, b) => parseInt(a) - parseInt(b));
-    placas.forEach(placa => {
-        let placaPowerOff = 0;
-        for (const pt in oData.ports[placa]) placaPowerOff += oData.ports[placa][pt].powerOff;
-        let btnClass = 'placa-btn';
-        if (placaPowerOff > 0) btnClass += ' has-alarm';
-        placasGrid.innerHTML += `
-            <button class="${btnClass}" onclick="window.openEnergyPlacaDetails('${oltId}', '${placa}')">
-                <span class="material-symbols-rounded" style="font-size: 32px;">developer_board</span>
-                Placa ${placa}
-                ${placaPowerOff > 0 ? `<span class="alarm-count">${placaPowerOff} sem luz</span>` : ''}
-            </button>`;
-    });
+    document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">electric_bolt</span> ${id}`;
     document.getElementById('energy-view-detalhes').style.display = 'none';
     document.getElementById('energy-view-placas').style.display = 'block';
+    
+    const placasList = document.getElementById('energy-placas-list');
+    placasList.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+            <span class="material-symbols-rounded" style="font-size: 48px; display: block; margin-bottom: 10px;">hourglass_top</span>
+            <h2>Analisando Quedas de Energia...</h2>
+        </div>
+    `;
+    
     modal.style.display = 'flex';
-};
+    
+    populateEnergyModal(id, sheetTab, type, boards);
+}
 
-window.openEnergyPlacaDetails = function(oltId, placa) {
-    window.CURRENT_ENERGY_OLT = oltId;
+async function populateEnergyModal(oltId, sheetTab, type, boards) {
+    try {
+        const rowsCircuitos = await fetchCircuitosData();
+        const pltData = window.ENERGY_DATA_STORE.olts[oltId]?.ports || {};
+
+        const placasList = document.getElementById('energy-placas-list');
+        if (placasList) placasList.innerHTML = '';
+
+        for (let i = 1; i <= boards; i++) {
+            const placaNum = i;
+            const ports = pltData[placaNum] || {};
+            
+            let totalPowerOff = 0;
+            for (const pt in ports) {
+                totalPowerOff += ports[pt].powerOff;
+            }
+
+            let btnClass = 'placa-btn';
+            let badgeHtml = '';
+            
+            if (totalPowerOff > 0) {
+                btnClass += ' has-energy-alarm'; 
+                badgeHtml = `<span class="alarm-count" style="background:#fbbf24; color:#000;">${totalPowerOff} Sinais</span>`;
+            }
+
+            if (placasList) {
+                placasList.innerHTML += `
+                    <button class="${btnClass}" onclick="window.openEnergyPlacaDetails('${oltId}', '${placaNum}', '${type}')">
+                        <span class="material-symbols-rounded" style="font-size: 32px;">developer_board</span>
+                        Placa ${placaNum}
+                        ${badgeHtml}
+                    </button>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Erro ao popular modal de energia:', error);
+    }
+}
+
+window.openEnergyPlacaDetails = async function(oltId, placa, type) {
     window.CURRENT_ENERGY_PLACA = placa;
-
+    
     document.getElementById('energy-view-placas').style.display = 'none';
     document.getElementById('energy-view-detalhes').style.display = 'block';
     
     const tbody = document.getElementById('energy-detalhes-tbody');
     tbody.innerHTML = '';
-    const ports = window.ENERGY_DATA_STORE.olts[oltId].ports[placa];
     
-    if (!ports || Object.keys(ports).length === 0) {
-        tbody.innerHTML = `<tr><td colspan=\"4\" style=\"text-align:center; padding: 20px; color: var(--m3-on-surface-variant);\">Nenhuma porta encontrada nesta placa.</td></tr>`;
+    const ports = window.ENERGY_DATA_STORE.olts[oltId]?.ports[placa] || {};
+    const sortedPorts = Object.keys(ports).sort((a, b) => parseInt(a) - parseInt(b));
+    
+    if (sortedPorts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: var(--m3-on-surface-variant);">Nenhuma porta com dados de energia nesta placa.</td></tr>`;
         return;
     }
 
-    Object.keys(ports).sort((a, b) => parseInt(a) - parseInt(b)).forEach(pt => {
-        const pData = ports[pt];
-        if (pData.total > 0) {
-            const perc = pData.powerOff / pData.total;
-            let statusClass = 'status-normal';
-            let statusText = 'Normal';
-            
-            if ((perc >= 0.5 && pData.powerOff >= 10) || (perc === 1 && pData.total >= 5)) {
-                statusClass = 'status-critico';
-                statusText = 'Crítico';
-            } else if (perc >= 0.15 && pData.powerOff >= 5) {
-                statusClass = 'status-atencao';
-                statusText = 'Atenção';
-            }
+    const rowsCircuitos = await fetchCircuitosData();
 
-            const safeInfo = pData.circuit.replace(/'/g, "\\'");
-            const textoBairro = pData.bairro && pData.bairro !== '-' ? pData.bairro : 'N/A';
+    sortedPorts.forEach(pt => {
+        const { online, offline, powerOff } = ports[pt];
+        const info = DataMapper.getCircuitInfo(rowsCircuitos, { id: oltId }, placa, pt);
+        
+        let powerColor = 'var(--m3-on-surface)';
+        if (powerOff > 0) powerColor = '#fbbf24'; 
 
-            tbody.innerHTML += `
-                <tr>
-                    <td>Porta ${String(pt).padStart(2, '0')}</td>
-                    <td><span class="circuit-badge">${pData.circuit}</span></td>
-                    <td style="font-family: var(--font-family-mono); font-size: 0.9rem; color: var(--m3-on-surface-variant);">${textoBairro}</td>
-                    <td>
-                        <button class="status ${statusClass} status-btn" style="cursor: pointer;"
-                            onclick="openEnergyPortDetails('${placa}', '${pt}', '${safeInfo}', ${pData.total}, ${pData.offline}, ${pData.powerOff})">
-                            ${statusText}
-                        </button>
-                    </td>
-                </tr>`;
-        }
+        const safeInfo = info.replace(/'/g, "\\'");
+
+        tbody.innerHTML += `
+            <tr>
+                <td>Porta ${String(pt).padStart(2, '0')}</td>
+                <td>
+                    <span class="circuit-badge circuit-clickable" onclick="window.openEnergyPortClients('${placa}', '${pt}', '${safeInfo}', ${online}, ${offline}, ${powerOff})">
+                        ${info}
+                    </span>
+                </td>
+                <td style="color: var(--m3-color-success); font-weight: bold;">${online}</td>
+                <td style="color: #f87171; font-weight: bold;">${offline}</td>
+                <td><strong style="color: ${powerColor}; font-size: 1.1rem;">${powerOff}</strong></td>
+            </tr>
+        `;
     });
 };
 
-window.openEnergyPortDetails = function(placa, porta, circuito, total, offline, powerOff) {
+window.openEnergyPortClients = function(placa, porta, circuitoNome, online, offline, powerOff) {
     const modal = document.getElementById('energy-port-modal');
     if (!modal) return;
 
-    const textoCircuito = (circuito && circuito !== "-") ? ` - Circuito: ${circuito}` : "";
-    document.getElementById('energy-port-modal-title').textContent = `Placa ${placa} / Porta ${porta}${textoCircuito}`;
+    const textoCircuito = (circuitoNome && circuitoNome !== "-") ? ` - Circuito: ${circuitoNome}` : "";
+    document.getElementById('energy-port-title').textContent = `Placa ${placa} / Porta ${porta}${textoCircuito}`;
 
-    document.getElementById('energy-modal-total').textContent = total;
+    document.getElementById('energy-modal-online').textContent = online;
     document.getElementById('energy-modal-offline').textContent = offline;
     document.getElementById('energy-modal-poweroff').textContent = powerOff;
 
@@ -536,7 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     if (isEnergyPage || typeof checkIsHomePage === 'function' && checkIsHomePage()) {
-        startEnergyMonitoring();
-        setInterval(startEnergyMonitoring, GLOBAL_REFRESH_SECONDS * 1000);
+        runEnergyMonitoring();
+        setInterval(runEnergyMonitoring, GLOBAL_REFRESH_SECONDS * 1000);
     }
 });

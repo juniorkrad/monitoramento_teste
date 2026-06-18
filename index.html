@@ -36,14 +36,12 @@
                             <h3><span class="material-symbols-rounded">public</span> MONITORAMENTO DA REDE</h3>
                         </div>
                         <div class="card-body" id="card-global-body">
-                            
                             <div id="global-net-loading" style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
                                 <div class="spinner"></div>
                                 <p style="margin-top: 10px; font-size: 0.9rem;">Processando topologia de rede...</p>
                             </div>
 
                             <div id="global-net-content" style="display: none; width: 100%; justify-content: space-between; align-items: stretch; flex-wrap: wrap; gap: 10px; height: 100%;">
-                                
                                 <div class="card-stats" style="flex: 1; padding-right: 15px; min-width: 200px;">
                                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px">
                                         <span class="material-symbols-rounded" style="color:#60a5fa; font-size:20px;">visibility</span>
@@ -69,13 +67,7 @@
                                         <h3 style="margin:0; font-size:1rem; color:var(--m3-on-surface);">Top 3 OLTs Críticas</h3>
                                     </div>
                                     <div id="net-ranking-container" style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center;">
-                                        
-                                        <div id="net-top-1" class="ranking-row" style="display: none; margin-bottom: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background-color 0.2s ease; margin-left: -8px;"
-                                             onmouseenter="handleNetHover(event)"
-                                             onmouseleave="handleNetLeave()"
-                                             onclick="handleNetClick(event)"
-                                             onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'"
-                                             onmouseout="this.style.backgroundColor='transparent'">
+                                        <div id="net-top-1" class="ranking-row" style="display: none; margin-bottom: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background-color 0.2s ease; margin-left: -8px;" onmouseenter="handleNetHover(event)" onmouseleave="handleNetLeave()" onclick="handleNetClick(event)">
                                             <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline; pointer-events: none;">
                                                 <strong id="net-top-1-name" style="color: var(--m3-on-surface); font-size: 1rem;"></strong>
                                                 <span id="net-top-1-off" class="stat-number" style="font-size: 1rem; color: var(--m3-color-error); width: auto;"></span>
@@ -84,13 +76,7 @@
                                                 <div id="net-top-1-bar" style="height: 100%; width: 0%; background: var(--m3-color-error); border-radius: 4px; transition: width 0.5s ease;"></div>
                                             </div>
                                         </div>
-                                        
-                                        <div id="net-top-2" class="ranking-row" style="display: none; margin-bottom: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background-color 0.2s ease; margin-left: -8px;"
-                                             onmouseenter="handleNetHover(event)"
-                                             onmouseleave="handleNetLeave()"
-                                             onclick="handleNetClick(event)"
-                                             onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'"
-                                             onmouseout="this.style.backgroundColor='transparent'">
+                                        <div id="net-top-2" class="ranking-row" style="display: none; margin-bottom: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background-color 0.2s ease; margin-left: -8px;" onmouseenter="handleNetHover(event)" onmouseleave="handleNetLeave()" onclick="handleNetClick(event)">
                                             <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline; pointer-events: none;">
                                                 <strong id="net-top-2-name" style="color: var(--m3-on-surface); font-size: 1rem;"></strong>
                                                 <span id="net-top-2-off" class="stat-number" style="font-size: 1rem; color: var(--m3-color-error); width: auto;"></span>
@@ -99,13 +85,7 @@
                                                 <div id="net-top-2-bar" style="height: 100%; width: 0%; background: var(--m3-color-error); border-radius: 4px; transition: width 0.5s ease;"></div>
                                             </div>
                                         </div>
-                                        
-                                        <div id="net-top-3" class="ranking-row" style="display: none; margin-bottom: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background-color 0.2s ease; margin-left: -8px;"
-                                             onmouseenter="handleNetHover(event)"
-                                             onmouseleave="handleNetLeave()"
-                                             onclick="handleNetClick(event)"
-                                             onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'"
-                                             onmouseout="this.style.backgroundColor='transparent'">
+                                        <div id="net-top-3" class="ranking-row" style="display: none; margin-bottom: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background-color 0.2s ease; margin-left: -8px;" onmouseenter="handleNetHover(event)" onmouseleave="handleNetLeave()" onclick="handleNetClick(event)">
                                             <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline; pointer-events: none;">
                                                 <strong id="net-top-3-name" style="color: var(--m3-on-surface); font-size: 1rem;"></strong>
                                                 <span id="net-top-3-off" class="stat-number" style="font-size: 1rem; color: var(--m3-color-error); width: auto;"></span>
@@ -118,20 +98,47 @@
                                         <div id="net-no-issues" style="display: none; text-align: center; color: var(--m3-color-success); font-weight: 700; width: 100%;">
                                             <span class="material-symbols-rounded" style="font-size: 40px;">sentiment_very_satisfied</span><br>Rede 100% Online!
                                         </div>
-                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
                     <div class="global-card" id="global-energia-body">
                         <div class="card-header">
                             <h3><span class="material-symbols-rounded">electric_bolt</span> MONITORAMENTO DE ENERGIA</h3>
                         </div>
-                        <div class="card-body">
-                            <div style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
+                        <div class="card-body" id="card-energia-body">
+                            <div id="global-energia-loading" style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
                                 <div class="spinner"></div>
                                 <p style="margin-top: 10px; font-size: 0.9rem;">Consultando telemetria de energia (Dying Gasp)...</p>
+                            </div>
+
+                            <div id="global-energia-content" style="display: none; width: 100%; justify-content: space-between; align-items: stretch; flex-wrap: wrap; gap: 10px; height: 100%;">
+                                <div class="card-stats" style="flex: 1; padding-right: 15px; min-width: 200px;">
+                                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px">
+                                        <span class="material-symbols-rounded" style="color:#fbbf24; font-size:20px;">power_off</span>
+                                        <h3 style="margin:0; font-size:1rem; color:var(--m3-on-surface);">Status Global</h3>
+                                    </div>
+                                    <div class="global-stat stat-item">
+                                        <span class="stat-number" id="energia-global-poweroff" style="color: #fbbf24;">--</span>
+                                        <label><span class="material-symbols-rounded icon-total" style="font-size: 18px;">battery_alert</span> Quedas (Power Off)</label>
+                                    </div>
+                                </div>
+                                <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 20px; min-width: 200px;">
+                                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px">
+                                        <span class="material-symbols-rounded" style="color:#60a5fa; font-size:20px;">analytics</span>
+                                        <h3 style="margin:0; font-size:1rem; color:var(--m3-on-surface);">Impacto na Rede</h3>
+                                    </div>
+                                    <div style="font-size: 0.95rem; line-height: 1.6; color: var(--m3-on-surface-variant);">
+                                        <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle;">dns</span>
+                                        <strong id="energia-olts-afetadas" style="color: var(--m3-on-surface);">--</strong> de <span id="energia-olts-total">--</span> OLTs afetadas.<br>
+                                        <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle;">public</span>
+                                        Impacto rede: <strong id="energia-impacto-rede" style="color: var(--m3-on-surface);">--%</strong><br>
+                                        <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle;">pie_chart</span>
+                                        Relativo OFF: <strong id="energia-relativo-off" style="color: #f87171;">--%</strong>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -140,10 +147,24 @@
                         <div class="card-header">
                             <h3><span class="material-symbols-rounded">insights</span> MONITORAMENTO DE POTÊNCIA</h3>
                         </div>
-                        <div class="card-body">
-                            <div style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
+                        <div class="card-body" id="card-potencia-body">
+                            <div id="global-potencia-loading" style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
                                 <div class="spinner"></div>
                                 <p style="margin-top: 10px; font-size: 0.9rem;">Avaliando atenuação óptica da rede...</p>
+                            </div>
+                            
+                            <div id="global-potencia-content" style="display: none; width: 100%; flex-direction: column; justify-content: stretch; height: 100%;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                                    <span class="material-symbols-rounded" style="color: #f87171; font-size: 20px;">insights</span>
+                                    <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Piores Médias (OLTs)</h3>
+                                </div>
+                                <div style="flex: 1; width: 100%; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                                    <div class="potencia-top-grid" id="potencia-badge-container" style="width: 100%;">
+                                        </div>
+                                    <div id="potencia-no-issues" style="display: none; text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px; width: 100%;">
+                                        <span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Rede sem clientes online lidos!
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -152,10 +173,19 @@
                         <div class="card-header">
                             <h3><span class="material-symbols-rounded">thermostat</span> MONITORAMENTO DE TEMPERATURA</h3>
                         </div>
-                        <div class="card-body">
-                            <div style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
+                        <div class="card-body" id="card-temperatura-body">
+                            <div id="global-temperatura-loading" style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
                                 <div class="spinner"></div>
                                 <p style="margin-top: 10px; font-size: 0.9rem;">Coletando sensores térmicos...</p>
+                            </div>
+
+                            <div id="global-temperatura-content" style="display: none; width: 100%; flex-direction: column; justify-content: stretch; height: 100%;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                                    <span class="material-symbols-rounded" style="color: #f97316; font-size: 20px;">grid_view</span>
+                                    <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Pico Térmico Global</h3>
+                                </div>
+                                <div class="temp-badge-grid" id="temperatura-badge-container">
+                                    </div>
                             </div>
                         </div>
                     </div>
@@ -167,10 +197,19 @@
                         <div class="card-header">
                             <h3><span class="material-symbols-rounded">precision_manufacturing</span> MONITORAMENTO DE EQUIPAMENTOS</h3>
                         </div>
-                        <div class="card-body">
-                            <div style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
+                        <div class="card-body" id="card-eqp-body">
+                            <div id="global-eqp-loading" style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
                                 <div class="spinner"></div>
                                 <p style="margin-top: 10px; font-size: 0.9rem;">Agrupando parque tecnológico...</p>
+                            </div>
+
+                            <div id="global-eqp-content" style="display: none; width: 100%; flex-direction: column; height: 100%;">
+                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px">
+                                    <span class="material-symbols-rounded" style="color:#60a5fa; font-size:20px;">inventory_2</span>
+                                    <h3 style="margin:0; font-size:1rem; color:var(--m3-on-surface);">Fabricantes na Rede</h3>
+                                </div>
+                                <div id="eqp-badge-container" class="eqp-badge-grid">
+                                    </div>
                             </div>
                         </div>
                     </div>
@@ -195,6 +234,7 @@
     <script src="layout.js"></script>
     <script src="notifications.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
+    
     <script src="olt-engine.js"></script>
     <script src="energia-engine.js"></script>
     <script src="equipamentos-engine.js"></script>
