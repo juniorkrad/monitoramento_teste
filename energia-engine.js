@@ -289,8 +289,8 @@ function runEnergyMonitoring() {
                                     </div>
                                 </div>
                                 <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Sem Energia">
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 36px;">power_off</span>
+                                    <div style="display: flex; align-items: center;">
+                                        <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 36px; margin-right: 8px;">power_off</span>
                                         <span style="font-size: 3rem; font-family: var(--font-family-mono); font-weight: bold; color: #fbbf24; line-height: 1;">${o.powerOff}</span>
                                     </div>
                                     <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px;">Sem Energia</span>
@@ -354,8 +354,8 @@ function populateEnergyModal(oltId) {
             let badgeHtml = '';
             
             if (totalPowerOff > 0) {
-                btnClass += ' has-alarm'; 
-                badgeHtml = `<span class="alarm-count critico">${totalPowerOff} sem energia</span>`;
+                btnClass += ' has-warning'; 
+                badgeHtml = `<span class="alarm-count" style="background-color: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3);">${totalPowerOff} sem energia</span>`;
             }
 
             if (placasList) {
@@ -397,7 +397,7 @@ window.openEnergyPlacaDetails = function(oltId, placa, type) {
         const { online, offline, powerOff, total } = ports[pt];
         const calcTotal = total || (online + offline);
         
-        const info = DataMapper.getCircuitInfo(rowsCircuitos, oltId, placa, pt);
+        const info = DataMapper.getCircuitInfo(rowsCircuitos, { id: oltId, type: type }, placa, pt);
         const bairro = DataMapper.getBairroInfo(rowsLocalidades, oltId, placa, pt, type);
         
         const safeInfo = info.replace(/'/g, "\\'");

@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Separação Estrita (Caminho 2) e Integração com Buscador Central
+// Atualização: Inclusão da dupla checagem (oltName || id) para leitura de dados
 // ==============================================================================
 
 window.OLT_CLIENTS_DATA = {};
@@ -308,7 +308,9 @@ window.startOltMonitoring = function(config) {
         try {
             const rowsCircuitos = window.DATA_STORE.circuitos || [];
             const rowsLocalidades = window.DATA_STORE.localidades || [];
-            const dataOlt = window.DATA_STORE.olts[config.id] || [];
+            
+            // CORREÇÃO: Dupla checagem (oltName || id) para leitura correta na memória central
+            const dataOlt = window.DATA_STORE.olts[config.oltName || config.id] || [];
 
             window.GLOBAL_BAIRROS_DATA = rowsLocalidades;
 
