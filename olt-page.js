@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-page.js - Controlador Exclusivo da Página de Status das OLTs (olt.html)
-// Atualização: Exportação em imagem PNG (HTML2Canvas) com fundo transparente
+// Atualização: Escala Visual Padronizada e Foco em Métricas Sem Gráficos
 // ==============================================================================
 
 window.OLT_LAST_UPDATES = {};
@@ -24,17 +24,96 @@ function createCardPlaceholders() {
                         </button>
                     </div>
                 </div>
-                <div class="card-body" style="display: flex; flex-direction: column; padding: 15px 20px;">
-                     <div class="card-stats" style="flex: 1; width: 100%;">
-                        <p>Carregando...</p>
-                    </div>
+                <div class="card-body" id="body-${olt.id}" style="display: flex; flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
+                    <div class="loading-spinner-small" style="margin: 20px auto;"></div>
                 </div>
             </div>
         `;
     });
 }
 
-// Função para capturar e exportar a imagem do card com bordas arredondadas (Fundo Transparente)
+function updateOltCards() {
+    if (!window.DATA_STORE || !window.DATA_STORE.isReady) return;
+
+    GLOBAL_MASTER_OLT_LIST.forEach(olt => {
+        const values = window.DATA_STORE.olts[olt.id] || [];
+        const rows = values.slice(1);
+        
+        let online = 0;
+        let offline = 0;
+        let lastUpdateStr = '--/--/---- --:--:--';
+
+        if (values.length > 0) {
+            const firstRow = values[0];
+            let cellData = firstRow[10] ? String(firstRow[10]) : '';
+            if (!cellData) {
+                for (let i = firstRow.length - 1; i >= 0; i--) {
+                    let val = firstRow[i] ? String(firstRow[i]) : '';
+                    if (val.match(/\d{2}\/\d{2}/) && val.match(/\d{2}:\d{2}/)) {
+                        cellData = val;
+                        break;
+                    }
+                }
+            }
+            if (cellData) {
+                const dateMatch = cellData.match(/\d{2}\/\d{2}\/\d{2,4}/);
+                const timeMatch = cellData.match(/\d{2}:\d{2}(:\d{2})?/);
+                if (dateMatch && timeMatch) {
+                    lastUpdateStr = `${dateMatch[0]} ${timeMatch[0]}`;
+                }
+            }
+        }
+
+        window.OLT_LAST_UPDATES[olt.id] = lastUpdateStr;
+
+        rows.forEach(columns => {
+            if (columns.length === 0) return;
+            const statusStr = columns[olt.type === 'nokia' ? 4 : 2];
+            if (DataMapper.isOnline(statusStr, olt.type)) {
+                online++;
+            } else {
+                offline++;
+            }
+        });
+
+        const total = online + offline;
+        
+        const bodyEl = document.getElementById(`body-${olt.id}`);
+        if (bodyEl) {
+            bodyEl.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px;" title="Clientes Online">
+                            <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">check_circle</span>
+                            <span style="font-size: 1.2rem; color: var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);">${online}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;" title="Clientes Offline">
+                            <span class="material-symbols-rounded" style="color: var(--m3-color-error); font-size: 20px;">cancel</span>
+                            <span style="font-size: 1.2rem; color: var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);">${offline}</span>
+                        </div>
+                    </div>
+                    <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Total de Clientes">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="material-symbols-rounded" style="color: #60a5fa; font-size: 28px;">router</span>
+                            <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; color: #60a5fa; line-height: 1;">${total}</span>
+                        </div>
+                        <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px;">Total</span>
+                    </div>
+                </div>
+                <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span> ${lastUpdateStr.split(' ')[0] || '--/--/----'}
+                    </div>
+                    <span style="color: rgba(255,255,255,0.1);">|</span>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span> ${lastUpdateStr.split(' ')[1] || '--:--:--'}
+                    </div>
+                </div>
+            `;
+        }
+    });
+}
+
 window.exportCardToImage = function(event, cardId, oltName) {
     if (event) event.stopPropagation();
 
@@ -45,24 +124,20 @@ window.exportCardToImage = function(event, cardId, oltName) {
     let originalContent = '';
     if (btn) {
         originalContent = btn.innerHTML;
-        // Muda o ícone temporariamente para indicar carregamento
         btn.innerHTML = `<span class="material-symbols-rounded">hourglass_empty</span>`;
     }
 
-    // Configura e dispara o html2canvas com backgroundColor: null para respeitar o border-radius
     html2canvas(card, {
         backgroundColor: null, 
         scale: 2, 
         useCORS: true,
         logging: false
     }).then(canvas => {
-        // Cria um link temporário para forçar o download
         const link = document.createElement('a');
         link.download = `Status_${oltName}_${new Date().getTime()}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
         
-        // Restaura o ícone original da câmera
         if (btn) btn.innerHTML = originalContent;
     }).catch(error => {
         console.error('Erro ao gerar imagem:', error);
@@ -71,182 +146,20 @@ window.exportCardToImage = function(event, cardId, oltName) {
     });
 };
 
-async function fetchOltData(olt) {
-    const range = `${olt.sheetTab}!A:K`;
-    
-    try {
-        const data = await API.get(range);
-        
-        let datePart = '--/--/----';
-        let timePart = '--:--:--';
-        if (data.values && data.values.length > 0) {
-            const firstRow = data.values[0];
-            let cellData = firstRow[10] ? String(firstRow[10]) : '';
-            
-            if (!cellData) {
-                for (let i = firstRow.length - 1; i >= 0; i--) {
-                    let val = firstRow[i] ? String(firstRow[i]) : '';
-                    if (val.match(/\d{2}\/\d{2}/) && val.match(/\d{2}:\d{2}/)) {
-                        cellData = val;
-                        break;
-                    }
-                }
-            }
-            
-            if (cellData) {
-                const dateMatch = cellData.match(/\d{2}\/\d{2}\/\d{2,4}/);
-                const timeMatch = cellData.match(/\d{2}:\d{2}(:\d{2})?/);
-                if (dateMatch) datePart = dateMatch[0];
-                if (timeMatch) timePart = timeMatch[0];
-            }
-        }
-        
-        window.OLT_LAST_UPDATES[olt.id] = { date: datePart, time: timePart };
-
-        const rows = (data.values || []).slice(1);
-        
-        let totalOnline = 0;
-        let totalOffline = 0;
-
-        rows.forEach(columns => {
-            if (columns.length === 0) return;
-            let isOnline;
-
-            if (olt.type === 'nokia') {
-                const status = columns[4] || '';
-                isOnline = status.trim().toLowerCase().includes('up');
-            } else { 
-                const status = columns[2] || '';
-                isOnline = status.trim().toLowerCase() === 'active';
-            }
-
-            if (isOnline) totalOnline++; else totalOffline++;
-        });
-
-        updateCardUI(olt.id, { onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type });
-        
-    } catch (error) {
-        console.error(`Erro para OLT ${olt.id}:`, error);
-        updateCardUI(olt.id, { error: true });
-    }
-}
-
-function updateCardUI(oltId, data) {
-    const card = document.getElementById(`card-${oltId}`);
-    if (!card) return;
-    if (data.error) {
-        card.querySelector('.card-stats').innerHTML = `<p style="color: #f87171;">Erro ao carregar.</p>`;
-        return;
-    }
-    const { onlineCount, offlineCount, type } = data;
-    const total = onlineCount + offlineCount;
-    const onlinePercent = total > 0 ? (onlineCount / total) * 100 : 0;
-    const offlinePercent = 100 - onlinePercent;
-    
-    const header = card.querySelector('.card-header');
-    header.classList.remove('status-normal', 'status-atencao', 'status-problema');
-    
-    if (offlinePercent > 15 || offlineCount >= 300) { 
-        header.classList.add('status-problema'); 
-    }
-    else if (offlinePercent > 8 || offlineCount >= 150) { 
-        header.classList.add('status-atencao'); 
-    }
-    else { 
-        header.classList.add('status-normal'); 
-    }
-    
-    const statsHtml = `
-        <div class="stat-item" style="display: grid; grid-template-columns: 50px 1fr; gap: 10px; margin-bottom: 12px; align-items: center;">
-            <span class="stat-number" style="font-size: 1.5rem; display: block; text-align: left;">${total}</span>
-            <label style="font-size: 0.95rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-rounded icon-total" style="font-size: 18px;">router</span> Total</label>
-        </div>
-        <div class="stat-item online" style="display: grid; grid-template-columns: 50px 1fr; gap: 10px; margin-bottom: 8px; align-items: center;">
-            <span class="stat-number" style="font-size: 1.2rem; display: block; text-align: left;">${onlineCount}</span>
-            <label style="font-size: 0.9rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-rounded icon-up" style="font-size: 18px;">check_circle</span> ${type === 'nokia' ? 'Up' : 'Active'}</label>
-        </div>
-        <div class="stat-item offline" style="display: grid; grid-template-columns: 50px 1fr; gap: 10px; align-items: center;">
-            <span class="stat-number" style="font-size: 1.2rem; display: block; text-align: left;">${offlineCount}</span>
-            <label style="font-size: 0.9rem; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-rounded icon-down" style="font-size: 18px;">error</span> ${type === 'nokia' ? 'Down' : 'Inactive'}</label>
-        </div>
-    `;
-    
-    const newRadius = 40; 
-    const circumference = 2 * Math.PI * newRadius; 
-    const offset = circumference - (onlinePercent / 100) * circumference;
-    
-    const chartHtml = `
-        <div class="donut-chart-container" style="position: relative; right: auto; top: auto; transform: none; margin-left: 10px; flex-shrink: 0; width: 100px; height: 100px;">
-            <svg class="donut-chart" width="100" height="100" viewBox="0 0 100 100">
-                <circle class="donut-bg" cx="50" cy="50" r="${newRadius}"></circle>
-                <circle class="donut-fg" cx="50" cy="50" r="${newRadius}"
-                    stroke-dasharray="${circumference}"
-                    stroke-dashoffset="${offset}">
-                </circle>
-            </svg>
-            <div class="chart-text"><span class="stat-number">${Math.round(onlinePercent)}%</span></div>
-        </div>
-    `;
-
-    let dateVal = '--/--/----';
-    let timeVal = '--:--:--';
-    if (window.OLT_LAST_UPDATES && window.OLT_LAST_UPDATES[oltId]) {
-        dateVal = window.OLT_LAST_UPDATES[oltId].date;
-        timeVal = window.OLT_LAST_UPDATES[oltId].time;
-    }
-
-    const footerHtml = `
-        <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%;">
-            <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
-                <span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span> ${dateVal}
-            </div>
-            <span style="color: rgba(255,255,255,0.1);">|</span>
-            <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
-                <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span> ${timeVal}
-            </div>
-        </div>
-    `;
-
-    card.querySelector('.card-body').innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-            <div class="card-stats" style="flex: 1; min-width: 0;">${statsHtml}</div>
-            ${chartHtml}
-        </div>
-        ${footerHtml}
-    `;
-}
-
-async function runOverview() {
-    const timestampEl = document.getElementById('update-timestamp');
-    if (timestampEl && (timestampEl.textContent === "" || timestampEl.textContent.includes('Aguardando'))) {
-        timestampEl.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Buscando dados...';
-    }
-    
-    if(document.getElementById('overview-grid') && document.getElementById('overview-grid').innerHTML.trim() === "") {
-        createCardPlaceholders();
-    }
-    
-    const oltPromises = GLOBAL_MASTER_OLT_LIST.map(olt => fetchOltData(olt));
-    await Promise.all(oltPromises);
-    
-    if (typeof updateGlobalTimestamp === 'function') {
-        updateGlobalTimestamp();
-    }
-}
-
 function openSuperModal(id, sheetTab, type, boards) {
-    document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${id}`;
-    
-    document.getElementById('olt-view-detalhes').style.display = 'none';
-    document.getElementById('olt-view-placas').style.display = 'block';
-    
-    document.getElementById('olt-placas-list').innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-            <span class="material-symbols-rounded" style="font-size: 48px; display: block; margin-bottom: 10px;">hourglass_top</span>
-            <h2>Estabelecendo conexão com a OLT...</h2>
-            <p>Buscando status de placas, portas e circuitos.</p>
-        </div>
-    `;
+    const btnTxt = document.getElementById('btn-export-placa-txt');
+    if (btnTxt) btnTxt.style.display = 'inline-block';
+
+    const placasList = document.getElementById('olt-placas-list');
+    if (placasList) {
+        placasList.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; color: var(--m3-on-surface-variant); padding: 40px 0;">
+                <span class="material-symbols-rounded" style="font-size: 48px; display: block; margin-bottom: 10px;">hourglass_top</span>
+                <h2>Estabelecendo conexão com a OLT...</h2>
+                <p>Buscando status de placas, portas e circuitos.</p>
+            </div>
+        `;
+    }
     
     document.getElementById('super-modal').style.display = 'flex';
     
@@ -270,6 +183,9 @@ function closeSuperModal(event) {
     document.getElementById('super-modal').style.display = 'none';
     document.getElementById('olt-placas-list').innerHTML = ''; 
     
+    const btnTxt = document.getElementById('btn-export-placa-txt');
+    if (btnTxt) btnTxt.style.display = 'none';
+
     if (typeof stopOltMonitoring === 'function') {
         stopOltMonitoring();
     }
@@ -278,9 +194,15 @@ function closeSuperModal(event) {
 document.addEventListener('DOMContentLoaded', () => {
     const isOltPage = window.location.pathname.includes('olt.html');
     if (isOltPage) {
-        if (typeof loadHeader === 'function') loadHeader({ title: "Status das OLTs", exactTitle: true });
+        if (typeof loadHeader === 'function') loadHeader({ title: "Status Geral de OLTs", exactTitle: true });
         if (typeof loadFooter === 'function') loadFooter();
-        runOverview();
-        setInterval(runOverview, GLOBAL_REFRESH_SECONDS * 1000);
+        createCardPlaceholders();
+    }
+});
+
+window.addEventListener('dadosAtualizados', () => {
+    const isOltPage = window.location.pathname.includes('olt.html');
+    if (isOltPage) {
+        updateOltCards();
     }
 });
