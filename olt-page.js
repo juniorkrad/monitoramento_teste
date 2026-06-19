@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-page.js - Controlador Exclusivo da Página de Status das OLTs (olt.html)
-// Atualização: Escala Visual Padronizada e Foco em Métricas Sem Gráficos
+// Atualização: Escala Visual Padronizada, Cores e Ícones Específicos
 // ==============================================================================
 
 window.OLT_LAST_UPDATES = {};
@@ -84,18 +84,18 @@ function updateOltCards() {
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
                     <div style="display: flex; flex-direction: column; gap: 12px;">
                         <div style="display: flex; align-items: center; gap: 8px;" title="Clientes Online">
-                            <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">check_circle</span>
-                            <span style="font-size: 1.2rem; color: var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);">${online}</span>
+                            <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">arrow_circle_up</span>
+                            <span style="font-size: 1.2rem; color: var(--m3-color-success); font-weight: bold; font-family: var(--font-family-mono);">${online}</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;" title="Clientes Offline">
-                            <span class="material-symbols-rounded" style="color: var(--m3-color-error); font-size: 20px;">cancel</span>
-                            <span style="font-size: 1.2rem; color: var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);">${offline}</span>
+                            <span class="material-symbols-rounded" style="color: var(--m3-color-error); font-size: 20px;">arrow_circle_down</span>
+                            <span style="font-size: 1.2rem; color: var(--m3-color-error); font-weight: bold; font-family: var(--font-family-mono);">${offline}</span>
                         </div>
                     </div>
                     <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Total de Clientes">
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <span class="material-symbols-rounded" style="color: #60a5fa; font-size: 28px;">router</span>
-                            <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; color: #60a5fa; line-height: 1;">${total}</span>
+                            <span class="material-symbols-rounded" style="color: #ffffff; font-size: 28px;">router</span>
+                            <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; color: #ffffff; line-height: 1;">${total}</span>
                         </div>
                         <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px;">Total</span>
                     </div>
