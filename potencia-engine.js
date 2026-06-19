@@ -238,7 +238,7 @@ function runPotenciaEngine() {
                 }
             });
 
-            const media = analisados > 0 ? (dbmSums / analisados).toFixed(2) : 0;
+            const media = analisados > 0 ? (dbmSums / analisados).toFixed(1) : 0;
             const health = analisados > 0 ? (((analisados - criticos) / analisados) * 100) : 0;
 
             oltStats.push({
@@ -350,7 +350,7 @@ function runPotenciaEngine() {
                                         <span class="material-symbols-rounded" style="color:#60a5fa; font-size: 28px;">insights</span>
                                         <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; color: #60a5fa; line-height: 1;">${o.media}</span>
                                     </div>
-                                    <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px; font-weight: 600;">Média (dBm)</span>
+                                    <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px;">Média (dBm)</span>
                                 </div>
                             </div>
                             <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%;">
@@ -549,7 +549,7 @@ window.openPotenciaPlacaDetails = function(placa, oltType) {
 
     sortedPorts.forEach(pt => {
         const { validCount, sumPower, info, bairro } = ports[pt];
-        const media = validCount > 0 ? (sumPower / validCount).toFixed(2) : 0;
+        const media = validCount > 0 ? (sumPower / validCount).toFixed(1) : 0;
         
         let statusClass = 'status-normal';
         if (media <= -28.00) statusClass = 'status-critico'; 
