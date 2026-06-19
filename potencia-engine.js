@@ -337,18 +337,18 @@ function runPotenciaEngine() {
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
                                 <div style="display: flex; flex-direction: column; gap: 12px;">
                                     <div style="display: flex; align-items: center; gap: 8px;" title="Total Analisado">
-                                        <span class="material-symbols-rounded" style="color:var(--m3-on-surface); font-size: 24px;">search</span>
-                                        <span style="font-size: 1.5rem; color:var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);">${o.analisados}</span>
+                                        <span class="material-symbols-rounded" style="color:var(--m3-on-surface); font-size: 20px;">search</span>
+                                        <span style="font-size: 1.2rem; color:var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);">${o.analisados}</span>
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 8px;" title="Clientes Críticos">
-                                        <span class="material-symbols-rounded" style="color:#f87171; font-size: 24px;">warning</span>
-                                        <span style="font-size: 1.5rem; color:#f87171; font-weight: bold; font-family: var(--font-family-mono);">${o.criticos}</span>
+                                        <span class="material-symbols-rounded" style="color:#f87171; font-size: 20px;">warning</span>
+                                        <span style="font-size: 1.2rem; color:#f87171; font-weight: bold; font-family: var(--font-family-mono);">${o.criticos}</span>
                                     </div>
                                 </div>
                                 <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Média de Potência">
                                     <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span class="material-symbols-rounded" style="color:#60a5fa; font-size: 36px;">insights</span>
-                                        <span style="font-size: 3rem; font-family: var(--font-family-mono); font-weight: bold; color: #60a5fa; line-height: 1;">${o.media}</span>
+                                        <span class="material-symbols-rounded" style="color:#60a5fa; font-size: 28px;">insights</span>
+                                        <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; color: #60a5fa; line-height: 1;">${o.media}</span>
                                     </div>
                                     <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px; font-weight: 600;">Média (dBm)</span>
                                 </div>
