@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Correção de IDs do Modal e Ajuste fino do Layout do Card
+// Atualização: Correção de IDs do Modal, Ajustes Finos no Layout e DataMapper
 // ==============================================================================
 
 window.ENERGY_DATA_STORE = {};
@@ -122,7 +122,6 @@ function runEnergyMonitoring() {
         window.ENERGY_DATA_STORE = { global: null, olts: {} };
         window.NETWORK_ENERGY_STORE.clear(); 
 
-        // PASSO 1: Analisa Base Online/Offline de Todas OLTs
         GLOBAL_MASTER_OLT_LIST.forEach((olt) => {
             const values = window.DATA_STORE.olts[olt.id] || [];
             const rows = values.slice(1);
@@ -159,7 +158,6 @@ function runEnergyMonitoring() {
             globalTotalOffline += oltOffline;
         });
 
-        // PASSO 2: Cruza com os dados específicos da aba ENERGIA
         const rowsEnergia = window.DATA_STORE.energia ? window.DATA_STORE.energia.slice(1) : [];
         
         GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {
@@ -280,7 +278,7 @@ function runEnergyMonitoring() {
                         </div>
                         <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
-                                <div style="display: flex; flex-direction: column; gap: 15px;">
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
                                     <div style="display: flex; align-items: center; gap: 8px;" title="Total Offline">
                                         <span class="material-symbols-rounded" style="color:#f87171; font-size: 24px;">router_off</span>
                                         <span style="font-size: 1.5rem; color:#f87171; font-weight: bold; font-family: var(--font-family-mono);">${o.offline}</span>
@@ -292,10 +290,10 @@ function runEnergyMonitoring() {
                                 </div>
                                 <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Sem Energia">
                                     <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span style="font-size: 3rem; font-family: var(--font-family-mono); font-weight: bold; color: #fbbf24; line-height: 1;">${o.powerOff}</span>
                                         <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 36px;">power_off</span>
+                                        <span style="font-size: 3rem; font-family: var(--font-family-mono); font-weight: bold; color: #fbbf24; line-height: 1;">${o.powerOff}</span>
                                     </div>
-                                    <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px; font-weight: 600;">Sem Energia</span>
+                                    <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px;">Sem Energia</span>
                                 </div>
                             </div>
                             <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%;">
@@ -356,8 +354,8 @@ function populateEnergyModal(oltId) {
             let badgeHtml = '';
             
             if (totalPowerOff > 0) {
-                btnClass += ' has-energy-alarm'; 
-                badgeHtml = `<span class="alarm-count" style="background:#fbbf24; color:#000;">${totalPowerOff} Sinais</span>`;
+                btnClass += ' has-alarm'; 
+                badgeHtml = `<span class="alarm-count critico">${totalPowerOff} sem energia</span>`;
             }
 
             if (placasList) {
@@ -399,7 +397,7 @@ window.openEnergyPlacaDetails = function(oltId, placa, type) {
         const { online, offline, powerOff, total } = ports[pt];
         const calcTotal = total || (online + offline);
         
-        const info = DataMapper.getCircuitInfo(rowsCircuitos, { id: oltId }, placa, pt);
+        const info = DataMapper.getCircuitInfo(rowsCircuitos, oltId, placa, pt);
         const bairro = DataMapper.getBairroInfo(rowsLocalidades, oltId, placa, pt, type);
         
         const safeInfo = info.replace(/'/g, "\\'");
