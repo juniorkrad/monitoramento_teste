@@ -8,6 +8,7 @@ window.DATA_STORE = {
     circuitos: [],   // Guardará a aba CIRCUITO
     localidades: [], // Guardará a aba LOCALIDADE
     temperatura: [], // Guardará a aba TEMPERATURA
+    energia: [],     // Guardará a aba ENERGIA
     isReady: false   // Flag para saber se a primeira carga já aconteceu
 };
 
@@ -16,10 +17,11 @@ async function fetchAllNetworkData() {
         // 1. Monta a lista de todas as abas que precisamos buscar
         const ranges = GLOBAL_MASTER_OLT_LIST.map(o => `${o.sheetTab}!A:K`);
         
-        // 2. Adiciona as abas de apoio e temperatura no mesmo pacote
+        // 2. Adiciona as abas de apoio, temperatura e energia no mesmo pacote
         ranges.push('CIRCUITO!A:AK');
         ranges.push('LOCALIDADE!A:AH');
         ranges.push('TEMPERATURA!A:CX');
+        ranges.push('ENERGIA!A:BP');
 
         // 3. Dispara UMA única requisição para a API do Google Sheets
         const dataBatch = await API.getBatch(ranges);
@@ -40,6 +42,7 @@ async function fetchAllNetworkData() {
         window.DATA_STORE.circuitos = dataBatch.valueRanges[totalOlts].values || [];
         window.DATA_STORE.localidades = dataBatch.valueRanges[totalOlts + 1].values || [];
         window.DATA_STORE.temperatura = dataBatch.valueRanges[totalOlts + 2].values || [];
+        window.DATA_STORE.energia = dataBatch.valueRanges[totalOlts + 3].values || [];
 
         window.DATA_STORE.isReady = true;
 
