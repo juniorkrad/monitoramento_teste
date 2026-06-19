@@ -277,8 +277,12 @@ function runPotenciaEngine() {
                 
                 top3Olts.forEach(o => {
                     const mediaVal = parseFloat(o.media);
-                    let color = '#f87171'; 
-                    if (mediaVal > -26.00) color = '#fbbf24'; 
+                    let color = '#4ade80'; 
+                    if (mediaVal <= -28.00) {
+                        color = '#f87171';
+                    } else if (mediaVal <= -26.00) {
+                        color = '#fbbf24';
+                    }
 
                     container.innerHTML += `
                         <div class="potencia-top-card"
@@ -327,6 +331,14 @@ function runPotenciaEngine() {
                 const dateVal = dateParts[0] || '--/--/----';
                 const timeVal = dateParts[1] || '--:--:--';
                 
+                let mediaVal = parseFloat(o.media);
+                let mediaColor = '#4ade80';
+                if (mediaVal <= -28.00) {
+                    mediaColor = '#f87171';
+                } else if (mediaVal <= -26.00) {
+                    mediaColor = '#fbbf24';
+                }
+
                 gridEl.innerHTML += `
                     <div class="overview-card" id="card-${o.id}" style="display: flex; flex-direction: column; width: 100%;">
                         <div class="card-header" style="justify-content: space-between; width: 100%; box-sizing: border-box;">
@@ -347,8 +359,8 @@ function runPotenciaEngine() {
                                 </div>
                                 <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Média de Potência">
                                     <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span class="material-symbols-rounded" style="color:#60a5fa; font-size: 28px;">insights</span>
-                                        <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; color: #60a5fa; line-height: 1;">${o.media}</span>
+                                        <span class="material-symbols-rounded" style="color:${mediaColor}; font-size: 28px;">insights</span>
+                                        <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; color: ${mediaColor}; line-height: 1;">${o.media}</span>
                                     </div>
                                     <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px;">Média (dBm)</span>
                                 </div>

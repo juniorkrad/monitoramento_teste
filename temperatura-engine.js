@@ -290,7 +290,7 @@ function runTemperaturaEngine() {
 
                     if (o.criticos > 0 || o.maxTemp >= 90) {
                         classeCSS = 'status-critico';
-                        icone = 'local_fire_department'; 
+                        icone = 'device_thermostat'; 
                         statusText = 'Crítico';
                         colorStatus = '#f87171';
                     } else if (o.atencao > 0 || o.maxTemp >= 80) {
@@ -370,7 +370,7 @@ function runTemperaturaEngine() {
                                 </div>
                                 <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Temperatura Máxima">
                                     <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span class="material-symbols-rounded" style="color:${textColor}; font-size: 28px;">local_fire_department</span>
+                                        <span class="material-symbols-rounded" style="color:${textColor}; font-size: 28px;">device_thermostat</span>
                                         <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; color: ${textColor}; line-height: 1;">${o.maxTemp}°C</span>
                                     </div>
                                     <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px;">Temp. Máxima</span>
