@@ -1,6 +1,6 @@
 // ==============================================================================
 // temperatura-engine.js - Motor Dedicado para Análise Térmica das OLTs
-// Atualização: Separação Estrita (Caminho 2) e Integração com Buscador Central
+// Atualização: Escala Visual Padronizada e Foco no Pico de Temperatura
 // ==============================================================================
 
 const TAB_TEMPERATURA = 'TEMPERATURA'; 
@@ -13,13 +13,12 @@ const MAPA_COLUNAS_TEMP = {
 
 window.TEMP_DATA_STORE = {}; 
 window.CURRENT_VIEW_SLOT = null; 
-window.CURRENT_TEMP_OLT = null; // Rastreia a OLT aberta no modal para auto-update
+window.CURRENT_TEMP_OLT = null; 
 
 function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
 }
 
-// Funções Injetadas Globalmente para o Hover/Clique
 window.handleTempHover = function(event) {
     if (isMobileDevice()) return;
     const tooltip = document.getElementById('smart-tooltip');
@@ -255,7 +254,6 @@ function runTemperaturaEngine() {
             });
         });
 
-        // Atualização Global na Home
         if (globalBody && isHomePage) {
             globalBody.style.display = 'flex';
             
@@ -325,7 +323,6 @@ function runTemperaturaEngine() {
             }
         }
 
-        // Atualização da Grade na Página de Temperatura
         if (isTemperaturaPage && gridEl) {
             gridEl.innerHTML = '';
             
@@ -347,6 +344,10 @@ function runTemperaturaEngine() {
                 const dateVal = dateParts[0] || '--/--/----';
                 const timeVal = dateParts[1] || '--:--:--';
                 
+                let textColor = '#f97316';
+                if (o.maxTemp >= 90) textColor = '#f87171';
+                else if (o.maxTemp < 80) textColor = '#4ade80';
+
                 gridEl.innerHTML += `
                     <div class="overview-card" id="card-${o.id}" style="display: flex; flex-direction: column; width: 100%;">
                         <div class="card-header" style="justify-content: space-between; width: 100%; box-sizing: border-box;">
@@ -355,25 +356,24 @@ function runTemperaturaEngine() {
                         </div>
                         <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
-                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
                                     <div style="display: flex; align-items: center; gap: 8px;" title="Sensores Lidos">
-                                        <span class="material-symbols-rounded" style="color:var(--m3-on-surface); font-size: 18px;">memory</span>
-                                        <span style="font-size: 1.1rem; color:var(--m3-on-surface); font-weight: 500;">${o.analisados}</span>
+                                        <span class="material-symbols-rounded" style="color:var(--m3-on-surface); font-size: 20px;">memory</span>
+                                        <span style="font-size: 1.2rem; color:var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);">${o.analisados}</span>
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 8px;" title="Crítico / Atenção">
-                                        <span class="material-symbols-rounded" style="color:#f87171; font-size: 18px;">warning</span>
-                                        <span style="font-size: 1.1rem; color:var(--m3-on-surface); font-weight: bold;">
-                                            <span style="color:#f87171">${o.criticos}</span> / <span style="color:#f97316">${o.atencao}</span>
+                                        <span class="material-symbols-rounded" style="color:#f87171; font-size: 20px;">warning</span>
+                                        <span style="font-size: 1.2rem; color:var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);">
+                                            <span style="color:#f87171">${o.criticos}</span> <span style="color:var(--m3-on-surface-variant); font-weight:normal;">/</span> <span style="color:#f97316">${o.atencao}</span>
                                         </span>
                                     </div>
-                                    <div style="display: flex; align-items: center; gap: 8px;" title="Pico de Temperatura">
-                                        <span class="material-symbols-rounded" style="color:#f97316; font-size: 18px;">local_fire_department</span>
-                                        <span style="font-size: 1.1rem; color:var(--m3-on-surface); font-weight: 500;">${o.maxTemp} °C</span>
-                                    </div>
                                 </div>
-                                <div style="text-align: right;">
-                                    <span style="font-size: 2rem; font-family: var(--font-family-mono); font-weight: bold; color: ${o.health >= 90 ? 'var(--m3-color-success)' : 'var(--m3-color-error)'};">${o.health.toFixed(1)}%</span><br>
-                                    <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); text-transform: uppercase;">Saúde Térmica</span>
+                                <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Temperatura Máxima">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span class="material-symbols-rounded" style="color:${textColor}; font-size: 28px;">local_fire_department</span>
+                                        <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; color: ${textColor}; line-height: 1;">${o.maxTemp}°C</span>
+                                    </div>
+                                    <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px;">Temp. Máxima</span>
                                 </div>
                             </div>
                             <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%;">
@@ -505,7 +505,6 @@ window.backToTemperaturaSlots = function() {
     document.getElementById('temperatura-view-slots').style.display = 'block';
 }
 
-// Inicialização e Carregamento Base
 document.addEventListener('DOMContentLoaded', () => {
     const isTemperaturaPage = window.location.pathname.includes('temperatura.html');
     
@@ -516,16 +515,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// OUVINTE DO BUSCADOR CENTRAL (Reage aos dados na memória)
 window.addEventListener('dadosAtualizados', () => {
     runTemperaturaEngine();
 
-    // Auto-atualização se o modal de uma OLT estiver aberto
     const modal = document.getElementById('super-modal');
     if (modal && modal.style.display === 'flex' && window.CURRENT_TEMP_OLT) {
         window.openTemperaturaSuperModal(window.CURRENT_TEMP_OLT);
         
-        // Se a visualização da tabela de sensores (detalhes) estiver aberta, re-renderiza ela
         if (document.getElementById('temperatura-view-detalhes') && document.getElementById('temperatura-view-detalhes').style.display === 'block' && window.CURRENT_VIEW_SLOT) {
             window.openTemperaturaSlotDetails(window.CURRENT_TEMP_OLT, window.CURRENT_VIEW_SLOT);
         }
