@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Ajuste fino visual nos cards (minimalista com foco em ícones e cores)
+// Atualização: Correção de IDs do Modal e Ajuste fino do Layout do Card
 // ==============================================================================
 
 window.ENERGY_DATA_STORE = {};
@@ -54,7 +54,7 @@ window.exportCardToImage = function(event, cardId, oltName) {
 };
 
 window.exportEnergiaPlacaToTXT = function() {
-    const titleEl = document.getElementById('super-modal-title');
+    const titleEl = document.getElementById('energy-modal-title');
     let oltName = 'OLT_Desconhecida';
     if (titleEl) {
         oltName = titleEl.innerText.replace('dns', '').trim();
@@ -261,7 +261,7 @@ function runEnergyMonitoring() {
                         <button class="card-header-button" onclick="exportCardToImage(event, 'card-${o.id}', '${o.id}')" title="Exportar Card">
                             <span class="material-symbols-rounded">photo_camera</span>
                         </button>
-                        <button class="card-header-button" onclick="window.openEnergySuperModal('${o.id}')" title="Detalhes de Energia">
+                        <button class="card-header-button" onclick="window.openEnergyModal('${o.id}')" title="Detalhes de Energia">
                             <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span>
                         </button>
                     </div>`;
@@ -280,7 +280,7 @@ function runEnergyMonitoring() {
                         </div>
                         <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
-                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div style="display: flex; flex-direction: column; gap: 15px;">
                                     <div style="display: flex; align-items: center; gap: 8px;" title="Total Offline">
                                         <span class="material-symbols-rounded" style="color:#f87171; font-size: 24px;">router_off</span>
                                         <span style="font-size: 1.5rem; color:#f87171; font-weight: bold; font-family: var(--font-family-mono);">${o.offline}</span>
@@ -290,9 +290,12 @@ function runEnergyMonitoring() {
                                         <span style="font-size: 1.5rem; color:#f97316; font-weight: bold; font-family: var(--font-family-mono);">${o.offlineOther}</span>
                                     </div>
                                 </div>
-                                <div style="text-align: right; display: flex; align-items: center; gap: 8px;" title="Sem Energia">
-                                    <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 36px;">power_off</span>
-                                    <span style="font-size: 3rem; font-family: var(--font-family-mono); font-weight: bold; color: #fbbf24; line-height: 1;">${o.powerOff}</span>
+                                <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Sem Energia">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 3rem; font-family: var(--font-family-mono); font-weight: bold; color: #fbbf24; line-height: 1;">${o.powerOff}</span>
+                                        <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 36px;">power_off</span>
+                                    </div>
+                                    <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px; font-weight: 600;">Sem Energia</span>
                                 </div>
                             </div>
                             <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%;">
@@ -314,13 +317,13 @@ function runEnergyMonitoring() {
     }
 }
 
-window.openEnergySuperModal = function(id) {
-    const modal = document.getElementById('energy-super-modal');
+window.openEnergyModal = function(id) {
+    const modal = document.getElementById('energy-detail-modal');
     if (!modal) return;
     
     window.CURRENT_ENERGY_OLT = id; 
     
-    document.getElementById('super-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${id}`; 
+    document.getElementById('energy-modal-title').innerHTML = `<span class="material-symbols-rounded">dns</span> ${id}`; 
     document.getElementById('energy-view-detalhes').style.display = 'none';
     document.getElementById('energy-view-placas').style.display = 'block';
     
@@ -480,7 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('dadosAtualizados', () => {
     runEnergyMonitoring();
 
-    const modal = document.getElementById('energy-super-modal');
+    const modal = document.getElementById('energy-detail-modal');
     if (modal && modal.style.display === 'flex' && window.CURRENT_ENERGY_OLT) {
         populateEnergyModal(window.CURRENT_ENERGY_OLT);
         if (document.getElementById('energy-view-detalhes').style.display === 'block' && window.CURRENT_ENERGY_PLACA) {
