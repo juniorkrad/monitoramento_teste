@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Correção do Filtro Dying Gasp (Regex) e Novo Layout de Cards
+// Atualização: Correções de Produção, Extrator, Layout de Ícones e Prevenção de Duplicidade
 // ==============================================================================
 
 window.ENERGY_DATA_STORE = {};
@@ -9,10 +9,10 @@ window.CURRENT_ENERGY_OLT = null;
 window.CURRENT_ENERGY_PLACA = null; 
 let energyChartInstance = null; 
 
+// 1. EXTRATOR RESTAURADO (IDÊNTICO À PRODUÇÃO - old.energia-engine.js)
 function extractEnergyPort(val) {
     if (!val) return null;
-    let s = String(val).replace(/gpon/i, '').replace(/\\/g, '/').trim();
-    s = s.replace(/[^0-9]+$/, ''); 
+    let s = String(val).replace(/gpon/i, '').trim();
     let parts = s.split('/');
     if (parts.length >= 2) {
         let placa = parseInt(parts[parts.length - 2], 10);
@@ -59,7 +59,7 @@ window.exportEnergiaPlacaToTXT = function() {
     const titleEl = document.getElementById('super-modal-title');
     let oltName = 'OLT_Desconhecida';
     if (titleEl) {
-        oltName = titleEl.innerText.replace('electric_bolt', '').trim();
+        oltName = titleEl.innerText.replace('dns', '').trim(); // Atualizado para dns
     }
     const placa = window.CURRENT_ENERGY_PLACA || '?';
     
@@ -161,12 +161,11 @@ function runEnergyMonitoring() {
 
                 if (isOnline) oltOnline++; else oltOffline++;
 
-                // Lógica de Filtro Aprimorada (Remove espaços, hifens e underlines antes de checar)
-                const cleanDesc1 = (columns[7] || '').toLowerCase().replace(/[\s\-_]/g, '');
-                const cleanDesc2 = (columns[8] || '').toLowerCase().replace(/[\s\-_]/g, '');
-                
-                const isDyingGasp = cleanDesc1.includes('dyinggasp') || cleanDesc1.includes('poweroff') || 
-                                    cleanDesc2.includes('dyinggasp') || cleanDesc2.includes('poweroff');
+                // 2. FILTRO DYING GASP RESTAURADO DA VERSÃO DE PRODUÇÃO
+                const desc1 = (columns[7] || '').toLowerCase();
+                const desc2 = (columns[8] || '').toLowerCase();
+                const isDyingGasp = desc1.includes('dyinggasp') || desc1.includes('dying gasp') || 
+                                    desc2.includes('dyinggasp') || desc2.includes('dying gasp');
 
                 if (isDyingGasp && !isOnline) {
                     oltPowerOff++;
@@ -231,6 +230,7 @@ function runEnergyMonitoring() {
         }
 
         if (isEnergyPage && gridEnergyPage) {
+            // 3. LIMPEZA PREVENTIVA DA GRADE PARA EVITAR DUPLICAÇÃO DE CARDS
             gridEnergyPage.innerHTML = '';
             
             GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {
@@ -253,7 +253,7 @@ function runEnergyMonitoring() {
                 
                 const showPulse = o.powerOff >= 10 ? 'pulse-energy' : '';
 
-                // Lógica dos novos ícones e contagens
+                // Cálculos e formatação do novo layout
                 const semSinalOptico = o.offline - o.powerOff;
 
                 gridEnergyPage.innerHTML += `
@@ -432,6 +432,17 @@ window.backToEnergyPlacas = function() {
     document.getElementById('energy-view-detalhes').style.display = 'none';
     document.getElementById('energy-view-placas').style.display = 'block';
 };
+
+// 4. RESTAURAÇÃO DO CARREGAMENTO DO CABEÇALHO/RODAPÉ
+document.addEventListener('DOMContentLoaded', () => {
+    const isEnergyPage = window.location.pathname.includes('energia.html');
+    
+    if (isEnergyPage) {
+        if (typeof loadHeader === 'function') loadHeader({ title: "Alarmes de Energia", exactTitle: true });
+        if (typeof loadFooter === 'function') loadFooter();
+        setTimeout(updateGlobalTimestamp, 500);
+    }
+});
 
 // OUVINTE DO BUSCADOR CENTRAL
 window.addEventListener('dadosAtualizados', () => {
