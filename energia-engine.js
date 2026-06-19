@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Fonte de dados de Energia restaurada para a aba ENERGIA
+// Atualização: Ajuste fino visual nos cards (minimalista com foco em ícones)
 // ==============================================================================
 
 window.ENERGY_DATA_STORE = {};
@@ -280,24 +280,19 @@ function runEnergyMonitoring() {
                         </div>
                         <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
-                                <div style="display: flex; flex-direction: column; gap: 8px;">
-                                    <div style="display: flex; align-items: center; gap: 8px;" title="Total Offline Geral">
-                                        <span class="material-symbols-rounded" style="color:#f87171; font-size: 18px;">router_off</span>
-                                        <span style="font-size: 1.1rem; color:var(--m3-on-surface); font-weight: 500;">${o.offline}</span>
-                                        <span style="font-size: 0.75rem; color:var(--m3-on-surface-variant); text-transform: uppercase; margin-left: 4px;">Total Offline</span>
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;" title="Total Offline">
+                                        <span class="material-symbols-rounded" style="color:#f87171; font-size: 24px;">router_off</span>
+                                        <span style="font-size: 1.5rem; color:var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);">${o.offline}</span>
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 8px;" title="Falta de Sinal Óptico">
-                                        <span class="material-symbols-rounded" style="color:#f97316; font-size: 18px;">wifi_off</span>
-                                        <span style="font-size: 1.1rem; color:var(--m3-on-surface); font-weight: 500;">${o.offlineOther}</span>
-                                        <span style="font-size: 0.75rem; color:var(--m3-on-surface-variant); text-transform: uppercase; margin-left: 4px;">Sem Sinal</span>
+                                        <span class="material-symbols-rounded" style="color:#f97316; font-size: 24px;">wifi_off</span>
+                                        <span style="font-size: 1.5rem; color:var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);">${o.offlineOther}</span>
                                     </div>
                                 </div>
-                                <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;">
-                                    <span style="font-size: 2.5rem; font-family: var(--font-family-mono); font-weight: bold; color: #fbbf24; line-height: 1;">${o.powerOff}</span>
-                                    <div style="display: flex; align-items: center; gap: 4px; margin-top: 5px;">
-                                        <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 14px;">power_off</span>
-                                        <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); text-transform: uppercase;">Sem Energia</span>
-                                    </div>
+                                <div style="text-align: right; display: flex; align-items: center; gap: 8px;" title="Sem Energia">
+                                    <span style="font-size: 3rem; font-family: var(--font-family-mono); font-weight: bold; color: #fbbf24; line-height: 1;">${o.powerOff}</span>
+                                    <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 36px;">power_off</span>
                                 </div>
                             </div>
                             <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%;">
