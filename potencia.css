@@ -1,65 +1,16 @@
 /* ==========================================================================
-   ESTILOS ESPECÍFICOS - PAINEL DE POTÊNCIA ÓPTICA (potencia.html)
+   ESTILOS ESPECÍFICOS - PAINEL DE POTÊNCIA ÓPTICA (potencia.css)
    ========================================================================== */
+
+/* Aviso: Estruturas de modais e cabeçalhos fixos de tabela (.noc-table)
+   foram centralizados no styles.css global. */
 
 /* DESTAQUE SUTIL PARA CLIENTES COM SINAL CRÍTICO */
 .bg-alerta-sinal { 
-    background-color: rgba(248, 113, 113, 0.12) !important; /* Vermelho suave translúcido */
+    background-color: rgba(248, 113, 113, 0.12) !important; 
     transition: background-color 0.3s ease;
 }
 
 .bg-alerta-sinal:hover {
     background-color: rgba(248, 113, 113, 0.2) !important;
-}
-
-/* --- TABELAS E COMPONENTES ESPECÍFICOS DO MODAL --- */
-.potencia-table-container { 
-    max-height: 500px; 
-    overflow-y: auto; 
-    margin-top: 15px; 
-    border-radius: 16px; 
-    border: 1px solid var(--m3-outline); 
-}
-
-/* Tabela de Clientes e Sinais */
-.potencia-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    font-size: 0.9rem; 
-    text-align: center; 
-}
-
-.potencia-table th { 
-    background-color: var(--m3-surface-container-high); 
-    color: var(--m3-on-surface); 
-    padding: 15px 12px; 
-    position: sticky; 
-    top: 0; 
-    z-index: 10; 
-    font-family: 'Montserrat', sans-serif; 
-    font-weight: 700; 
-}
-
-.potencia-table td { 
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
-    padding: 12px 10px; 
-    color: var(--m3-on-surface); 
-    font-family: var(--font-family-mono); 
-}
-
-/* Badges de Alerta de Sinal Específicos */
-.sinal-critico { 
-    color: #f87171 !important; 
-    font-weight: 700; 
-    background: rgba(248, 113, 113, 0.15); 
-    padding: 4px 10px;
-    border-radius: 12px;
-}
-
-.sinal-atencao { 
-    color: #fbbf24 !important; 
-    font-weight: 700; 
-    background: rgba(251, 191, 36, 0.15); 
-    padding: 4px 10px;
-    border-radius: 12px;
 }

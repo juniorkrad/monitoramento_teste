@@ -1,93 +1,18 @@
 /* ==========================================================================
-   ESTILOS ESPECÍFICOS - PAINEL DE ENERGIA (energia.html)
+   ESTILOS ESPECÍFICOS - PAINEL DE ENERGIA (energia.css)
    ========================================================================== */
 
-/* Único Card Master - Estilo MD3 Arredondado */
-.energy-master-card {
-    display: flex;
-    flex-direction: row;
-    max-width: 100% !important; 
-    width: 100%;
-    margin-bottom: 24px;
-    padding: 0; 
-    overflow: hidden; 
-    border-radius: 24px !important; 
-    background-color: var(--m3-surface-container);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+/* Aviso: Todas as classes estruturais e modais foram centralizadas 
+   no styles.css para garantir a padronização global do Material Design 3. */
+
+/* Destaque sutil para cards com alarmes massivos de energia */
+.pulse-energy {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4);
+    animation: pulseEnergy 2s infinite;
 }
 
-.energy-master-left {
-    flex: 0 0 280px; 
-    padding: 25px;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
-    border-left: 6px solid #fbbf24; 
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.energy-master-right {
-    flex: 1; 
-    min-width: 0; 
-    padding: 25px;
-    display: flex;
-    flex-direction: column;
-}
-
-/* --- GRÁFICO DE BLOCOS DE DENSIDADE (OPÇÃO 5) --- */
-.opt5-container {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-top: 15px;
-    padding: 0 10px;
-}
-
-.block {
-    width: 12px;
-    height: 12px;
-    border-radius: 2px;
-}
-
-/* --- MODAL MINIMALISTA: CAIXAS DE DESTAQUE --- */
-/* Aplicado diretamente na div .modal-stat-box para sobrescrever o estilo global */
-.modal-stat-box.energy-box-total {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
-.modal-stat-box.energy-box-total .modal-stat-value {
-    color: #ffffff !important;
-}
-
-.modal-stat-box.energy-box-offline {
-    background-color: rgba(248, 113, 113, 0.15) !important;
-    border: 1px solid rgba(248, 113, 113, 0.3) !important;
-}
-.modal-stat-box.energy-box-offline .modal-stat-value {
-    color: #f87171 !important;
-}
-
-.modal-stat-box.energy-box-poweroff {
-    background-color: rgba(251, 191, 36, 0.15) !important;
-    border: 1px solid rgba(251, 191, 36, 0.3) !important;
-}
-.modal-stat-box.energy-box-poweroff .modal-stat-value {
-    color: #fbbf24 !important;
-}
-
-/* ==========================================================================
-   RESPONSIVIDADE
-   ========================================================================== */
-@media (max-width: 900px) {
-    .energy-master-card {
-        flex-direction: column; 
-        border-radius: 20px !important;
-    }
-    .energy-master-left {
-        flex: auto;
-        border-right: none;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 20px;
-    }
+@keyframes pulseEnergy {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(251, 191, 36, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
 }

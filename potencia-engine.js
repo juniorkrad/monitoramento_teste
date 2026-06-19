@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Separação Estrita (Caminho 2) e Integração com Buscador Central
+// Atualização: Escala Visual Padronizada, Botões de Status e Injeção de Modal
 // ==============================================================================
 
 window.POTENCIA_CLIENTS_DATA = {};
@@ -12,7 +12,6 @@ function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
 }
 
-// Funções Injetadas Globalmente para o Hover/Clique
 window.handlePotHover = function(event) {
     if (isMobileDevice()) return;
     const tooltip = document.getElementById('smart-tooltip');
@@ -255,7 +254,6 @@ function runPotenciaEngine() {
             globalAnalisados += analisados;
         });
 
-        // Atualização Global na Home
         if (globalBody && isHomePage) {
             globalBody.style.display = 'flex';
             
@@ -308,7 +306,6 @@ function runPotenciaEngine() {
             }
         }
 
-        // Atualização da Grade na Página de Potência
         if (isPotenciaPage && gridEl) {
             gridEl.innerHTML = '';
             
@@ -338,23 +335,22 @@ function runPotenciaEngine() {
                         </div>
                         <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
-                                <div style="display: flex; flex-direction: column; gap: 8px;">
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span class="material-symbols-rounded" style="color:var(--m3-on-surface); font-size: 18px;">search</span>
-                                        <span style="font-size: 1.1rem; color:var(--m3-on-surface); font-weight: 500;">${o.analisados}</span>
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;" title="Total Analisado">
+                                        <span class="material-symbols-rounded" style="color:var(--m3-on-surface); font-size: 24px;">search</span>
+                                        <span style="font-size: 1.5rem; color:var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);">${o.analisados}</span>
                                     </div>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span class="material-symbols-rounded" style="color:#fbbf24; font-size: 18px;">warning</span>
-                                        <span style="font-size: 1.1rem; color:#fbbf24; font-weight: bold;">${o.criticos}</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span class="material-symbols-rounded" style="color:#60a5fa; font-size: 18px;">insights</span>
-                                        <span style="font-size: 1.1rem; color:var(--m3-on-surface); font-weight: 500;">${o.media} dBm</span>
+                                    <div style="display: flex; align-items: center; gap: 8px;" title="Clientes Críticos">
+                                        <span class="material-symbols-rounded" style="color:#f87171; font-size: 24px;">warning</span>
+                                        <span style="font-size: 1.5rem; color:#f87171; font-weight: bold; font-family: var(--font-family-mono);">${o.criticos}</span>
                                     </div>
                                 </div>
-                                <div style="text-align: right;">
-                                    <span style="font-size: 2rem; font-family: var(--font-family-mono); font-weight: bold; color: ${o.health >= 90 ? 'var(--m3-color-success)' : 'var(--m3-color-error)'};">${o.health.toFixed(1)}%</span><br>
-                                    <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); text-transform: uppercase;">Saúde</span>
+                                <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Média de Potência">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span class="material-symbols-rounded" style="color:#60a5fa; font-size: 36px;">insights</span>
+                                        <span style="font-size: 3rem; font-family: var(--font-family-mono); font-weight: bold; color: #60a5fa; line-height: 1;">${o.media}</span>
+                                    </div>
+                                    <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px; font-weight: 600;">Média (dBm)</span>
                                 </div>
                             </div>
                             <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%;">
@@ -413,8 +409,8 @@ window.startPotenciaMonitoring = function(config) {
                                     <option value="critico">Crítico (<= -28 dBm)</option>
                                 </select>
                             </div>
-                            <div class="client-table-container">
-                                <table id="table-clients">
+                            <div class="table-container">
+                                <table id="table-clients" class="noc-table">
                                     <thead id="clients-thead" class="table-header-row"></thead>
                                     <tbody id="clients-tbody"></tbody>
                                 </table>
@@ -555,9 +551,9 @@ window.openPotenciaPlacaDetails = function(placa, oltType) {
         const { validCount, sumPower, info, bairro } = ports[pt];
         const media = validCount > 0 ? (sumPower / validCount).toFixed(2) : 0;
         
-        let mediaColor = 'var(--m3-on-surface)';
-        if (media <= -28.00) mediaColor = '#f87171'; 
-        else if (media <= -26.00) mediaColor = '#fbbf24'; 
+        let statusClass = 'status-normal';
+        if (media <= -28.00) statusClass = 'status-critico'; 
+        else if (media <= -26.00) statusClass = 'status-atencao'; 
 
         const safeInfo = info.replace(/'/g, "\\'");
         const textoBairro = bairro && bairro !== '-' ? bairro : 'N/A';
@@ -574,7 +570,9 @@ window.openPotenciaPlacaDetails = function(placa, oltType) {
                 </td>
                 <td style="font-family: var(--font-family-mono); font-size: 0.9rem; color: var(--m3-on-surface-variant);">${textoBairro}</td>
                 <td>
-                    <strong style="color: ${mediaColor};">${media} dBm</strong>
+                    <button class="status ${statusClass} status-btn" style="cursor: default;">
+                        ${media} dBm
+                    </button>
                 </td>
             </tr>
         `;
@@ -673,15 +671,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// OUVINTE DO BUSCADOR CENTRAL
 window.addEventListener('dadosAtualizados', () => {
     runPotenciaEngine();
 
-    // Atualização síncrona do Modal caso esteja aberto
     if (window.CURRENT_POTENCIA_CONFIG && typeof window.updatePotenciaModal === 'function') {
         window.updatePotenciaModal();
         
-        // Se a visualização de detalhes (tabela de portas) estiver aberta, re-renderiza ela
         if (document.getElementById('potencia-view-detalhes') && document.getElementById('potencia-view-detalhes').style.display === 'block' && window.CURRENT_VIEW_PLACA) {
             window.openPotenciaPlacaDetails(window.CURRENT_VIEW_PLACA, window.CURRENT_POTENCIA_CONFIG.type);
         }

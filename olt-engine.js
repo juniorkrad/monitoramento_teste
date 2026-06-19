@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Inclusão da dupla checagem (oltName || id) para leitura de dados
+// Atualização: Padronização visual final (Tabelas noc-table e Containers)
 // ==============================================================================
 
 window.OLT_CLIENTS_DATA = {};
@@ -285,8 +285,8 @@ window.startOltMonitoring = function(config) {
                                 <input type="text" id="search-input" class="filter-input" placeholder="Buscar (Nome, Serial...)" onkeyup="filterClients()">
                                 <select id="status-filter" class="filter-select" onchange="filterClients()"></select>
                             </div>
-                            <div class="client-table-container">
-                                <table id="table-clients">
+                            <div class="table-container">
+                                <table id="table-clients" class="noc-table">
                                     <thead id="clients-thead" class="table-header-row"></thead>
                                     <tbody id="clients-tbody"></tbody>
                                 </table>
@@ -309,7 +309,6 @@ window.startOltMonitoring = function(config) {
             const rowsCircuitos = window.DATA_STORE.circuitos || [];
             const rowsLocalidades = window.DATA_STORE.localidades || [];
             
-            // CORREÇÃO: Dupla checagem (oltName || id) para leitura correta na memória central
             const dataOlt = window.DATA_STORE.olts[config.oltName || config.id] || [];
 
             window.GLOBAL_BAIRROS_DATA = rowsLocalidades;

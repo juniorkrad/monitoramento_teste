@@ -9,8 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">    
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=router_off" />
+    
     <style>
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -29,17 +29,17 @@
 
         <main class="main-content" style="flex-direction: column;">
             <div id="energy-olt-grid" class="grid-container">
-                </div>
+            </div>
         </main>
     </div>
 
-    <div id="energy-detail-modal" class="modal-overlay" onclick="closeEnergyModal(event)">
+    <div id="super-modal" class="modal-overlay" onclick="closeSuperModal(event)">
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h3 id="energy-modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                <h3 id="super-modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
                     <span class="material-symbols-rounded">dns</span> Detalhes da OLT
                 </h3>
-                <button class="close-modal" onclick="closeEnergyModal()">&times;</button>
+                <button class="close-modal" onclick="closeSuperModal()">&times;</button>
             </div>
             <div class="modal-body">
                 
@@ -48,18 +48,17 @@
                 </div>
 
                 <div id="energy-view-detalhes" style="display: none;">
-                    
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <button class="btn-voltar-placas" style="margin-bottom: 0;" onclick="backToEnergyPlacas()">
                             <span class="material-symbols-rounded">arrow_back</span> Voltar para Placas
                         </button>
-                        <button class="btn-voltar-placas" style="margin-bottom: 0; padding: 10px;" onclick="exportEnergyPlacaToTXT()" title="Exportar para TXT">
+                        <button class="btn-voltar-placas" style="margin-bottom: 0; padding: 10px;" onclick="exportEnergiaPlacaToTXT()" title="Exportar para TXT">
                             <span class="material-symbols-rounded">download</span>
                         </button>
                     </div>
                     
                     <div class="table-container">
-                        <table>
+                        <table class="noc-table">
                             <thead>
                                 <tr class="table-header-row">
                                     <th>PORTAS</th>
@@ -76,31 +75,6 @@
         </div>
     </div>
 
-    <div id="energy-port-modal" class="modal-overlay" onclick="closeEnergyPortModal(event)">
-        <div class="modal-content" style="max-width: 450px;">
-            <div class="modal-header">
-                <h3 id="energy-port-modal-title" style="margin: 0;">Porta Detalhes</h3>
-                <button class="close-modal" onclick="closeEnergyPortModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="modal-stats-grid" style="grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                    <div class="modal-stat-box energy-box-total">
-                        <span id="energy-modal-total" class="modal-stat-value">0</span>
-                        <span class="modal-stat-label" style="color: #ffffff;">TOTAL</span>
-                    </div>
-                    <div class="modal-stat-box energy-box-offline">
-                        <span id="energy-modal-offline" class="modal-stat-value">0</span>
-                        <span class="modal-stat-label" style="color: #f87171;">OFFLINE</span>
-                    </div>
-                    <div class="modal-stat-box energy-box-poweroff">
-                        <span id="energy-modal-poweroff" class="modal-stat-value">0</span>
-                        <span class="modal-stat-label" style="color: #fbbf24;">ENERGIA</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div id="footer-placeholder"></div>
 
     <script src="config.js"></script>
@@ -109,7 +83,6 @@
     <script src="data-store.js"></script>
     <script src="layout.js"></script>
     <script src="notifications.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="energia-engine.js"></script> 
     <script>
