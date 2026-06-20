@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor de Fabricantes (Visão por Marca)
-// Atualização: Separação Estrita (Caminho 2) e Integração com Buscador Central
+// Atualização: Refatoração da Home (Fases 1 a 3) - Cores Variáveis MD3 e Tipografia
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -71,11 +71,11 @@ window.handleEqpHover = function(event) {
         </div>
         <div class="smart-tooltip-line">
             <span style="color: var(--m3-on-surface-variant);">Online:</span> 
-            <strong style="color: #4ade80;">${el.dataset.online}</strong>
+            <strong style="color: var(--m3-color-success);">${el.dataset.online}</strong>
         </div>
         <div class="smart-tooltip-line">
             <span style="color: var(--m3-on-surface-variant);">Offline:</span> 
-            <strong style="color: #f87171;">${el.dataset.offline}</strong>
+            <strong style="color: var(--m3-color-error);">${el.dataset.offline}</strong>
         </div>
         <div class="smart-tooltip-line">
             <span style="color: var(--m3-on-surface-variant);">Saúde:</span> 
@@ -121,12 +121,12 @@ window.handleEqpClick = function(event) {
         </div>
         <div style="display: flex; gap: 10px;">
             <div style="flex:1; background:rgba(74,222,128,0.1); padding:8px; border-radius:8px; text-align:center;">
-                <span style="display:block; font-size:0.7rem; color:#4ade80;">ONLINE</span>
-                <strong style="font-family:var(--font-family-mono); color:#4ade80;">${el.dataset.online}</strong>
+                <span style="display:block; font-size:0.7rem; color:var(--m3-color-success);">ONLINE</span>
+                <strong style="font-family:var(--font-family-mono); color:var(--m3-color-success);">${el.dataset.online}</strong>
             </div>
             <div style="flex:1; background:rgba(248,113,113,0.1); padding:8px; border-radius:8px; text-align:center;">
-                <span style="display:block; font-size:0.7rem; color:#f87171;">OFFLINE</span>
-                <strong style="font-family:var(--font-family-mono); color:#f87171;">${el.dataset.offline}</strong>
+                <span style="display:block; font-size:0.7rem; color:var(--m3-color-error);">OFFLINE</span>
+                <strong style="font-family:var(--font-family-mono); color:var(--m3-color-error);">${el.dataset.offline}</strong>
             </div>
         </div>
     `;
@@ -213,7 +213,7 @@ function runEquipamentosEngine() {
                 todasMarcas.map(nome => ({ nome, ...brandData[nome] }))
                     .sort((a, b) => b.total - a.total)
                     .forEach(marca => {
-                        const color = marca.nome === 'DESCONHECIDOS' ? '#f87171' : '#60a5fa';
+                        const color = marca.nome === 'DESCONHECIDOS' ? 'var(--m3-color-error)' : 'var(--m3-on-surface)';
                         const disabledClass = marca.total === 0 ? 'disabled' : '';
                         const pctOnline = marca.total > 0 ? ((marca.online / marca.total) * 100).toFixed(1) : 0;
                         
@@ -233,7 +233,7 @@ function runEquipamentosEngine() {
                                  onmouseleave="handleEqpLeave()"
                                  onclick="handleEqpClick(event)">
                                 ${getLogoHtml(marca.nome)}
-                                <span class="eqp-total-value" style="margin-top: 2px; pointer-events: none;">${marca.total}</span>
+                                <span class="eqp-total-value" style="margin-top: 2px; pointer-events: none; color: ${color};">${marca.total}</span>
                             </div>
                         `;
                     });
@@ -284,10 +284,10 @@ function runEquipamentosEngine() {
                                 <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
                                     <div style="display:flex; flex-direction:column; gap:4px;">
                                         <span style="font-size:0.75rem; color:var(--m3-on-surface-variant); text-transform:uppercase;">Total</span>
-                                        <span style="font-size:1.8rem; font-weight:700; color:#60a5fa; font-family:var(--font-family-mono); line-height:1;">${m.total}</span>
+                                        <span style="font-size:1.5rem; font-weight:700; color:var(--m3-on-surface); font-family:var(--font-family-mono); line-height:1;">${m.total}</span>
                                     </div>
                                     <div style="text-align:right;">
-                                        <span style="font-size:1.5rem; font-weight:700; color:${health >= 95 ? 'var(--m3-color-success)' : '#fbbf24'}; font-family:var(--font-family-mono);">${health}%</span><br>
+                                        <span style="font-size:1.5rem; font-weight:700; color:${health >= 95 ? 'var(--m3-color-success)' : 'var(--m3-color-warning)'}; font-family:var(--font-family-mono);">${health}%</span><br>
                                         <span style="font-size:0.7rem; color:var(--m3-on-surface-variant); text-transform:uppercase;">Saúde</span>
                                     </div>
                                 </div>
@@ -299,12 +299,12 @@ function runEquipamentosEngine() {
 
                                 <div style="display:flex; gap:10px; width:100%;">
                                     <div style="flex:1; background:rgba(74,222,128,0.1); padding:8px; border-radius:8px; text-align:center;">
-                                        <span style="display:block; font-size:0.7rem; color:#4ade80;">ONLINE</span>
-                                        <strong style="font-family:var(--font-family-mono); color:#4ade80;">${m.online}</strong>
+                                        <span style="display:block; font-size:0.7rem; color:var(--m3-color-success);">ONLINE</span>
+                                        <strong style="font-family:var(--font-family-mono); color:var(--m3-color-success);">${m.online}</strong>
                                     </div>
                                     <div style="flex:1; background:rgba(248,113,113,0.1); padding:8px; border-radius:8px; text-align:center;">
-                                        <span style="display:block; font-size:0.7rem; color:#f87171;">OFFLINE</span>
-                                        <strong style="font-family:var(--font-family-mono); color:#f87171;">${m.offline}</strong>
+                                        <span style="display:block; font-size:0.7rem; color:var(--m3-color-error);">OFFLINE</span>
+                                        <strong style="font-family:var(--font-family-mono); color:var(--m3-color-error);">${m.offline}</strong>
                                     </div>
                                 </div>
 
@@ -364,7 +364,7 @@ window.openDistribuicaoModal = function(marca) {
 
     if (modal && titulo && container) {
         titulo.innerText = marca;
-        container.innerHTML = window.BRAND_OLT_HTML[marca] || '<p style="text-align:center; color:var(--m3-on-surface-variant);\">Sem dados de distribuição para este fabricante.</p>';
+        container.innerHTML = window.BRAND_OLT_HTML[marca] || '<p style="text-align:center; color:var(--m3-on-surface-variant);">Sem dados de distribuição para este fabricante.</p>';
         modal.style.display = 'flex';
     }
 };

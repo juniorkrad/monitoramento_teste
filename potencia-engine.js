@@ -1,6 +1,7 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
 // Atualização: Refatoração da Home (Fase 1) - Remoção de injeção HTML dinâmica
+// Atualização Fase 3: Padronização de Cores Status com Variáveis MD3
 // ==============================================================================
 
 window.POTENCIA_CLIENTS_DATA = {};
@@ -196,13 +197,13 @@ function runPotenciaEngine() {
                 elMedia.textContent = globalMedia;
                 
                 // Lógica de Cores da Média Global
-                let mediaColor = '#4ade80'; // Verde (Estável)
+                let mediaColor = 'var(--m3-color-success)'; // Verde (Estável)
                 let mediaVal = parseFloat(globalMedia);
                 
                 if (mediaVal <= -28.00) {
-                    mediaColor = '#f87171'; // Vermelho (Crítico)
+                    mediaColor = 'var(--m3-color-error)'; // Vermelho (Crítico)
                 } else if (mediaVal <= -26.00) {
-                    mediaColor = '#fbbf24'; // Amarelo (Atenção)
+                    mediaColor = 'var(--m3-color-warning)'; // Amarelo (Atenção)
                 }
                 
                 elMedia.style.color = mediaColor;
@@ -241,11 +242,11 @@ function runPotenciaEngine() {
                 const timeVal = dateParts[1] || '--:--:--';
                 
                 let mediaVal = parseFloat(o.media);
-                let mediaColor = '#4ade80';
+                let mediaColor = 'var(--m3-color-success)';
                 if (mediaVal <= -28.00) {
-                    mediaColor = '#f87171';
+                    mediaColor = 'var(--m3-color-error)';
                 } else if (mediaVal <= -26.00) {
-                    mediaColor = '#fbbf24';
+                    mediaColor = 'var(--m3-color-warning)';
                 }
 
                 gridEl.innerHTML += `
@@ -262,8 +263,8 @@ function runPotenciaEngine() {
                                         <span style="font-size: 1.2rem; color:var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);">${o.analisados}</span>
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 8px;" title="Clientes Críticos">
-                                        <span class="material-symbols-rounded" style="color:#f87171; font-size: 20px;">warning</span>
-                                        <span style="font-size: 1.2rem; color:#f87171; font-weight: bold; font-family: var(--font-family-mono);">${o.criticos}</span>
+                                        <span class="material-symbols-rounded" style="color:var(--m3-color-error); font-size: 20px;">warning</span>
+                                        <span style="font-size: 1.2rem; color:var(--m3-color-error); font-weight: bold; font-family: var(--font-family-mono);">${o.criticos}</span>
                                     </div>
                                 </div>
                                 <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Média de Potência">
@@ -535,7 +536,7 @@ window.openPotenciaCircuitClients = function(placa, porta, circuitoNome, oltType
         clients.forEach(c => {
             const isCritical = c.potencia <= -28.00;
             const rowClass = isCritical ? 'client-row filter-critico bg-alerta-sinal' : 'client-row filter-normal';
-            const valColor = isCritical ? '#f87171' : 'inherit';
+            const valColor = isCritical ? 'var(--m3-color-error)' : 'inherit';
             
             let rowHTML = '';
             if (oltType === 'nokia') {

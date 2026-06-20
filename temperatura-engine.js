@@ -1,6 +1,7 @@
 // ==============================================================================
 // temperatura-engine.js - Motor Dedicado para Análise Térmica das OLTs
 // Atualização: Refatoração da Home (Fase 1) - Remoção de injeção HTML dinâmica
+// Atualização Fase 3: Padronização de Cores Status com Variáveis MD3
 // ==============================================================================
 
 const TAB_TEMPERATURA = 'TEMPERATURA'; 
@@ -36,7 +37,7 @@ window.handleTempHover = function(event) {
         </div>
         <div class="smart-tooltip-line">
             <span style="color: var(--m3-on-surface-variant);">Sensores em Alerta:</span> 
-            <strong><span style="color:#f87171">${el.dataset.crit}</span> / <span style="color:#f97316">${el.dataset.warn}</span></strong>
+            <strong><span style="color: var(--m3-color-error);">${el.dataset.crit}</span> / <span style="color: var(--m3-color-warning);">${el.dataset.warn}</span></strong>
         </div>
         <div class="smart-tooltip-line">
             <span style="color: var(--m3-on-surface-variant);">Status Geral:</span> 
@@ -73,11 +74,11 @@ window.handleTempClick = function(event) {
         <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
             <div>
                 <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Sensores Críticos</span><br>
-                <strong style="font-size: 1.2rem; color: #f87171;">${el.dataset.crit}</strong>
+                <strong style="font-size: 1.2rem; color: var(--m3-color-error);">${el.dataset.crit}</strong>
             </div>
             <div style="text-align: right;">
                 <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Sensores em Atenção</span><br>
-                <strong style="font-size: 1.2rem; color: #f97316;">${el.dataset.warn}</strong>
+                <strong style="font-size: 1.2rem; color: var(--m3-color-warning);">${el.dataset.warn}</strong>
             </div>
         </div>
         <div style="text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
@@ -276,11 +277,11 @@ function runTemperaturaEngine() {
             if (elMaxima) {
                 elMaxima.textContent = globalMaxTemp + '°C';
 
-                let tempColor = '#4ade80'; 
+                let tempColor = 'var(--m3-color-success)'; 
                 if (globalMaxTemp >= 90) {
-                    tempColor = '#f87171'; 
+                    tempColor = 'var(--m3-color-error)'; 
                 } else if (globalMaxTemp >= 80) {
-                    tempColor = '#f97316'; 
+                    tempColor = 'var(--m3-color-warning)'; 
                 }
 
                 elMaxima.style.color = tempColor;
@@ -318,9 +319,9 @@ function runTemperaturaEngine() {
                 const dateVal = dateParts[0] || '--/--/----';
                 const timeVal = dateParts[1] || '--:--:--';
                 
-                let textColor = '#4ade80';
-                if (o.maxTemp >= 90) textColor = '#f87171';
-                else if (o.maxTemp >= 80) textColor = '#f97316';
+                let textColor = 'var(--m3-color-success)';
+                if (o.maxTemp >= 90) textColor = 'var(--m3-color-error)';
+                else if (o.maxTemp >= 80) textColor = 'var(--m3-color-warning)';
 
                 gridEl.innerHTML += `
                     <div class="overview-card" id="card-${o.id}" style="display: flex; flex-direction: column; width: 100%;">
@@ -336,9 +337,9 @@ function runTemperaturaEngine() {
                                         <span style="font-size: 1.2rem; color:var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);">${o.analisados}</span>
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 8px;" title="Crítico / Atenção">
-                                        <span class="material-symbols-rounded" style="color:#f87171; font-size: 20px;">warning</span>
+                                        <span class="material-symbols-rounded" style="color:var(--m3-color-error); font-size: 20px;">warning</span>
                                         <span style="font-size: 1.2rem; color:var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);">
-                                            <span style="color:#f87171">${o.criticos}</span> <span style="color:var(--m3-on-surface-variant); font-weight:normal;">/</span> <span style="color:#f97316">${o.atencao}</span>
+                                            <span style="color:var(--m3-color-error);">${o.criticos}</span> <span style="color:var(--m3-on-surface-variant); font-weight:normal;">/</span> <span style="color:var(--m3-color-warning);">${o.atencao}</span>
                                         </span>
                                     </div>
                                 </div>
@@ -407,7 +408,7 @@ window.openTemperaturaSuperModal = function(oltId) {
             badgeHtml = `<span class="alarm-count critico">CRÍTICO</span>`;
         } else if (hasAtencao) {
             btnClass += ' has-warning';
-            badgeHtml = `<span class="alarm-count atencao" style="background:#f97316; color:#000;">ATENÇÃO</span>`;
+            badgeHtml = `<span class="alarm-count atencao" style="background:var(--m3-color-warning); color:#000;">ATENÇÃO</span>`;
         }
 
         placasList.innerHTML += `
@@ -445,11 +446,11 @@ window.openTemperaturaSlotDetails = function(oltId, slot) {
         
         if (s.isCritico) {
             statusBadge = `<span class="temp-critico">Crítico</span>`;
-            tempColor = '#f87171';
+            tempColor = 'var(--m3-color-error)';
             rowClass = 'bg-alerta-temp-critico';
         } else if (s.isAtencao) {
-            statusBadge = `<span class="temp-atencao" style="background: rgba(249, 115, 22, 0.15); color: #f97316 !important;">Atenção</span>`;
-            tempColor = '#f97316';
+            statusBadge = `<span class="temp-atencao" style="background: rgba(249, 115, 22, 0.15); color: var(--m3-color-warning) !important;">Atenção</span>`;
+            tempColor = 'var(--m3-color-warning)';
             rowClass = 'bg-alerta-temp-atencao';
         }
 

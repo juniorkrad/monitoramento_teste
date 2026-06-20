@@ -29,26 +29,26 @@
         <main class="main-content" style="flex-direction: column;">
             <div id="overview-grid" class="grid-container">
                 
-                <div class="overview-card" id="home-card-rede">
+                <div class="global-card" id="home-card-rede">
                     <div class="card-header">
                         <h3><span class="material-symbols-rounded">router</span> Status de Rede</h3>
                     </div>
-                    <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
+                    <div class="card-body">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
                             <div style="display: flex; flex-direction: column; gap: 12px;">
                                 <div style="display: flex; align-items: center; gap: 8px;" title="Clientes Online">
-                                    <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">arrow_circle_up</span>
-                                    <span style="font-size: 1.2rem; color: var(--m3-color-success); font-weight: bold; font-family: var(--font-family-mono);" id="net-total-online">--</span>
+                                    <span class="material-symbols-rounded secondary-icon" style="color: var(--m3-color-success);">arrow_circle_up</span>
+                                    <span class="secondary-value" style="color: var(--m3-color-success);" id="net-total-online">--</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 8px;" title="Clientes Offline">
-                                    <span class="material-symbols-rounded" style="color: var(--m3-color-error); font-size: 20px;">arrow_circle_down</span>
-                                    <span style="font-size: 1.2rem; color: var(--m3-color-error); font-weight: bold; font-family: var(--font-family-mono);" id="net-total-offline">--</span>
+                                    <span class="material-symbols-rounded secondary-icon" style="color: var(--m3-color-error);">arrow_circle_down</span>
+                                    <span class="secondary-value" style="color: var(--m3-color-error);" id="net-total-offline">--</span>
                                 </div>
                             </div>
                             <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Total de Clientes">
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span class="material-symbols-rounded" style="color: #ffffff; font-size: 28px;">router</span>
-                                    <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; color: #ffffff; line-height: 1;" id="net-total-geral">--</span>
+                                    <span class="material-symbols-rounded primary-icon" style="color: var(--m3-on-surface);">router</span>
+                                    <span class="primary-value" style="color: var(--m3-on-surface);" id="net-total-geral">--</span>
                                 </div>
                                 <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px;">Total</span>
                             </div>
@@ -67,26 +67,26 @@
                     </div>
                 </div>
 
-                <div class="overview-card" id="home-card-energia">
+                <div class="global-card" id="home-card-energia">
                     <div class="card-header">
                         <h3><span class="material-symbols-rounded">bolt</span> Alarmes de Energia</h3>
                     </div>
-                    <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
+                    <div class="card-body">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
                             <div style="display: flex; flex-direction: column; gap: 12px;">
                                 <div style="display: flex; align-items: center; gap: 8px;" title="Total Offline">
-                                    <span class="material-symbols-rounded" style="color: #f87171; font-size: 20px;">router_off</span>
-                                    <span style="font-size: 1.2rem; color: #f87171; font-weight: bold; font-family: var(--font-family-mono);" id="energia-total-offline">--</span>
+                                    <span class="material-symbols-rounded secondary-icon" style="color: var(--m3-color-error);">router_off</span>
+                                    <span class="secondary-value" style="color: var(--m3-color-error);" id="energia-total-offline">--</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 8px;" title="Falta de Sinal Óptico">
-                                    <span class="material-symbols-rounded" style="color: #f97316; font-size: 20px;">wifi_off</span>
-                                    <span style="font-size: 1.2rem; color: #f97316; font-weight: bold; font-family: var(--font-family-mono);" id="energia-offline-other">--</span>
+                                    <span class="material-symbols-rounded secondary-icon" style="color: var(--m3-color-warning);">wifi_off</span>
+                                    <span class="secondary-value" style="color: var(--m3-color-warning);" id="energia-offline-other">--</span>
                                 </div>
                             </div>
                             <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Sem Energia">
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span class="material-symbols-rounded" style="color: #fbbf24; font-size: 28px;">power_off</span>
-                                    <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; color: #fbbf24; line-height: 1;" id="energia-global-poweroff">--</span>
+                                    <span class="material-symbols-rounded primary-icon" style="color: var(--m3-color-warning);">power_off</span>
+                                    <span class="primary-value" style="color: var(--m3-color-warning);" id="energia-global-poweroff">--</span>
                                 </div>
                                 <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px;">Sem Energia</span>
                             </div>
@@ -105,26 +105,26 @@
                     </div>
                 </div>
 
-                <div class="overview-card" id="home-card-potencia">
+                <div class="global-card" id="home-card-potencia">
                     <div class="card-header">
                         <h3><span class="material-symbols-rounded">insights</span> Análise de Potência</h3>
                     </div>
-                    <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
+                    <div class="card-body">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
                             <div style="display: flex; flex-direction: column; gap: 12px;">
                                 <div style="display: flex; align-items: center; gap: 8px;" title="Total Analisado">
-                                    <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">search</span>
-                                    <span style="font-size: 1.2rem; color: var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);" id="potencia-total-analisado">--</span>
+                                    <span class="material-symbols-rounded secondary-icon" style="color: var(--m3-on-surface);">search</span>
+                                    <span class="secondary-value" style="color: var(--m3-on-surface);" id="potencia-total-analisado">--</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 8px;" title="Clientes Críticos">
-                                    <span class="material-symbols-rounded" style="color: #f87171; font-size: 20px;">warning</span>
-                                    <span style="font-size: 1.2rem; color: #f87171; font-weight: bold; font-family: var(--font-family-mono);" id="potencia-total-criticos">--</span>
+                                    <span class="material-symbols-rounded secondary-icon" style="color: var(--m3-color-error);">warning</span>
+                                    <span class="secondary-value" style="color: var(--m3-color-error);" id="potencia-total-criticos">--</span>
                                 </div>
                             </div>
                             <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Média de Potência">
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span class="material-symbols-rounded" style="font-size: 28px;" id="potencia-main-icon">insights</span>
-                                    <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; line-height: 1;" id="potencia-global-media">--</span>
+                                    <span class="material-symbols-rounded primary-icon" id="potencia-main-icon">insights</span>
+                                    <span class="primary-value" id="potencia-global-media">--</span>
                                 </div>
                                 <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px;">Média (dBm)</span>
                             </div>
@@ -143,30 +143,30 @@
                     </div>
                 </div>
 
-                <div class="overview-card" id="home-card-temperatura">
+                <div class="global-card" id="home-card-temperatura">
                     <div class="card-header">
                         <h3><span class="material-symbols-rounded">device_thermostat</span> Monitoramento Térmico</h3>
                     </div>
-                    <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
+                    <div class="card-body">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
                             <div style="display: flex; flex-direction: column; gap: 12px;">
                                 <div style="display: flex; align-items: center; gap: 8px;" title="Sensores Lidos">
-                                    <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">memory</span>
-                                    <span style="font-size: 1.2rem; color: var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);" id="temperatura-total-analisado">--</span>
+                                    <span class="material-symbols-rounded secondary-icon" style="color: var(--m3-on-surface);">memory</span>
+                                    <span class="secondary-value" style="color: var(--m3-on-surface);" id="temperatura-total-analisado">--</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 8px;" title="Sensores Críticos / Atenção">
-                                    <span class="material-symbols-rounded" style="color: #f87171; font-size: 20px;">warning</span>
-                                    <span style="font-size: 1.2rem; color: var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);">
-                                        <span id="temperatura-total-criticos" style="color: #f87171;">--</span>
+                                    <span class="material-symbols-rounded secondary-icon" style="color: var(--m3-color-error);">warning</span>
+                                    <span class="secondary-value">
+                                        <span id="temperatura-total-criticos" style="color: var(--m3-color-error);">--</span>
                                         <span style="color: var(--m3-on-surface-variant); font-weight: normal;">/</span>
-                                        <span id="temperatura-total-atencao" style="color: #f97316;">--</span>
+                                        <span id="temperatura-total-atencao" style="color: var(--m3-color-warning);">--</span>
                                     </span>
                                 </div>
                             </div>
                             <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Temperatura Máxima">
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span class="material-symbols-rounded" style="font-size: 28px;" id="temperatura-main-icon">device_thermostat</span>
-                                    <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; line-height: 1;" id="temperatura-global-maxima">--</span>
+                                    <span class="material-symbols-rounded primary-icon" id="temperatura-main-icon">device_thermostat</span>
+                                    <span class="primary-value" id="temperatura-global-maxima">--</span>
                                 </div>
                                 <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px;">Temp. Máxima</span>
                             </div>
