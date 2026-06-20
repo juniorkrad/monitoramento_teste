@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Padronização Visual e Remoção de Animação (Pulse)
+// Atualização: Refatoração da Home (Fase 1) - Preenchimento do esqueleto fixo
 // ==============================================================================
 
 window.ENERGY_DATA_STORE = {};
@@ -101,14 +101,8 @@ function runEnergyMonitoring() {
     if (!window.DATA_STORE || !window.DATA_STORE.isReady) return;
 
     const gridEnergyPage = document.getElementById('energy-olt-grid');
-    const globalBody = document.getElementById('global-energia-body');
-    
     const isEnergyPage = window.location.pathname.includes('energia.html');
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
-
-    if (!isHomePage && globalBody) {
-        globalBody.style.display = 'none';
-    }
 
     if (!isEnergyPage && !isHomePage) return;
 
@@ -118,6 +112,7 @@ function runEnergyMonitoring() {
         let globalTotalOffline = 0;
         let oltsAffected = 0;
         let oltStats = [];
+        let globalLastUpdateStr = '--/--/---- --:--:--';
 
         window.ENERGY_DATA_STORE = { global: null, olts: {} };
         window.NETWORK_ENERGY_STORE.clear(); 
@@ -171,8 +166,12 @@ function runEnergyMonitoring() {
                     const rawDate = rowsEnergia[0][colIndex + 3];
                     const dateMatch = String(rawDate).match(/\d{2}\/\d{2}\/\d{2,4}/);
                     const timeMatch = String(rawDate).match(/\d{2}:\d{2}(:\d{2})?/);
-                    if (dateMatch && timeMatch) oltData.lastUpdate = `${dateMatch[0]} ${timeMatch[0]}`;
-                    else oltData.lastUpdate = rawDate;
+                    if (dateMatch && timeMatch) {
+                        oltData.lastUpdate = `${dateMatch[0]} ${timeMatch[0]}`;
+                        globalLastUpdateStr = oltData.lastUpdate;
+                    } else {
+                        oltData.lastUpdate = rawDate;
+                    }
                 }
 
                 rowsEnergia.forEach(row => {
@@ -218,35 +217,30 @@ function runEnergyMonitoring() {
             totalOffline: globalTotalOffline, oltsAffected: oltsAffected
         };
 
-        if (globalBody && isHomePage) {
-            globalBody.style.display = 'flex'; 
-            
-            const loadingEl = document.getElementById('global-energia-loading');
-            const contentEl = document.getElementById('global-energia-content');
-            
-            if (loadingEl) loadingEl.style.display = 'none';
-            if (contentEl) contentEl.style.display = 'flex';
+        // ==============================================================================
+        // INJEÇÃO DA HOME (Apenas abastecimento de dados no esqueleto fixo)
+        // ==============================================================================
+        if (isHomePage) {
+            const elTotalOffline = document.getElementById('energia-total-offline');
+            const elOfflineOther = document.getElementById('energia-offline-other');
+            const elPowerOff = document.getElementById('energia-global-poweroff');
+            const elDate = document.getElementById('energia-date');
+            const elTime = document.getElementById('energia-time');
 
-            const impactoRede = globalTotalClients > 0 
-                ? ((globalPowerOff / globalTotalClients) * 100).toFixed(1) 
-                : 0;
-            const relativoOff = globalTotalOffline > 0 
-                ? ((globalPowerOff / globalTotalOffline) * 100).toFixed(1) 
-                : 0;
+            if (elTotalOffline) elTotalOffline.textContent = globalTotalOffline;
+            if (elOfflineOther) elOfflineOther.textContent = Math.max(0, globalTotalOffline - globalPowerOff);
+            if (elPowerOff) elPowerOff.textContent = globalPowerOff;
 
-            const poEl = document.getElementById('energia-global-poweroff');
-            const afEl = document.getElementById('energia-olts-afetadas');
-            const toEl = document.getElementById('energia-olts-total');
-            const irEl = document.getElementById('energia-impacto-rede');
-            const roEl = document.getElementById('energia-relativo-off');
-
-            if (poEl) poEl.textContent = globalPowerOff;
-            if (afEl) afEl.textContent = oltsAffected;
-            if (toEl) toEl.textContent = GLOBAL_MASTER_OLT_LIST.length;
-            if (irEl) irEl.textContent = `${impactoRede}%`;
-            if (roEl) roEl.textContent = `${relativoOff}%`;
+            if (globalLastUpdateStr !== '--/--/---- --:--:--') {
+                const dateParts = globalLastUpdateStr.split(' ');
+                if (elDate) elDate.textContent = dateParts[0] || '--/--/----';
+                if (elTime) elTime.textContent = dateParts[1] || '--:--:--';
+            }
         }
 
+        // ==============================================================================
+        // INJEÇÃO DA PÁGINA ENERGIA.HTML (Cards individuais mantidos)
+        // ==============================================================================
         if (isEnergyPage && gridEnergyPage) {
             gridEnergyPage.innerHTML = '';
             

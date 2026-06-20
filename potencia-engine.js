@@ -1,90 +1,12 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Escala Visual Padronizada, Botões de Status e Injeção de Modal
+// Atualização: Refatoração da Home (Fase 1) - Remoção de injeção HTML dinâmica
 // ==============================================================================
 
 window.POTENCIA_CLIENTS_DATA = {};
 window.POTENCIA_PORT_DATA = {}; 
 window.CURRENT_VIEW_PLACA = null; 
 window.CURRENT_POTENCIA_CONFIG = null;
-
-function isMobileDevice() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
-}
-
-window.handlePotHover = function(event) {
-    if (isMobileDevice()) return;
-    const tooltip = document.getElementById('smart-tooltip');
-    if (!tooltip) return;
-
-    const el = event.currentTarget;
-    tooltip.innerHTML = `
-        <div class="smart-tooltip-title">
-            <span class="material-symbols-rounded" style="font-size: 18px; color: ${el.dataset.color};">dns</span>
-            ${el.dataset.olt}
-        </div>
-        <div class="smart-tooltip-line">
-            <span style="color: var(--m3-on-surface-variant);">Média Global:</span> 
-            <strong style="font-family: var(--font-family-mono); color: ${el.dataset.color};">${el.dataset.media} dBm</strong>
-        </div>
-        <div class="smart-tooltip-line">
-            <span style="color: var(--m3-on-surface-variant);">Saúde da Rede:</span> 
-            <strong style="color: ${el.dataset.health >= 90 ? '#4ade80' : '#f87171'};">${el.dataset.health}%</strong>
-        </div>
-        <div class="smart-tooltip-line">
-            <span style="color: var(--m3-on-surface-variant);">Clientes Críticos:</span> 
-            <strong style="color:#f87171">${el.dataset.crit}</strong>
-        </div>
-        <div class="smart-tooltip-line">
-            <span style="color: var(--m3-on-surface-variant);">Total Analisado:</span> 
-            <strong>${el.dataset.total}</strong>
-        </div>
-    `;
-
-    const rect = el.getBoundingClientRect();
-    tooltip.style.left = (rect.left + (rect.width / 2) + window.scrollX) + 'px';
-    tooltip.style.top = (rect.top + window.scrollY) + 'px';
-    tooltip.style.opacity = 1;
-};
-
-window.handlePotLeave = function() {
-    const tooltip = document.getElementById('smart-tooltip');
-    if (tooltip) tooltip.style.opacity = 0;
-};
-
-window.handlePotClick = function(event) {
-    if (!isMobileDevice()) return;
-    const modal = document.getElementById('mobile-fast-modal');
-    const content = document.getElementById('fast-modal-content');
-    if (!modal || !content) return;
-
-    const el = event.currentTarget;
-    content.innerHTML = `
-        <h3 style="margin-top: 0; border-bottom: 1px solid var(--m3-outline); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-            <span class="material-symbols-rounded" style="color: ${el.dataset.color};">dns</span> ${el.dataset.olt}
-        </h3>
-        <div style="margin-bottom: 15px; text-align: center;">
-            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Média de Potência</span><br>
-            <strong style="font-size: 2.5rem; font-family: var(--font-family-mono); color: ${el.dataset.color}; line-height: 1;">${el.dataset.media}</strong>
-            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">dBm</span>
-        </div>
-        <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
-            <div>
-                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Clientes Críticos</span><br>
-                <strong style="font-size: 1.2rem; color: #f87171;">${el.dataset.crit}</strong>
-            </div>
-            <div style="text-align: right;">
-                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Total Analisado</span><br>
-                <strong style="font-size: 1.2rem;">${el.dataset.total}</strong>
-            </div>
-        </div>
-        <div style="text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
-            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Saúde Óptica da OLT</span><br>
-            <strong style="color: ${el.dataset.health >= 90 ? '#4ade80' : '#f87171'}; font-size: 1.2rem;">${el.dataset.health}%</strong>
-        </div>
-    `;
-    modal.style.display = 'flex';
-};
 
 window.exportCardToImage = function(event, cardId, oltName) {
     if (event) event.stopPropagation();
@@ -165,20 +87,16 @@ function runPotenciaEngine() {
     if (!window.DATA_STORE || !window.DATA_STORE.isReady) return;
 
     const gridEl = document.getElementById('potencia-grid');
-    const globalBody = document.getElementById('global-potencia-body');
-    
     const isPotenciaPage = window.location.pathname.includes('potencia.html');
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
-    
-    if (!isHomePage && globalBody) {
-        globalBody.style.display = 'none';
-    }
 
     if (!isPotenciaPage && !isHomePage) return;
 
     try {
         let globalCriticos = 0;
         let globalAnalisados = 0;
+        let globalDbmSums = 0;
+        let globalLatestUpdate = '--/--/---- --:--:--';
         let oltStats = [];
         let todosClientesCriticos = []; 
         
@@ -208,7 +126,10 @@ function runPotenciaEngine() {
                 if (cellData) {
                     const dateMatch = cellData.match(/\d{2}\/\d{2}\/\d{2,4}/);
                     const timeMatch = cellData.match(/\d{2}:\d{2}(:\d{2})?/);
-                    if (dateMatch && timeMatch) lastUpdateStr = `${dateMatch[0]} ${timeMatch[0]}`;
+                    if (dateMatch && timeMatch) {
+                        lastUpdateStr = `${dateMatch[0]} ${timeMatch[0]}`;
+                        globalLatestUpdate = lastUpdateStr;
+                    }
                 }
             }
 
@@ -252,64 +173,52 @@ function runPotenciaEngine() {
 
             globalCriticos += criticos;
             globalAnalisados += analisados;
+            globalDbmSums += dbmSums;
         });
 
-        if (globalBody && isHomePage) {
-            globalBody.style.display = 'flex';
+        // ==============================================================================
+        // INJEÇÃO DA HOME (Apenas abastecimento de dados no esqueleto fixo)
+        // ==============================================================================
+        if (isHomePage) {
+            const globalMedia = globalAnalisados > 0 ? (globalDbmSums / globalAnalisados).toFixed(1) : "0.0";
             
-            const loadingEl = document.getElementById('global-potencia-loading');
-            const contentEl = document.getElementById('global-potencia-content');
-            const container = document.getElementById('potencia-badge-container');
-            const noIssuesEl = document.getElementById('potencia-no-issues');
-            
-            if (loadingEl) loadingEl.style.display = 'none';
-            if (contentEl) contentEl.style.display = 'flex';
-            
-            const validOlts = oltStats.filter(o => o.analisados > 0);
-            validOlts.sort((a, b) => parseFloat(a.media) - parseFloat(b.media));
-            const top3Olts = validOlts.slice(0, 3);
+            const elAnalisado = document.getElementById('potencia-total-analisado');
+            const elCriticos = document.getElementById('potencia-total-criticos');
+            const elMedia = document.getElementById('potencia-global-media');
+            const elIcon = document.getElementById('potencia-main-icon');
+            const elDate = document.getElementById('potencia-date');
+            const elTime = document.getElementById('potencia-time');
 
-            if (container) container.innerHTML = ''; 
+            if (elAnalisado) elAnalisado.textContent = globalAnalisados;
+            if (elCriticos) elCriticos.textContent = globalCriticos;
             
-            if (top3Olts.length > 0) {
-                if (noIssuesEl) noIssuesEl.style.display = 'none';
-                if (container) container.style.display = 'flex';
+            if (elMedia) {
+                elMedia.textContent = globalMedia;
                 
-                top3Olts.forEach(o => {
-                    const mediaVal = parseFloat(o.media);
-                    let color = '#4ade80'; 
-                    if (mediaVal <= -28.00) {
-                        color = '#f87171';
-                    } else if (mediaVal <= -26.00) {
-                        color = '#fbbf24';
-                    }
+                // Lógica de Cores da Média Global
+                let mediaColor = '#4ade80'; // Verde (Estável)
+                let mediaVal = parseFloat(globalMedia);
+                
+                if (mediaVal <= -28.00) {
+                    mediaColor = '#f87171'; // Vermelho (Crítico)
+                } else if (mediaVal <= -26.00) {
+                    mediaColor = '#fbbf24'; // Amarelo (Atenção)
+                }
+                
+                elMedia.style.color = mediaColor;
+                if (elIcon) elIcon.style.color = mediaColor;
+            }
 
-                    container.innerHTML += `
-                        <div class="potencia-top-card"
-                             data-olt="${o.id}"
-                             data-media="${o.media}"
-                             data-health="${o.health.toFixed(1)}"
-                             data-crit="${o.criticos}"
-                             data-total="${o.analisados}"
-                             data-color="${color}"
-                             onmouseenter="handlePotHover(event)"
-                             onmouseleave="handlePotLeave()"
-                             onclick="handlePotClick(event)">
-                            <span class="pot-olt-name" style="pointer-events: none;">
-                                <span class="material-symbols-rounded" style="font-size: 16px; color: var(--m3-on-surface-variant);">dns</span>
-                                ${o.id}
-                            </span>
-                            <span class="pot-olt-media" style="color: ${color}; pointer-events: none;">${o.media}</span>
-                            <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); margin-top: 4px; pointer-events: none;">dBm</span>
-                        </div>
-                    `;
-                });
-            } else {
-                if (container) container.style.display = 'none';
-                if (noIssuesEl) noIssuesEl.style.display = 'block';
+            if (globalLatestUpdate !== '--/--/---- --:--:--') {
+                const dateParts = globalLatestUpdate.split(' ');
+                if (elDate) elDate.textContent = dateParts[0] || '--/--/----';
+                if (elTime) elTime.textContent = dateParts[1] || '--:--:--';
             }
         }
 
+        // ==============================================================================
+        // INJEÇÃO DA PÁGINA POTENCIA.HTML (Cards individuais mantidos)
+        // ==============================================================================
         if (isPotenciaPage && gridEl) {
             gridEl.innerHTML = '';
             

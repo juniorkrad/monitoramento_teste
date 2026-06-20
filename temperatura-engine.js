@@ -1,6 +1,6 @@
 // ==============================================================================
 // temperatura-engine.js - Motor Dedicado para Análise Térmica das OLTs
-// Atualização: Escala Visual Padronizada e Foco no Pico de Temperatura
+// Atualização: Refatoração da Home (Fase 1) - Remoção de injeção HTML dinâmica
 // ==============================================================================
 
 const TAB_TEMPERATURA = 'TEMPERATURA'; 
@@ -167,25 +167,20 @@ function runTemperaturaEngine() {
     if (!window.DATA_STORE || !window.DATA_STORE.isReady) return;
 
     const gridEl = document.getElementById('temperatura-grid');
-    const globalBody = document.getElementById('global-temperatura-body');
-    const timestampEl = document.getElementById('update-timestamp');
-    
     const isTemperaturaPage = window.location.pathname.includes('temperatura.html');
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
 
-    if (!isHomePage && globalBody) {
-        globalBody.style.display = 'none';
-    }
-
     if (!isTemperaturaPage && !isHomePage) return;
-
-    if (timestampEl && timestampEl.textContent.includes('Aguardando')) {
-        timestampEl.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Buscando dados...';
-    }
 
     try {
         let oltStats = [];
         window.TEMP_DATA_STORE = {};
+
+        let globalAnalisados = 0;
+        let globalCriticos = 0;
+        let globalAtencao = 0;
+        let globalMaxTemp = 0;
+        let globalLastUpdate = '--/--/---- --:--:--';
 
         const values = window.DATA_STORE.temperatura || [];
         
@@ -218,10 +213,14 @@ function runTemperaturaEngine() {
 
                 if (!slot || isNaN(tempAtual)) return;
                 
-                if (dataHora) lastUpdateStr = dataHora;
+                if (dataHora) {
+                    lastUpdateStr = dataHora;
+                    globalLastUpdate = dataHora;
+                }
                 analisados++;
                 
                 if (tempAtual > maxTemp) maxTemp = tempAtual;
+                if (tempAtual > globalMaxTemp) globalMaxTemp = tempAtual;
 
                 let isCritico = tempAtual >= 90 || (!isNaN(limCrit) && tempAtual >= limCrit);
                 let isAtencao = (!isCritico) && (tempAtual >= 80 || (!isNaN(limAlta) && tempAtual >= limAlta));
@@ -252,77 +251,52 @@ function runTemperaturaEngine() {
                 health,
                 lastUpdate: lastUpdateStr
             });
+
+            globalAnalisados += analisados;
+            globalCriticos += criticos;
+            globalAtencao += atencao;
         });
 
-        if (globalBody && isHomePage) {
-            globalBody.style.display = 'flex';
-            
-            const loadingEl = document.getElementById('global-temperatura-loading');
-            const contentEl = document.getElementById('global-temperatura-content');
-            const container = document.getElementById('temperatura-badge-container');
-            
-            if (loadingEl) loadingEl.style.display = 'none';
-            if (contentEl) contentEl.style.display = 'flex';
-            
-            if (container) {
-                container.innerHTML = ''; 
-                
-                GLOBAL_MASTER_OLT_LIST.forEach(oltDef => {
-                    const o = oltStats.find(stats => stats.id === oltDef.id);
-                    
-                    if (!o || o.analisados === 0) {
-                        container.innerHTML += `
-                            <div class="temp-badge-item" style="background-color: rgba(255,255,255,0.02); opacity: 0.5;">
-                                <div style="display: flex; align-items: center; gap: 6px; pointer-events: none;">
-                                    <span class="material-symbols-rounded" style="font-size: 18px; color: var(--m3-on-surface-variant);">device_thermostat</span>
-                                    <span class="olt-name">${oltDef.id}</span>
-                                </div>
-                                <span class="temp-value" style="pointer-events: none;">--</span>
-                            </div>
-                        `;
-                        return;
-                    }
+        // ==============================================================================
+        // INJEÇÃO DA HOME (Apenas abastecimento de dados no esqueleto fixo)
+        // ==============================================================================
+        if (isHomePage) {
+            const elAnalisado = document.getElementById('temperatura-total-analisado');
+            const elCriticos = document.getElementById('temperatura-total-criticos');
+            const elAtencao = document.getElementById('temperatura-total-atencao');
+            const elMaxima = document.getElementById('temperatura-global-maxima');
+            const elIcon = document.getElementById('temperatura-main-icon');
+            const elDate = document.getElementById('temperatura-date');
+            const elTime = document.getElementById('temperatura-time');
 
-                    let classeCSS = 'status-normal';
-                    let icone = 'device_thermostat';
-                    let statusText = 'Estável';
-                    let colorStatus = '#4ade80';
+            if (elAnalisado) elAnalisado.textContent = globalAnalisados;
+            if (elCriticos) elCriticos.textContent = globalCriticos;
+            if (elAtencao) elAtencao.textContent = globalAtencao;
 
-                    if (o.criticos > 0 || o.maxTemp >= 90) {
-                        classeCSS = 'status-critico';
-                        icone = 'device_thermostat'; 
-                        statusText = 'Crítico';
-                        colorStatus = '#f87171';
-                    } else if (o.atencao > 0 || o.maxTemp >= 80) {
-                        classeCSS = 'status-atencao';
-                        icone = 'device_thermostat';
-                        statusText = 'Atenção';
-                        colorStatus = '#f97316';
-                    }
+            if (elMaxima) {
+                elMaxima.textContent = globalMaxTemp + '°C';
 
-                    container.innerHTML += `
-                        <div class="temp-badge-item ${classeCSS}"
-                             data-olt="${o.id}"
-                             data-max="${o.maxTemp}"
-                             data-crit="${o.criticos}"
-                             data-warn="${o.atencao}"
-                             data-status="${statusText}"
-                             data-color="${colorStatus}"
-                             data-icon="${icone}"
-                             onmouseenter="handleTempHover(event)"
-                             onmouseleave="handleTempLeave()"
-                             onclick="handleTempClick(event)">
-                            <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; pointer-events: none;">
-                                <span class="material-symbols-rounded" style="font-size: 18px;">${icone}</span>
-                                <span class="olt-name">${o.id}</span>
-                            </div>
-                            <span class="temp-value" style="pointer-events: none;">${o.maxTemp}°C</span>
-                        </div>
-                    `;
-                });
+                let tempColor = '#4ade80'; 
+                if (globalMaxTemp >= 90) {
+                    tempColor = '#f87171'; 
+                } else if (globalMaxTemp >= 80) {
+                    tempColor = '#f97316'; 
+                }
+
+                elMaxima.style.color = tempColor;
+                if (elIcon) elIcon.style.color = tempColor;
+            }
+
+            if (globalLastUpdate !== '--/--/---- --:--:--') {
+                const dateParts = globalLastUpdate.split(' ');
+                if (elDate) elDate.textContent = dateParts[0] || '--/--/----';
+                if (elTime) elTime.textContent = dateParts[1] || '--:--:--';
             }
         }
 
+        // ==============================================================================
+        // INJEÇÃO DA PÁGINA TEMPERATURA.HTML (Cards individuais mantidos)
+        // ==============================================================================
         if (isTemperaturaPage && gridEl) {
             gridEl.innerHTML = '';
             
@@ -344,9 +318,9 @@ function runTemperaturaEngine() {
                 const dateVal = dateParts[0] || '--/--/----';
                 const timeVal = dateParts[1] || '--:--:--';
                 
-                let textColor = '#f97316';
+                let textColor = '#4ade80';
                 if (o.maxTemp >= 90) textColor = '#f87171';
-                else if (o.maxTemp < 80) textColor = '#4ade80';
+                else if (o.maxTemp >= 80) textColor = '#f97316';
 
                 gridEl.innerHTML += `
                     <div class="overview-card" id="card-${o.id}" style="display: flex; flex-direction: column; width: 100%;">

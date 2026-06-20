@@ -2,89 +2,84 @@
    ESTILOS ESPECÍFICOS - DASHBOARD HOME (index.html)
    ========================================================================== */
 
-/* Padronização compacta dos cards na Home */
-.global-card .card-body {
-    padding: 16px 20px !important; 
-    box-sizing: border-box !important;
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    flex-wrap: wrap !important;
-}
-
-/* Ajuste das colunas internas para garantir centralização */
-.global-card div[style*="flex: 1"] {
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
-    align-items: center !important;
-    text-align: center !important;
-}
-
-/* Garante que a primeira coluna (Estatísticas) alinhe à esquerda */
-.global-card .card-stats {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    text-align: left !important;
-}
-
-/* --- RESTAURAÇÃO DE CORES DOS INDICADORES --- */
-.global-card .stat-item.online .stat-number, 
-.global-card .stat-item.online label, 
-.global-card .stat-item.online .icon-up { 
-    color: var(--m3-color-success) !important; 
-}
-.global-card .stat-item.offline .stat-number, 
-.global-card .stat-item.offline label, 
-.global-card .stat-item.offline .icon-down { 
-    color: var(--m3-color-error) !important; 
-}
-
-/* Layout em Grid Principal */
+/* Layout em Grid Principal e Dividido - Responsividade Fluida (Auto-Fit) */
 .global-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 8px; 
+    gap: 15px; 
     width: 100%;
 }
 
-/* Layout dividido para Equipamentos e Potência / Rede e Potência */
 .split-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px; 
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 15px; 
     width: 100%;
 }
 
+/* Cards da Home - Agora fluidos e sem altura forçada */
 .global-card {
     background-color: var(--m3-surface-container);
-    border-radius: 20px; 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 24px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     display: flex;
     flex-direction: column;
     margin: 0; 
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.global-card:hover { 
+    transform: translateY(-4px); 
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3); 
 }
 
 .global-card .card-header {
-    background-color: var(--m3-surface-container-high);
-    padding: 10px 20px; 
-    border-bottom: 1px solid var(--m3-outline-variant);
+    background-color: rgba(234, 208, 255, 0.03);
+    padding: 16px 25px; 
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
 }
 
 .global-card .card-header h3 {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: 1.25rem;
     color: var(--m3-on-surface);
     display: flex;
     align-items: center;
     gap: 10px;
-    font-weight: 700;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Corpo dos cards com Flex Wrap nativo - A MÁGICA ACONTECE AQUI! Substitui as media queries rígidas */
+.global-card .card-body {
+    padding: 20px; 
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; 
+    gap: 20px;
+    flex: 1;
+}
+
+/* Colunas internas dos cards da home ajustando automaticamente */
+.global-card .card-body > div {
+    flex: 1 1 200px; /* Cresce, encolhe e quebra automaticamente em 200px */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Primeira coluna (Estatísticas) alinha à esquerda */
+.global-card .card-stats {
+    align-items: flex-start;
+    text-align: left;
 }
 
 .global-stat {
@@ -116,21 +111,21 @@
     height: 14px; width: 100%; background: var(--m3-surface-container-high); 
     border-radius: 4px; display: flex; overflow: hidden; margin-top: 12px; 
 }
-.bar-online { background-color: var(--m3-on-surface); } 
-.bar-poweroff { background-color: #f87171; } 
+
+.bar-online { background-color: var(--m3-color-success); } 
+.bar-poweroff { background-color: var(--m3-color-error); } 
 .bar-offline { background-color: var(--m3-color-warning); }
 
-/* Classes utilitárias para quebra de linha (Comportamento Desktop Padrão) */
+/* Classes utilitárias para quebra de linha fluida */
 .mobile-break-separator { display: inline; }
 .mobile-break-line { display: inline; }
-
 
 /* ==========================================================================
    TOP 3 OLTs POTÊNCIA (HOME) 
    ========================================================================== */
 .potencia-top-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Responsividade fluida */
     gap: 10px;
     width: 100%;
 }
@@ -146,7 +141,7 @@
     justify-content: center;
     text-align: center;
     transition: transform 0.2s, background-color 0.2s;
-    cursor: pointer; /* Alterado para pointer indicando interatividade */
+    cursor: pointer;
 }
 
 .potencia-top-card:hover {
@@ -180,17 +175,14 @@
    GRID DE MINI-TERMÔMETROS (TEMPERATURA HOME)
    ========================================================================== */
 .temp-badge-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); /* Responsividade nativa */
     gap: 8px;
     width: 100%;
     margin-top: 10px;
 }
 
 .temp-badge-item {
-    flex: 0 1 calc(11.11% - 8px); 
-    min-width: 110px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -201,7 +193,7 @@
     border: 1px solid rgba(255,255,255,0.05);
     box-sizing: border-box;
     transition: transform 0.2s ease, border-color 0.2s ease;
-    cursor: pointer; /* Indicando interatividade */
+    cursor: pointer;
 }
 
 .temp-badge-item:hover {
@@ -246,7 +238,7 @@
    ========================================================================== */
 .eqp-badge-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* Responsividade fluida */
     gap: 12px;
     width: 100%;
     margin-top: 10px;
@@ -312,7 +304,6 @@
    SISTEMA HÍBRIDO: TOOLTIP INTELIGENTE (PC) E MODAL RÁPIDO (MOBILE)
    ========================================================================== */
 
-/* Tooltip Dinâmico - Flutuante no Body */
 #smart-tooltip {
     position: absolute;
     background-color: var(--m3-surface-container-high);
@@ -362,12 +353,11 @@
     gap: 24px;
 }
 
-/* Modal Rápido - Focado em Mobile/Tablet */
 .fast-modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background-color: rgba(0, 0, 0, 0.6);
-    display: none; /* Ativado via JavaScript */
+    display: none; 
     align-items: center;
     justify-content: center;
     z-index: 99999;
@@ -380,6 +370,7 @@
     border-radius: 16px;
     padding: 20px;
     width: 280px;
+    max-width: 90%;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     position: relative;
     text-align: left;
@@ -399,57 +390,15 @@
     color: var(--m3-on-surface);
 }
 
-
-/* RESPONSIVIDADE EXCLUSIVA DA HOME (MÓVEL & TABLETS) */
-@media (max-width: 900px) {
-    .split-grid {
-        grid-template-columns: 1fr; 
-    }
-
-    .global-card .card-body {
-        flex-direction: column !important;
-        align-items: stretch !important;
-        padding: 15px !important; 
-    }
-
-    .global-card .card-stats,
-    .global-card div[style*="flex: 1"] {
-        width: 100% !important; 
-        max-width: 100% !important;
-        border-left: none !important;
-        padding-left: 0 !important; 
-        padding-right: 0 !important;
-        padding-top: 15px !important; 
-        padding-bottom: 15px !important;
-        align-items: flex-start !important;
-        text-align: left !important;
-    }
-
-    .global-card div[style*="flex: 1"] {
-        border-top: none !important;
-    }
-
-    .donut-chart-container {
-        align-self: center !important;
-        margin-top: 15px !important;
-    }
-
-    .temp-badge-grid {
-        justify-content: flex-start; 
-    }
-    .temp-badge-item {
-        flex: 1 1 calc(33% - 8px); 
-    }
-    
-    .eqp-badge-grid {
-        grid-template-columns: repeat(3, 1fr); 
-    }
-
+/* ==========================================================================
+   AJUSTES SUPER FINOS DE TELA PEQUENA (Sem overrides destrutivos)
+   ========================================================================== */
+@media (max-width: 600px) {
     .mobile-break-separator {
-        display: none !important;
+        display: none;
     }
     .mobile-break-line {
-        display: block !important;
+        display: block;
         margin-top: 3px;
     }
 }

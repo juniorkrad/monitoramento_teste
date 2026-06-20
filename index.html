@@ -26,190 +26,160 @@
     <div class="page-container">
         <div id="header-placeholder"></div>
 
-        <main class="main-content">
-            <div class="split-grid">
+        <main class="main-content" style="flex-direction: column;">
+            <div id="overview-grid" class="grid-container">
                 
-                <div class="left-column" style="display: flex; flex-direction: column; gap: 24px;">
-                    
-                    <div class="global-card" id="card-global">
-                        <div class="card-header">
-                            <h3><span class="material-symbols-rounded">public</span> MONITORAMENTO DA REDE</h3>
-                        </div>
-                        <div class="card-body" id="card-global-body">
-                            <div id="global-net-loading" style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
-                                <div class="spinner"></div>
-                                <p style="margin-top: 10px; font-size: 0.9rem;">Processando topologia de rede...</p>
+                <div class="overview-card" id="home-card-rede">
+                    <div class="card-header">
+                        <h3><span class="material-symbols-rounded">router</span> Status de Rede</h3>
+                    </div>
+                    <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div style="display: flex; align-items: center; gap: 8px;" title="Clientes Online">
+                                    <span class="material-symbols-rounded" style="color: var(--m3-color-success); font-size: 20px;">arrow_circle_up</span>
+                                    <span style="font-size: 1.2rem; color: var(--m3-color-success); font-weight: bold; font-family: var(--font-family-mono);" id="net-total-online">--</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;" title="Clientes Offline">
+                                    <span class="material-symbols-rounded" style="color: var(--m3-color-error); font-size: 20px;">arrow_circle_down</span>
+                                    <span style="font-size: 1.2rem; color: var(--m3-color-error); font-weight: bold; font-family: var(--font-family-mono);" id="net-total-offline">--</span>
+                                </div>
                             </div>
-
-                            <div id="global-net-content" style="display: none; width: 100%; justify-content: space-between; align-items: stretch; flex-wrap: wrap; gap: 10px; height: 100%;">
-                                <div class="card-stats" style="flex: 1; padding-right: 15px; min-width: 200px;">
-                                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px">
-                                        <span class="material-symbols-rounded" style="color:#60a5fa; font-size:20px;">visibility</span>
-                                        <h3 style="margin:0; font-size:1rem; color:var(--m3-on-surface);">Visão Geral</h3>
-                                    </div>
-                                    <div class="global-stat stat-item">
-                                        <span class="stat-number" id="net-total-geral">--</span>
-                                        <label><span class="material-symbols-rounded icon-total" style="font-size: 18px;">router</span> Total Geral</label>
-                                    </div>
-                                    <div class="global-stat stat-item online">
-                                        <span class="stat-number" id="net-total-online">--</span>
-                                        <label><span class="material-symbols-rounded icon-up" style="font-size: 18px;">check_circle</span> Total Online</label>
-                                    </div>
-                                    <div class="global-stat stat-item offline">
-                                        <span class="stat-number" id="net-total-offline">--</span>
-                                        <label><span class="material-symbols-rounded icon-down" style="font-size: 18px;">error</span> Total Offline</label>
-                                    </div>
+                            <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Total de Clientes">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="material-symbols-rounded" style="color: #ffffff; font-size: 28px;">router</span>
+                                    <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; color: #ffffff; line-height: 1;" id="net-total-geral">--</span>
                                 </div>
-                                
-                                <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 20px; min-width: 200px;">
-                                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px">
-                                        <span class="material-symbols-rounded" style="color:#f87171; font-size:20px;">warning</span>
-                                        <h3 style="margin:0; font-size:1rem; color:var(--m3-on-surface);">Top 3 OLTs Críticas</h3>
-                                    </div>
-                                    <div id="net-ranking-container" style="flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center;">
-                                        <div id="net-top-1" class="ranking-row" style="display: none; margin-bottom: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background-color 0.2s ease; margin-left: -8px;" onmouseenter="handleNetHover(event)" onmouseleave="handleNetLeave()" onclick="handleNetClick(event)">
-                                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline; pointer-events: none;">
-                                                <strong id="net-top-1-name" style="color: var(--m3-on-surface); font-size: 1rem;"></strong>
-                                                <span id="net-top-1-off" class="stat-number" style="font-size: 1rem; color: var(--m3-color-error); width: auto;"></span>
-                                            </div>
-                                            <div style="height: 8px; background: var(--m3-surface-container-high); border-radius: 4px; overflow: hidden; width: 100%; pointer-events: none;">
-                                                <div id="net-top-1-bar" style="height: 100%; width: 0%; background: var(--m3-color-error); border-radius: 4px; transition: width 0.5s ease;"></div>
-                                            </div>
-                                        </div>
-                                        <div id="net-top-2" class="ranking-row" style="display: none; margin-bottom: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background-color 0.2s ease; margin-left: -8px;" onmouseenter="handleNetHover(event)" onmouseleave="handleNetLeave()" onclick="handleNetClick(event)">
-                                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline; pointer-events: none;">
-                                                <strong id="net-top-2-name" style="color: var(--m3-on-surface); font-size: 1rem;"></strong>
-                                                <span id="net-top-2-off" class="stat-number" style="font-size: 1rem; color: var(--m3-color-error); width: auto;"></span>
-                                            </div>
-                                            <div style="height: 8px; background: var(--m3-surface-container-high); border-radius: 4px; overflow: hidden; width: 100%; pointer-events: none;">
-                                                <div id="net-top-2-bar" style="height: 100%; width: 0%; background: var(--m3-color-error); border-radius: 4px; transition: width 0.5s ease;"></div>
-                                            </div>
-                                        </div>
-                                        <div id="net-top-3" class="ranking-row" style="display: none; margin-bottom: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background-color 0.2s ease; margin-left: -8px;" onmouseenter="handleNetHover(event)" onmouseleave="handleNetLeave()" onclick="handleNetClick(event)">
-                                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline; pointer-events: none;">
-                                                <strong id="net-top-3-name" style="color: var(--m3-on-surface); font-size: 1rem;"></strong>
-                                                <span id="net-top-3-off" class="stat-number" style="font-size: 1rem; color: var(--m3-color-error); width: auto;"></span>
-                                            </div>
-                                            <div style="height: 8px; background: var(--m3-surface-container-high); border-radius: 4px; overflow: hidden; width: 100%; pointer-events: none;">
-                                                <div id="net-top-3-bar" style="height: 100%; width: 0%; background: var(--m3-color-error); border-radius: 4px; transition: width 0.5s ease;"></div>
-                                            </div>
-                                        </div>
-
-                                        <div id="net-no-issues" style="display: none; text-align: center; color: var(--m3-color-success); font-weight: 700; width: 100%;">
-                                            <span class="material-symbols-rounded" style="font-size: 40px;">sentiment_very_satisfied</span><br>Rede 100% Online!
-                                        </div>
-                                    </div>
-                                </div>
+                                <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px;">Total</span>
+                            </div>
+                        </div>
+                        <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span>
+                                <span id="net-date">--/--/----</span>
+                            </div>
+                            <span style="color: rgba(255,255,255,0.1);">|</span>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span>
+                                <span id="net-time">--:--:--</span>
                             </div>
                         </div>
                     </div>
-
-                    <div class="global-card" id="global-energia-body">
-                        <div class="card-header">
-                            <h3><span class="material-symbols-rounded">electric_bolt</span> MONITORAMENTO DE ENERGIA</h3>
-                        </div>
-                        <div class="card-body" id="card-energia-body">
-                            <div id="global-energia-loading" style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
-                                <div class="spinner"></div>
-                                <p style="margin-top: 10px; font-size: 0.9rem;">Consultando telemetria de energia (Dying Gasp)...</p>
-                            </div>
-
-                            <div id="global-energia-content" style="display: none; width: 100%; justify-content: space-between; align-items: stretch; flex-wrap: wrap; gap: 10px; height: 100%;">
-                                <div class="card-stats" style="flex: 1; padding-right: 15px; min-width: 200px;">
-                                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px">
-                                        <span class="material-symbols-rounded" style="color:#fbbf24; font-size:20px;">power_off</span>
-                                        <h3 style="margin:0; font-size:1rem; color:var(--m3-on-surface);">Status Global</h3>
-                                    </div>
-                                    <div class="global-stat stat-item">
-                                        <span class="stat-number" id="energia-global-poweroff" style="color: #fbbf24;">--</span>
-                                        <label><span class="material-symbols-rounded icon-total" style="font-size: 18px;">battery_alert</span> Quedas (Power Off)</label>
-                                    </div>
-                                </div>
-                                <div style="flex: 1; border-left: 1px solid var(--m3-outline); padding-left: 20px; min-width: 200px;">
-                                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px">
-                                        <span class="material-symbols-rounded" style="color:#60a5fa; font-size:20px;">analytics</span>
-                                        <h3 style="margin:0; font-size:1rem; color:var(--m3-on-surface);">Impacto na Rede</h3>
-                                    </div>
-                                    <div style="font-size: 0.95rem; line-height: 1.6; color: var(--m3-on-surface-variant);">
-                                        <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle;">dns</span>
-                                        <strong id="energia-olts-afetadas" style="color: var(--m3-on-surface);">--</strong> de <span id="energia-olts-total">--</span> OLTs afetadas.<br>
-                                        <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle;">public</span>
-                                        Impacto rede: <strong id="energia-impacto-rede" style="color: var(--m3-on-surface);">--%</strong><br>
-                                        <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle;">pie_chart</span>
-                                        Relativo OFF: <strong id="energia-relativo-off" style="color: #f87171;">--%</strong>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="global-card" id="global-potencia-body">
-                        <div class="card-header">
-                            <h3><span class="material-symbols-rounded">insights</span> MONITORAMENTO DE POTÊNCIA</h3>
-                        </div>
-                        <div class="card-body" id="card-potencia-body">
-                            <div id="global-potencia-loading" style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
-                                <div class="spinner"></div>
-                                <p style="margin-top: 10px; font-size: 0.9rem;">Avaliando atenuação óptica da rede...</p>
-                            </div>
-                            
-                            <div id="global-potencia-content" style="display: none; width: 100%; flex-direction: column; justify-content: stretch; height: 100%;">
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
-                                    <span class="material-symbols-rounded" style="color: #f87171; font-size: 20px;">insights</span>
-                                    <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Piores Médias (OLTs)</h3>
-                                </div>
-                                <div style="flex: 1; width: 100%; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                                    <div class="potencia-top-grid" id="potencia-badge-container" style="width: 100%;">
-                                        </div>
-                                    <div id="potencia-no-issues" style="display: none; text-align: center; color: var(--m3-color-success); font-weight: 700; margin-top: 15px; width: 100%;">
-                                        <span class="material-symbols-rounded" style="font-size: 48px;">sentiment_very_satisfied</span><br>Rede sem clientes online lidos!
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="global-card" id="global-temperatura-body">
-                        <div class="card-header">
-                            <h3><span class="material-symbols-rounded">thermostat</span> MONITORAMENTO DE TEMPERATURA</h3>
-                        </div>
-                        <div class="card-body" id="card-temperatura-body">
-                            <div id="global-temperatura-loading" style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
-                                <div class="spinner"></div>
-                                <p style="margin-top: 10px; font-size: 0.9rem;">Coletando sensores térmicos...</p>
-                            </div>
-
-                            <div id="global-temperatura-content" style="display: none; width: 100%; flex-direction: column; justify-content: stretch; height: 100%;">
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
-                                    <span class="material-symbols-rounded" style="color: #f97316; font-size: 20px;">grid_view</span>
-                                    <h3 style="margin: 0; font-size: 1rem; color: var(--m3-on-surface);">Pico Térmico Global</h3>
-                                </div>
-                                <div class="temp-badge-grid" id="temperatura-badge-container">
-                                    </div>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
 
-                <div class="right-column">
-                    <div class="global-card" id="card-fabricantes">
-                        <div class="card-header">
-                            <h3><span class="material-symbols-rounded">precision_manufacturing</span> MONITORAMENTO DE EQUIPAMENTOS</h3>
-                        </div>
-                        <div class="card-body" id="card-eqp-body">
-                            <div id="global-eqp-loading" style="text-align: center; color: var(--m3-on-surface-variant); width: 100%; padding: 20px;">
-                                <div class="spinner"></div>
-                                <p style="margin-top: 10px; font-size: 0.9rem;">Agrupando parque tecnológico...</p>
-                            </div>
-
-                            <div id="global-eqp-content" style="display: none; width: 100%; flex-direction: column; height: 100%;">
-                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px">
-                                    <span class="material-symbols-rounded" style="color:#60a5fa; font-size:20px;">inventory_2</span>
-                                    <h3 style="margin:0; font-size:1rem; color:var(--m3-on-surface);">Fabricantes na Rede</h3>
+                <div class="overview-card" id="home-card-energia">
+                    <div class="card-header">
+                        <h3><span class="material-symbols-rounded">bolt</span> Alarmes de Energia</h3>
+                    </div>
+                    <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div style="display: flex; align-items: center; gap: 8px;" title="Total Offline">
+                                    <span class="material-symbols-rounded" style="color: #f87171; font-size: 20px;">router_off</span>
+                                    <span style="font-size: 1.2rem; color: #f87171; font-weight: bold; font-family: var(--font-family-mono);" id="energia-total-offline">--</span>
                                 </div>
-                                <div id="eqp-badge-container" class="eqp-badge-grid">
-                                    </div>
+                                <div style="display: flex; align-items: center; gap: 8px;" title="Falta de Sinal Óptico">
+                                    <span class="material-symbols-rounded" style="color: #f97316; font-size: 20px;">wifi_off</span>
+                                    <span style="font-size: 1.2rem; color: #f97316; font-weight: bold; font-family: var(--font-family-mono);" id="energia-offline-other">--</span>
+                                </div>
+                            </div>
+                            <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Sem Energia">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="material-symbols-rounded" style="color: #fbbf24; font-size: 28px;">power_off</span>
+                                    <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; color: #fbbf24; line-height: 1;" id="energia-global-poweroff">--</span>
+                                </div>
+                                <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px;">Sem Energia</span>
+                            </div>
+                        </div>
+                        <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span>
+                                <span id="energia-date">--/--/----</span>
+                            </div>
+                            <span style="color: rgba(255,255,255,0.1);">|</span>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span>
+                                <span id="energia-time">--:--:--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overview-card" id="home-card-potencia">
+                    <div class="card-header">
+                        <h3><span class="material-symbols-rounded">insights</span> Análise de Potência</h3>
+                    </div>
+                    <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div style="display: flex; align-items: center; gap: 8px;" title="Total Analisado">
+                                    <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">search</span>
+                                    <span style="font-size: 1.2rem; color: var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);" id="potencia-total-analisado">--</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;" title="Clientes Críticos">
+                                    <span class="material-symbols-rounded" style="color: #f87171; font-size: 20px;">warning</span>
+                                    <span style="font-size: 1.2rem; color: #f87171; font-weight: bold; font-family: var(--font-family-mono);" id="potencia-total-criticos">--</span>
+                                </div>
+                            </div>
+                            <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Média de Potência">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="material-symbols-rounded" style="font-size: 28px;" id="potencia-main-icon">insights</span>
+                                    <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; line-height: 1;" id="potencia-global-media">--</span>
+                                </div>
+                                <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px;">Média (dBm)</span>
+                            </div>
+                        </div>
+                        <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span>
+                                <span id="potencia-date">--/--/----</span>
+                            </div>
+                            <span style="color: rgba(255,255,255,0.1);">|</span>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span>
+                                <span id="potencia-time">--:--:--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overview-card" id="home-card-temperatura">
+                    <div class="card-header">
+                        <h3><span class="material-symbols-rounded">device_thermostat</span> Monitoramento Térmico</h3>
+                    </div>
+                    <div class="card-body" style="flex-direction: column; padding: 16px 20px; width: 100%; box-sizing: border-box;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%;">
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div style="display: flex; align-items: center; gap: 8px;" title="Sensores Lidos">
+                                    <span class="material-symbols-rounded" style="color: var(--m3-on-surface); font-size: 20px;">memory</span>
+                                    <span style="font-size: 1.2rem; color: var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);" id="temperatura-total-analisado">--</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;" title="Sensores Críticos / Atenção">
+                                    <span class="material-symbols-rounded" style="color: #f87171; font-size: 20px;">warning</span>
+                                    <span style="font-size: 1.2rem; color: var(--m3-on-surface); font-weight: bold; font-family: var(--font-family-mono);">
+                                        <span id="temperatura-total-criticos" style="color: #f87171;">--</span>
+                                        <span style="color: var(--m3-on-surface-variant); font-weight: normal;">/</span>
+                                        <span id="temperatura-total-atencao" style="color: #f97316;">--</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;" title="Temperatura Máxima">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="material-symbols-rounded" style="font-size: 28px;" id="temperatura-main-icon">device_thermostat</span>
+                                    <span style="font-size: 2.2rem; font-family: var(--font-family-mono); font-weight: bold; line-height: 1;" id="temperatura-global-maxima">--</span>
+                                </div>
+                                <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant); text-transform: uppercase; margin-top: 6px;">Temp. Máxima</span>
+                            </div>
+                        </div>
+                        <div style="border-top: 1px solid var(--m3-outline); padding-top: 12px; display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%; font-size: 0.75rem; color: var(--m3-on-surface-variant); font-family: var(--font-family-mono);">
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span>
+                                <span id="temperatura-date">--/--/----</span>
+                            </div>
+                            <span style="color: rgba(255,255,255,0.1);">|</span>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-rounded" style="font-size: 14px;">schedule</span>
+                                <span id="temperatura-time">--:--:--</span>
                             </div>
                         </div>
                     </div>
@@ -219,8 +189,8 @@
         </main>
     </div>
 
-    <div id="mobile-fast-modal" class="fast-modal-overlay" onclick="closeFastModal(event)">
-        <div class="fast-modal-box">
+    <div id="mobile-fast-modal" class="modal-overlay" style="display: none;" onclick="closeFastModal(event)">
+        <div class="modal-content fast-modal-box">
             <button class="close-btn" onclick="closeFastModal()">&times;</button>
             <div id="fast-modal-content"></div>
         </div>
@@ -234,7 +204,6 @@
     <script src="data-store.js"></script>
     <script src="layout.js"></script>
     <script src="notifications.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
     
     <script src="olt-engine.js"></script>
     <script src="energia-engine.js"></script>

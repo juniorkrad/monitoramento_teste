@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Padronização visual final (Tabelas noc-table e Containers)
+// Atualização: Visão Geral da Home Alinhada ao Esqueleto Universal Sem Gráficos
 // ==============================================================================
 
 window.OLT_CLIENTS_DATA = {};
@@ -90,7 +90,7 @@ window.handleNetClick = function(event) {
 
 function fetchGlobalOltData(olt) {
     if (!window.DATA_STORE || !window.DATA_STORE.isReady) {
-        return { id: olt.id, onlineCount: 0, offlineCount: 0, type: olt.type, portData: {} };
+        return { id: olt.id, onlineCount: 0, offlineCount: 0, type: olt.type, portData: {}, lastUpdate: '--/--/---- --:--:--' };
     }
 
     try {
@@ -99,6 +99,25 @@ function fetchGlobalOltData(olt) {
         
         let totalOnline = 0, totalOffline = 0;
         const portData = {};
+        let lastUpdateStr = '--/--/---- --:--:--';
+
+        if (values.length > 0) {
+            const firstRow = values[0];
+            let cellData = firstRow[10] ? String(firstRow[10]) : '';
+            if (!cellData) {
+                for (let i = firstRow.length - 1; i >= 0; i--) {
+                    let val = firstRow[i] ? String(firstRow[i]) : '';
+                    if (val.match(/\d{2}\/\d{2}/) && val.match(/\d{2}:\d{2}/)) {
+                        cellData = val; break;
+                    }
+                }
+            }
+            if (cellData) {
+                const dateMatch = cellData.match(/\d{2}\/\d{2}\/\d{2,4}/);
+                const timeMatch = cellData.match(/\d{2}:\d{2}(:\d{2})?/);
+                if (dateMatch && timeMatch) lastUpdateStr = `${dateMatch[0]} ${timeMatch[0]}`;
+            }
+        }
 
         rows.forEach(columns => {
             if (columns.length === 0) return;
@@ -117,67 +136,31 @@ function fetchGlobalOltData(olt) {
             }
         });
 
-        return { id: olt.id, onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type, portData };
+        return { id: olt.id, onlineCount: totalOnline, offlineCount: totalOffline, type: olt.type, portData, lastUpdate: lastUpdateStr };
     } catch (error) {
-        return { id: olt.id, onlineCount: 0, offlineCount: 0, type: olt.type, portData: {} };
+        return { id: olt.id, onlineCount: 0, offlineCount: 0, type: olt.type, portData: {}, lastUpdate: '--/--/---- --:--:--' };
     }
 }
 
-function updateGlobalNetworkCard(globalOnline, globalOffline, top3Olts) {
+function updateGlobalNetworkCard(globalOnline, globalOffline, latestUpdateStr) {
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
     if (!isHomePage) return;
-
-    const loadingEl = document.getElementById('global-net-loading');
-    const contentEl = document.getElementById('global-net-content');
-    if (loadingEl) loadingEl.style.display = 'none';
-    if (contentEl) contentEl.style.display = 'flex';
 
     const total = globalOnline + globalOffline;
     const elTotal = document.getElementById('net-total-geral');
     const elOnline = document.getElementById('net-total-online');
     const elOffline = document.getElementById('net-total-offline');
+    const elDate = document.getElementById('net-date');
+    const elTime = document.getElementById('net-time');
     
     if (elTotal) elTotal.textContent = total;
     if (elOnline) elOnline.textContent = globalOnline;
     if (elOffline) elOffline.textContent = globalOffline;
 
-    const hasIssues = top3Olts.some(olt => olt.offline > 0);
-    const noIssuesEl = document.getElementById('net-no-issues');
-    
-    if (!hasIssues) {
-        if (noIssuesEl) noIssuesEl.style.display = 'block';
-        for (let i = 1; i <= 3; i++) {
-            const row = document.getElementById(`net-top-${i}`);
-            if (row) row.style.display = 'none';
-        }
-    } else {
-        if (noIssuesEl) noIssuesEl.style.display = 'none';
-        
-        for (let i = 1; i <= 3; i++) {
-            const row = document.getElementById(`net-top-${i}`);
-            const nameEl = document.getElementById(`net-top-${i}-name`);
-            const offEl = document.getElementById(`net-top-${i}-off`);
-            const barEl = document.getElementById(`net-top-${i}-bar`);
-            
-            const olt = top3Olts[i - 1]; 
-            
-            if (olt && olt.offline > 0 && row) {
-                const offlinePct = olt.total > 0 ? ((olt.offline / olt.total) * 100).toFixed(1) : 0;
-                
-                row.dataset.olt = olt.id;
-                row.dataset.off = olt.offline;
-                row.dataset.total = olt.total;
-                row.dataset.pct = offlinePct;
-
-                if (nameEl) nameEl.textContent = `${i}º ${olt.id}`;
-                if (offEl) offEl.textContent = `${olt.offline} OFF`;
-                if (barEl) barEl.style.width = `${offlinePct}%`;
-                
-                row.style.display = 'block';
-            } else {
-                if (row) row.style.display = 'none';
-            }
-        }
+    if (latestUpdateStr) {
+        const dateParts = latestUpdateStr.split(' ');
+        if (elDate) elDate.textContent = dateParts[0] || '--/--/----';
+        if (elTime) elTime.textContent = dateParts[1] || '--:--:--';
     }
 }
 
@@ -187,12 +170,17 @@ function runGlobalNetworkOverview() {
     let globalOnline = 0, globalOffline = 0;
     let oltStatsList = [], currentBackbones = new Set();
     let allProblems = new Set();
+    let latestUpdateStr = '--/--/---- --:--:--';
 
     results.forEach(result => {
         globalOnline += result.onlineCount; 
         globalOffline += result.offlineCount;
-        let total = result.onlineCount + result.offlineCount;
         
+        if (result.lastUpdate && result.lastUpdate !== '--/--/---- --:--:--') {
+            latestUpdateStr = result.lastUpdate;
+        }
+
+        let total = result.onlineCount + result.offlineCount;
         oltStatsList.push({ id: result.id, offline: result.offlineCount, total });
 
         let ports100Down = 0;
@@ -237,7 +225,7 @@ function runGlobalNetworkOverview() {
     });
 
     oltStatsList.sort((a, b) => b.offline - a.offline);
-    updateGlobalNetworkCard(globalOnline, globalOffline, oltStatsList.slice(0, 3));
+    updateGlobalNetworkCard(globalOnline, globalOffline, latestUpdateStr);
 
     window.NETWORK_PROBLEMS_STORE = allProblems;
     window.NETWORK_BACKBONE_STORE = currentBackbones;
