@@ -134,7 +134,6 @@ window.handleEqpClick = function(event) {
 };
 
 function runEquipamentosEngine() {
-    // ABORTA SE OS DADOS AINDA NÃO ESTIVEREM NA MEMÓRIA
     if (!window.DATA_STORE || !window.DATA_STORE.isReady) return;
 
     const globalBody = document.getElementById('card-fabricantes');
@@ -159,12 +158,9 @@ function runEquipamentosEngine() {
             brandData[m] = { total: 0, online: 0, offline: 0, olts: {} };
         });
 
-        // ==========================================
-        // DADOS PUXADOS DIRETAMENTE DA MEMÓRIA
-        // ==========================================
         GLOBAL_MASTER_OLT_LIST.forEach((olt) => {
             const values = window.DATA_STORE.olts[olt.id] || [];
-            const rows = values.slice(1); // Ignora o cabeçalho
+            const rows = values.slice(1);
 
             rows.forEach(columns => {
                 if (columns.length === 0) return;
@@ -311,7 +307,7 @@ function runEquipamentosEngine() {
                                 <div style="width:100%; margin-top:5px;">
                                     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--m3-outline); padding-bottom:4px;">
                                         <span style="font-size:0.75rem; color:var(--m3-on-surface-variant); font-weight:700; text-transform:uppercase;">DISTRIBUIÇÃO POR OLT</span>
-                                        <button onclick="openDistribuicaoModal('${m.nome}')" style="background:transparent; border:none; color:var(--m3-on-surface-variant); cursor:pointer; display:flex; align-items:center; padding:0; transition:color 0.2s;" onmouseover="this.style.color='var(--m3-on-surface)'" onmouseout="this.style.color='var(--m3-on-surface-variant)'" title="Ver Distribuição Detalhada">
+                                        <button onclick="openDistribuicaoModal('${m.nome}')" style="background:transparent; border:none; color:var(--m3-on-surface-variant); cursor:pointer; display:flex; align-items:center; padding:0; transition:color 0.2s保存;" onmouseover="this.style.color='var(--m3-on-surface)'" onmouseout="this.style.color='var(--m3-on-surface-variant)'" title="Ver Distribuição Detalhada">
                                             <span class="material-symbols-rounded" style="font-size: 18px;">open_in_new</span>
                                         </button>
                                     </div>
@@ -375,7 +371,6 @@ window.closeDistribuicaoModal = function(event) {
     if (modal) modal.style.display = 'none';
 };
 
-// Carregamento exclusivo de Cabeçalho e Rodapé para a página individual
 document.addEventListener('DOMContentLoaded', () => {
     const isEqpPage = window.location.pathname.includes('equipamentos.html');
     
@@ -386,7 +381,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// OUVINTE DO MAESTRO: Renderiza os dados apenas quando o Buscador Central gritar!
 window.addEventListener('dadosAtualizados', () => {
     runEquipamentosEngine();
 });
