@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor de Fabricantes (Visão por Marca)
-// Atualização: Refatoração da Home (Fases 1 a 3) - Cores Variáveis MD3 e Tipografia
+// Atualização: Wallboard da Home - Ajuste de Fluxo Horizontal (Widescreen)
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -194,6 +194,9 @@ function runEquipamentosEngine() {
             });
         });
 
+        // ==============================================================================
+        // INJEÇÃO DA HOME (Abastecimento de dados no esqueleto fixo Widescreen)
+        // ==============================================================================
         if (globalBody && isHomePage) {
             globalBody.style.display = 'flex';
             
@@ -236,6 +239,9 @@ function runEquipamentosEngine() {
             }
         }
 
+        // ==============================================================================
+        // INJEÇÃO DA PÁGINA EQUIPAMENTOS.HTML (Cards individuais mantidos)
+        // ==============================================================================
         if (isEqpPage && gridEqpPage) {
             gridEqpPage.innerHTML = '';
 
@@ -307,7 +313,7 @@ function runEquipamentosEngine() {
                                 <div style="width:100%; margin-top:5px;">
                                     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--m3-outline); padding-bottom:4px;">
                                         <span style="font-size:0.75rem; color:var(--m3-on-surface-variant); font-weight:700; text-transform:uppercase;">DISTRIBUIÇÃO POR OLT</span>
-                                        <button onclick="openDistribuicaoModal('${m.nome}')" style="background:transparent; border:none; color:var(--m3-on-surface-variant); cursor:pointer; display:flex; align-items:center; padding:0; transition:color 0.2s保存;" onmouseover="this.style.color='var(--m3-on-surface)'" onmouseout="this.style.color='var(--m3-on-surface-variant)'" title="Ver Distribuição Detalhada">
+                                        <button onclick="openDistribuicaoModal('${m.nome}')" style="background:transparent; border:none; color:var(--m3-on-surface-variant); cursor:pointer; display:flex; align-items:center; padding:0; transition:color 0.2s;" onmouseover="this.style.color='var(--m3-on-surface)'" onmouseout="this.style.color='var(--m3-on-surface-variant)'" title="Ver Distribuição Detalhada">
                                             <span class="material-symbols-rounded" style="font-size: 18px;">open_in_new</span>
                                         </button>
                                     </div>

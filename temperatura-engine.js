@@ -1,7 +1,6 @@
 // ==============================================================================
 // temperatura-engine.js - Motor Dedicado para Análise Térmica das OLTs
-// Atualização: Refatoração da Home (Fase 1) - Remoção de injeção HTML dinâmica
-// Atualização Fase 3: Padronização de Cores Status com Variáveis MD3
+// Atualização: Wallboard da Home - Minicards Térmicos por OLT
 // ==============================================================================
 
 const TAB_TEMPERATURA = 'TEMPERATURA'; 
@@ -259,7 +258,7 @@ function runTemperaturaEngine() {
         });
 
         // ==============================================================================
-        // INJEÇÃO DA HOME (Apenas abastecimento de dados no esqueleto fixo)
+        // INJEÇÃO DA HOME (Resumo Fixo e Minicards Wallboard)
         // ==============================================================================
         if (isHomePage) {
             const elAnalisado = document.getElementById('temperatura-total-analisado');
@@ -292,6 +291,50 @@ function runTemperaturaEngine() {
                 const dateParts = globalLastUpdate.split(' ');
                 if (elDate) elDate.textContent = dateParts[0] || '--/--/----';
                 if (elTime) elTime.textContent = dateParts[1] || '--:--:--';
+            }
+
+            // Geração dos Minicards de Temperatura
+            const targetMinicards = document.getElementById('target-temperatura-minicards');
+            if (targetMinicards) {
+                let minicardsHtml = '<div class="minicards-grid">';
+                
+                const validOlts = oltStats.filter(o => o.analisados > 0);
+                
+                // Ordena da OLT mais quente para a mais fria
+                validOlts.sort((a, b) => b.maxTemp - a.maxTemp);
+
+                validOlts.forEach(stat => {
+                    let tempColor = 'var(--m3-color-success)';
+                    let statusText = 'NORMAL';
+                    
+                    if (stat.maxTemp >= 90) {
+                        tempColor = 'var(--m3-color-error)';
+                        statusText = 'CRÍTICO';
+                    } else if (stat.maxTemp >= 80) {
+                        tempColor = 'var(--m3-color-warning)';
+                        statusText = 'ATENÇÃO';
+                    }
+
+                    minicardsHtml += `
+                        <div class="minicard-item"
+                             data-olt="${stat.id}"
+                             data-max="${stat.maxTemp}"
+                             data-crit="${stat.criticos}"
+                             data-warn="${stat.atencao}"
+                             data-status="${statusText}"
+                             data-icon="device_thermostat"
+                             data-color="${tempColor}"
+                             onmouseenter="handleTempHover(event)"
+                             onmouseleave="handleTempLeave()"
+                             onclick="handleTempClick(event)">
+                            <span class="minicard-title" style="pointer-events: none;">${stat.id}</span>
+                            <span class="minicard-value" style="color: ${tempColor}; pointer-events: none;">${stat.maxTemp}°C</span>
+                        </div>
+                    `;
+                });
+                
+                minicardsHtml += '</div>';
+                targetMinicards.innerHTML = minicardsHtml;
             }
         }
 

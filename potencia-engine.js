@@ -1,13 +1,90 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Refatoração da Home (Fase 1) - Remoção de injeção HTML dinâmica
-// Atualização Fase 3: Padronização de Cores Status com Variáveis MD3
+// Atualização: Wallboard da Home - Minicards de Sinais Ópticos por OLT
 // ==============================================================================
 
 window.POTENCIA_CLIENTS_DATA = {};
 window.POTENCIA_PORT_DATA = {}; 
 window.CURRENT_VIEW_PLACA = null; 
 window.CURRENT_POTENCIA_CONFIG = null;
+
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
+}
+
+window.handlePotHover = function(event) {
+    if (isMobileDevice()) return;
+    const tooltip = document.getElementById('smart-tooltip');
+    if (!tooltip) return;
+
+    const el = event.currentTarget;
+    tooltip.innerHTML = `
+        <div class="smart-tooltip-title">
+            <span class="material-symbols-rounded" style="font-size: 18px; color: ${el.dataset.color};">dns</span>
+            ${el.dataset.olt}
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Média Global:</span> 
+            <strong style="font-family: var(--font-family-mono); color: ${el.dataset.color};">${el.dataset.media} dBm</strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Saúde da Rede:</span> 
+            <strong style="color: ${el.dataset.health >= 90 ? 'var(--m3-color-success)' : 'var(--m3-color-error)'};">${el.dataset.health}%</strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Clientes Críticos:</span> 
+            <strong style="color: var(--m3-color-error);">${el.dataset.crit}</strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Total Analisado:</span> 
+            <strong>${el.dataset.total}</strong>
+        </div>
+    `;
+
+    const rect = el.getBoundingClientRect();
+    tooltip.style.left = (rect.left + (rect.width / 2) + window.scrollX) + 'px';
+    tooltip.style.top = (rect.top + window.scrollY) + 'px';
+    tooltip.style.opacity = 1;
+};
+
+window.handlePotLeave = function() {
+    const tooltip = document.getElementById('smart-tooltip');
+    if (tooltip) tooltip.style.opacity = 0;
+};
+
+window.handlePotClick = function(event) {
+    if (!isMobileDevice()) return;
+    const modal = document.getElementById('mobile-fast-modal');
+    const content = document.getElementById('fast-modal-content');
+    if (!modal || !content) return;
+
+    const el = event.currentTarget;
+    content.innerHTML = `
+        <h3 style="margin-top: 0; border-bottom: 1px solid var(--m3-outline); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+            <span class="material-symbols-rounded" style="color: ${el.dataset.color};">dns</span> ${el.dataset.olt}
+        </h3>
+        <div style="margin-bottom: 15px; text-align: center;">
+            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Média de Potência</span><br>
+            <strong style="font-size: 2.5rem; font-family: var(--font-family-mono); color: ${el.dataset.color}; line-height: 1;">${el.dataset.media}</strong>
+            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">dBm</span>
+        </div>
+        <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
+            <div>
+                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Clientes Críticos</span><br>
+                <strong style="font-size: 1.2rem; color: var(--m3-color-error);">${el.dataset.crit}</strong>
+            </div>
+            <div style="text-align: right;">
+                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Total Analisado</span><br>
+                <strong style="font-size: 1.2rem;">${el.dataset.total}</strong>
+            </div>
+        </div>
+        <div style="text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Saúde Óptica da OLT</span><br>
+            <strong style="color: ${el.dataset.health >= 90 ? 'var(--m3-color-success)' : 'var(--m3-color-error)'}; font-size: 1.2rem;">${el.dataset.health}%</strong>
+        </div>
+    `;
+    modal.style.display = 'flex';
+};
 
 window.exportCardToImage = function(event, cardId, oltName) {
     if (event) event.stopPropagation();
@@ -178,7 +255,7 @@ function runPotenciaEngine() {
         });
 
         // ==============================================================================
-        // INJEÇÃO DA HOME (Apenas abastecimento de dados no esqueleto fixo)
+        // INJEÇÃO DA HOME (Resumo Fixo e Minicards Wallboard)
         // ==============================================================================
         if (isHomePage) {
             const globalMedia = globalAnalisados > 0 ? (globalDbmSums / globalAnalisados).toFixed(1) : "0.0";
@@ -196,14 +273,13 @@ function runPotenciaEngine() {
             if (elMedia) {
                 elMedia.textContent = globalMedia;
                 
-                // Lógica de Cores da Média Global
-                let mediaColor = 'var(--m3-color-success)'; // Verde (Estável)
+                let mediaColor = 'var(--m3-color-success)'; 
                 let mediaVal = parseFloat(globalMedia);
                 
                 if (mediaVal <= -28.00) {
-                    mediaColor = 'var(--m3-color-error)'; // Vermelho (Crítico)
+                    mediaColor = 'var(--m3-color-error)'; 
                 } else if (mediaVal <= -26.00) {
-                    mediaColor = 'var(--m3-color-warning)'; // Amarelo (Atenção)
+                    mediaColor = 'var(--m3-color-warning)'; 
                 }
                 
                 elMedia.style.color = mediaColor;
@@ -214,6 +290,48 @@ function runPotenciaEngine() {
                 const dateParts = globalLatestUpdate.split(' ');
                 if (elDate) elDate.textContent = dateParts[0] || '--/--/----';
                 if (elTime) elTime.textContent = dateParts[1] || '--:--:--';
+            }
+
+            // Geração dos Minicards de Potência
+            const targetMinicards = document.getElementById('target-potencia-minicards');
+            if (targetMinicards) {
+                let minicardsHtml = '<div class="minicards-grid">';
+                
+                // Filtra OLTs que tem dados analisados
+                const validOlts = oltStats.filter(o => o.analisados > 0);
+                
+                // Ordenar da pior média para a melhor
+                validOlts.sort((a, b) => parseFloat(a.media) - parseFloat(b.media));
+
+                validOlts.forEach(stat => {
+                    let mediaColor = 'var(--m3-color-success)';
+                    let mediaVal = parseFloat(stat.media);
+                    
+                    if (mediaVal <= -28.00) {
+                        mediaColor = 'var(--m3-color-error)';
+                    } else if (mediaVal <= -26.00) {
+                        mediaColor = 'var(--m3-color-warning)';
+                    }
+
+                    minicardsHtml += `
+                        <div class="minicard-item"
+                             data-olt="${stat.id}"
+                             data-media="${stat.media}"
+                             data-health="${stat.health.toFixed(1)}"
+                             data-crit="${stat.criticos}"
+                             data-total="${stat.analisados}"
+                             data-color="${mediaColor}"
+                             onmouseenter="handlePotHover(event)"
+                             onmouseleave="handlePotLeave()"
+                             onclick="handlePotClick(event)">
+                            <span class="minicard-title" style="pointer-events: none;">${stat.id}</span>
+                            <span class="minicard-value" style="color: ${mediaColor}; pointer-events: none;">${stat.media} dBm</span>
+                        </div>
+                    `;
+                });
+                
+                minicardsHtml += '</div>';
+                targetMinicards.innerHTML = minicardsHtml;
             }
         }
 
