@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Visão Geral da Home Alinhada ao Esqueleto Universal Sem Gráficos
+// Atualização: Wallboard da Home - Ranking de Clientes Offline
 // ==============================================================================
 
 window.OLT_CLIENTS_DATA = {};
@@ -224,8 +224,47 @@ function runGlobalNetworkOverview() {
         }
     });
 
+    // Ordena do maior número de oflines para o menor
     oltStatsList.sort((a, b) => b.offline - a.offline);
+    
     updateGlobalNetworkCard(globalOnline, globalOffline, latestUpdateStr);
+
+    // ==============================================================================
+    // INJEÇÃO DO RANKING WALLBOARD (HOME)
+    // ==============================================================================
+    const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
+    
+    if (isHomePage) {
+        const targetRanking = document.getElementById('target-rede-ranking');
+        if (targetRanking) {
+            let rankingHtml = '<div class="ranking-list">';
+            
+            oltStatsList.forEach(stat => {
+                const perc = stat.total > 0 ? ((stat.offline / stat.total) * 100).toFixed(1) : 0;
+                const isAlert = stat.offline > 0;
+                const color = isAlert ? 'var(--m3-color-error)' : 'var(--m3-color-success)';
+                const icon = isAlert ? 'warning' : 'check_circle';
+                const bgWidth = Math.min(perc, 100);
+
+                rankingHtml += `
+                    <div class="ranking-item" style="position: relative; overflow: hidden; padding: 10px 15px;">
+                        <div style="position: absolute; top: 0; left: 0; height: 100%; width: ${bgWidth}%; background: rgba(248, 113, 113, 0.15); z-index: 0; transition: width 0.5s ease;"></div>
+                        <div class="ranking-item-left" style="position: relative; z-index: 1;">
+                            <span class="material-symbols-rounded" style="color: ${color}; font-size: 18px;">${icon}</span>
+                            <span>${stat.id}</span>
+                        </div>
+                        <div class="ranking-item-right" style="position: relative; z-index: 1;">
+                            <span style="color: ${color};">${stat.offline}</span> 
+                            <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); font-weight: normal;">/ ${stat.total}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            rankingHtml += '</div>';
+            targetRanking.innerHTML = rankingHtml;
+        }
+    }
 
     window.NETWORK_PROBLEMS_STORE = allProblems;
     window.NETWORK_BACKBONE_STORE = currentBackbones;
