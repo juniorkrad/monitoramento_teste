@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Wallboard da Home - Ranking de Clientes Offline
+// Atualização: Wallboard da Home - Layout Widescreen com Minicards
 // ==============================================================================
 
 window.OLT_CLIENTS_DATA = {};
@@ -23,18 +23,29 @@ window.handleNetHover = function(event) {
     if (!tooltip) return;
 
     const el = event.currentTarget;
+    let statusTexto = 'Normal';
+    let statusCor = 'var(--m3-color-success)';
+    
+    if (el.classList.contains('danger')) {
+        statusTexto = 'Crítico';
+        statusCor = 'var(--m3-color-error)';
+    } else if (el.classList.contains('warning')) {
+        statusTexto = 'Atenção';
+        statusCor = 'var(--m3-color-warning)';
+    }
+
     tooltip.innerHTML = `
         <div class="smart-tooltip-title">
-            <span class="material-symbols-rounded" style="font-size: 18px; color: var(--m3-color-error);">warning</span>
+            <span class="material-symbols-rounded" style="font-size: 18px; color: ${statusCor};">router</span>
             ${el.dataset.olt}
         </div>
         <div class="smart-tooltip-line">
             <span style="color: var(--m3-on-surface-variant);">Status:</span> 
-            <strong style="color: var(--m3-color-error);">Crítico</strong>
+            <strong style="color: ${statusCor};">${statusTexto}</strong>
         </div>
         <div class="smart-tooltip-line">
             <span style="color: var(--m3-on-surface-variant);">Total Offline:</span> 
-            <strong style="color: var(--m3-color-error);">${el.dataset.off}</strong>
+            <strong style="color: ${statusCor};">${el.dataset.off}</strong>
         </div>
         <div class="smart-tooltip-line">
             <span style="color: var(--m3-on-surface-variant);">Total Analisado:</span> 
@@ -64,13 +75,17 @@ window.handleNetClick = function(event) {
     if (!modal || !content) return;
 
     const el = event.currentTarget;
+    let statusCor = 'var(--m3-color-success)';
+    if (el.classList.contains('danger')) statusCor = 'var(--m3-color-error)';
+    else if (el.classList.contains('warning')) statusCor = 'var(--m3-color-warning)';
+
     content.innerHTML = `
         <h3 style="margin-top: 0; border-bottom: 1px solid var(--m3-outline); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-            <span class="material-symbols-rounded" style="color: var(--m3-color-error);">warning</span> ${el.dataset.olt}
+            <span class="material-symbols-rounded" style="color: ${statusCor};">router</span> ${el.dataset.olt}
         </h3>
         <div style="margin-bottom: 15px; text-align: center;">
             <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Total Offline</span><br>
-            <strong style="font-size: 2.5rem; font-family: var(--font-family-mono); color: var(--m3-color-error); line-height: 1;">${el.dataset.off}</strong>
+            <strong style="font-size: 2.5rem; font-family: var(--font-family-mono); color: ${statusCor}; line-height: 1;">${el.dataset.off}</strong>
         </div>
         <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
             <div>
@@ -79,7 +94,7 @@ window.handleNetClick = function(event) {
             </div>
             <div style="text-align: right;">
                 <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Impacto na OLT</span><br>
-                <strong style="font-size: 1.2rem; color: var(--m3-color-error);">${el.dataset.pct}%</strong>
+                <strong style="font-size: 1.2rem; color: ${statusCor};">${el.dataset.pct}%</strong>
             </div>
         </div>
     `;
@@ -224,45 +239,45 @@ function runGlobalNetworkOverview() {
         }
     });
 
-    // Ordena do maior número de oflines para o menor
     oltStatsList.sort((a, b) => b.offline - a.offline);
-    
     updateGlobalNetworkCard(globalOnline, globalOffline, latestUpdateStr);
 
     // ==============================================================================
-    // INJEÇÃO DO RANKING WALLBOARD (HOME)
+    // INJEÇÃO DOS MINICARDS WALLBOARD (HOME)
     // ==============================================================================
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
     
     if (isHomePage) {
-        const targetRanking = document.getElementById('target-rede-ranking');
-        if (targetRanking) {
-            let rankingHtml = '<div class="ranking-list">';
+        const targetMinicards = document.getElementById('target-rede-minicards') || document.getElementById('target-rede-ranking');
+        if (targetMinicards) {
+            let minicardsHtml = '';
             
             oltStatsList.forEach(stat => {
                 const perc = stat.total > 0 ? ((stat.offline / stat.total) * 100).toFixed(1) : 0;
-                const isAlert = stat.offline > 0;
-                const color = isAlert ? 'var(--m3-color-error)' : 'var(--m3-color-success)';
-                const icon = isAlert ? 'warning' : 'check_circle';
-                const bgWidth = Math.min(perc, 100);
+                let statusClass = 'ok';
+                let contentHtml = `<span class="material-symbols-rounded">check_circle</span>`;
+                
+                if (stat.offline > 0) {
+                    statusClass = stat.offline >= 15 ? 'danger' : 'warning';
+                    contentHtml = `<span class="olt-value">${stat.offline}</span>`;
+                }
 
-                rankingHtml += `
-                    <div class="ranking-item" style="position: relative; overflow: hidden; padding: 10px 15px;">
-                        <div style="position: absolute; top: 0; left: 0; height: 100%; width: ${bgWidth}%; background: rgba(248, 113, 113, 0.15); z-index: 0; transition: width 0.5s ease;"></div>
-                        <div class="ranking-item-left" style="position: relative; z-index: 1;">
-                            <span class="material-symbols-rounded" style="color: ${color}; font-size: 18px;">${icon}</span>
-                            <span>${stat.id}</span>
-                        </div>
-                        <div class="ranking-item-right" style="position: relative; z-index: 1;">
-                            <span style="color: ${color};">${stat.offline}</span> 
-                            <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); font-weight: normal;">/ ${stat.total}</span>
-                        </div>
+                minicardsHtml += `
+                    <div class="status-card ${statusClass}"
+                         data-olt="${stat.id}"
+                         data-off="${stat.offline}"
+                         data-total="${stat.total}"
+                         data-pct="${perc}"
+                         onmouseenter="handleNetHover(event)"
+                         onmouseleave="handleNetLeave()"
+                         onclick="handleNetClick(event)">
+                        <span class="olt-name" style="pointer-events: none;">${stat.id}</span>
+                        ${contentHtml}
                     </div>
                 `;
             });
             
-            rankingHtml += '</div>';
-            targetRanking.innerHTML = rankingHtml;
+            targetMinicards.innerHTML = minicardsHtml;
         }
     }
 
