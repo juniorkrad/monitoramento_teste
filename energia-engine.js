@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Refatoração da Home (Fase 1) - Preenchimento do esqueleto fixo
+// Atualização: Wallboard da Home - Ranking de OLTs sem Energia
 // ==============================================================================
 
 window.ENERGY_DATA_STORE = {};
@@ -218,7 +218,7 @@ function runEnergyMonitoring() {
         };
 
         // ==============================================================================
-        // INJEÇÃO DA HOME (Apenas abastecimento de dados no esqueleto fixo)
+        // INJEÇÃO DA HOME (Abastecimento de dados no esqueleto fixo + Ranking Wallboard)
         // ==============================================================================
         if (isHomePage) {
             const elTotalOffline = document.getElementById('energia-total-offline');
@@ -235,6 +235,42 @@ function runEnergyMonitoring() {
                 const dateParts = globalLastUpdateStr.split(' ');
                 if (elDate) elDate.textContent = dateParts[0] || '--/--/----';
                 if (elTime) elTime.textContent = dateParts[1] || '--:--:--';
+            }
+
+            // Geração do Ranking de Energia
+            const targetRanking = document.getElementById('target-energia-ranking');
+            if (targetRanking) {
+                // Ordenar pelo maior número de clientes afetados por falta de energia
+                oltStats.sort((a, b) => b.powerOff - a.powerOff);
+
+                let rankingHtml = '<div class="ranking-list">';
+                
+                oltStats.forEach(stat => {
+                    // A barra de progresso visual representa a proporção de falta de energia em relação ao total offline daquela OLT
+                    const perc = stat.offline > 0 ? ((stat.powerOff / stat.offline) * 100).toFixed(1) : 0;
+                    const isAlert = stat.powerOff > 0;
+                    
+                    const color = isAlert ? 'var(--m3-color-warning)' : 'var(--m3-color-success)';
+                    const icon = isAlert ? 'power_off' : 'bolt';
+                    const bgWidth = Math.min(perc, 100);
+
+                    rankingHtml += `
+                        <div class="ranking-item" style="position: relative; overflow: hidden; padding: 10px 15px;">
+                            <div style="position: absolute; top: 0; left: 0; height: 100%; width: ${bgWidth}%; background: rgba(251, 191, 36, 0.15); z-index: 0; transition: width 0.5s ease;"></div>
+                            <div class="ranking-item-left" style="position: relative; z-index: 1;">
+                                <span class="material-symbols-rounded" style="color: ${color}; font-size: 18px;">${icon}</span>
+                                <span>${stat.id}</span>
+                            </div>
+                            <div class="ranking-item-right" style="position: relative; z-index: 1;">
+                                <span style="color: ${color};">${stat.powerOff}</span> 
+                                <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); font-weight: normal;" title="Total Offline da OLT">/ ${stat.offline}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                rankingHtml += '</div>';
+                targetRanking.innerHTML = rankingHtml;
             }
         }
 
