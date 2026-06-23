@@ -300,17 +300,8 @@ function runEnergyMonitoring() {
         // INJEÇÃO DA HOME (Wallboard Widescreen com Resumo + Minicards)
         // ==============================================================================
         if (isHomePage) {
-            // Suporte legado (Caso existam as IDs fixas antigas, atualiza-as)
-            const elTotalOffline = document.getElementById('energia-total-offline');
-            const elOfflineOther = document.getElementById('energia-offline-other');
-            const elPowerOff = document.getElementById('energia-global-poweroff');
-            
-            if (elTotalOffline) elTotalOffline.textContent = globalTotalOffline;
-            if (elOfflineOther) elOfflineOther.textContent = Math.max(0, globalTotalOffline - globalPowerOff);
-            if (elPowerOff) elPowerOff.textContent = globalPowerOff;
-
             // Alvo do layout novo de Widescreen (Grid de Minicards e Resumo)
-            const targetWidescreen = document.querySelector('#home-card-energia .widescreen-body');
+            const targetWidescreen = document.getElementById('target-energia-widescreen');
             
             if (targetWidescreen) {
                 let globalOfflineOther = Math.max(0, globalTotalOffline - globalPowerOff);

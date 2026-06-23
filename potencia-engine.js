@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Wallboard da Home - Minicards de Sinais Ópticos por OLT
+// Atualização: Wallboard da Home - Resumo Médio + Minicards (Grid Dense)
 // ==============================================================================
 
 window.POTENCIA_CLIENTS_DATA = {};
@@ -255,11 +255,12 @@ function runPotenciaEngine() {
         });
 
         // ==============================================================================
-        // INJEÇÃO DA HOME (Resumo Fixo e Minicards Wallboard)
+        // INJEÇÃO DA HOME (Wallboard Widescreen com Resumo + Minicards)
         // ==============================================================================
         if (isHomePage) {
             const globalMedia = globalAnalisados > 0 ? (globalDbmSums / globalAnalisados).toFixed(1) : "0.0";
             
+            // Suporte legado
             const elAnalisado = document.getElementById('potencia-total-analisado');
             const elCriticos = document.getElementById('potencia-total-criticos');
             const elMedia = document.getElementById('potencia-global-media');
@@ -270,20 +271,15 @@ function runPotenciaEngine() {
             if (elAnalisado) elAnalisado.textContent = globalAnalisados;
             if (elCriticos) elCriticos.textContent = globalCriticos;
             
+            let globalMediaColor = 'var(--m3-color-success)'; 
+            let gMediaVal = parseFloat(globalMedia);
+            if (gMediaVal <= -28.00) globalMediaColor = 'var(--m3-color-error)'; 
+            else if (gMediaVal <= -26.00) globalMediaColor = 'var(--m3-color-warning)';
+
             if (elMedia) {
                 elMedia.textContent = globalMedia;
-                
-                let mediaColor = 'var(--m3-color-success)'; 
-                let mediaVal = parseFloat(globalMedia);
-                
-                if (mediaVal <= -28.00) {
-                    mediaColor = 'var(--m3-color-error)'; 
-                } else if (mediaVal <= -26.00) {
-                    mediaColor = 'var(--m3-color-warning)'; 
-                }
-                
-                elMedia.style.color = mediaColor;
-                if (elIcon) elIcon.style.color = mediaColor;
+                elMedia.style.color = globalMediaColor;
+                if (elIcon) elIcon.style.color = globalMediaColor;
             }
 
             if (globalLatestUpdate !== '--/--/---- --:--:--') {
@@ -292,10 +288,24 @@ function runPotenciaEngine() {
                 if (elTime) elTime.textContent = dateParts[1] || '--:--:--';
             }
 
-            // Geração dos Minicards de Potência
-            const targetMinicards = document.getElementById('target-potencia-minicards');
-            if (targetMinicards) {
-                let minicardsHtml = '<div class="minicards-grid">';
+            // Alvo do layout novo de Widescreen (Grid de Minicards e Resumo)
+            const targetWidescreen = document.getElementById('target-potencia-widescreen');
+            
+            if (targetWidescreen) {
+                // Inicia montando o Card Médio de Resumo Geral
+                let htmlWidescreen = `
+                    <div class="resumo-card">
+                        <div>
+                            <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:16px;">settings_input_antenna</span> Média Global</div>
+                            <div class="resumo-main-val" style="color: ${globalMediaColor};">${globalMedia}</div>
+                            <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Média (dBm) na Rede</div>
+                        </div>
+                        <div class="resumo-sec-val">
+                            <span>Clientes Críticos:</span>
+                            <strong style="color: var(--m3-color-error); font-size: 1.1rem;">${globalCriticos}</strong>
+                        </div>
+                    </div>
+                `;
                 
                 // Filtra OLTs que tem dados analisados
                 const validOlts = oltStats.filter(o => o.analisados > 0);
@@ -303,18 +313,22 @@ function runPotenciaEngine() {
                 // Ordenar da pior média para a melhor
                 validOlts.sort((a, b) => parseFloat(a.media) - parseFloat(b.media));
 
+                // Montar os minicards fluidos
                 validOlts.forEach(stat => {
+                    let statusClass = 'ok';
                     let mediaColor = 'var(--m3-color-success)';
                     let mediaVal = parseFloat(stat.media);
                     
                     if (mediaVal <= -28.00) {
+                        statusClass = 'danger';
                         mediaColor = 'var(--m3-color-error)';
                     } else if (mediaVal <= -26.00) {
+                        statusClass = 'warning';
                         mediaColor = 'var(--m3-color-warning)';
                     }
 
-                    minicardsHtml += `
-                        <div class="minicard-item"
+                    htmlWidescreen += `
+                        <div class="status-card ${statusClass}"
                              data-olt="${stat.id}"
                              data-media="${stat.media}"
                              data-health="${stat.health.toFixed(1)}"
@@ -324,14 +338,15 @@ function runPotenciaEngine() {
                              onmouseenter="handlePotHover(event)"
                              onmouseleave="handlePotLeave()"
                              onclick="handlePotClick(event)">
-                            <span class="minicard-title" style="pointer-events: none;">${stat.id}</span>
-                            <span class="minicard-value" style="color: ${mediaColor}; pointer-events: none;">${stat.media} dBm</span>
+                            <span class="olt-name" style="pointer-events: none;">${stat.id}</span>
+                            <span class="olt-value" style="color: ${mediaColor}; pointer-events: none;">${stat.media}</span>
+                            <span class="olt-label" style="pointer-events: none;">dBm</span>
                         </div>
                     `;
                 });
                 
-                minicardsHtml += '</div>';
-                targetMinicards.innerHTML = minicardsHtml;
+                // Injeta o HTML limpo e dinâmico direto no Body do Widescreen
+                targetWidescreen.innerHTML = htmlWidescreen;
             }
         }
 

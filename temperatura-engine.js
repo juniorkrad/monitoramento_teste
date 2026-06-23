@@ -1,6 +1,6 @@
 // ==============================================================================
 // temperatura-engine.js - Motor Dedicado para Análise Térmica das OLTs
-// Atualização: Wallboard da Home - Minicards Térmicos por OLT
+// Atualização: Wallboard da Home - Resumo Médio + Minicards (Grid Dense)
 // ==============================================================================
 
 const TAB_TEMPERATURA = 'TEMPERATURA'; 
@@ -261,6 +261,7 @@ function runTemperaturaEngine() {
         // INJEÇÃO DA HOME (Resumo Fixo e Minicards Wallboard)
         // ==============================================================================
         if (isHomePage) {
+            // Suporte Legado
             const elAnalisado = document.getElementById('temperatura-total-analisado');
             const elCriticos = document.getElementById('temperatura-total-criticos');
             const elAtencao = document.getElementById('temperatura-total-atencao');
@@ -273,18 +274,14 @@ function runTemperaturaEngine() {
             if (elCriticos) elCriticos.textContent = globalCriticos;
             if (elAtencao) elAtencao.textContent = globalAtencao;
 
+            let globalTempColor = 'var(--m3-color-success)'; 
+            if (globalMaxTemp >= 90) globalTempColor = 'var(--m3-color-error)'; 
+            else if (globalMaxTemp >= 80) globalTempColor = 'var(--m3-color-warning)';
+
             if (elMaxima) {
                 elMaxima.textContent = globalMaxTemp + '°C';
-
-                let tempColor = 'var(--m3-color-success)'; 
-                if (globalMaxTemp >= 90) {
-                    tempColor = 'var(--m3-color-error)'; 
-                } else if (globalMaxTemp >= 80) {
-                    tempColor = 'var(--m3-color-warning)'; 
-                }
-
-                elMaxima.style.color = tempColor;
-                if (elIcon) elIcon.style.color = tempColor;
+                elMaxima.style.color = globalTempColor;
+                if (elIcon) elIcon.style.color = globalTempColor;
             }
 
             if (globalLastUpdate !== '--/--/---- --:--:--') {
@@ -293,10 +290,25 @@ function runTemperaturaEngine() {
                 if (elTime) elTime.textContent = dateParts[1] || '--:--:--';
             }
 
-            // Geração dos Minicards de Temperatura
-            const targetMinicards = document.getElementById('target-temperatura-minicards');
-            if (targetMinicards) {
-                let minicardsHtml = '<div class="minicards-grid">';
+            // Alvo do layout novo de Widescreen (Grid de Minicards e Resumo)
+            const targetWidescreen = document.getElementById('target-temperatura-widescreen');
+            if (targetWidescreen) {
+                let totalAlertas = globalCriticos + globalAtencao;
+                
+                // Inicia montando o Card Médio de Resumo Geral
+                let htmlWidescreen = `
+                    <div class="resumo-card">
+                        <div>
+                            <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:16px;">whatshot</span> Pico da Rede</div>
+                            <div class="resumo-main-val" style="color: ${globalTempColor};">${globalMaxTemp}°C</div>
+                            <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Temperatura Máxima Encontrada</div>
+                        </div>
+                        <div class="resumo-sec-val">
+                            <span>Sensores em Alerta:</span>
+                            <strong style="color: var(--m3-color-warning); font-size: 1.1rem;">${totalAlertas}</strong>
+                        </div>
+                    </div>
+                `;
                 
                 const validOlts = oltStats.filter(o => o.analisados > 0);
                 
@@ -304,19 +316,22 @@ function runTemperaturaEngine() {
                 validOlts.sort((a, b) => b.maxTemp - a.maxTemp);
 
                 validOlts.forEach(stat => {
+                    let statusClass = 'ok';
                     let tempColor = 'var(--m3-color-success)';
                     let statusText = 'NORMAL';
                     
                     if (stat.maxTemp >= 90) {
+                        statusClass = 'danger';
                         tempColor = 'var(--m3-color-error)';
                         statusText = 'CRÍTICO';
                     } else if (stat.maxTemp >= 80) {
+                        statusClass = 'warning';
                         tempColor = 'var(--m3-color-warning)';
                         statusText = 'ATENÇÃO';
                     }
 
-                    minicardsHtml += `
-                        <div class="minicard-item"
+                    htmlWidescreen += `
+                        <div class="status-card ${statusClass}"
                              data-olt="${stat.id}"
                              data-max="${stat.maxTemp}"
                              data-crit="${stat.criticos}"
@@ -327,14 +342,13 @@ function runTemperaturaEngine() {
                              onmouseenter="handleTempHover(event)"
                              onmouseleave="handleTempLeave()"
                              onclick="handleTempClick(event)">
-                            <span class="minicard-title" style="pointer-events: none;">${stat.id}</span>
-                            <span class="minicard-value" style="color: ${tempColor}; pointer-events: none;">${stat.maxTemp}°C</span>
+                            <span class="olt-name" style="pointer-events: none;">${stat.id}</span>
+                            <span class="olt-value" style="color: ${tempColor}; pointer-events: none;">${stat.maxTemp}°</span>
                         </div>
                     `;
                 });
                 
-                minicardsHtml += '</div>';
-                targetMinicards.innerHTML = minicardsHtml;
+                targetWidescreen.innerHTML = htmlWidescreen;
             }
         }
 
