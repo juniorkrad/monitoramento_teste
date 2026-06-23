@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Wallboard da Home - Resumo Médio + Minicards (Grid Dense)
+// Atualização: Wallboard da Home - Resumo Médio + Minicards (Grid Dense) e Ajustes Finos
 // ==============================================================================
 
 window.ENERGY_DATA_STORE = {};
@@ -304,7 +304,7 @@ function runEnergyMonitoring() {
             const targetWidescreen = document.getElementById('target-energia-widescreen');
             
             if (targetWidescreen) {
-                let globalOfflineOther = Math.max(0, globalTotalOffline - globalPowerOff);
+                let impactoNosOfflines = globalTotalOffline > 0 ? ((globalPowerOff / globalTotalOffline) * 100).toFixed(1) : 0;
                 
                 // Inicia montando o Card Médio de Resumo Geral
                 let htmlWidescreen = `
@@ -315,8 +315,8 @@ function runEnergyMonitoring() {
                             <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Sem Energia (Dying Gasp)</div>
                         </div>
                         <div class="resumo-sec-val">
-                            <span>Falta de Sinal Óptico:</span>
-                            <strong style="color: var(--m3-color-error); font-size: 1.1rem;">${globalOfflineOther}</strong>
+                            <span>Impacto nos Offlines:</span>
+                            <strong style="color: var(--m3-color-warning); font-size: 1.1rem;">${impactoNosOfflines}%</strong>
                         </div>
                     </div>
                 `;
@@ -335,8 +335,14 @@ function runEnergyMonitoring() {
                                  onmouseenter="handleEnergyHover(event)"
                                  onmouseleave="handleEnergyLeave()"
                                  onclick="handleEnergyClick(event)">
-                                <span class="olt-name" style="pointer-events: none;">${stat.id}</span>
-                                <span class="olt-value" style="pointer-events: none;">${stat.powerOff}</span>
+                                <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
+                                    <span class="material-symbols-rounded" style="font-size: 14px; color: var(--m3-on-surface-variant);">dns</span>
+                                    <span class="olt-name">${stat.id}</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
+                                    <span class="material-symbols-rounded" style="font-size: 16px; color: var(--m3-color-warning);">power_off</span>
+                                    <span class="olt-value">${stat.powerOff}</span>
+                                </div>
                             </div>
                         `;
                     } else {
@@ -348,7 +354,10 @@ function runEnergyMonitoring() {
                                  onmouseenter="handleEnergyHover(event)"
                                  onmouseleave="handleEnergyLeave()"
                                  onclick="handleEnergyClick(event)">
-                                <span class="olt-name" style="pointer-events: none;">${stat.id}</span>
+                                <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
+                                    <span class="material-symbols-rounded" style="font-size: 14px; color: var(--m3-on-surface-variant);">dns</span>
+                                    <span class="olt-name">${stat.id}</span>
+                                </div>
                                 <span class="material-symbols-rounded" style="pointer-events: none;">bolt</span>
                             </div>
                         `;
@@ -616,7 +625,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isEnergyPage = window.location.pathname.includes('energia.html');
     
     if (isEnergyPage) {
-        if (typeof loadHeader === 'function') loadHeader({ title: "Alarmes de Energia", exactTitle: true });
+        if (typeof loadHeader === 'function') loadHeader({ title: "Monitoramento de Energia", exactTitle: true });
         if (typeof loadFooter === 'function') loadFooter();
         setTimeout(updateGlobalTimestamp, 500);
     }

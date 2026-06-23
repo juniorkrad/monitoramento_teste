@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isEqpPage = window.location.pathname.includes('equipamentos.html');
     
     if (isEqpPage) {
-        if (typeof loadHeader === 'function') loadHeader({ title: "Equipamentos por Fabricante", exactTitle: true });
+        if (typeof loadHeader === 'function') loadHeader({ title: "Monitoramento de Equipamentos", exactTitle: true });
         if (typeof loadFooter === 'function') loadFooter();
         setTimeout(updateGlobalTimestamp, 500); 
     }

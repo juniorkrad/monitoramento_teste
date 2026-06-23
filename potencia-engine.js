@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Wallboard da Home - Resumo Médio + Minicards (Grid Dense)
+// Atualização: Wallboard da Home - Resumo Médio + Minicards (Grid Dense) e Ajustes Finos
 // ==============================================================================
 
 window.POTENCIA_CLIENTS_DATA = {};
@@ -24,7 +24,7 @@ window.handlePotHover = function(event) {
             ${el.dataset.olt}
         </div>
         <div class="smart-tooltip-line">
-            <span style="color: var(--m3-on-surface-variant);">Média Global:</span> 
+            <span style="color: var(--m3-on-surface-variant);">Média de Potência:</span> 
             <strong style="font-family: var(--font-family-mono); color: ${el.dataset.color};">${el.dataset.media} dBm</strong>
         </div>
         <div class="smart-tooltip-line">
@@ -296,7 +296,7 @@ function runPotenciaEngine() {
                 let htmlWidescreen = `
                     <div class="resumo-card">
                         <div>
-                            <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:16px;">settings_input_antenna</span> Média Global</div>
+                            <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:16px;">settings_input_antenna</span> Média de Potência</div>
                             <div class="resumo-main-val" style="color: ${globalMediaColor};">${globalMedia}</div>
                             <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Média (dBm) na Rede</div>
                         </div>
@@ -338,7 +338,10 @@ function runPotenciaEngine() {
                              onmouseenter="handlePotHover(event)"
                              onmouseleave="handlePotLeave()"
                              onclick="handlePotClick(event)">
-                            <span class="olt-name" style="pointer-events: none;">${stat.id}</span>
+                            <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
+                                <span class="material-symbols-rounded" style="font-size: 14px; color: var(--m3-on-surface-variant);">dns</span>
+                                <span class="olt-name">${stat.id}</span>
+                            </div>
                             <span class="olt-value" style="color: ${mediaColor}; pointer-events: none;">${stat.media}</span>
                             <span class="olt-label" style="pointer-events: none;">dBm</span>
                         </div>
@@ -720,7 +723,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isPotenciaPage = window.location.pathname.includes('potencia.html');
     
     if (isPotenciaPage) {
-        if (typeof loadHeader === 'function') loadHeader({ title: "Análise de Potência", exactTitle: true });
+        if (typeof loadHeader === 'function') loadHeader({ title: "Monitoramento de Potência", exactTitle: true });
         if (typeof loadFooter === 'function') loadFooter();
         setTimeout(updateGlobalTimestamp, 500);
     }

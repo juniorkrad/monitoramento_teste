@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Wallboard da Home - Injeção do Resumo Médio e Minicards (Grid Dense)
+// Atualização: Wallboard da Home - Ajustes Finos de Ícones e Resumo
 // ==============================================================================
 
 window.OLT_CLIENTS_DATA = {};
@@ -36,7 +36,7 @@ window.handleNetHover = function(event) {
 
     tooltip.innerHTML = `
         <div class="smart-tooltip-title">
-            <span class="material-symbols-rounded" style="font-size: 18px; color: ${statusCor};">router</span>
+            <span class="material-symbols-rounded" style="font-size: 18px; color: ${statusCor};">lan</span>
             ${el.dataset.olt}
         </div>
         <div class="smart-tooltip-line">
@@ -81,7 +81,7 @@ window.handleNetClick = function(event) {
 
     content.innerHTML = `
         <h3 style="margin-top: 0; border-bottom: 1px solid var(--m3-outline); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-            <span class="material-symbols-rounded" style="color: ${statusCor};">router</span> ${el.dataset.olt}
+            <span class="material-symbols-rounded" style="color: ${statusCor};">lan</span> ${el.dataset.olt}
         </h3>
         <div style="margin-bottom: 15px; text-align: center;">
             <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Total Offline</span><br>
@@ -253,22 +253,26 @@ function runGlobalNetworkOverview() {
         if (targetWidescreen) {
             let globalTotal = globalOnline + globalOffline;
 
-            // Inicia montando o Card Médio de Resumo Geral
+            // Inicia montando o Card Médio de Resumo Geral com Online, Offline e Total
             let htmlWidescreen = `
                 <div class="resumo-card">
                     <div>
-                        <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:16px;">public</span> Resumo Global</div>
+                        <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:16px;">router_off</span> Resumo Global</div>
                         <div class="resumo-main-val" style="color: var(--m3-color-error);">${globalOffline}</div>
                         <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Clientes Offline no momento</div>
                     </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; margin-top: 8px;">
+                        <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Clientes Online:</span>
+                        <strong style="color: var(--m3-color-success); font-size: 1rem;">${globalOnline}</strong>
+                    </div>
                     <div class="resumo-sec-val">
                         <span>Total Analisado:</span>
-                        <strong style="color: var(--m3-on-surface); font-size: 1.1rem;">${globalTotal}</strong>
+                        <strong style="color: var(--m3-on-surface); font-size: 1rem;">${globalTotal}</strong>
                     </div>
                 </div>
             `;
             
-            // Montar os 17 minicards fluidos
+            // Montar os 17 minicards fluidos com os novos ícones (dns e wifi_off)
             oltStatsList.forEach(stat => {
                 const perc = stat.total > 0 ? ((stat.offline / stat.total) * 100).toFixed(1) : 0;
                 let statusClass = 'ok';
@@ -276,7 +280,12 @@ function runGlobalNetworkOverview() {
                 
                 if (stat.offline > 0) {
                     statusClass = stat.offline >= 15 ? 'danger' : 'warning';
-                    contentHtml = `<span class="olt-value" style="pointer-events: none;">${stat.offline}</span>`;
+                    contentHtml = `
+                        <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
+                            <span class="material-symbols-rounded" style="font-size: 16px; color: ${statusClass === 'danger' ? 'var(--m3-color-error)' : 'var(--m3-color-warning)'};">wifi_off</span>
+                            <span class="olt-value">${stat.offline}</span>
+                        </div>
+                    `;
                 }
 
                 htmlWidescreen += `
@@ -288,7 +297,10 @@ function runGlobalNetworkOverview() {
                          onmouseenter="handleNetHover(event)"
                          onmouseleave="handleNetLeave()"
                          onclick="handleNetClick(event)">
-                        <span class="olt-name" style="pointer-events: none;">${stat.id}</span>
+                        <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
+                            <span class="material-symbols-rounded" style="font-size: 14px; color: var(--m3-on-surface-variant);">dns</span>
+                            <span class="olt-name">${stat.id}</span>
+                        </div>
                         ${contentHtml}
                     </div>
                 `;

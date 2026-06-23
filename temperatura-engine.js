@@ -1,6 +1,6 @@
 // ==============================================================================
 // temperatura-engine.js - Motor Dedicado para Análise Térmica das OLTs
-// Atualização: Wallboard da Home - Resumo Médio + Minicards (Grid Dense)
+// Atualização: Wallboard da Home - Resumo Médio + Minicards (Grid Dense) e Ajustes Finos
 // ==============================================================================
 
 const TAB_TEMPERATURA = 'TEMPERATURA'; 
@@ -299,7 +299,7 @@ function runTemperaturaEngine() {
                 let htmlWidescreen = `
                     <div class="resumo-card">
                         <div>
-                            <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:16px;">whatshot</span> Pico da Rede</div>
+                            <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:16px;">whatshot</span> Pico Térmico</div>
                             <div class="resumo-main-val" style="color: ${globalTempColor};">${globalMaxTemp}°C</div>
                             <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Temperatura Máxima Encontrada</div>
                         </div>
@@ -342,8 +342,14 @@ function runTemperaturaEngine() {
                              onmouseenter="handleTempHover(event)"
                              onmouseleave="handleTempLeave()"
                              onclick="handleTempClick(event)">
-                            <span class="olt-name" style="pointer-events: none;">${stat.id}</span>
-                            <span class="olt-value" style="color: ${tempColor}; pointer-events: none;">${stat.maxTemp}°</span>
+                            <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
+                                <span class="material-symbols-rounded" style="font-size: 14px; color: var(--m3-on-surface-variant);">dns</span>
+                                <span class="olt-name">${stat.id}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
+                                <span class="material-symbols-rounded" style="font-size: 16px; color: ${tempColor};">thermometer</span>
+                                <span class="olt-value" style="color: ${tempColor};">${stat.maxTemp}°</span>
+                            </div>
                         </div>
                     `;
                 });
