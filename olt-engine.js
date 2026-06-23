@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Wallboard da Home - Layout Widescreen com Minicards
+// Atualização: Wallboard da Home - Injeção do Resumo Médio e Minicards (Grid Dense)
 // ==============================================================================
 
 window.OLT_CLIENTS_DATA = {};
@@ -158,6 +158,7 @@ function fetchGlobalOltData(olt) {
 }
 
 function updateGlobalNetworkCard(globalOnline, globalOffline, latestUpdateStr) {
+    // Suporte legado mantido para outras páginas que usam IDs antigos
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
     if (!isHomePage) return;
 
@@ -243,26 +244,42 @@ function runGlobalNetworkOverview() {
     updateGlobalNetworkCard(globalOnline, globalOffline, latestUpdateStr);
 
     // ==============================================================================
-    // INJEÇÃO DOS MINICARDS WALLBOARD (HOME)
+    // INJEÇÃO DOS MINICARDS E RESUMO WALLBOARD (HOME)
     // ==============================================================================
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
     
     if (isHomePage) {
-        const targetMinicards = document.getElementById('target-rede-minicards') || document.getElementById('target-rede-ranking');
-        if (targetMinicards) {
-            let minicardsHtml = '';
+        const targetWidescreen = document.getElementById('target-rede-widescreen');
+        if (targetWidescreen) {
+            let globalTotal = globalOnline + globalOffline;
+
+            // Inicia montando o Card Médio de Resumo Geral
+            let htmlWidescreen = `
+                <div class="resumo-card">
+                    <div>
+                        <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:16px;">public</span> Resumo Global</div>
+                        <div class="resumo-main-val" style="color: var(--m3-color-error);">${globalOffline}</div>
+                        <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Clientes Offline no momento</div>
+                    </div>
+                    <div class="resumo-sec-val">
+                        <span>Total Analisado:</span>
+                        <strong style="color: var(--m3-on-surface); font-size: 1.1rem;">${globalTotal}</strong>
+                    </div>
+                </div>
+            `;
             
+            // Montar os 17 minicards fluidos
             oltStatsList.forEach(stat => {
                 const perc = stat.total > 0 ? ((stat.offline / stat.total) * 100).toFixed(1) : 0;
                 let statusClass = 'ok';
-                let contentHtml = `<span class="material-symbols-rounded">check_circle</span>`;
+                let contentHtml = `<span class="material-symbols-rounded" style="pointer-events: none;">check_circle</span>`;
                 
                 if (stat.offline > 0) {
                     statusClass = stat.offline >= 15 ? 'danger' : 'warning';
-                    contentHtml = `<span class="olt-value">${stat.offline}</span>`;
+                    contentHtml = `<span class="olt-value" style="pointer-events: none;">${stat.offline}</span>`;
                 }
 
-                minicardsHtml += `
+                htmlWidescreen += `
                     <div class="status-card ${statusClass}"
                          data-olt="${stat.id}"
                          data-off="${stat.offline}"
@@ -277,7 +294,7 @@ function runGlobalNetworkOverview() {
                 `;
             });
             
-            targetMinicards.innerHTML = minicardsHtml;
+            targetWidescreen.innerHTML = htmlWidescreen;
         }
     }
 

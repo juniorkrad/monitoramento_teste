@@ -29,179 +29,39 @@
         <main class="main-content" style="flex-direction: column;">
             <div id="overview-grid" class="home-wallboard-grid">
                 
-                <div class="global-card widescreen-card" id="home-card-rede">
+                <div class="global-card" id="home-card-rede">
                     <div class="card-header">
                         <h3><span class="material-symbols-rounded">router</span> Status de Rede</h3>
                     </div>
-                    <div class="card-body">
-                        <div class="resumo-panel">
-                            <div class="resumo-main">
-                                <div class="resumo-stats">
-                                    <div class="stat-row" title="Clientes Online">
-                                        <span class="material-symbols-rounded secondary-icon" style="color: var(--m3-color-success);">arrow_circle_up</span>
-                                        <span class="secondary-value" style="color: var(--m3-color-success);" id="net-total-online">--</span>
-                                    </div>
-                                    <div class="stat-row" title="Clientes Offline">
-                                        <span class="material-symbols-rounded secondary-icon" style="color: var(--m3-color-error);">arrow_circle_down</span>
-                                        <span class="secondary-value" style="color: var(--m3-color-error);" id="net-total-offline">--</span>
-                                    </div>
-                                </div>
-                                <div class="resumo-destaque" title="Total de Clientes">
-                                    <div class="destaque-valor">
-                                        <span class="material-symbols-rounded primary-icon" style="color: var(--m3-on-surface);">router</span>
-                                        <span class="primary-value" style="color: var(--m3-on-surface);" id="net-total-geral">--</span>
-                                    </div>
-                                    <span class="destaque-label">Total</span>
-                                </div>
-                            </div>
-                            <div class="resumo-footer">
-                                <div class="footer-item">
-                                    <span class="material-symbols-rounded">calendar_today</span>
-                                    <span id="net-date">--/--/----</span>
-                                </div>
-                                <span class="footer-divisor">|</span>
-                                <div class="footer-item">
-                                    <span class="material-symbols-rounded">schedule</span>
-                                    <span id="net-time">--:--:--</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="detalhes-panel custom-scroll" id="target-rede-ranking">
-                            <div style="color: var(--m3-on-surface-variant); text-align: center; margin-top: 20px;">Aguardando dados de rede...</div>
-                        </div>
+                    <div class="widescreen-body" id="target-rede-widescreen">
+                        <div style="grid-column: 1 / -1; text-align: center; color: var(--m3-on-surface-variant); padding: 20px;">Aguardando dados de rede...</div>
                     </div>
                 </div>
 
-                <div class="global-card widescreen-card" id="home-card-energia">
+                <div class="global-card" id="home-card-energia">
                     <div class="card-header">
                         <h3><span class="material-symbols-rounded">bolt</span> Alarmes de Energia</h3>
                     </div>
-                    <div class="card-body">
-                        <div class="resumo-panel">
-                            <div class="resumo-main">
-                                <div class="resumo-stats">
-                                    <div class="stat-row" title="Total Offline">
-                                        <span class="material-symbols-rounded secondary-icon" style="color: var(--m3-color-error);">router_off</span>
-                                        <span class="secondary-value" style="color: var(--m3-color-error);" id="energia-total-offline">--</span>
-                                    </div>
-                                    <div class="stat-row" title="Falta de Sinal Óptico">
-                                        <span class="material-symbols-rounded secondary-icon" style="color: var(--m3-color-warning);">wifi_off</span>
-                                        <span class="secondary-value" style="color: var(--m3-color-warning);" id="energia-offline-other">--</span>
-                                    </div>
-                                </div>
-                                <div class="resumo-destaque" title="Sem Energia">
-                                    <div class="destaque-valor">
-                                        <span class="material-symbols-rounded primary-icon" style="color: var(--m3-color-warning);">power_off</span>
-                                        <span class="primary-value" style="color: var(--m3-color-warning);" id="energia-global-poweroff">--</span>
-                                    </div>
-                                    <span class="destaque-label">Sem Energia</span>
-                                </div>
-                            </div>
-                            <div class="resumo-footer">
-                                <div class="footer-item">
-                                    <span class="material-symbols-rounded">calendar_today</span>
-                                    <span id="energia-date">--/--/----</span>
-                                </div>
-                                <span class="footer-divisor">|</span>
-                                <div class="footer-item">
-                                    <span class="material-symbols-rounded">schedule</span>
-                                    <span id="energia-time">--:--:--</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="detalhes-panel custom-scroll" id="target-energia-ranking">
-                            <div style="color: var(--m3-on-surface-variant); text-align: center; margin-top: 20px;">Aguardando dados de energia...</div>
-                        </div>
+                    <div class="widescreen-body" id="target-energia-widescreen">
+                        <div style="grid-column: 1 / -1; text-align: center; color: var(--m3-on-surface-variant); padding: 20px;">Aguardando dados de energia...</div>
                     </div>
                 </div>
 
-                <div class="global-card widescreen-card" id="home-card-potencia">
+                <div class="global-card" id="home-card-potencia">
                     <div class="card-header">
                         <h3><span class="material-symbols-rounded">insights</span> Análise de Potência</h3>
                     </div>
-                    <div class="card-body">
-                        <div class="resumo-panel">
-                            <div class="resumo-main">
-                                <div class="resumo-stats">
-                                    <div class="stat-row" title="Total Analisado">
-                                        <span class="material-symbols-rounded secondary-icon" style="color: var(--m3-on-surface);">search</span>
-                                        <span class="secondary-value" style="color: var(--m3-on-surface);" id="potencia-total-analisado">--</span>
-                                    </div>
-                                    <div class="stat-row" title="Clientes Críticos">
-                                        <span class="material-symbols-rounded secondary-icon" style="color: var(--m3-color-error);">warning</span>
-                                        <span class="secondary-value" style="color: var(--m3-color-error);" id="potencia-total-criticos">--</span>
-                                    </div>
-                                </div>
-                                <div class="resumo-destaque" title="Média de Potência">
-                                    <div class="destaque-valor">
-                                        <span class="material-symbols-rounded primary-icon" id="potencia-main-icon">insights</span>
-                                        <span class="primary-value" id="potencia-global-media">--</span>
-                                    </div>
-                                    <span class="destaque-label">Média (dBm)</span>
-                                </div>
-                            </div>
-                            <div class="resumo-footer">
-                                <div class="footer-item">
-                                    <span class="material-symbols-rounded">calendar_today</span>
-                                    <span id="potencia-date">--/--/----</span>
-                                </div>
-                                <span class="footer-divisor">|</span>
-                                <div class="footer-item">
-                                    <span class="material-symbols-rounded">schedule</span>
-                                    <span id="potencia-time">--:--:--</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="detalhes-panel custom-scroll" id="target-potencia-minicards">
-                            <div style="color: var(--m3-on-surface-variant); text-align: center; margin-top: 20px;">Aguardando dados ópticos...</div>
-                        </div>
+                    <div class="widescreen-body" id="target-potencia-widescreen">
+                        <div style="grid-column: 1 / -1; text-align: center; color: var(--m3-on-surface-variant); padding: 20px;">Aguardando dados ópticos...</div>
                     </div>
                 </div>
 
-                <div class="global-card widescreen-card" id="home-card-temperatura">
+                <div class="global-card" id="home-card-temperatura">
                     <div class="card-header">
                         <h3><span class="material-symbols-rounded">device_thermostat</span> Monitoramento Térmico</h3>
                     </div>
-                    <div class="card-body">
-                        <div class="resumo-panel">
-                            <div class="resumo-main">
-                                <div class="resumo-stats">
-                                    <div class="stat-row" title="Sensores Lidos">
-                                        <span class="material-symbols-rounded secondary-icon" style="color: var(--m3-on-surface);">memory</span>
-                                        <span class="secondary-value" style="color: var(--m3-on-surface);" id="temperatura-total-analisado">--</span>
-                                    </div>
-                                    <div class="stat-row" title="Sensores Críticos / Atenção">
-                                        <span class="material-symbols-rounded secondary-icon" style="color: var(--m3-color-error);">warning</span>
-                                        <span class="secondary-value">
-                                            <span id="temperatura-total-criticos" style="color: var(--m3-color-error);">--</span>
-                                            <span style="color: var(--m3-on-surface-variant); font-weight: normal;">/</span>
-                                            <span id="temperatura-total-atencao" style="color: var(--m3-color-warning);">--</span>
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="resumo-destaque" title="Temperatura Máxima">
-                                    <div class="destaque-valor">
-                                        <span class="material-symbols-rounded primary-icon" id="temperatura-main-icon">device_thermostat</span>
-                                        <span class="primary-value" id="temperatura-global-maxima">--</span>
-                                    </div>
-                                    <span class="destaque-label">Temp. Máxima</span>
-                                </div>
-                            </div>
-                            <div class="resumo-footer">
-                                <div class="footer-item">
-                                    <span class="material-symbols-rounded">calendar_today</span>
-                                    <span id="temperatura-date">--/--/----</span>
-                                </div>
-                                <span class="footer-divisor">|</span>
-                                <div class="footer-item">
-                                    <span class="material-symbols-rounded">schedule</span>
-                                    <span id="temperatura-time">--:--:--</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="detalhes-panel custom-scroll" id="target-temperatura-minicards">
-                            <div style="color: var(--m3-on-surface-variant); text-align: center; margin-top: 20px;">Aguardando dados térmicos...</div>
-                        </div>
+                    <div class="widescreen-body" id="target-temperatura-widescreen">
+                        <div style="grid-column: 1 / -1; text-align: center; color: var(--m3-on-surface-variant); padding: 20px;">Aguardando dados térmicos...</div>
                     </div>
                 </div>
 
