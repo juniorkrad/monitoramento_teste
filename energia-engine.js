@@ -1,12 +1,91 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Wallboard da Home - Ranking de OLTs sem Energia
+// Atualização: Wallboard da Home - Resumo Médio + Minicards (Grid Dense)
 // ==============================================================================
 
 window.ENERGY_DATA_STORE = {};
 window.NETWORK_ENERGY_STORE = new Set(); 
 window.CURRENT_ENERGY_OLT = null; 
 window.CURRENT_ENERGY_PLACA = null; 
+
+// ==============================================================================
+// FUNÇÕES DO SISTEMA HÍBRIDO (TOOLTIP PC / MODAL MOBILE)
+// ==============================================================================
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
+}
+
+window.handleEnergyHover = function(event) {
+    if (isMobileDevice()) return;
+    const tooltip = document.getElementById('smart-tooltip');
+    if (!tooltip) return;
+
+    const el = event.currentTarget;
+    let statusTexto = el.classList.contains('warning') ? 'Atenção (Sem Energia)' : 'Normal';
+    let statusCor = el.classList.contains('warning') ? 'var(--m3-color-warning)' : 'var(--m3-color-success)';
+
+    tooltip.innerHTML = `
+        <div class="smart-tooltip-title">
+            <span class="material-symbols-rounded" style="font-size: 18px; color: ${statusCor};">bolt</span>
+            ${el.dataset.olt}
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Status:</span> 
+            <strong style="color: ${statusCor};">${statusTexto}</strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Sem Energia:</span> 
+            <strong style="color: var(--m3-color-warning);">${el.dataset.poweroff}</strong>
+        </div>
+        <div class="smart-tooltip-line">
+            <span style="color: var(--m3-on-surface-variant);">Total Offline:</span> 
+            <strong style="color: var(--m3-color-error);">${el.dataset.offline}</strong>
+        </div>
+    `;
+
+    const rect = el.getBoundingClientRect();
+    tooltip.style.left = (rect.left + (rect.width / 2) + window.scrollX) + 'px';
+    tooltip.style.top = (rect.top + window.scrollY) + 'px';
+    tooltip.style.opacity = 1;
+};
+
+window.handleEnergyLeave = function() {
+    const tooltip = document.getElementById('smart-tooltip');
+    if (tooltip) tooltip.style.opacity = 0;
+};
+
+window.handleEnergyClick = function(event) {
+    if (!isMobileDevice()) return;
+    const modal = document.getElementById('mobile-fast-modal');
+    const content = document.getElementById('fast-modal-content');
+    if (!modal || !content) return;
+
+    const el = event.currentTarget;
+    let statusCor = el.classList.contains('warning') ? 'var(--m3-color-warning)' : 'var(--m3-color-success)';
+
+    content.innerHTML = `
+        <h3 style="margin-top: 0; border-bottom: 1px solid var(--m3-outline); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+            <span class="material-symbols-rounded" style="color: ${statusCor};">bolt</span> ${el.dataset.olt}
+        </h3>
+        <div style="margin-bottom: 15px; text-align: center;">
+            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Sem Energia (Dying Gasp)</span><br>
+            <strong style="font-size: 2.5rem; font-family: var(--font-family-mono); color: var(--m3-color-warning); line-height: 1;">${el.dataset.poweroff}</strong>
+        </div>
+        <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
+            <div>
+                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Total Offline</span><br>
+                <strong style="font-size: 1.2rem; color: var(--m3-color-error);">${el.dataset.offline}</strong>
+            </div>
+            <div style="text-align: right;">
+                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Status</span><br>
+                <strong style="font-size: 1.1rem; color: ${statusCor}; text-transform: uppercase;">${el.classList.contains('warning') ? 'Atenção' : 'Normal'}</strong>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+};
+
+// ==============================================================================
 
 function extractEnergyPort(val) {
     if (!val) return null;
@@ -218,59 +297,75 @@ function runEnergyMonitoring() {
         };
 
         // ==============================================================================
-        // INJEÇÃO DA HOME (Abastecimento de dados no esqueleto fixo + Ranking Wallboard)
+        // INJEÇÃO DA HOME (Wallboard Widescreen com Resumo + Minicards)
         // ==============================================================================
         if (isHomePage) {
+            // Suporte legado (Caso existam as IDs fixas antigas, atualiza-as)
             const elTotalOffline = document.getElementById('energia-total-offline');
             const elOfflineOther = document.getElementById('energia-offline-other');
             const elPowerOff = document.getElementById('energia-global-poweroff');
-            const elDate = document.getElementById('energia-date');
-            const elTime = document.getElementById('energia-time');
-
+            
             if (elTotalOffline) elTotalOffline.textContent = globalTotalOffline;
             if (elOfflineOther) elOfflineOther.textContent = Math.max(0, globalTotalOffline - globalPowerOff);
             if (elPowerOff) elPowerOff.textContent = globalPowerOff;
 
-            if (globalLastUpdateStr !== '--/--/---- --:--:--') {
-                const dateParts = globalLastUpdateStr.split(' ');
-                if (elDate) elDate.textContent = dateParts[0] || '--/--/----';
-                if (elTime) elTime.textContent = dateParts[1] || '--:--:--';
-            }
+            // Alvo do layout novo de Widescreen (Grid de Minicards e Resumo)
+            const targetWidescreen = document.querySelector('#home-card-energia .widescreen-body');
+            
+            if (targetWidescreen) {
+                let globalOfflineOther = Math.max(0, globalTotalOffline - globalPowerOff);
+                
+                // Inicia montando o Card Médio de Resumo Geral
+                let htmlWidescreen = `
+                    <div class="resumo-card">
+                        <div>
+                            <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:16px;">power_off</span> Resumo Global</div>
+                            <div class="resumo-main-val" style="color: var(--m3-color-warning);">${globalPowerOff}</div>
+                            <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Sem Energia (Dying Gasp)</div>
+                        </div>
+                        <div class="resumo-sec-val">
+                            <span>Falta de Sinal Óptico:</span>
+                            <strong style="color: var(--m3-color-error); font-size: 1.1rem;">${globalOfflineOther}</strong>
+                        </div>
+                    </div>
+                `;
 
-            // Geração do Ranking de Energia
-            const targetRanking = document.getElementById('target-energia-ranking');
-            if (targetRanking) {
-                // Ordenar pelo maior número de clientes afetados por falta de energia
+                // Ordenar pelo maior número de clientes sem energia
                 oltStats.sort((a, b) => b.powerOff - a.powerOff);
 
-                let rankingHtml = '<div class="ranking-list">';
-                
+                // Montar os 17 minicards fluidos
                 oltStats.forEach(stat => {
-                    // A barra de progresso visual representa a proporção de falta de energia em relação ao total offline daquela OLT
-                    const perc = stat.offline > 0 ? ((stat.powerOff / stat.offline) * 100).toFixed(1) : 0;
-                    const isAlert = stat.powerOff > 0;
-                    
-                    const color = isAlert ? 'var(--m3-color-warning)' : 'var(--m3-color-success)';
-                    const icon = isAlert ? 'power_off' : 'bolt';
-                    const bgWidth = Math.min(perc, 100);
-
-                    rankingHtml += `
-                        <div class="ranking-item" style="position: relative; overflow: hidden; padding: 10px 15px;">
-                            <div style="position: absolute; top: 0; left: 0; height: 100%; width: ${bgWidth}%; background: rgba(251, 191, 36, 0.15); z-index: 0; transition: width 0.5s ease;"></div>
-                            <div class="ranking-item-left" style="position: relative; z-index: 1;">
-                                <span class="material-symbols-rounded" style="color: ${color}; font-size: 18px;">${icon}</span>
-                                <span>${stat.id}</span>
+                    if (stat.powerOff > 0) {
+                        htmlWidescreen += `
+                            <div class="status-card warning"
+                                 data-olt="${stat.id}"
+                                 data-poweroff="${stat.powerOff}"
+                                 data-offline="${stat.offline}"
+                                 onmouseenter="handleEnergyHover(event)"
+                                 onmouseleave="handleEnergyLeave()"
+                                 onclick="handleEnergyClick(event)">
+                                <span class="olt-name" style="pointer-events: none;">${stat.id}</span>
+                                <span class="olt-value" style="pointer-events: none;">${stat.powerOff}</span>
                             </div>
-                            <div class="ranking-item-right" style="position: relative; z-index: 1;">
-                                <span style="color: ${color};">${stat.powerOff}</span> 
-                                <span style="font-size: 0.75rem; color: var(--m3-on-surface-variant); font-weight: normal;" title="Total Offline da OLT">/ ${stat.offline}</span>
+                        `;
+                    } else {
+                        htmlWidescreen += `
+                            <div class="status-card ok"
+                                 data-olt="${stat.id}"
+                                 data-poweroff="0"
+                                 data-offline="${stat.offline}"
+                                 onmouseenter="handleEnergyHover(event)"
+                                 onmouseleave="handleEnergyLeave()"
+                                 onclick="handleEnergyClick(event)">
+                                <span class="olt-name" style="pointer-events: none;">${stat.id}</span>
+                                <span class="material-symbols-rounded" style="pointer-events: none;">bolt</span>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    }
                 });
-                
-                rankingHtml += '</div>';
-                targetRanking.innerHTML = rankingHtml;
+
+                // Injeta o HTML limpo e dinâmico direto no Body do Widescreen
+                targetWidescreen.innerHTML = htmlWidescreen;
             }
         }
 
