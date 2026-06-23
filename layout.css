@@ -96,9 +96,9 @@ body.idle .footer {
 .sidebar {
     position: fixed; 
     top: 20px; 
+    bottom: 20px; /* Substitui o height e força a margem inferior de 20px */
     right: -340px; /* Esconde além da margem */
     width: 300px; 
-    height: calc(100% - 40px); /* Respeita a margem superior e inferior */
     background-color: var(--m3-surface-container); 
     border: 1px solid rgba(255,255,255,0.1); 
     border-radius: 24px;
@@ -173,7 +173,7 @@ body.idle .footer {
 }
 
 /* ==========================================================================
-   RESPONSIVIDADE DO HEADER
+   RESPONSIVIDADE DO HEADER E MENU FLUTUANTE
    ========================================================================== */
 @media (max-width: 768px) {
     .header { 
@@ -197,9 +197,9 @@ body.idle .footer {
     /* Adaptação mobile para o card flutuante */
     .sidebar {
         top: 10px;
+        bottom: 10px; /* Garante margem inferior de 10px em telemóveis */
         right: -100%; /* Esconde na tela inteira */
         width: calc(100% - 20px);
-        height: calc(100% - 20px);
     }
     .sidebar.active { right: 10px; }
 }
