@@ -91,16 +91,29 @@ body.idle .footer {
 }
 
 /* ==========================================================================
-   MENU LATERAL (SIDEBAR) E SEU FUNDO ESCURO
+   MENU LATERAL (SIDEBAR) FLUTUANTE
    ========================================================================== */
 .sidebar {
-    position: fixed; top: 0; right: -300px; width: 300px; height: 100%;
-    background-color: var(--m3-surface-container); border-left: 1px solid rgba(255,255,255,0.05); 
-    box-shadow: -5px 0 25px rgba(0,0,0,0.5); z-index: 2000; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex; flex-direction: column; padding-bottom: 20px;
+    position: fixed; 
+    top: 20px; 
+    right: -340px; /* Esconde além da margem */
+    width: 300px; 
+    height: calc(100% - 40px); /* Respeita a margem superior e inferior */
+    background-color: var(--m3-surface-container); 
+    border: 1px solid rgba(255,255,255,0.1); 
+    border-radius: 24px;
+    box-shadow: -5px 10px 30px rgba(0,0,0,0.6); 
+    z-index: 2000; 
+    transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; 
+    flex-direction: column; 
+    padding-bottom: 20px;
+    overflow: hidden; /* Garante que os itens respeitem os cantos arredondados */
 }
 
-.sidebar.active { right: 0; }
+.sidebar.active { 
+    right: 20px; /* Para antes de encostar na borda direita da tela */
+}
 
 .sidebar-header { 
     height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; 
@@ -112,6 +125,11 @@ body.idle .footer {
 .sidebar-nav { 
     flex: 1; overflow-y: auto; padding: 15px 20px; display: flex; flex-direction: column; 
 }
+
+/* Estilização scrollbar interna do menu flutuante */
+.sidebar-nav::-webkit-scrollbar { width: 6px; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+.sidebar-nav::-webkit-scrollbar-thumb:hover { background: var(--m3-outline); }
 
 .olt-link-grid { 
     display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px; 
@@ -175,6 +193,15 @@ body.idle .footer {
     .timestamp-badge { 
         order: 3; width: 100%; justify-content: center; margin-top: 5px;
     }
+    
+    /* Adaptação mobile para o card flutuante */
+    .sidebar {
+        top: 10px;
+        right: -100%; /* Esconde na tela inteira */
+        width: calc(100% - 20px);
+        height: calc(100% - 20px);
+    }
+    .sidebar.active { right: 10px; }
 }
 
 /* ==========================================================================

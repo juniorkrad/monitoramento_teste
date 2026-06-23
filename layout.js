@@ -1,6 +1,6 @@
 // ==============================================================================
 // layout.js - Construtor de Layout e Menu Inteligente (Com Busca e Emergência Autenticada)
-// Atualização: Limpeza profunda (Data Mapping movido para data-mapper.js)
+// Atualização: Reordenação do menu de navegação
 // ==============================================================================
 
 (function loadIconFont() {
@@ -82,11 +82,6 @@ function loadSidebar(currentPage) {
                     STATUS OLTS
                 </a>
                 
-                <a href="equipamentos.html" class="sidebar-link home-highlight" style="margin-top: 5px; font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
-                    <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px;">router</span>
-                    EQUIPAMENTOS
-                </a>
-
                 <a href="energia.html" class="sidebar-link home-highlight" style="margin-top: 5px; font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
                     <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px;">bolt</span>
                     ENERGIA
@@ -100,6 +95,11 @@ function loadSidebar(currentPage) {
                 <a href="temperatura.html" class="sidebar-link home-highlight" style="margin-top: 5px; font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
                     <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px;">device_thermostat</span>
                     TEMPERATURA
+                </a>
+
+                <a href="equipamentos.html" class="sidebar-link home-highlight" style="margin-top: 5px; font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
+                    <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px;">router</span>
+                    EQUIPAMENTOS
                 </a>
 
                 <div class="sidebar-divider" style="margin: 15px 0;"></div>
