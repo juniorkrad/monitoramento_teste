@@ -2,14 +2,35 @@
    ESTILOS ESPECÍFICOS - DASHBOARD HOME (index.html)
    ========================================================================== */
 
-/* Grid Exclusivo da Home para forçar layout Wallboard (1 coluna empilhada) */
+/* Cores de Destaque por Serviço */
+:root {
+    --color-rede: #3b82f6;      /* Azul (Network) */
+    --color-energia: #f59e0b;   /* Laranja/Amarelo (Lightning) */
+    --color-potencia: #d946ef;  /* Roxo/Rosa (Insights) */
+    --color-temperatura: #ef4444; /* Vermelho (Thermometer) */
+    --color-equipamentos: #06b6d4; /* Ciano (Router) */
+}
+
+/* Grid Exclusivo da Home para layout de 2 colunas */
 .home-wallboard-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 15px; 
     width: 100%;
     padding-bottom: 20px;
 }
+
+/* Garante que o card de equipamentos ocupe a linha inteira */
+#card-fabricantes {
+    grid-column: 1 / -1;
+}
+
+/* Cores aplicadas aos ícones dos cabeçalhos dos cards */
+#home-card-rede .card-header h3 span { color: var(--color-rede); }
+#home-card-energia .card-header h3 span { color: var(--color-energia); }
+#home-card-potencia .card-header h3 span { color: var(--color-potencia); }
+#home-card-temperatura .card-header h3 span { color: var(--color-temperatura); }
+#card-fabricantes .card-header h3 span { color: var(--color-equipamentos); }
 
 /* ==========================================================================
    TIPOGRAFIA E ÍCONES (PADRONIZAÇÃO MD3)
@@ -42,7 +63,7 @@
     background-color: var(--m3-surface-container);
     border-radius: 20px; 
     border: 1px solid rgba(255,255,255,0.05);
-    margin-bottom: 25px;
+    margin-bottom: 0; /* Removido margin-bottom pois o grid gap já cuida disso */
     box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     display: flex;
     flex-direction: column;
@@ -79,16 +100,17 @@
 /* O CORAÇÃO DO NOVO LAYOUT: CSS GRID DENSE */
 .widescreen-body {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); /* Cria colunas dinâmicas fluidas */
-    grid-auto-flow: dense; /* Faz os cards menores preencherem os buracos */
+    /* Reduzindo o minmax para caber melhor na meia tela */
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); 
+    grid-auto-flow: dense; 
     gap: 12px;
     padding: 15px 20px;
 }
 
-/* CARD MÉDIO (RESUMO GERAL) - Ocupa 3 colunas e 2 linhas */
+/* CARD MÉDIO (RESUMO GERAL) - Adaptado para meia tela */
 .resumo-card {
-    grid-column: span 3; /* Largura equivalente a 3 minicards */
-    grid-row: span 2;    /* Altura exata de 2 minicards + gap */
+    grid-column: 1 / -1; /* Ocupa a linha inteira em meia tela para melhor proporção, ou span 2 se preferir quadrado */
+    grid-row: span 1;    
     background: rgba(103, 7, 159, 0.15);
     border: 1px solid var(--m3-primary);
     border-radius: 14px;
@@ -153,14 +175,14 @@
 }
 
 .olt-name { 
-    font-size: 0.8rem; 
+    font-size: 0.75rem; /* Levemente menor para caber melhor no grid reduzido */
     font-weight: 700; 
     color: var(--m3-on-surface); 
 }
 
 .olt-value { 
     font-family: var(--font-family-mono); 
-    font-size: 1.2rem; 
+    font-size: 1.1rem; /* Levemente menor para caber melhor no grid reduzido */
     line-height: 1; 
 }
 
@@ -364,9 +386,9 @@
 /* ==========================================================================
    AJUSTES RESPONSIVOS (Telas menores)
    ========================================================================== */
-@media (max-width: 768px) {
-    .resumo-card {
-        grid-column: 1 / -1; /* Ocupa 100% da linha no mobile */
-        grid-row: span 1;
+@media (max-width: 1024px) {
+    /* Em tablets e celulares, volta para 1 coluna empilhada para não espremer os dados */
+    .home-wallboard-grid {
+        grid-template-columns: 1fr;
     }
 }
