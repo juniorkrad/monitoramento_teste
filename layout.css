@@ -33,11 +33,12 @@
 .icon-btn {
     background-color: #371752; color: var(--m3-on-primary); border: none; border-radius: 50%; 
     width: 40px; height: 40px; display: flex; justify-content: center; align-items: center;
-    cursor: pointer; transition: all 0.2s ease; text-decoration: none;
+    cursor: pointer; transition: background-color 0.2s ease, box-shadow 0.2s ease; text-decoration: none;
 }
 
+/* Removido o transform: scale(1.1) para evitar o corte na animação com o overflow:hidden do header */
 .icon-btn:hover { 
-    background-color: var(--m3-primary-hover); transform: scale(1.1); box-shadow: 0 0 10px var(--m3-primary-hover); 
+    background-color: var(--m3-primary-hover); box-shadow: 0 0 10px var(--m3-primary-hover); 
 }
 
 /* --- BADGE DE HORA E ATUALIZAÇÃO --- */

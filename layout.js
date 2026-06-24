@@ -1,6 +1,6 @@
 // ==============================================================================
 // layout.js - Construtor de Layout e Menu Inteligente (Com Busca e Emergência Autenticada)
-// Atualização: Reordenação do menu de navegação
+// Atualização: Reordenação do menu e substituição de emojis por ícones no rodapé
 // ==============================================================================
 
 (function loadIconFont() {
@@ -25,7 +25,7 @@ function loadHeader(config) {
     const currentPage = path.split('/').pop() || 'index.html';
 
     let navHtml = `
-        <button class="icon-btn" onclick="toggleSidebar()" title="Abrir Menu" style="border-radius: 8px; width: auto; padding: 8px 12px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; color: var(--m3-on-surface); transition: background 0.2s;">
+        <button class="icon-btn" onclick="toggleSidebar()" title="Abrir Menu" style="border-radius: 8px; width: auto; padding: 8px 12px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; color: var(--m3-on-surface); transition: background-color 0.2s, box-shadow 0.2s;">
             <span class="material-symbols-rounded">menu</span>
         </button>
     `;
@@ -134,8 +134,13 @@ function loadFooter() {
     const currentYear = new Date().getFullYear();
     footerPlaceholder.innerHTML = `
         <footer class="footer">
-            <p>© ${currentYear} Painel de Monitoramento | Desenvolvido por 👤@juniorkrad + 🤖Gemini</p>
-            <p style="font-size: 0.75rem; margin-top: 6px; opacity: 0.7; font-weight: 400;">
+            <div style="display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span>© ${currentYear} Painel de Monitoramento | Desenvolvido por</span>
+                <span class="material-symbols-rounded" style="font-size: 16px;">person</span> @juniorkrad 
+                <span>+</span>
+                <span class="material-symbols-rounded" style="font-size: 16px;">smart_toy</span> Gemini
+            </div>
+            <p style="font-size: 0.75rem; margin-top: 6px; opacity: 0.7; font-weight: 400; margin-bottom: 0;">
                 Todos os direitos reservados. Projeto registrado. Proibida a reprodução não autorizada.
             </p>
         </footer>
