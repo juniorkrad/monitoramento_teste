@@ -1,6 +1,6 @@
 // ==============================================================================
 // layout.js - Construtor de Layout e Menu Inteligente (Com Busca e Emergência Autenticada)
-// Atualização: Reordenação do menu e substituição de emojis por ícones no rodapé
+// Atualização: Reordenação do menu e substituição de emojis por ícones no rodapé preenchidos (FILL)
 // ==============================================================================
 
 (function loadIconFont() {
@@ -136,9 +136,9 @@ function loadFooter() {
         <footer class="footer">
             <div style="display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap;">
                 <span>© ${currentYear} Painel de Monitoramento | Desenvolvido por</span>
-                <span class="material-symbols-rounded" style="font-size: 16px;">person</span> @juniorkrad 
+                <span class="material-symbols-rounded" style="font-size: 16px; font-variation-settings: 'FILL' 1;">person</span> @juniorkrad 
                 <span>+</span>
-                <span class="material-symbols-rounded" style="font-size: 16px;">smart_toy</span> Gemini
+                <span class="material-symbols-rounded" style="font-size: 16px; font-variation-settings: 'FILL' 1;">smart_toy</span> Gemini
             </div>
             <p style="font-size: 0.75rem; margin-top: 6px; opacity: 0.7; font-weight: 400; margin-bottom: 0;">
                 Todos os direitos reservados. Projeto registrado. Proibida a reprodução não autorizada.
