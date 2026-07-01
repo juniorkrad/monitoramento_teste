@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-relatorio.js - Gerador de Boletim Visual (PNG Off-screen) para OLTs
-// Atualização: Imagem com tamanho fixo ajustado (850x750) para melhor proporção
+// Atualização: Imagem com tamanho ajustado (1000x750) com Bairros e nova distribuição de colunas
 // ==============================================================================
 
 window.gerarRelatorioOltOffscreen = async function(event) {
@@ -11,7 +11,7 @@ window.gerarRelatorioOltOffscreen = async function(event) {
     if (btn) {
         originalContent = btn.innerHTML;
         // Animação de ampulheta enquanto processa
-        btn.innerHTML = `<span class="material-symbols-rounded">hourglass_empty</span>`;
+        btn.innerHTML = `<span class="material-symbols-rounded" style="font-size: 30px;">hourglass_empty</span>`;
     }
 
     try {
@@ -40,6 +40,7 @@ window.gerarRelatorioOltOffscreen = async function(event) {
                             placa: placa,
                             porta: String(porta).padStart(2, '0'),
                             circuito: pData.info,
+                            bairro: pData.bairro && pData.bairro !== '-' ? pData.bairro : 'N/A',
                             perc: Math.round(percOffline * 100) + '%',
                             status: 'CRÍTICO'
                         });
@@ -78,8 +79,8 @@ window.gerarRelatorioOltOffscreen = async function(event) {
 
             // A Lona Real onde o layout será desenhado
             const offscreenDiv = document.createElement('div');
-            offscreenDiv.style.width = '850px';
-            offscreenDiv.style.height = '750px'; // Tamanho FIXO otimizado (Redução de ~25%)
+            offscreenDiv.style.width = '1000px'; // Tamanho FIXO ajustado para suportar os bairros
+            offscreenDiv.style.height = '750px'; 
             offscreenDiv.style.backgroundColor = '#2f0e51'; // Fundo Padrão (M3 Surface)
             offscreenDiv.style.color = '#ffffff';
             offscreenDiv.style.padding = '30px';
@@ -115,15 +116,17 @@ window.gerarRelatorioOltOffscreen = async function(event) {
                     
                     rowsHtml += `
                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                            <td style="padding: 12px 10px; font-weight: bold; text-align: center; width: 20%;">${p.placa}</td>
-                            <td style="padding: 12px 10px; font-family: 'Roboto Mono', monospace; text-align: center; width: 20%;">${p.porta}</td>
+                            <td style="padding: 12px 10px; font-weight: bold; text-align: center; width: 10%;">${p.placa}</td>
+                            <td style="padding: 12px 10px; font-family: 'Roboto Mono', monospace; text-align: center; width: 10%;">${p.porta}</td>
                             
                             <td style="padding: 12px 10px; text-align: center; width: 20%;">
                                 <span style="border: 1px solid rgba(255,255,255,0.2); background-color: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 8px; font-family: 'Roboto Mono', monospace; font-size: 0.9rem;">${p.circuito}</span>
                             </td>
                             
-                            <td style="padding: 12px 10px; text-align: center; font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight: bold; width: 20%; border-left: 1px solid rgba(255,255,255,0.1); background-color: rgba(248, 113, 113, 0.04);">${p.perc}</td>
-                            <td style="padding: 12px 10px; text-align: center; width: 20%; background-color: rgba(248, 113, 113, 0.04);">
+                            <td style="padding: 12px 10px; text-align: center; font-size: 0.85rem; color: #CAC4D0; width: 30%; word-break: break-word;">${p.bairro}</td>
+                            
+                            <td style="padding: 12px 10px; text-align: center; font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight: bold; width: 15%; border-left: 1px solid rgba(255,255,255,0.1); background-color: rgba(248, 113, 113, 0.04);">${p.perc}</td>
+                            <td style="padding: 12px 10px; text-align: center; width: 15%; background-color: rgba(248, 113, 113, 0.04);">
                                 <span style="background: ${statusBg}; color: ${statusColor}; padding: 6px 12px; border-radius: 12px; font-weight: bold; font-size: 0.85rem;">${p.status}</span>
                             </td>
                         </tr>
@@ -134,11 +137,12 @@ window.gerarRelatorioOltOffscreen = async function(event) {
                     <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.95rem;">
                         <thead>
                             <tr>
-                                <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; border-radius: 8px 0 0 0; width: 20%;">PLACA</th>
-                                <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 20%;">PORTA</th>
+                                <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; border-radius: 8px 0 0 0; width: 10%;">PLACA</th>
+                                <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 10%;">PORTA</th>
                                 <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 20%;">CIRCUITO</th>
-                                <th style="padding: 12px 10px; background: rgba(248, 113, 113, 0.1); text-align: center; border-left: 1px solid rgba(255,255,255,0.1); width: 20%;">IMPACTO</th>
-                                <th style="padding: 12px 10px; background: rgba(248, 113, 113, 0.1); text-align: center; border-radius: 0 8px 0 0; width: 20%;">STATUS</th>
+                                <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 30%;">BAIRRO</th>
+                                <th style="padding: 12px 10px; background: rgba(248, 113, 113, 0.1); text-align: center; border-left: 1px solid rgba(255,255,255,0.1); width: 15%;">IMPACTO</th>
+                                <th style="padding: 12px 10px; background: rgba(248, 113, 113, 0.1); text-align: center; border-radius: 0 8px 0 0; width: 15%;">STATUS</th>
                             </tr>
                         </thead>
                         <tbody>
