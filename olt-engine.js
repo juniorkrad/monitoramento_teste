@@ -490,16 +490,14 @@ window.openOltPlacaDetails = function(placa, oltType) {
 
     const modalTitle = document.getElementById('super-modal-title');
     if (modalTitle && window.CURRENT_MONITORING_CONFIG) {
-        modalTitle.innerHTML = `<span class="material-symbols-rounded">dns</span> ${window.CURRENT_MONITORING_CONFIG.oltName} - Placa ${placa}`;
+        modalTitle.innerHTML = `<span class="material-symbols-rounded">dns</span> ${window.CURRENT_MONITORING_CONFIG.oltName}`;
     }
 
     const btnBoletim = document.getElementById('btn-gerar-boletim');
     const btnComunicado = document.getElementById('btn-gerar-comunicado');
-    const btnTxt = document.getElementById('btn-export-placa-txt');
     
     if (btnBoletim) btnBoletim.style.display = 'none';
     if (btnComunicado) btnComunicado.style.display = 'none';
-    if (btnTxt) btnTxt.style.display = 'inline-block';
     
     const tbody = document.getElementById('olt-detalhes-tbody');
     tbody.innerHTML = '';
@@ -513,7 +511,8 @@ window.openOltPlacaDetails = function(placa, oltType) {
     }
 
     sortedPorts.forEach(pt => {
-        const { online, offline, total, info, bairro } = ports[pt];
+        const { online, offline, info, bairro } = ports[pt];
+        const total = online + offline;
         
         let statusClass = 'status-normal';
         let statusText = 'Normal';
@@ -565,11 +564,9 @@ window.backToOltPlacas = function() {
 
     const btnBoletim = document.getElementById('btn-gerar-boletim');
     const btnComunicado = document.getElementById('btn-gerar-comunicado');
-    const btnTxt = document.getElementById('btn-export-placa-txt');
     
     if (btnBoletim) btnBoletim.style.display = 'inline-block';
     if (btnComunicado) btnComunicado.style.display = 'inline-block';
-    if (btnTxt) btnTxt.style.display = 'none';
 };
 
 window.exportPlacaToTXT = function() {

@@ -165,11 +165,9 @@ function openSuperModal(id, sheetTab, type, boards) {
 
     const btnBoletim = document.getElementById('btn-gerar-boletim');
     const btnComunicado = document.getElementById('btn-gerar-comunicado');
-    const btnTxt = document.getElementById('btn-export-placa-txt');
     
     if (btnBoletim) btnBoletim.style.display = 'inline-block';
     if (btnComunicado) btnComunicado.style.display = 'inline-block';
-    if (btnTxt) btnTxt.style.display = 'none';
 
     const placasList = document.getElementById('olt-placas-list');
     if (placasList) {
@@ -194,11 +192,6 @@ function openSuperModal(id, sheetTab, type, boards) {
     }
 }
 
-function backToOltPlacas() {
-    document.getElementById('olt-view-detalhes').style.display = 'none';
-    document.getElementById('olt-view-placas').style.display = 'block';
-}
-
 function closeSuperModal(event) {
     if (event && event.target.id !== 'super-modal' && !event.target.classList.contains('close-modal')) return;
     
@@ -208,11 +201,9 @@ function closeSuperModal(event) {
     document.getElementById('olt-view-detalhes').style.display = 'none';
     document.getElementById('olt-view-placas').style.display = 'block';
 
-    const btnTxt = document.getElementById('btn-export-placa-txt');
     const btnBoletim = document.getElementById('btn-gerar-boletim');
     const btnComunicado = document.getElementById('btn-gerar-comunicado');
     
-    if (btnTxt) btnTxt.style.display = 'none';
     if (btnBoletim) btnBoletim.style.display = 'none';
     if (btnComunicado) btnComunicado.style.display = 'none';
 
