@@ -161,7 +161,7 @@ window.exportEnergiaPlacaToTXT = function() {
             const bairro = cols[2].innerText.trim();
             const poweroff = row.getAttribute('data-poweroff') || '0';
             
-            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(10, ' ')} | Bairro: ${bairro.padEnd(30, ' ')} | Sem Energia: ${poweroff}\n`;
+            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(10, ' ')} | Bairro: ${bairro.padEnd(45, ' ')} | Sem Energia: ${poweroff}\n`;
         }
     });
     
