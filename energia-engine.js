@@ -565,13 +565,13 @@ window.openEnergyPortClients = function(placa, porta, circuitoNome, total, offli
     if (!modal) {
         const modalHTML = `
             <div id="detail-modal" class="modal-overlay" style="display: none;" onclick="closeModal(event)">
-                <div class="modal-content" style="max-width: 450px;">
+                <div class="modal-content">
                     <div class="modal-header">
                         <h3 id="modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">Detalhes</h3>
                         <button class="close-modal" onclick="closeModal()" title="Fechar">&times;</button>
                     </div>
                     <div class="modal-body">
-                        <div class="modal-stats-grid" style="grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                        <div class="modal-stats-grid">
                             <div class="modal-stat-box" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
                                 <span id="modal-val-total" class="modal-stat-value" style="color: #ffffff;">0</span>
                                 <span class="modal-stat-label">TOTAL</span>
