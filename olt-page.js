@@ -127,7 +127,16 @@ window.exportCardToImage = function(event, cardId, oltName) {
         btn.innerHTML = `<span class="material-symbols-rounded">hourglass_empty</span>`;
     }
 
-    html2canvas(card, {
+    // Clone do card para forçar isolamento de tamanho e evitar quebra por scroll ou flex no container global da Home
+    const clone = card.cloneNode(true);
+    clone.style.position = 'absolute';
+    clone.style.top = '-9999px';
+    clone.style.left = '-9999px';
+    clone.style.width = card.offsetWidth + 'px';
+    clone.style.height = card.offsetHeight + 'px';
+    document.body.appendChild(clone);
+
+    html2canvas(clone, {
         backgroundColor: null, 
         scale: 2, 
         useCORS: true,
@@ -138,17 +147,29 @@ window.exportCardToImage = function(event, cardId, oltName) {
         link.href = canvas.toDataURL('image/png');
         link.click();
         
+        document.body.removeChild(clone);
         if (btn) btn.innerHTML = originalContent;
     }).catch(error => {
         console.error('Erro ao gerar imagem:', error);
         alert('Ocorreu um erro ao exportar a imagem.');
+        if (clone.parentNode) document.body.removeChild(clone);
         if (btn) btn.innerHTML = originalContent;
     });
 };
 
 function openSuperModal(id, sheetTab, type, boards) {
+    const modalTitle = document.getElementById('super-modal-title');
+    if (modalTitle) {
+        modalTitle.innerHTML = `<span class="material-symbols-rounded">dns</span> ${id}`;
+    }
+
+    const btnBoletim = document.getElementById('btn-gerar-boletim');
+    const btnComunicado = document.getElementById('btn-gerar-comunicado');
     const btnTxt = document.getElementById('btn-export-placa-txt');
-    if (btnTxt) btnTxt.style.display = 'inline-block';
+    
+    if (btnBoletim) btnBoletim.style.display = 'inline-block';
+    if (btnComunicado) btnComunicado.style.display = 'inline-block';
+    if (btnTxt) btnTxt.style.display = 'none';
 
     const placasList = document.getElementById('olt-placas-list');
     if (placasList) {
@@ -180,11 +201,20 @@ function backToOltPlacas() {
 
 function closeSuperModal(event) {
     if (event && event.target.id !== 'super-modal' && !event.target.classList.contains('close-modal')) return;
+    
     document.getElementById('super-modal').style.display = 'none';
     document.getElementById('olt-placas-list').innerHTML = ''; 
     
+    document.getElementById('olt-view-detalhes').style.display = 'none';
+    document.getElementById('olt-view-placas').style.display = 'block';
+
     const btnTxt = document.getElementById('btn-export-placa-txt');
+    const btnBoletim = document.getElementById('btn-gerar-boletim');
+    const btnComunicado = document.getElementById('btn-gerar-comunicado');
+    
     if (btnTxt) btnTxt.style.display = 'none';
+    if (btnBoletim) btnBoletim.style.display = 'none';
+    if (btnComunicado) btnComunicado.style.display = 'none';
 
     if (typeof stopOltMonitoring === 'function') {
         stopOltMonitoring();
@@ -196,6 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isOltPage) {
         if (typeof loadHeader === 'function') loadHeader({ title: "Status Geral de OLTs", exactTitle: true });
         if (typeof loadFooter === 'function') loadFooter();
+        if (typeof updateGlobalTimestamp === 'function') updateGlobalTimestamp();
         createCardPlaceholders();
     }
 });

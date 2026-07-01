@@ -158,7 +158,6 @@ function fetchGlobalOltData(olt) {
 }
 
 function updateGlobalNetworkCard(globalOnline, globalOffline, latestUpdateStr) {
-    // Suporte legado mantido para outras páginas que usam IDs antigos
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
     if (!isHomePage) return;
 
@@ -253,7 +252,6 @@ function runGlobalNetworkOverview() {
         if (targetWidescreen) {
             let globalTotal = globalOnline + globalOffline;
 
-            // Inicia montando o Card Médio de Resumo Geral com Online, Offline e Total
             let htmlWidescreen = `
                 <div class="resumo-card">
                     <div>
@@ -272,7 +270,6 @@ function runGlobalNetworkOverview() {
                 </div>
             `;
             
-            // Montar os 17 minicards fluidos com os novos ícones (dns e wifi_off)
             oltStatsList.forEach(stat => {
                 const perc = stat.total > 0 ? ((stat.offline / stat.total) * 100).toFixed(1) : 0;
                 let statusClass = 'ok';
@@ -329,7 +326,7 @@ window.startOltMonitoring = function(config) {
                     <div class="modal-header">
                         <h3 id="modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">Detalhes</h3>
                         <div style="display: flex; gap: 15px; align-items: center;">
-                            <button onclick="exportDetailModalToImage(event)" title="Exportar para PNG" style="background: transparent; border: none; color: var(--m3-on-surface-variant); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; transition: color 0.2s;">
+                            <button id="btn-export-detail-png" onclick="exportDetailModalToImage(event)" title="Exportar para PNG" style="background: transparent; border: none; color: var(--m3-on-surface-variant); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; transition: color 0.2s;">
                                 <span class="material-symbols-rounded" style="font-size: 26px;">photo_camera</span>
                             </button>
                             <button class="close-modal" onclick="closeModal()" title="Fechar">&times;</button>
@@ -473,11 +470,7 @@ window.startOltMonitoring = function(config) {
 
             const detalhesView = document.getElementById('olt-view-detalhes');
             if (detalhesView && detalhesView.style.display === 'block') {
-                const subtitle = document.getElementById('olt-placa-subtitle');
-                if (subtitle) {
-                    const match = subtitle.innerText.match(/Placa (\d+)/);
-                    if (match) window.openOltPlacaDetails(match[1], config.type);
-                }
+                if (window.CURRENT_VIEW_PLACA) window.openOltPlacaDetails(window.CURRENT_VIEW_PLACA, config.type);
             }
 
         } catch (error) { 
@@ -494,6 +487,19 @@ window.openOltPlacaDetails = function(placa, oltType) {
     
     document.getElementById('olt-view-placas').style.display = 'none';
     document.getElementById('olt-view-detalhes').style.display = 'block';
+
+    const modalTitle = document.getElementById('super-modal-title');
+    if (modalTitle && window.CURRENT_MONITORING_CONFIG) {
+        modalTitle.innerHTML = `<span class="material-symbols-rounded">dns</span> ${window.CURRENT_MONITORING_CONFIG.oltName} - Placa ${placa}`;
+    }
+
+    const btnBoletim = document.getElementById('btn-gerar-boletim');
+    const btnComunicado = document.getElementById('btn-gerar-comunicado');
+    const btnTxt = document.getElementById('btn-export-placa-txt');
+    
+    if (btnBoletim) btnBoletim.style.display = 'none';
+    if (btnComunicado) btnComunicado.style.display = 'none';
+    if (btnTxt) btnTxt.style.display = 'inline-block';
     
     const tbody = document.getElementById('olt-detalhes-tbody');
     tbody.innerHTML = '';
@@ -502,13 +508,12 @@ window.openOltPlacaDetails = function(placa, oltType) {
     const sortedPorts = Object.keys(ports).sort((a, b) => parseInt(a) - parseInt(b));
     
     if (sortedPorts.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--m3-on-surface-variant);">Nenhuma porta ativa com clientes encontrada nesta placa.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--m3-on-surface-variant);">Nenhuma porta activa com clientes encontrada nesta placa.</td></tr>`;
         return;
     }
 
     sortedPorts.forEach(pt => {
-        const { online, offline, info, bairro } = ports[pt];
-        const total = online + offline;
+        const { online, offline, total, info, bairro } = ports[pt];
         
         let statusClass = 'status-normal';
         let statusText = 'Normal';
@@ -547,11 +552,31 @@ window.openOltPlacaDetails = function(placa, oltType) {
     });
 };
 
+window.backToOltPlacas = function() {
+    document.getElementById('olt-view-detalhes').style.display = 'none';
+    document.getElementById('olt-view-placas').style.display = 'block';
+    
+    window.CURRENT_VIEW_PLACA = null;
+
+    const modalTitle = document.getElementById('super-modal-title');
+    if (modalTitle && window.CURRENT_MONITORING_CONFIG) {
+        modalTitle.innerHTML = `<span class="material-symbols-rounded">dns</span> ${window.CURRENT_MONITORING_CONFIG.oltName}`;
+    }
+
+    const btnBoletim = document.getElementById('btn-gerar-boletim');
+    const btnComunicado = document.getElementById('btn-gerar-comunicado');
+    const btnTxt = document.getElementById('btn-export-placa-txt');
+    
+    if (btnBoletim) btnBoletim.style.display = 'inline-block';
+    if (btnComunicado) btnComunicado.style.display = 'inline-block';
+    if (btnTxt) btnTxt.style.display = 'none';
+};
+
 window.exportPlacaToTXT = function() {
     const titleEl = document.getElementById('super-modal-title');
     let oltName = 'OLT_Desconhecida';
     if (titleEl) {
-        oltName = titleEl.innerText.replace('dns', '').trim();
+        oltName = titleEl.innerText.replace('dns', '').split('-')[0].trim();
     }
     const placa = window.CURRENT_VIEW_PLACA || '?';
     
@@ -607,10 +632,31 @@ window.exportDetailModalToImage = function(event) {
     const titleEl = document.getElementById('modal-title');
     let titleName = 'Detalhes';
     if (titleEl) {
-        titleName = titleName.replace(/[^a-zA-Z0-9-]/g, '_');
+        titleName = titleEl.textContent.replace(/[^a-zA-Z0-9-]/g, '_');
     }
 
-    html2canvas(modalContent, {
+    // Configuração explícita do clone para capturar dimensões perfeitas sem distorção flex ou overflow
+    const clone = modalContent.cloneNode(true);
+    clone.style.position = 'absolute';
+    clone.style.top = '-9999px';
+    clone.style.left = '-9999px';
+    
+    // Garante que herde os tamanhos limitados do CSS caso o modal-large não esteja ativo
+    if (!modalContent.classList.contains('modal-large')) {
+        clone.style.width = '500px'; 
+    } else {
+        clone.style.width = modalContent.offsetWidth + 'px';
+    }
+    
+    document.body.appendChild(clone);
+
+    // Força exibição de áreas ocultas no clone caso necessário para renderização completa do canvas
+    const viewStats = clone.querySelector('#view-stats');
+    const viewClients = clone.querySelector('#view-clients');
+    if (viewStats && modalContent.querySelector('#view-stats').style.display !== 'none') viewStats.style.display = 'flex';
+    if (viewClients && modalContent.querySelector('#view-clients').style.display !== 'none') viewClients.style.display = 'block';
+
+    html2canvas(clone, {
         backgroundColor: null, 
         scale: 2, 
         useCORS: true,
@@ -621,10 +667,12 @@ window.exportDetailModalToImage = function(event) {
         link.href = canvas.toDataURL('image/png');
         link.click();
         
+        document.body.removeChild(clone);
         if (btn) btn.innerHTML = originalContent;
     }).catch(error => {
         console.error('Erro ao gerar imagem:', error);
         alert('Ocorreu um erro ao exportar a imagem.');
+        if (clone.parentNode) document.body.removeChild(clone);
         if (btn) btn.innerHTML = originalContent;
     });
 };
@@ -633,12 +681,15 @@ window.closeModal = function(event) {
     if (event && event.target.id !== 'detail-modal' && !event.target.classList.contains('close-modal')) return;
     const modal = document.getElementById('detail-modal');
     if (modal) modal.style.display = 'none';
-}
+};
 
 window.openPortDetails = function(placa, porta, circuito, online, offline, total) {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.querySelector('#detail-modal .modal-content');
     modalContent.classList.remove('modal-large'); 
+
+    const btnPng = document.getElementById('btn-export-detail-png');
+    if (btnPng) btnPng.style.display = 'inline-block';
 
     const textoCircuito = (circuito && circuito !== "-") ? ` - Circuito: ${circuito}` : "";
     document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta}${textoCircuito}`;
@@ -648,12 +699,15 @@ window.openPortDetails = function(placa, porta, circuito, online, offline, total
     document.getElementById('modal-down').textContent = offline;
     document.getElementById('modal-total').textContent = total;
     modal.style.display = 'flex';
-}
+};
 
 window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.querySelector('#detail-modal .modal-content');
     modalContent.classList.add('modal-large');     
+
+    const btnPng = document.getElementById('btn-export-detail-png');
+    if (btnPng) btnPng.style.display = 'none';
 
     const textoCircuito = (circuitoNome && circuitoNome !== "-") ? ` - Circuito: ${circuitoNome}` : "";
     document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta}${textoCircuito}`;
@@ -709,7 +763,7 @@ window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
         });
     }
     modal.style.display = 'flex';
-}
+};
 
 window.filterClients = function() {
     const searchText = document.getElementById('search-input').value.toLowerCase();
@@ -726,7 +780,7 @@ window.filterClients = function() {
         if (matchesSearch && matchesStatus) row.style.display = '';
         else row.style.display = 'none';
     });
-}
+};
 
 // OUVINTE DO MAESTRO CENTRAL (data-store.js)
 window.addEventListener('dadosAtualizados', () => {

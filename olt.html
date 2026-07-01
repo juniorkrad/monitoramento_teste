@@ -37,6 +37,12 @@
                     <span class="material-symbols-rounded">dns</span> Detalhes da OLT
                 </h3>
                 <div style="display: flex; gap: 15px; align-items: center;">
+                    <button id="btn-gerar-boletim" onclick="window.gerarRelatorioOltOffscreen(event)" class="card-header-button" title="Gerar Boletim de Alarmes" style="display: none;">
+                        <span class="material-symbols-rounded">warning</span>
+                    </button>
+                    <button id="btn-gerar-comunicado" onclick="window.gerarComunicadoSocialOffscreen(event)" class="card-header-button" title="Gerar Comunicado Redes Sociais" style="display: none;">
+                        <span class="material-symbols-rounded">campaign</span>
+                    </button>
                     <button id="btn-export-placa-txt" onclick="window.exportPlacaToTXT()" class="card-header-button" title="Exportar Tabela para TXT" style="display: none;">
                         <span class="material-symbols-rounded">download</span>
                     </button>
@@ -53,8 +59,7 @@
                     <button class="btn-voltar-placas" onclick="backToOltPlacas()">
                         <span class="material-symbols-rounded">arrow_back</span> Voltar para Placas
                     </button>
-                    <h4 id="olt-placa-subtitle" style="margin: 10px 0; color: var(--m3-on-surface-variant); font-weight: 500;">Placa X</h4>
-                    <div class="table-container">
+                    <div class="table-container" style="margin-top: 10px;">
                         <table class="noc-table">
                             <thead>
                                 <tr class="table-header-row">
@@ -81,7 +86,7 @@
     <script src="data-store.js"></script>
     <script src="layout.js"></script>
     <script src="notifications.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js\"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="olt-engine.js"></script>
     <script src="olt-page.js"></script>
     <script src="olt-relatorio.js"></script>
