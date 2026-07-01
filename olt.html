@@ -38,10 +38,10 @@
                 </h3>
                 <div style="display: flex; gap: 15px; align-items: center;">
                     <button id="btn-gerar-boletim" onclick="window.gerarRelatorioOltOffscreen(event)" class="card-header-button" title="Gerar Boletim de Alarmes" style="display: none;">
-                        <span class="material-symbols-rounded" style="font-size: 30px;">warning</span>
+                        <span class="material-symbols-rounded">warning</span>
                     </button>
                     <button id="btn-gerar-comunicado" onclick="window.gerarComunicadoSocialOffscreen(event)" class="card-header-button" title="Gerar Comunicado Redes Sociais" style="display: none;">
-                        <span class="material-symbols-rounded" style="font-size: 30px;">campaign</span>
+                        <span class="material-symbols-rounded">campaign</span>
                     </button>
                     <button class="close-modal" onclick="closeSuperModal()">&times;</button>
                 </div>
@@ -54,7 +54,7 @@
 
                 <div id="olt-view-detalhes" style="display: none;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <button class="btn-voltar-placas" onclick="backToOltPlacas()">
+                        <button class="btn-voltar-placas" style="margin-bottom: 0;" onclick="backToOltPlacas()">
                             <span class="material-symbols-rounded">arrow_back</span> Voltar para Placas
                         </button>
                         <button id="btn-export-placa-txt" class="btn-voltar-placas" style="margin-bottom: 0; padding: 10px;" onclick="window.exportPlacaToTXT()" title="Exportar Tabela para TXT">
