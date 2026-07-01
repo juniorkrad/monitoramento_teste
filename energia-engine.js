@@ -159,9 +159,9 @@ window.exportEnergiaPlacaToTXT = function() {
             const porta = cols[0].innerText.trim();
             const circuito = cols[1].innerText.trim();
             const bairro = cols[2].innerText.trim();
-            const status = cols[3].innerText.trim();
+            const poweroff = row.getAttribute('data-poweroff') || '0';
             
-            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(20, ' ')} | Bairro: ${bairro.padEnd(20, ' ')} | Status: ${status}\n`;
+            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(10, ' ')} | Bairro: ${bairro.padEnd(30, ' ')} | Sem Energia: ${poweroff}\n`;
         }
     });
     
@@ -541,7 +541,7 @@ window.openEnergyPlacaDetails = function(oltId, placa, type) {
         }
 
         tbody.innerHTML += `
-            <tr>
+            <tr data-poweroff="${powerOff}">
                 <td>Porta ${String(pt).padStart(2, '0')}</td>
                 <td>
                     <span class="circuit-badge circuit-clickable" onclick="window.openEnergyPortClients('${placa}', '${pt}', '${safeInfo}', ${calcTotal}, ${offline}, ${powerOff})">

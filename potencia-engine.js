@@ -146,7 +146,7 @@ window.exportPotenciaPlacaToTXT = function() {
             const bairro = cols[2].innerText.trim();
             const media = cols[3].innerText.trim();
             
-            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(25, ' ')} | Bairro: ${bairro.padEnd(20, ' ')} | Média: ${media}\n`;
+            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(12, ' ')} | Bairro: ${bairro.padEnd(30, ' ')} | Média: ${media}\n`;
         }
     });
     

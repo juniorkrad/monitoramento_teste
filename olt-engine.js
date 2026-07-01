@@ -598,7 +598,7 @@ window.exportPlacaToTXT = function() {
             const localidade = cols[2].innerText.trim();
             const status = cols[3].innerText.trim();
             
-            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(20, ' ')} | Local: ${localidade.padEnd(20, ' ')} | Status: ${status}\n`;
+            txtContent += `• ${porta.padEnd(10, ' ')} | Circuito: ${circuito.padEnd(10, ' ')} | Local: ${localidade.padEnd(30, ' ')} | Status: ${status}\n`;
         }
     });
     
