@@ -75,6 +75,18 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                         showToast('Rede Normalizada', `${oltId} operando normalmente`, 'status-normal', 'check_circle', 'right');
                     }
                 }
+            } else if (oldProblem.includes("STATUS::CIRCUITO::")) {
+                const matchCircuito = oldProblem.match(/^\[(.*?)\] STATUS::CIRCUITO::(.*?)::(\d+\/\d+)/);
+                if (matchCircuito) {
+                    const oltId = matchCircuito[1];
+                    const circuitoNome = matchCircuito[2];
+                    const porta = matchCircuito[3];
+                    const stillHasIssue = Array.from(newProblems).some(p => p.startsWith(`[${oltId}] STATUS::`) && p.includes(porta));
+                    
+                    if (!stillHasIssue) {
+                        showToast('Circuito Normalizado', `${circuitoNome} normalizado (${oltId} - ${porta})`, 'status-normal', 'check_circle', 'right'); 
+                    }
+                }
             } else {
                 const matchSingle = oldProblem.match(/^\[(.*?)\] STATUS::(.*?)_(\d+\/\d+)/);
                 if (matchSingle) {
@@ -108,6 +120,30 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     const activeHybridPorts = new Set(); 
 
     for (const hb of newHybridProblems) {
+        // Nova assinatura: Alarme Múltiplo de Energia
+        const matchMultiplo = hb.match(/^\[(.*?)\] HIBRIDO_MULTIPLO::(.*?)::(\d+)::(\d+)$/);
+        if (matchMultiplo) {
+            const oltId = matchMultiplo[1];
+            const portasStr = matchMultiplo[2];
+            const offRede = matchMultiplo[3];
+            const offEnergia = matchMultiplo[4];
+            
+            const portas = portasStr.split(',');
+            portas.forEach(p => activeHybridPorts.add(`${oltId}_${p}`));
+            
+            if (!currentHybridProblems.has(hb)) {
+                showToast(
+                    'Alarme Múltiplo de Energia', 
+                    `${oltId} (${portasStr}): ${offRede} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">router</span> / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">power_off</span>`, 
+                    'hibrido-multiplo', 
+                    'offline_bolt', 
+                    'left' 
+                );
+            }
+            continue;
+        }
+
+        // Assinatura clássica: Alarme Híbrido Individual
         const match = hb.match(/^\[(.*?)\] HIBRIDO::(\d+\/\d+)::(\d+)::(\d+)$/);
         if (match) {
             const oltId = match[1];
@@ -134,6 +170,26 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
     for (const problemKey of newProblems) {
         if (!currentProblems.has(problemKey)) {
 
+            // Nova Assinatura: Alarme de Circuito
+            const matchCircuito = problemKey.match(/^\[(.*?)\] STATUS::CIRCUITO::(.*?)::(\d+\/\d+)::(\d+)$/);
+            if (matchCircuito) {
+                const oltId = matchCircuito[1];
+                const circuitoNome = matchCircuito[2];
+                const porta = matchCircuito[3];
+
+                if (activeHybridPorts.has(`${oltId}_${porta}`)) continue;
+
+                showToast(
+                    'Alarme de Circuito', 
+                    `${circuitoNome} (${oltId} - ${porta})`, 
+                    'backbone-l1', 
+                    'settings_input_component', 
+                    'right' 
+                );
+                continue;
+            }
+
+            // Verifica Assinatura Múltipla
             const matchMulti = problemKey.match(/^\[(.*?)\] STATUS::MULTI::(.*)$/);
             if (matchMulti) {
                 const oltId = matchMulti[1];
@@ -156,6 +212,7 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                 continue; 
             }
 
+            // Verifica Assinatura Individual (Super, Crit, Warn)
             const matchSingle = problemKey.match(/^\[(.*?)\] STATUS::(SUPER|CRIT|WARN)_(\d+\/\d+)::(\d+)$/);
             if (matchSingle) {
                 const oltId = matchSingle[1];

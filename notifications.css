@@ -101,7 +101,7 @@
 }
 
 /* ==========================================================================
-   1. QUEDA DE ENERGIA (Esquerda, 500px, Sem Cortes de Texto)
+   1. QUEDA DE ENERGIA INDIVIDUAL (Esquerda, 500px, Sem Cortes de Texto)
    ========================================================================== */
 .toast.hibrido { 
     width: 500px; 
@@ -130,6 +130,42 @@
 }
 
 /* ==========================================================================
+   1.5 QUEDA DE ENERGIA MÚLTIPLA (Esquerda, Escala +25% do Híbrido -> ~625px)
+   ========================================================================== */
+.toast.hibrido-multiplo, .toast.energia-multi { 
+    width: 625px; 
+    min-height: 130px;
+    border: 2px solid #f59e0b;
+    border-left: 12px solid #f59e0b; 
+    background-color: #3b2800; 
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.4), 0 6px 20px rgba(0, 0, 0, 0.7);
+    animation: pulseEnergiaMulti 1.5s infinite;
+    z-index: 10;
+}
+
+.toast.hibrido-multiplo .toast-icon, .toast.energia-multi .toast-icon { 
+    font-size: 60px; 
+    color: #f59e0b; 
+    filter: drop-shadow(0 0 8px #f59e0b);
+}
+
+.toast.hibrido-multiplo strong, .toast.energia-multi strong { 
+    font-size: 28px; 
+    color: #f59e0b; 
+    white-space: normal; 
+    overflow: visible;
+    line-height: 1.1;
+    margin-bottom: 8px;
+    text-shadow: 0 0 5px rgba(245, 158, 11, 0.6);
+}
+
+.toast.hibrido-multiplo .toast-content > span, .toast.energia-multi .toast-content > span {
+    font-size: 22px; 
+    white-space: normal; 
+    color: #ffedad;
+}
+
+/* ==========================================================================
    2. CORES E BORDAS PADRÃO REDE E SUCESSO (400px)
    ========================================================================== */
 .toast.status-normal { border-left: 6px solid var(--m3-color-success); }
@@ -142,8 +178,7 @@
 .toast.rede-problem .toast-icon { color: var(--m3-color-error); }
 
 /* ==========================================================================
-   3. BACKBONE Nível 1 (Direita, Escala +10% -> 440px)
-   (Porta 100% OFF Isolada)
+   3. BACKBONE Nível 1 & CIRCUITO (Direita, Escala +10% -> 440px)
    ========================================================================== */
 .toast.backbone-l1 { 
     width: 440px; 
@@ -151,7 +186,7 @@
     border-left: 6px solid #FF1744; 
     background-color: #1a0000; 
     animation: pulseCritical 1.5s infinite; 
-    order: -1; /* Mantém logo abaixo do nível 2, sobrepondo alarmes comuns */
+    order: -1; 
 }
 
 .toast.backbone-l1 .toast-icon { 
@@ -170,7 +205,6 @@
 
 /* ==========================================================================
    4. BACKBONE Nível 2 (Direita, Escala MAX +25% -> 500px, Neon/Pisca)
-   (Rompimento Massivo / Múltiplas Portas)
    ========================================================================== */
 .toast.backbone-l2 { 
     width: 500px; 
@@ -179,7 +213,7 @@
     border-left: 8px solid #ff0000;
     box-shadow: 0 0 15px rgba(255, 0, 0, 0.6), 0 6px 20px rgba(0, 0, 0, 0.8);
     animation: flashBackgroundL2 1s infinite; 
-    order: -2; /* Prioridade Máxima: Fica sempre no topo do container */
+    order: -2; 
     z-index: 10;
 }
 
@@ -206,6 +240,13 @@
 /* ==========================================================================
    ANIMAÇÕES EXCLUSIVAS
    ========================================================================== */
+
+/* Pulso laranja/amarelo para Energia Múltipla */
+@keyframes pulseEnergiaMulti {
+    0% { box-shadow: 0 0 0 rgba(245, 158, 11, 0), 0 6px 20px rgba(0, 0, 0, 0.6); }
+    50% { box-shadow: 0 0 25px rgba(245, 158, 11, 0.6), 0 6px 20px rgba(0, 0, 0, 0.8); }
+    100% { box-shadow: 0 0 0 rgba(245, 158, 11, 0), 0 6px 20px rgba(0, 0, 0, 0.6); }
+}
 
 /* Pulso suave de borda (Backbone L1) */
 @keyframes pulseCritical {
@@ -239,7 +280,7 @@
     #toast-container-left, #toast-container-right { left: 10px; right: 10px; top: 10px; align-items: center; }
     .toast { width: 100%; max-width: 380px; }
     /* Impede que alarmes expandidos quebrem a tela no mobile */
-    .toast.hibrido, .toast.backbone-l1, .toast.backbone-l2 { max-width: 95vw; } 
+    .toast.hibrido, .toast.hibrido-multiplo, .toast.energia-multi, .toast.backbone-l1, .toast.backbone-l2 { max-width: 95vw; } 
     .toast.slide-left, .toast.slide-right { transform: translateY(-120%); }
     .toast.show { transform: translateY(0); }
 }

@@ -14,6 +14,10 @@ function watchHomeAlarms() {
     // 2. Avalia a Regra dos Híbridos (Se os dados de energia existirem)
     // O desenho na tela da Home agora é responsabilidade do energia-engine.js!
     if (window.ENERGY_DATA_STORE && window.ENERGY_DATA_STORE.global) {
+        
+        // Objeto para agrupar as portas que entraram na regra, separadas por OLT
+        const hibridosPorOlt = {};
+
         // ============================================================
         // A REGRA DOS HÍBRIDOS: >= 32 clientes offline e >= 70% de energia
         // ============================================================
@@ -28,11 +32,48 @@ function watchHomeAlarms() {
                     if (pData.offline >= 32 && pData.powerOff > 0) {
                         const overlap = pData.powerOff / pData.offline;
                         if (overlap >= 0.70) {
-                            // TODO Futuro: Injetar a Localidade (Bairro) aqui para unificação
-                            hybridProblems.add(`[${oltId}] HIBRIDO::${pt}::${pData.offline}::${pData.powerOff}`);
+                            // Inicializa o array da OLT se não existir
+                            if (!hibridosPorOlt[oltId]) {
+                                hibridosPorOlt[oltId] = [];
+                            }
+                            
+                            // Guarda os dados da porta afetada
+                            hibridosPorOlt[oltId].push({
+                                pt: pt,
+                                offline: pData.offline,
+                                powerOff: pData.powerOff
+                            });
                         }
                     }
                 }
+            }
+        }
+
+        // ============================================================
+        // AVALIAÇÃO DE AGRUPAMENTO (ÚNICO VS MÚLTIPLO)
+        // ============================================================
+        for (const oltId in hibridosPorOlt) {
+            const portasAfetadas = hibridosPorOlt[oltId];
+            
+            if (portasAfetadas.length === 1) {
+                // Emite o alarme normal/individual se apenas 1 porta estiver na regra
+                const p = portasAfetadas[0];
+                // TODO Futuro: Injetar a Localidade (Bairro) aqui para unificação
+                hybridProblems.add(`[${oltId}] HIBRIDO::${p.pt}::${p.offline}::${p.powerOff}`);
+            } else if (portasAfetadas.length >= 2) {
+                // Emite a nova assinatura de alarme múltiplo agrupando as portas
+                let totalOffline = 0;
+                let totalPowerOff = 0;
+                const listaPortas = [];
+                
+                portasAfetadas.forEach(p => {
+                    totalOffline += p.offline;
+                    totalPowerOff += p.powerOff;
+                    listaPortas.push(p.pt);
+                });
+                
+                const portasStr = listaPortas.join(',');
+                hybridProblems.add(`[${oltId}] HIBRIDO_MULTIPLO::${portasStr}::${totalOffline}::${totalPowerOff}`);
             }
         }
     }

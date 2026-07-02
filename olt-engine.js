@@ -145,7 +145,8 @@ function fetchGlobalOltData(olt) {
             if (portInfo) {
                 const { placa, porta } = portInfo;
                 const portKey = `${placa}/${porta}`; 
-                if (!portData[portKey]) portData[portKey] = { off: 0, total: 0 };
+                // Guardamos também a placa e porta separadas para facilitar o lookup do circuito
+                if (!portData[portKey]) portData[portKey] = { off: 0, total: 0, placa: placa, porta: porta };
                 portData[portKey].total++;
                 if (!isOnline) portData[portKey].off++;
             }
@@ -187,6 +188,9 @@ function runGlobalNetworkOverview() {
     let allProblems = new Set();
     let latestUpdateStr = '--/--/---- --:--:--';
 
+    // Necessário para resgatar os nomes dos circuitos na varredura global
+    const rowsCircuitos = (window.DATA_STORE && window.DATA_STORE.circuitos) ? window.DATA_STORE.circuitos : [];
+
     results.forEach(result => {
         globalOnline += result.onlineCount; 
         globalOffline += result.offlineCount;
@@ -200,41 +204,54 @@ function runGlobalNetworkOverview() {
 
         let ports100Down = 0;
         let localProblems = []; 
+        let superPorts = []; // Agrupa temporariamente as portas 100% caídas
         
         for (const key in result.portData) {
-            const { off, total: pTotal } = result.portData[key];
+            const { off, total: pTotal, placa, porta } = result.portData[key];
             if (pTotal >= 5) {
                 let severity = null;
                 const percOffline = off / pTotal;
 
                 if (percOffline === 1) { 
                     ports100Down++; 
-                    severity = 'SUPER'; 
+                    superPorts.push({ key, placa, porta, off });
                 } else if (percOffline >= 0.5 || off >= 32) { 
                     severity = 'CRIT'; 
                 } else if (off >= 16) { 
                     severity = 'WARN'; 
                 }
 
+                // As portas super (100% down) são processadas separadamente agora
                 if (severity) {
                     localProblems.push({ porta: key, severity: severity, off: off });
                 }
             }
         }
         
-        let filteredProblems = localProblems;
-        
+        // ============================================================
+        // NOVA REGRA DE ENCAMINHAMENTO (BACKBONE VS CIRCUITO)
+        // ============================================================
         if (ports100Down >= 2) { 
+            // Emite o Backbone clássico
             currentBackbones.add(result.id); 
-            filteredProblems = localProblems.filter(p => p.severity !== 'SUPER');
-        } 
+        } else if (ports100Down === 1) {
+            // Emite o gatilho exclusivo de Circuito para 1 única porta isolada
+            const sp = superPorts[0];
+            const pseudoConfig = { id: result.id, oltName: result.id, type: result.type };
+            const circuitoNome = DataMapper.getCircuitInfo(rowsCircuitos, pseudoConfig, sp.placa, sp.porta);
+            
+            allProblems.add(`[${result.id}] STATUS::CIRCUITO::${circuitoNome}::${sp.key}::${sp.off}`);
+        }
 
-        if (filteredProblems.length >= 2) {
-            const multiStr = filteredProblems.map(p => p.porta).join(',');
+        // ============================================================
+        // PROBLEMAS LOCAIS (CRIT, WARN, MULTI)
+        // ============================================================
+        if (localProblems.length >= 2) {
+            const multiStr = localProblems.map(p => p.porta).join(',');
             allProblems.add(`[${result.id}] STATUS::MULTI::${multiStr}`);
         } 
-        else if (filteredProblems.length === 1) {
-            const p = filteredProblems[0];
+        else if (localProblems.length === 1) {
+            const p = localProblems[0];
             allProblems.add(`[${result.id}] STATUS::${p.severity}_${p.porta}::${p.off}`);
         }
     });
@@ -506,7 +523,7 @@ window.openOltPlacaDetails = function(placa, oltType) {
     const sortedPorts = Object.keys(ports).sort((a, b) => parseInt(a) - parseInt(b));
     
     if (sortedPorts.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--m3-on-surface-variant);">Nenhuma porta activa com clientes encontrada nesta placa.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--m3-on-surface-variant);">Nenhuma porta ativa com clientes encontrada nesta placa.</td></tr>`;
         return;
     }
 
@@ -632,13 +649,11 @@ window.exportDetailModalToImage = function(event) {
         titleName = titleEl.textContent.replace(/[^a-zA-Z0-9-]/g, '_');
     }
 
-    // Configuração explícita do clone para capturar dimensões perfeitas sem distorção flex ou overflow
     const clone = modalContent.cloneNode(true);
     clone.style.position = 'absolute';
     clone.style.top = '-9999px';
     clone.style.left = '-9999px';
     
-    // Garante que herde os tamanhos limitados do CSS caso o modal-large não esteja ativo
     if (!modalContent.classList.contains('modal-large')) {
         clone.style.width = '500px'; 
     } else {
@@ -647,7 +662,6 @@ window.exportDetailModalToImage = function(event) {
     
     document.body.appendChild(clone);
 
-    // Força exibição de áreas ocultas no clone caso necessário para renderização completa do canvas
     const viewStats = clone.querySelector('#view-stats');
     const viewClients = clone.querySelector('#view-clients');
     if (viewStats && modalContent.querySelector('#view-stats').style.display !== 'none') viewStats.style.display = 'flex';
