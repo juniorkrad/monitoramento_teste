@@ -84,7 +84,8 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                     const stillHasIssue = Array.from(newProblems).some(p => p.startsWith(`[${oltId}] STATUS::`) && p.includes(porta));
                     
                     if (!stillHasIssue) {
-                        showToast('Circuito Normalizado', `${circuitoNome} normalizado (${oltId} - ${porta})`, 'status-normal', 'check_circle', 'right'); 
+                        // Parênteses removidos para manter o padrão visual limpo na normalização também
+                        showToast('Circuito Normalizado', `${oltId} - ${porta} - ${circuitoNome}`, 'status-normal', 'check_circle', 'right'); 
                     }
                 }
             } else {
@@ -134,9 +135,10 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
             if (!currentHybridProblems.has(hb)) {
                 showToast(
                     'Alarme Múltiplo de Energia', 
-                    `${oltId} (${portasStr}): ${offRede} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">router</span> / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">power_off</span>`, 
+                    // Mostrando apenas a OLT e o valor de clientes offline por energia (com ícone) sem parênteses
+                    `${oltId} - ${offEnergia} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">power_off</span>`, 
                     'hibrido-multiplo', 
-                    'offline_bolt', 
+                    'electric_bolt', // Ícone atualizado
                     'left' 
                 );
             }
@@ -156,7 +158,8 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
             if (!currentHybridProblems.has(hb)) {
                 showToast(
                     'Queda de Energia', 
-                    `${oltId} (${porta}): ${offRede} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">router</span> / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">power_off</span>`, 
+                    // Parênteses removidos
+                    `${oltId} - ${porta}: ${offRede} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">router</span> / ${offEnergia} <span class="material-symbols-rounded" style="font-size: 22px; vertical-align: middle;">power_off</span>`, 
                     'hibrido', 
                     'offline_bolt', 
                     'left' 
@@ -181,9 +184,10 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
 
                 showToast(
                     'Alarme de Circuito', 
-                    `${circuitoNome} (${oltId} - ${porta})`, 
+                    // Formato atualizado: OLT - porta - circuito e parênteses removidos
+                    `${oltId} - ${porta} - ${circuitoNome}`, 
                     'backbone-l1', 
-                    'settings_input_component', 
+                    'crisis_alert', // Ícone atualizado
                     'right' 
                 );
                 continue;
