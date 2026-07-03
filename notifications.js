@@ -230,14 +230,36 @@ function checkAndNotifyForNewProblems(newProblems, activeBackbones = new Set(), 
                 const oltId = matchMulti[1];
                 const multiString = matchMulti[2]; 
                 
-                let portsArray = multiString.split(',');
+                let portsDataArray = multiString.split(',');
+                let affectedList = [];
 
-                portsArray = portsArray.filter(p => !activeHybridPorts.has(`${oltId}_${p}`));
-                if (portsArray.length === 0) continue;
+                portsDataArray.forEach(data => {
+                    const parts = data.split('::');
+                    if (parts.length >= 2) {
+                        const porta = parts[0];
+                        const circuitoNome = parts[1];
+
+                        if (!activeHybridPorts.has(`${oltId}_${porta}`)) {
+                            const circText = formatarNomeCircuito(circuitoNome);
+                            affectedList.push(`${oltId} - ${porta} - ${circText}`);
+                        }
+                    } else {
+                        // Fallback de segurança para dados antigos
+                        const porta = data;
+                        if (!activeHybridPorts.has(`${oltId}_${porta}`)) {
+                            affectedList.push(`${oltId} - ${porta}`);
+                        }
+                    }
+                });
+
+                if (affectedList.length === 0) continue;
+
+                // Transforma a lista de problemas em linhas separadas
+                const descFormatada = affectedList.join('<br>');
 
                 showToast(
                     'Falha Múltipla', 
-                    `${oltId} - Múltiplos circuitos afetados`, 
+                    descFormatada, 
                     'rede-problem', 
                     'error',        
                     'right' 

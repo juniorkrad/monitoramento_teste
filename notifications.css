@@ -174,12 +174,24 @@
 .toast.rede-warn { border-left: 6px solid var(--m3-color-warning); }
 .toast.rede-warn .toast-icon { color: var(--m3-color-warning); }
 
-/* Novo Esquema de Cor: Laranja Escuro para o alarme de 'Problema' */
-.toast.rede-problem { border-left: 6px solid #e65100; }
+/* Laranja Escuro para o alarme de 'Problema' e 'Falha Múltipla' */
+.toast.rede-problem { 
+    border-left: 6px solid #e65100; 
+    height: auto; /* Permite que o balão cresça com listas grandes */
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
 .toast.rede-problem .toast-icon { color: #e65100; }
 
-/* Classe extra mantida como vermelho padrão para garantir que a 'Falha Múltipla' 
-   possa ser separada visualmente (caso o JS seja ajustado para chamá-la) */
+/* Exceção para permitir a quebra de linha na lista de Falha Múltipla */
+.toast.rede-problem .toast-content > span {
+    white-space: normal;
+    overflow: visible;
+    line-height: 1.6;
+    margin-top: 6px;
+}
+
+/* Classe extra mantida como vermelho padrão para eventuais necessidades */
 .toast.rede-multipla { border-left: 6px solid var(--m3-color-error); }
 .toast.rede-multipla .toast-icon { color: var(--m3-color-error); }
 

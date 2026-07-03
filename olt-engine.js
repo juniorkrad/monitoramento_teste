@@ -248,7 +248,8 @@ function runGlobalNetworkOverview() {
         // PROBLEMAS LOCAIS (CRIT, WARN, MULTI)
         // ============================================================
         if (localProblems.length >= 2) {
-            const multiStr = localProblems.map(p => p.porta).join(',');
+            // Empacota enviando a porta separada do circuito por "::" e cada pacote por ","
+            const multiStr = localProblems.map(p => `${p.porta}::${p.circuito}`).join(',');
             allProblems.add(`[${result.id}] STATUS::MULTI::${multiStr}`);
         } 
         else if (localProblems.length === 1) {
