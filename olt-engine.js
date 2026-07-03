@@ -370,7 +370,7 @@ window.startOltMonitoring = function(config) {
 
                         <div id="view-clients" style="display:none;">
                             <div class="filter-bar">
-                                <input type="text" id="search-input" class="filter-input" placeholder="Buscar (Nome, Serial...)" onkeyup="filterClients()">
+                                <input type="text" id="search-input" class="filter-input" placeholder="Buscar por Serial ou Código..." onkeyup="filterClients()">
                                 <select id="status-filter" class="filter-select" onchange="filterClients()"></select>
                             </div>
                             <div class="table-container">
@@ -431,12 +431,32 @@ window.startOltMonitoring = function(config) {
                 if (isOnline) window.CURRENT_OLT_PORT_DATA[placaNum][portaNum].online++;
                 else window.CURRENT_OLT_PORT_DATA[placaNum][portaNum].offline++;
                 
-                let clientData = {};
+                let serialVal = '';
+                let codigoVal = '';
+                let statusRefVal = '';
+                
+                // Mapeamento exclusivo: Nokia e Furukawa
                 if (config.type === 'nokia') {
-                    clientData = { colB: columns[1] || '', colC: columns[2] || '', colE: columns[4] || '', colH: columns[7] || '', colI: columns[8] || '', statusRef: columns[4] || '' };
+                    // Coluna C (índice 2) = Serial, Coluna I (índice 8) = Código, Coluna E (índice 4) = Status
+                    serialVal = columns[2] || '';
+                    codigoVal = columns[8] || '';
+                    statusRefVal = columns[4] || '';
                 } else {
-                    clientData = { colB: columns[1] || '', colC: columns[2] || '', colD: columns[3] || '', colH: columns[7] || '', statusRef: columns[2] || '' };
+                    // Furukawa: Coluna D (índice 3) = Serial, Coluna H (índice 7) = Código, Coluna C (índice 2) = Status
+                    serialVal = columns[3] || '';
+                    codigoVal = columns[7] || '';
+                    statusRefVal = columns[2] || '';
                 }
+                
+                let clientData = { 
+                    serial: String(serialVal).trim(), 
+                    codigo: String(codigoVal).trim(), 
+                    statusRef: String(statusRefVal).trim(),
+                    oltName: config.oltName || config.id,
+                    placa: placaNum,
+                    porta: portaNum,
+                    circuito: window.CURRENT_OLT_PORT_DATA[placaNum][portaNum].info
+                };
                 
                 window.OLT_CLIENTS_DATA[portKey].push(clientData);
             });
@@ -723,8 +743,8 @@ window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
     const btnPng = document.getElementById('btn-export-detail-png');
     if (btnPng) btnPng.style.display = 'none';
 
-    const textoCircuito = (circuitoNome && circuitoNome !== "-") ? ` - Circuito: ${circuitoNome}` : "";
-    document.getElementById('modal-title').textContent = `Placa ${placa} / Porta ${porta}${textoCircuito}`;
+    // Alterado o título para a nova área de pesquisa
+    document.getElementById('modal-title').innerHTML = `<span class="material-symbols-rounded" style="margin-right: 8px;">manage_search</span> Pesquisa de Clientes e Equipamentos`;
 
     document.getElementById('view-stats').style.display = 'none';
     document.getElementById('view-clients').style.display = 'block';
@@ -742,37 +762,71 @@ window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
     const thead = document.getElementById('clients-thead');
     const tbody = document.getElementById('clients-tbody');
     
-    if (oltType === 'nokia') {
-        thead.innerHTML = `<tr><th>Posição</th><th>Serial</th><th>Status</th><th>Descrição 1</th><th>Descrição 2</th></tr>`;
-    } else {
-        thead.innerHTML = `<tr><th>Posição</th><th>Status</th><th>Serial</th><th>Descrição</th></tr>`;
-    }
-    
+    // Cabeçalho simplificado focado no visual de cards/linhas ricas
+    thead.innerHTML = `<tr><th style="text-align: left; padding-left: 15px;">Detalhes do Equipamento e Assinante</th></tr>`;
     tbody.innerHTML = '';
 
     const portKey = `${placa}/${porta}`;
     const clients = window.OLT_CLIENTS_DATA[portKey] || [];
 
     if (clients.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${oltType === 'nokia' ? 5 : 4}" style="text-align:center;">Nenhum cliente encontrado.</td></tr>`;
+        tbody.innerHTML = `<tr><td style="text-align:center;">Nenhum cliente encontrado.</td></tr>`;
     } else {
         clients.forEach(c => {
             let statusRaw = c.statusRef.toLowerCase();
             let statusClass = 'filter-unknown';
+            let statusText = 'UNKNOWN';
+            
             if (oltType === 'nokia') {
-                if (statusRaw.includes('up')) statusClass = 'filter-online';
-                else if (statusRaw.includes('down')) statusClass = 'filter-offline';
+                if (statusRaw.includes('up')) { statusClass = 'filter-online'; statusText = 'UP'; }
+                else if (statusRaw.includes('down')) { statusClass = 'filter-offline'; statusText = 'DOWN'; }
             } else {
-                if (statusRaw.includes('active') && !statusRaw.includes('inactive')) statusClass = 'filter-online';
-                else if (statusRaw.includes('inactive')) statusClass = 'filter-offline';
+                if (statusRaw.includes('active') && !statusRaw.includes('inactive')) { statusClass = 'filter-online'; statusText = 'UP'; }
+                else if (statusRaw.includes('inactive')) { statusClass = 'filter-offline'; statusText = 'DOWN'; }
             }
             
-            let rowHTML = '';
-            if (oltType === 'nokia') {
-                rowHTML = `<tr class="client-row ${statusClass}"><td>${c.colB}</td><td>${c.colC}</td><td>${c.colE}</td><td>${c.colH}</td><td>${c.colI}</td></tr>`;
-            } else {
-                rowHTML = `<tr class="client-row ${statusClass}"><td>${c.colB}</td><td>${c.colC}</td><td>${c.colD}</td><td>${c.colH}</td></tr>`;
-            }
+            let buttonClass = statusClass === 'filter-online' ? 'status-normal' : 'status-critico';
+            if (statusClass === 'filter-unknown') buttonClass = 'status-atencao';
+
+            // Geração da linha rica com as tags invisíveis data-serial e data-codigo
+            let rowHTML = `
+                <tr class="client-row ${statusClass}" data-serial="${c.serial}" data-codigo="${c.codigo}">
+                    <td style="padding: 15px;">
+                        <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                                
+                                <div style="display: flex; align-items: center; gap: 6px;" title="Serial do Equipamento">
+                                    <span class="material-symbols-rounded" style="color: var(--m3-color-primary);">barcode</span> 
+                                    <strong style="font-family: var(--font-family-mono); font-size: 1.05rem;">${c.serial || 'N/A'}</strong>
+                                </div>
+                                
+                                <div style="display: flex; align-items: center; gap: 6px;" title="Código do Cliente">
+                                    <span class="material-symbols-rounded" style="color: var(--m3-color-primary);">deployed_code_account</span> 
+                                    <strong style="font-family: var(--font-family-mono); font-size: 1.05rem;">${c.codigo || 'N/A'}</strong>
+                                </div>
+
+                                <div style="display: flex; align-items: center; gap: 6px; color: var(--m3-on-surface-variant);" title="Nome da OLT">
+                                    <span class="material-symbols-rounded" style="font-size: 20px;">dns</span> ${c.oltName}
+                                </div>
+
+                                <div style="display: flex; align-items: center; gap: 6px; color: var(--m3-on-surface-variant);" title="Placa/Porta">
+                                    <span class="material-symbols-rounded" style="font-size: 20px;">developer_board</span> ${c.placa}/${c.porta}
+                                </div>
+
+                                <div style="display: flex; align-items: center; gap: 6px; color: var(--m3-on-surface-variant);" title="Circuito">
+                                    <span class="material-symbols-rounded" style="font-size: 20px;">network_node</span> ${c.circuito}
+                                </div>
+
+                            </div>
+                            <div>
+                                <button class="status-btn ${buttonClass}" style="display: flex; align-items: center; gap: 6px; cursor: default; pointer-events: none;">
+                                    <span class="material-symbols-rounded" style="font-size: 20px;">online_prediction</span> ${statusText}
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
             tbody.innerHTML += rowHTML;
         });
     }
@@ -780,19 +834,27 @@ window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
 };
 
 window.filterClients = function() {
-    const searchText = document.getElementById('search-input').value.toLowerCase();
+    const searchText = document.getElementById('search-input').value.toLowerCase().trim();
     const statusFilter = document.getElementById('status-filter').value;
     const rows = document.querySelectorAll('.client-row');
     
     rows.forEach(row => {
-        const textContent = row.textContent.toLowerCase();
-        let matchesSearch = textContent.includes(searchText);
+        // Resgata os valores injetados nas tags invisíveis
+        const serial = (row.dataset.serial || '').toLowerCase();
+        const codigo = (row.dataset.codigo || '').toLowerCase();
+        
+        // A busca se torna cirúrgica avaliando exclusivamente as tags
+        let matchesSearch = searchText === '' || serial.includes(searchText) || codigo.includes(searchText);
+        
         let matchesStatus = true;
         if (statusFilter === 'online') matchesStatus = row.classList.contains('filter-online');
         if (statusFilter === 'offline') matchesStatus = row.classList.contains('filter-offline');
         
-        if (matchesSearch && matchesStatus) row.style.display = '';
-        else row.style.display = 'none';
+        if (matchesSearch && matchesStatus) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
     });
 };
 
