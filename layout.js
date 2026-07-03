@@ -1,6 +1,6 @@
 // ==============================================================================
 // layout.js - Construtor de Layout e Menu Inteligente (Com Busca e Emergência Autenticada)
-// Atualização: Reordenação do menu e substituição de emojis por ícones no rodapé preenchidos (FILL)
+// Atualização: Limpeza da formatação de dBm na Busca Global
 // ==============================================================================
 
 (function loadIconFont() {
@@ -242,7 +242,10 @@ async function executeSerialSearch() {
                     
                     let serialVal = '';
                     let codigoVal = '';
-                    let potenciaVal = String(row[5] || '').trim(); // Coluna F
+                    
+                    // LIMPEZA DA POTÊNCIA: Remove "dBm" (qualquer case) e remove todos os espaços para isolar apenas o número
+                    let potenciaVal = String(row[5] || '').replace(/dbm/ig, '').replace(/\s+/g, '');
+                    
                     let colStatus = 2;
 
                     // Mapeamento focado: Nokia e Furukawa

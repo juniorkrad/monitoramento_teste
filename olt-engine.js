@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Injeção de Dados (Serial, Código, Potência) e Layout de Busca Local
+// Atualização: Injeção de Dados (Serial, Código, Potência) e Limpeza de dBm
 // ==============================================================================
 
 window.OLT_CLIENTS_DATA = {};
@@ -417,7 +417,10 @@ window.startOltMonitoring = function(config) {
                 
                 let serialVal = '';
                 let codigoVal = '';
-                let potenciaVal = String(columns[5] || '').trim(); // Coluna F (Índice 5)
+                
+                // LIMPEZA DA POTÊNCIA: Remove "dBm" (qualquer case) e remove todos os espaços para isolar apenas o número
+                let potenciaVal = String(columns[5] || '').replace(/dbm/ig, '').replace(/\s+/g, '');
+                
                 let statusRefVal = '';
                 
                 // Mapeamento exclusivo: Nokia e Furukawa
