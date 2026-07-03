@@ -242,6 +242,7 @@ async function executeSerialSearch() {
                     
                     let serialVal = '';
                     let codigoVal = '';
+                    let potenciaVal = String(row[5] || '').trim(); // Coluna F
                     let colStatus = 2;
 
                     // Mapeamento focado: Nokia e Furukawa
@@ -305,6 +306,7 @@ async function executeSerialSearch() {
                             placa: placa,
                             porta: porta,
                             circuito: circuitoNome,
+                            potencia: potenciaVal,
                             status: statusStr,
                             statusClass: statusClass
                         });
@@ -331,34 +333,36 @@ async function executeSerialSearch() {
         foundResults.forEach(res => {
             html += `
                 <div class="search-result-card" style="padding: 15px;">
-                    <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: space-between;">
-                        <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-                            
-                            <div style="display: flex; align-items: center; gap: 6px;" title="Serial do Equipamento">
-                                <span class="material-symbols-rounded" style="color: var(--m3-color-primary);">barcode</span> 
-                                <strong style="font-family: var(--font-family-mono); font-size: 1.05rem;">${res.serial || 'N/A'}</strong>
-                            </div>
-                            
-                            <div style="display: flex; align-items: center; gap: 6px;" title="Código do Cliente">
-                                <span class="material-symbols-rounded" style="color: var(--m3-color-primary);">deployed_code_account</span> 
-                                <strong style="font-family: var(--font-family-mono); font-size: 1.05rem;">${res.codigo || 'N/A'}</strong>
-                            </div>
-
-                            <div style="display: flex; align-items: center; gap: 6px; color: var(--m3-on-surface-variant);" title="Nome da OLT">
-                                <span class="material-symbols-rounded" style="font-size: 20px;">dns</span> ${res.oltName}
-                            </div>
-
-                            <div style="display: flex; align-items: center; gap: 6px; color: var(--m3-on-surface-variant);" title="Placa/Porta">
-                                <span class="material-symbols-rounded" style="font-size: 20px;">developer_board</span> ${res.placa}/${res.porta}
-                            </div>
-
-                            <div style="display: flex; align-items: center; gap: 6px; color: var(--m3-on-surface-variant);" title="Circuito">
-                                <span class="material-symbols-rounded" style="font-size: 20px;">network_node</span> ${res.circuito}
-                            </div>
-
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        
+                        <div style="display: flex; align-items: center; gap: 6px;" title="Serial do Equipamento">
+                            <span class="material-symbols-rounded" style="color: var(--m3-color-primary);">barcode</span> 
+                            <strong style="font-family: var(--font-family-mono); font-size: 1.05rem;">${res.serial || 'N/A'}</strong>
                         </div>
-                        <div>
-                            <span class="search-result-status ${res.statusClass}" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.95rem;">
+                        
+                        <div style="display: flex; align-items: center; gap: 6px;" title="Código do Cliente">
+                            <span class="material-symbols-rounded" style="color: var(--m3-color-primary);">deployed_code_account</span> 
+                            <strong style="font-family: var(--font-family-mono); font-size: 1.05rem;">${res.codigo || 'N/A'}</strong>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 6px; color: var(--m3-on-surface-variant);" title="Nome da OLT">
+                            <span class="material-symbols-rounded" style="font-size: 20px;">dns</span> ${res.oltName}
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 6px; color: var(--m3-on-surface-variant);" title="Placa/Porta">
+                            <span class="material-symbols-rounded" style="font-size: 20px;">developer_board</span> ${res.placa}/${res.porta}
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 6px; color: var(--m3-on-surface-variant);" title="Circuito">
+                            <span class="material-symbols-rounded" style="font-size: 20px;">network_node</span> ${res.circuito}
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 6px; color: var(--m3-on-surface-variant);" title="Potência (dBm)">
+                            <span class="material-symbols-rounded" style="font-size: 20px;">infrared</span> ${res.potencia || 'N/A'} dBm
+                        </div>
+
+                        <div style="margin-top: 4px;">
+                            <span class="search-result-status ${res.statusClass}" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.95rem;">
                                 <span class="material-symbols-rounded" style="font-size: 20px;">online_prediction</span> ${res.status}
                             </span>
                         </div>
