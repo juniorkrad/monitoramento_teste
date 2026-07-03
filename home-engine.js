@@ -1,6 +1,6 @@
 /* ==========================================================================
    home-engine.js - Controlador Geral e Vigilante de Alarmes (Home)
-   Atualização: Limpeza de UI redundante, focando apenas na emissão do Alarme Híbrido
+   Atualização: Injeção do Nome do Circuito na Assinatura Híbrida Individual
    ========================================================================== */
 
 let lastNotifiedState = ""; 
@@ -17,6 +17,9 @@ function watchHomeAlarms() {
         
         // Objeto para agrupar as portas que entraram na regra, separadas por OLT
         const hibridosPorOlt = {};
+        
+        // Base de circuitos para consulta (Necessário para injetar no alarme individual)
+        const rowsCircuitos = (window.DATA_STORE && window.DATA_STORE.circuitos) ? window.DATA_STORE.circuitos : [];
 
         // ============================================================
         // A REGRA DOS HÍBRIDOS: >= 32 clientes offline e >= 70% de energia
@@ -37,9 +40,11 @@ function watchHomeAlarms() {
                                 hibridosPorOlt[oltId] = [];
                             }
                             
-                            // Guarda os dados da porta afetada
+                            // Guarda os dados da porta afetada, incluindo placa e porta separados para o circuito
                             hibridosPorOlt[oltId].push({
                                 pt: pt,
+                                placa: placa,
+                                porta: porta,
                                 offline: pData.offline,
                                 powerOff: pData.powerOff
                             });
@@ -58,8 +63,19 @@ function watchHomeAlarms() {
             if (portasAfetadas.length === 1) {
                 // Emite o alarme normal/individual se apenas 1 porta estiver na regra
                 const p = portasAfetadas[0];
-                // TODO Futuro: Injetar a Localidade (Bairro) aqui para unificação
-                hybridProblems.add(`[${oltId}] HIBRIDO::${p.pt}::${p.offline}::${p.powerOff}`);
+                
+                // Busca o tipo da OLT para garantir compatibilidade com o DataMapper
+                let oltType = 'huawei'; 
+                if (typeof GLOBAL_MASTER_OLT_LIST !== 'undefined') {
+                    const configOlt = GLOBAL_MASTER_OLT_LIST.find(o => o.id === oltId);
+                    if (configOlt) oltType = configOlt.type;
+                }
+                
+                const pseudoConfig = { id: oltId, oltName: oltId, type: oltType };
+                const circuitoNome = (typeof DataMapper !== 'undefined') ? DataMapper.getCircuitInfo(rowsCircuitos, pseudoConfig, p.placa, p.porta) : '-';
+
+                // Nova assinatura: Inclui o nome do circuito no final
+                hybridProblems.add(`[${oltId}] HIBRIDO::${p.pt}::${p.offline}::${p.powerOff}::${circuitoNome}`);
             } else if (portasAfetadas.length >= 2) {
                 // Emite a nova assinatura de alarme múltiplo agrupando as portas
                 let totalOffline = 0;
@@ -100,11 +116,11 @@ function watchHomeAlarms() {
 
 document.addEventListener('DOMContentLoaded', () => {
     // Só inicia o vigilante se estiver na tela inicial
-    if (checkIsHomePage()) {
+    if (typeof checkIsHomePage === 'function' && checkIsHomePage()) {
         if (typeof loadHeader === 'function') loadHeader({ title: "Dashboard Gerencial", exactTitle: true });
         if (typeof loadFooter === 'function') loadFooter();
         
-        setTimeout(updateGlobalTimestamp, 500);
+        if (typeof updateGlobalTimestamp === 'function') setTimeout(updateGlobalTimestamp, 500);
         
         // Chamada imediata para remover o delay inicial
         watchHomeAlarms();

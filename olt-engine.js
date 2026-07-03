@@ -206,6 +206,8 @@ function runGlobalNetworkOverview() {
         let localProblems = []; 
         let superPorts = []; // Agrupa temporariamente as portas 100% caídas
         
+        const pseudoConfig = { id: result.id, oltName: result.id, type: result.type };
+
         for (const key in result.portData) {
             const { off, total: pTotal, placa, porta } = result.portData[key];
             if (pTotal >= 5) {
@@ -223,7 +225,8 @@ function runGlobalNetworkOverview() {
 
                 // As portas super (100% down) são processadas separadamente agora
                 if (severity) {
-                    localProblems.push({ porta: key, severity: severity, off: off });
+                    const circuitoNome = DataMapper.getCircuitInfo(rowsCircuitos, pseudoConfig, placa, porta);
+                    localProblems.push({ porta: key, severity: severity, off: off, circuito: circuitoNome });
                 }
             }
         }
@@ -232,14 +235,12 @@ function runGlobalNetworkOverview() {
         // NOVA REGRA DE ENCAMINHAMENTO (BACKBONE VS CIRCUITO)
         // ============================================================
         if (ports100Down >= 2) { 
-            // Emite o Backbone clássico
-            currentBackbones.add(result.id); 
+            // Emite o Backbone clássico com assinatura nova incluindo total offline
+            currentBackbones.add(`[${result.id}] BACKBONE::${result.offlineCount}`); 
         } else if (ports100Down === 1) {
             // Emite o gatilho exclusivo de Circuito para 1 única porta isolada
             const sp = superPorts[0];
-            const pseudoConfig = { id: result.id, oltName: result.id, type: result.type };
             const circuitoNome = DataMapper.getCircuitInfo(rowsCircuitos, pseudoConfig, sp.placa, sp.porta);
-            
             allProblems.add(`[${result.id}] STATUS::CIRCUITO::${circuitoNome}::${sp.key}::${sp.off}`);
         }
 
@@ -252,7 +253,8 @@ function runGlobalNetworkOverview() {
         } 
         else if (localProblems.length === 1) {
             const p = localProblems[0];
-            allProblems.add(`[${result.id}] STATUS::${p.severity}_${p.porta}::${p.off}`);
+            // Assinatura de Atenção/Problema agora inclui o nome do circuito
+            allProblems.add(`[${result.id}] STATUS::${p.severity}_${p.porta}::${p.off}::${p.circuito}`);
         }
     });
 
