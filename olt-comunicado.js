@@ -1,8 +1,18 @@
 // ==============================================================================
 // olt-comunicado.js - Gerador de Imagem para Redes Sociais (Formato Stories 9:16)
 // Tema: Material Design Light / Cores do Projeto (Roxo) / Fundo Branco
-// Atualização: Paginação ajustada de 8 para 7 bairros por página para melhor layout vertical.
+// Atualização: Escopo Unificado por POP e Deduplicação Inteligente de Bairros
 // ==============================================================================
+
+const POP_MAP = {
+    'PSV-1': 'POP São Vicente', 'PSV-7': 'POP São Vicente',
+    'SBO-1': 'POP São Bernardo', 'SBO-2': 'POP São Bernardo', 'SBO-3': 'POP São Bernardo', 'SBO-4': 'POP São Bernardo',
+    'HEL-1': 'POP Heliópolis', 'HEL-2': 'POP Heliópolis',
+    'LTXV-1': 'POP Lote XV', 'LTXV-2': 'POP Lote XV',
+    'SB-1': 'POP São Bento', 'SB-2': 'POP São Bento', 'SB-3': 'POP São Bento',
+    'PQA-1': 'POP Parque Amorim', 'PQA-2': 'POP Parque Amorim', 'PQA-3': 'POP Parque Amorim',
+    'MGP': 'POP Piabetá'
+};
 
 window.gerarComunicadoSocialOffscreen = async function(event) {
     if (event) event.stopPropagation();
@@ -78,27 +88,60 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             return null; // Se não achar na coluna inteira, retorna nulo
         }
 
+        // 2. Determinar o POP e as OLTs a serem varridas
+        const popName = POP_MAP[oltName] || oltName;
+        let targetOlts = Object.keys(POP_MAP).filter(key => POP_MAP[key] === popName);
+        
+        // Se a OLT não estiver no mapeamento, processa apenas ela
+        if (targetOlts.length === 0) targetOlts.push(oltName);
 
-        // 2. Extrair EXCLUSIVAMENTE as Localidades (Bairros) das portas 100% caídas
+        // 3. Extrair EXCLUSIVAMENTE as Localidades (Bairros) das portas 100% caídas do POP inteiro
         const localidadesAfetadasSet = new Set();
-        const data = window.CURRENT_OLT_PORT_DATA || {}; 
+        const rowsLocalidades = window.GLOBAL_BAIRROS_DATA || (window.DATA_STORE && window.DATA_STORE.localidades) || [];
 
-        for (const placa in data) {
-            const ports = data[placa];
-            for (const porta in ports) {
-                const pData = ports[porta];
+        targetOlts.forEach(targetOltId => {
+            const oltConfig = typeof GLOBAL_MASTER_OLT_LIST !== 'undefined' ? GLOBAL_MASTER_OLT_LIST.find(o => o.id === targetOltId) : null;
+            if (!oltConfig) return;
+
+            const values = window.DATA_STORE.olts[targetOltId] || [];
+            const rows = values.slice(1);
+            const portDataMap = {};
+
+            // Mapeia todas as portas e seus status (online/offline) para a OLT atual
+            rows.forEach(columns => {
+                if (columns.length === 0) return;
+                
+                const isOnline = DataMapper.isOnline(columns[oltConfig.type === 'nokia' ? 4 : 2], oltConfig.type);
+                const portInfo = DataMapper.extractPort(columns[0], oltConfig.type);
+                if (!portInfo) return;
+
+                const { placa, porta } = portInfo;
+                const placaNum = parseInt(placa);
+                const portaNum = parseInt(porta);
+                const portKey = `${placaNum}/${portaNum}`;
+
+                if (!portDataMap[portKey]) {
+                    portDataMap[portKey] = { online: 0, offline: 0, placa: placaNum, porta: portaNum };
+                }
+
+                if (isOnline) portDataMap[portKey].online++;
+                else portDataMap[portKey].offline++;
+            });
+
+            // Analisa quais portas da OLT atual caíram 100% e resgata seus bairros
+            for (const pk in portDataMap) {
+                const pData = portDataMap[pk];
                 const total = pData.online + pData.offline;
                 
                 // Critério de queda: total >= 5 clientes e 100% offline
                 if (total >= 5 && (pData.offline / total) === 1) {
                     let nomeLocalidade = null;
                     
-                    // Cruza os dados EXCLUSIVAMENTE usando o novo PROCV
-                    if (window.GLOBAL_BAIRROS_DATA) {
-                        nomeLocalidade = buscarLocalidadeExata(window.GLOBAL_BAIRROS_DATA, oltName, placa, porta);
+                    // Cruza os dados EXCLUSIVAMENTE usando o PROCV
+                    if (rowsLocalidades.length > 0) {
+                        nomeLocalidade = buscarLocalidadeExata(rowsLocalidades, targetOltId, pData.placa, pData.porta);
                     }
                     
-                    // Se achou uma localidade válida (NÃO usa mais circuito como fallback)
                     if (nomeLocalidade && nomeLocalidade.trim() !== "" && nomeLocalidade.trim() !== "-") {
                         
                         // Fatiador Inteligente
@@ -107,19 +150,18 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                         partes.forEach(parte => {
                             const bairroLimpo = parte.trim();
                             if (bairroLimpo && bairroLimpo !== "-") {
-                                localidadesAfetadasSet.add(bairroLimpo); // O Set elimina duplicatas
+                                localidadesAfetadasSet.add(bairroLimpo); // O Set elimina duplicatas em todo o POP
                             }
                         });
                     }
                 }
             }
-        }
+        });
 
         // Converte o Set para um Array e ordena alfabeticamente
         const bairros = Array.from(localidadesAfetadasSet).sort();
 
-        // 3. Paginação (Limite de bairros por "Story")
-        // AJUSTE: Redução do limite de bairros por página de 8 para 7 para garantir espaçamento vertical e evitar que os itens toquem a borda inferior. Isso resultará em mais páginas, mas com um layout melhor.
+        // 4. Paginação (Limite de bairros por "Story")
         const LIMITE_BAIRROS = 7;
         const paginasDeLista = Math.ceil(bairros.length / LIMITE_BAIRROS);
         const totalPaginas = bairros.length > 0 ? paginasDeLista + 1 : 1;
@@ -270,7 +312,7 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             }
             await new Promise(resolve => setTimeout(resolve, 200));
 
-            // 4. Gerar a imagem com HTML2Canvas
+            // 5. Gerar a imagem com HTML2Canvas
             const canvas = await html2canvas(wrapperDiv, {
                 backgroundColor: null, 
                 scale: 1, 
@@ -278,7 +320,8 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                 useCORS: true 
             });
 
-            let nomeArquivo = `Story_${oltName.replace(/[^a-zA-Z0-9-]/g, '_')}_${new Date().getTime()}`;
+            // Usando o nome do POP unificado no arquivo gerado
+            let nomeArquivo = `Story_${popName.replace(/[^a-zA-Z0-9-]/g, '_')}_${new Date().getTime()}`;
             if (totalPaginas > 1) nomeArquivo += `_Pag${paginaAtual}`;
 
             // Criar Link de Download

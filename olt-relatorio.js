@@ -1,7 +1,17 @@
 // ==============================================================================
 // olt-relatorio.js - Gerador de Boletim Visual (PNG Off-screen) para OLTs
-// Atualização: Imagem com tamanho ajustado (1000x750) com Bairros e nova distribuição de colunas
+// Atualização: Escopo Unificado por POP, com coluna de OLT e Placa/Porta unificada
 // ==============================================================================
+
+const POP_MAP = {
+    'PSV-1': 'POP São Vicente', 'PSV-7': 'POP São Vicente',
+    'SBO-1': 'POP São Bernardo', 'SBO-2': 'POP São Bernardo', 'SBO-3': 'POP São Bernardo', 'SBO-4': 'POP São Bernardo',
+    'HEL-1': 'POP Heliópolis', 'HEL-2': 'POP Heliópolis',
+    'LTXV-1': 'POP Lote XV', 'LTXV-2': 'POP Lote XV',
+    'SB-1': 'POP São Bento', 'SB-2': 'POP São Bento', 'SB-3': 'POP São Bento',
+    'PQA-1': 'POP Parque Amorim', 'PQA-2': 'POP Parque Amorim', 'PQA-3': 'POP Parque Amorim',
+    'MGP': 'POP Piabetá'
+};
 
 window.gerarRelatorioOltOffscreen = async function(event) {
     if (event) event.stopPropagation();
@@ -22,14 +32,55 @@ window.gerarRelatorioOltOffscreen = async function(event) {
             oltName = titleEl.innerText.replace('dns', '').trim();
         }
 
-        // 2. Filtrar apenas as portas com alarmes críticos (100% DOWN)
-        const portasCriticas = [];
-        const data = window.CURRENT_OLT_PORT_DATA || {}; 
+        // 2. Determinar o POP e as OLTs a serem varridas
+        const popName = POP_MAP[oltName] || oltName;
+        let targetOlts = Object.keys(POP_MAP).filter(key => POP_MAP[key] === popName);
+        
+        // Se a OLT não estiver no mapeamento, processa apenas ela
+        if (targetOlts.length === 0) targetOlts.push(oltName);
 
-        for (const placa in data) {
-            const ports = data[placa];
-            for (const porta in ports) {
-                const pData = ports[porta];
+        // 3. Varrer o DATA_STORE para todas as OLTs do POP
+        const portasCriticas = [];
+        const rowsCircuitos = (window.DATA_STORE && window.DATA_STORE.circuitos) ? window.DATA_STORE.circuitos : [];
+        const rowsLocalidades = window.DATA_STORE.localidades || [];
+
+        targetOlts.forEach(targetOltId => {
+            const oltConfig = typeof GLOBAL_MASTER_OLT_LIST !== 'undefined' ? GLOBAL_MASTER_OLT_LIST.find(o => o.id === targetOltId) : null;
+            if (!oltConfig) return;
+
+            const values = window.DATA_STORE.olts[targetOltId] || [];
+            const rows = values.slice(1);
+            const portDataMap = {};
+
+            rows.forEach(columns => {
+                if (columns.length === 0) return;
+                
+                const isOnline = DataMapper.isOnline(columns[oltConfig.type === 'nokia' ? 4 : 2], oltConfig.type);
+                const portInfo = DataMapper.extractPort(columns[0], oltConfig.type);
+                if (!portInfo) return;
+
+                const { placa, porta } = portInfo;
+                const placaNum = parseInt(placa);
+                const portaNum = parseInt(porta);
+                const portKey = `${placaNum}/${portaNum}`;
+
+                if (!portDataMap[portKey]) {
+                    const infoExtra = DataMapper.getCircuitInfo(rowsCircuitos, oltConfig, placa, porta);
+                    const bairroExtra = DataMapper.getBairroInfo(rowsLocalidades, targetOltId, placa, porta, oltConfig.type);
+                    portDataMap[portKey] = { 
+                        online: 0, offline: 0, 
+                        info: infoExtra, bairro: bairroExtra, 
+                        placa: placaNum, porta: portaNum 
+                    };
+                }
+
+                if (isOnline) portDataMap[portKey].online++;
+                else portDataMap[portKey].offline++;
+            });
+
+            // 4. Filtrar apenas as portas com alarmes críticos (100% DOWN)
+            for (const pk in portDataMap) {
+                const pData = portDataMap[pk];
                 const total = pData.online + pData.offline;
                 
                 // Focado exclusivamente em situação de 100% da porta down
@@ -37,8 +88,9 @@ window.gerarRelatorioOltOffscreen = async function(event) {
                     const percOffline = pData.offline / total;
                     if (percOffline === 1) { 
                         portasCriticas.push({
-                            placa: placa,
-                            porta: String(porta).padStart(2, '0'),
+                            olt: targetOltId,
+                            placa: pData.placa,
+                            porta: String(pData.porta).padStart(2, '0'),
                             circuito: pData.info,
                             bairro: pData.bairro && pData.bairro !== '-' ? pData.bairro : 'N/A',
                             perc: Math.round(percOffline * 100) + '%',
@@ -47,7 +99,7 @@ window.gerarRelatorioOltOffscreen = async function(event) {
                     }
                 }
             }
-        }
+        });
 
         // Título inteligente baseado na quantidade de portas caídas
         let tituloBoletim = "REDE ESTÁVEL";
@@ -57,8 +109,8 @@ window.gerarRelatorioOltOffscreen = async function(event) {
             tituloBoletim = "ROMPIMENTO CIRCUITO";
         }
 
-        // Ordena por Placa e depois por Porta
-        portasCriticas.sort((a, b) => parseInt(a.placa) - parseInt(b.placa) || parseInt(a.porta) - parseInt(b.porta));
+        // Ordena por OLT, depois Placa e depois Porta
+        portasCriticas.sort((a, b) => a.olt.localeCompare(b.olt) || parseInt(a.placa) - parseInt(b.placa) || parseInt(a.porta) - parseInt(b.porta));
 
         // Lógica de Paginação (Limite Seguro: 12)
         const LIMITE_LINHAS = 12;
@@ -68,7 +120,7 @@ window.gerarRelatorioOltOffscreen = async function(event) {
         // Loop assíncrono para gerar cada página sequencialmente
         for (let paginaAtual = 1; paginaAtual <= totalPaginas; paginaAtual++) {
             
-            // 3. O TRUQUE: Criar um Wrapper Transparente para evitar quinas brancas
+            // O TRUQUE: Criar um Wrapper Transparente para evitar quinas brancas
             const wrapperDiv = document.createElement('div');
             wrapperDiv.id = `offscreen-wrapper-pag-${paginaAtual}`;
             wrapperDiv.style.position = 'absolute';
@@ -79,7 +131,7 @@ window.gerarRelatorioOltOffscreen = async function(event) {
 
             // A Lona Real onde o layout será desenhado
             const offscreenDiv = document.createElement('div');
-            offscreenDiv.style.width = '1000px'; // Tamanho FIXO ajustado para suportar os bairros
+            offscreenDiv.style.width = '1000px'; 
             offscreenDiv.style.height = '750px'; 
             offscreenDiv.style.backgroundColor = '#2f0e51'; // Fundo Padrão (M3 Surface)
             offscreenDiv.style.color = '#ffffff';
@@ -88,7 +140,7 @@ window.gerarRelatorioOltOffscreen = async function(event) {
             offscreenDiv.style.overflow = 'hidden'; // Garante que o conteúdo não vaze as bordas
             offscreenDiv.style.fontFamily = "'Montserrat', sans-serif";
             offscreenDiv.style.boxSizing = 'border-box';
-            offscreenDiv.style.display = 'flex'; // Aplicação de flex para controle de fluxo
+            offscreenDiv.style.display = 'flex'; 
             offscreenDiv.style.flexDirection = 'column';
             offscreenDiv.style.justifyContent = 'flex-start';
 
@@ -99,7 +151,7 @@ window.gerarRelatorioOltOffscreen = async function(event) {
                     <div style="text-align: center; padding: 40px; background: rgba(255,255,255,0.05); border-radius: 12px; margin-top: 20px; flex: 1; display: flex; flex-direction: column; justify-content: center;">
                         <span style="font-family: 'Material Symbols Rounded'; font-size: 64px; color: #4ade80; margin-bottom: 15px; display:block;">check_circle</span>
                         <h2 style="margin: 0; color: #4ade80; font-size: 2rem;">Rede Estável</h2>
-                        <p style="color: #CAC4D0; margin-top: 10px; font-size: 1.1rem;">Nenhum alarme crítico de queda total (100%) detectado nesta OLT no momento.</p>
+                        <p style="color: #CAC4D0; margin-top: 10px; font-size: 1.1rem;">Nenhum alarme crítico de queda total (100%) detectado no ${popName} no momento.</p>
                     </div>
                 `;
             } else {
@@ -116,17 +168,17 @@ window.gerarRelatorioOltOffscreen = async function(event) {
                     
                     rowsHtml += `
                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                            <td style="padding: 12px 10px; font-weight: bold; text-align: center; width: 10%;">${p.placa}</td>
-                            <td style="padding: 12px 10px; font-family: 'Roboto Mono', monospace; text-align: center; width: 10%;">${p.porta}</td>
+                            <td style="padding: 12px 10px; font-weight: bold; text-align: center; width: 12%; color: #fbbf24;">${p.olt}</td>
+                            <td style="padding: 12px 10px; font-family: 'Roboto Mono', monospace; text-align: center; width: 14%;">${p.placa}/${p.porta}</td>
                             
                             <td style="padding: 12px 10px; text-align: center; width: 20%;">
                                 <span style="border: 1px solid rgba(255,255,255,0.2); background-color: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 8px; font-family: 'Roboto Mono', monospace; font-size: 0.9rem;">${p.circuito}</span>
                             </td>
                             
-                            <td style="padding: 12px 10px; text-align: center; font-size: 0.85rem; color: #CAC4D0; width: 30%; word-break: break-word;">${p.bairro}</td>
+                            <td style="padding: 12px 10px; text-align: center; font-size: 0.85rem; color: #CAC4D0; width: 28%; word-break: break-word;">${p.bairro}</td>
                             
-                            <td style="padding: 12px 10px; text-align: center; font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight: bold; width: 15%; border-left: 1px solid rgba(255,255,255,0.1); background-color: rgba(248, 113, 113, 0.04);">${p.perc}</td>
-                            <td style="padding: 12px 10px; text-align: center; width: 15%; background-color: rgba(248, 113, 113, 0.04);">
+                            <td style="padding: 12px 10px; text-align: center; font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight: bold; width: 12%; border-left: 1px solid rgba(255,255,255,0.1); background-color: rgba(248, 113, 113, 0.04);">${p.perc}</td>
+                            <td style="padding: 12px 10px; text-align: center; width: 14%; background-color: rgba(248, 113, 113, 0.04);">
                                 <span style="background: ${statusBg}; color: ${statusColor}; padding: 6px 12px; border-radius: 12px; font-weight: bold; font-size: 0.85rem;">${p.status}</span>
                             </td>
                         </tr>
@@ -137,12 +189,12 @@ window.gerarRelatorioOltOffscreen = async function(event) {
                     <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.95rem;">
                         <thead>
                             <tr>
-                                <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; border-radius: 8px 0 0 0; width: 10%;">PLACA</th>
-                                <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 10%;">PORTA</th>
+                                <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; border-radius: 8px 0 0 0; width: 12%; color: #fbbf24;">OLT</th>
+                                <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 14%;">PLACA/PORTA</th>
                                 <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 20%;">CIRCUITO</th>
-                                <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 30%;">BAIRRO</th>
-                                <th style="padding: 12px 10px; background: rgba(248, 113, 113, 0.1); text-align: center; border-left: 1px solid rgba(255,255,255,0.1); width: 15%;">IMPACTO</th>
-                                <th style="padding: 12px 10px; background: rgba(248, 113, 113, 0.1); text-align: center; border-radius: 0 8px 0 0; width: 15%;">STATUS</th>
+                                <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 28%;">BAIRRO</th>
+                                <th style="padding: 12px 10px; background: rgba(248, 113, 113, 0.1); text-align: center; border-left: 1px solid rgba(255,255,255,0.1); width: 12%;">IMPACTO</th>
+                                <th style="padding: 12px 10px; background: rgba(248, 113, 113, 0.1); text-align: center; border-radius: 0 8px 0 0; width: 14%;">STATUS</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -173,8 +225,8 @@ window.gerarRelatorioOltOffscreen = async function(event) {
                                 ${portasCriticas.length > 0 ? `<span style="font-family: 'Material Symbols Rounded'; font-weight: normal; font-size: 28px;">warning</span>` : ''}
                                 ${tituloBoletim}
                             </h2>
-                            <h3 style="margin: 5px 0 0 0; font-size: 1.3rem; color: #ffffff; display: flex; align-items: center; gap: 8px;">
-                                <span style="font-family: 'Material Symbols Rounded'; font-weight: normal; font-size: 24px;">dns</span> ${oltName}
+                            <h3 style="margin: 5px 0 0 0; font-size: 1.3rem; color: #ffffff; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+                                <span style="font-family: 'Material Symbols Rounded'; font-weight: normal; font-size: 24px;">domain</span> ${popName}
                             </h3>
                         </div>
                     </div>
@@ -197,7 +249,7 @@ window.gerarRelatorioOltOffscreen = async function(event) {
             });
 
             // Nome do arquivo dinâmico
-            let nomeArquivo = `Boletim_${oltName.replace(/[^a-zA-Z0-9-]/g, '_')}_${new Date().getTime()}`;
+            let nomeArquivo = `Boletim_${popName.replace(/[^a-zA-Z0-9-]/g, '_')}_${new Date().getTime()}`;
             if (totalPaginas > 1) nomeArquivo += `_Pag${paginaAtual}`;
 
             // Criar Link de Download
