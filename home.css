@@ -1,5 +1,6 @@
 /* ==========================================================================
    ESTILOS ESPECÍFICOS - DASHBOARD HOME (index.html)
+   Atualização: Layout Wallboard com Gráficos CSS/SVG
    ========================================================================== */
 
 /* Cores de Destaque por Serviço */
@@ -15,7 +16,7 @@
 .home-wallboard-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 15px; 
+    gap: 20px; 
     width: 100%;
     padding-bottom: 20px;
 }
@@ -23,6 +24,7 @@
 /* Garante que o card de equipamentos ocupe a linha inteira */
 #card-fabricantes {
     grid-column: 1 / -1;
+    height: auto; /* Permite que o card de equipamentos cresça conforme o conteúdo */
 }
 
 /* Cores aplicadas aos ícones dos cabeçalhos dos cards */
@@ -33,42 +35,18 @@
 #card-fabricantes .card-header h3 span { color: var(--color-equipamentos); }
 
 /* ==========================================================================
-   TIPOGRAFIA E ÍCONES (PADRONIZAÇÃO MD3)
-   ========================================================================== */
-.primary-value {
-    font-size: 2.5rem;
-    font-family: var(--font-family-mono);
-    font-weight: 700;
-    line-height: 1;
-}
-
-.primary-icon {
-    font-size: 28px !important;
-}
-
-.secondary-value {
-    font-size: 1.2rem;
-    font-family: var(--font-family-mono);
-    font-weight: 700;
-}
-
-.secondary-icon {
-    font-size: 20px !important;
-}
-
-/* ==========================================================================
-   CARDS GLOBAIS E ESTRUTURA WALLBOARD (WIDESCREEN MASONRY)
+   CARDS GLOBAIS E ESTRUTURA WALLBOARD
    ========================================================================== */
 .global-card {
     background-color: var(--m3-surface-container);
     border-radius: 20px; 
     border: 1px solid rgba(255,255,255,0.05);
-    margin-bottom: 0; /* Removido margin-bottom pois o grid gap já cuida disso */
     box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     display: flex;
     flex-direction: column;
     overflow: hidden; 
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 360px; /* Altura fixa para manter o alinhamento perfeito do grid */
 }
 
 .global-card:hover { 
@@ -77,8 +55,8 @@
 }
 
 .global-card .card-header {
-    background-color: rgba(234, 208, 255, 0.03);
-    padding: 12px 20px; 
+    background-color: rgba(255, 255, 255, 0.02);
+    padding: 16px 20px; 
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     justify-content: space-between;
@@ -97,36 +75,35 @@
     letter-spacing: 1px;
 }
 
-/* O CORAÇÃO DO NOVO LAYOUT: CSS GRID DENSE */
-.widescreen-body {
-    display: grid;
-    /* Reduzindo o minmax para caber melhor na meia tela */
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); 
-    grid-auto-flow: dense; 
-    gap: 12px;
-    padding: 15px 20px;
+/* ==========================================================================
+   NOVO LAYOUT INTERNO: DIVISÃO RESUMO LATERAL E GRÁFICO
+   ========================================================================== */
+.card-body-layout {
+    padding: 20px;
+    display: flex;
+    gap: 20px;
+    height: calc(100% - 60px); /* Desconta o header */
+    box-sizing: border-box;
 }
 
-/* CARD MÉDIO (RESUMO GERAL) - Tamanho fixo e proporcional */
-.resumo-card {
-    grid-column: span 2; /* Ocupa 2 colunas de largura */
-    grid-row: span 2;    /* Ocupa 2 linhas de altura */
-    background: rgba(103, 7, 159, 0.15);
-    border: 1px solid var(--m3-primary);
-    border-radius: 14px;
+/* --- BLOCO ESQUERDO: RESUMO DA MÉTRICA --- */
+.resumo-lateral {
+    width: 32%;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px;
     padding: 15px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    box-shadow: 4px 4px 10px rgba(0,0,0,0.1);
+    box-sizing: border-box;
 }
 
 .resumo-title {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     text-transform: uppercase;
     color: var(--m3-on-surface-variant);
     font-weight: 700;
-    margin-bottom: 10px;
     display: flex;
     align-items: center;
     gap: 5px;
@@ -137,85 +114,175 @@
     font-size: 2.2rem;
     font-weight: 700;
     line-height: 1;
-    margin-bottom: 5px;
+    margin: 10px 0;
 }
 
-.resumo-sec-val {
+/* --- BLOCO DIREITO: ÁREA DE GRÁFICOS --- */
+.grafico-lateral {
+    width: 68%;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.02);
+    padding: 15px;
+    box-sizing: border-box;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.8rem;
-    color: var(--m3-on-surface-variant);
-    border-top: 1px solid rgba(255,255,255,0.1);
-    padding-top: 8px;
-    margin-top: 8px;
+    position: relative;
 }
 
-/* MINI-CARDS (AS OLTS) */
-.status-card {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 14px;
-    padding: 12px 5px;
+/* ==========================================================================
+   GRÁFICOS ESPECÍFICOS POR SERVIÇO
+   ========================================================================== */
+
+/* 1. GRÁFICO DE REDE: GLOW BAR CHART (BARRAS VERTICAIS) */
+.rede-chart-area {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    width: 100%;
+    height: 100%;
+}
+
+.rede-bar-col {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    text-align: center;
-    gap: 6px;
-    transition: transform 0.2s, background 0.2s;
     height: 100%;
-    box-sizing: border-box;
-    cursor: pointer;
+    justify-content: flex-end;
+    width: 14%;
 }
 
-.status-card:hover { 
-    transform: translateY(-2px); 
-    background: rgba(255,255,255,0.05); 
+.rede-bar-fill {
+    width: 60%;
+    border-radius: 6px 6px 0 0;
+    transition: height 1s ease, background 0.5s ease;
+    position: relative;
 }
 
-.olt-name { 
-    font-size: 0.75rem; /* Levemente menor para caber melhor no grid reduzido */
-    font-weight: 700; 
-    color: var(--m3-on-surface); 
+.rede-bar-fill.normal { background: rgba(59, 130, 246, 0.1); }
+.rede-bar-fill.warning { background: linear-gradient(to top, rgba(251, 191, 36, 0.2), var(--m3-color-warning)); box-shadow: 0 0 12px rgba(251, 191, 36, 0.4); }
+.rede-bar-fill.critico { background: linear-gradient(to top, rgba(248, 113, 113, 0.2), var(--m3-color-error)); box-shadow: 0 0 12px rgba(248, 113, 113, 0.5); }
+
+.rede-bar-label {
+    font-family: var(--font-family-mono);
+    font-size: 0.65rem;
+    font-weight: bold;
+    color: var(--m3-on-surface-variant);
+    margin-top: 8px;
 }
 
-.olt-value { 
-    font-family: var(--font-family-mono); 
-    font-size: 1.1rem; /* Levemente menor para caber melhor no grid reduzido */
-    line-height: 1; 
+/* 2. GRÁFICO DE ENERGIA: STACKED AREA (BARRAS HORIZONTAIS) */
+.energia-chart-area {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+    height: 100%;
 }
 
-.olt-label { 
-    font-size: 0.65rem; 
-    color: var(--m3-on-surface-variant); 
-    text-transform: uppercase;
+.energia-row {
+    width: 100%;
 }
 
-/* CORES DE STATUS DINÂMICAS PARA OS MINICARDS */
-.status-card.ok { 
-    background: rgba(103, 194, 58, 0.05); 
-    border-color: rgba(103, 194, 58, 0.15); 
-}
-.status-card.ok .olt-value, .status-card.ok .material-symbols-rounded { 
-    color: var(--m3-color-success); 
+.energia-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    margin-bottom: 6px;
 }
 
-.status-card.danger { 
-    background: rgba(245, 108, 108, 0.15); 
-    border-color: rgba(245, 108, 108, 0.4); 
-    box-shadow: 0 0 8px rgba(245, 108, 108, 0.2); 
-}
-.status-card.danger .olt-value, .status-card.danger .material-symbols-rounded { 
-    color: var(--m3-color-error); 
+.energia-track {
+    width: 100%;
+    height: 14px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    overflow: hidden;
 }
 
-.status-card.warning { 
-    background: rgba(230, 162, 60, 0.15); 
-    border-color: rgba(230, 162, 60, 0.4); 
+.energia-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 1s ease, background 0.5s ease;
 }
-.status-card.warning .olt-value, .status-card.warning .material-symbols-rounded { 
-    color: var(--m3-color-warning); 
+
+/* 3. GRÁFICO DE POTÊNCIA: VELOCÍMETRO (POINTER GAUGE) */
+.potencia-chart-area {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    width: 100%;
+    height: 100%;
+    flex-wrap: wrap;
+}
+
+.olt-gauge-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    width: 30%; /* Ajustado para caber múltiplas OLTs lado a lado */
+}
+
+.gauge-inner-text {
+    position: absolute;
+    top: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: translateY(-20%);
+}
+
+.olt-gauge-label {
+    font-size: 0.70rem;
+    font-weight: bold;
+    color: var(--m3-on-surface);
+    margin-top: -8px;
+    letter-spacing: 0.5px;
+}
+
+/* 4. GRÁFICO DE TEMPERATURA: COLUNAS ORTODOXAS (BAR CHART CLÁSSICO) */
+.temp-chart-area {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    width: 100%;
+    height: 100%;
+}
+
+.temp-bar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+    width: 12%; /* Ajusta dependendo de quantas OLTs existem */
+}
+
+.temp-bar-val {
+    font-family: var(--font-family-mono);
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-bottom: 6px;
+    transition: color 0.3s;
+}
+
+.temp-bar-fill {
+    width: 70%;
+    border-radius: 4px 4px 0 0;
+    transition: height 1s ease, background 0.5s ease;
+    background: rgba(255,255,255,0.1);
+}
+
+.temp-bar-fill.normal { background: var(--m3-color-success); box-shadow: 0 0 8px rgba(74, 222, 128, 0.3); }
+.temp-bar-fill.warning { background: var(--m3-color-warning); box-shadow: 0 0 10px rgba(251, 191, 36, 0.4); }
+.temp-bar-fill.critico { background: var(--m3-color-error); box-shadow: 0 0 12px rgba(248, 113, 113, 0.5); }
+
+.temp-bar-label {
+    font-family: var(--font-family-mono);
+    font-size: 0.65rem;
+    font-weight: bold;
+    color: var(--m3-on-surface-variant);
+    margin-top: 6px;
 }
 
 /* ==========================================================================
@@ -390,5 +457,18 @@
     /* Em tablets e celulares, volta para 1 coluna empilhada para não espremer os dados */
     .home-wallboard-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .card-body-layout {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .resumo-lateral, .grafico-lateral {
+        width: 100%;
+    }
+    
+    .grafico-lateral {
+        height: 200px; /* Garante altura para os gráficos no mobile */
     }
 }
