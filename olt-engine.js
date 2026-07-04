@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Glow Bar Chart (Gráfico de Barras Verticais) para a Home
+// Atualização: Injeção de Dados (Serial, Código, Potência) e Limpeza de dBm
 // ==============================================================================
 
 window.OLT_CLIENTS_DATA = {};
@@ -26,7 +26,7 @@ window.handleNetHover = function(event) {
     let statusTexto = 'Normal';
     let statusCor = 'var(--m3-color-success)';
     
-    if (el.classList.contains('critico') || el.classList.contains('danger')) {
+    if (el.classList.contains('danger')) {
         statusTexto = 'Crítico';
         statusCor = 'var(--m3-color-error)';
     } else if (el.classList.contains('warning')) {
@@ -76,7 +76,7 @@ window.handleNetClick = function(event) {
 
     const el = event.currentTarget;
     let statusCor = 'var(--m3-color-success)';
-    if (el.classList.contains('critico') || el.classList.contains('danger')) statusCor = 'var(--m3-color-error)';
+    if (el.classList.contains('danger')) statusCor = 'var(--m3-color-error)';
     else if (el.classList.contains('warning')) statusCor = 'var(--m3-color-warning)';
 
     content.innerHTML = `
@@ -254,55 +254,58 @@ function runGlobalNetworkOverview() {
     if (isHomePage) {
         const targetWidescreen = document.getElementById('target-rede-widescreen');
         if (targetWidescreen) {
-            targetWidescreen.className = 'card-body-layout';
-            
+            let globalTotal = globalOnline + globalOffline;
+
             let htmlWidescreen = `
-                <div class="resumo-lateral">
+                <div class="resumo-card">
                     <div>
-                        <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:14px;">router_off</span> Clientes Off</div>
+                        <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:16px;">router_off</span> Resumo Global</div>
                         <div class="resumo-main-val" style="color: var(--m3-color-error);">${globalOffline}</div>
-                        <div style="font-size: 0.75rem; color: var(--m3-on-surface-variant); border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">Online: <strong style="color:var(--m3-color-success)">${globalOnline}</strong></div>
+                        <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Clientes Offline no momento</div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; margin-top: 8px;">
+                        <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Clientes Online:</span>
+                        <strong style="color: var(--m3-color-success); font-size: 1rem;">${globalOnline}</strong>
+                    </div>
+                    <div class="resumo-sec-val">
+                        <span>Total Analisado:</span>
+                        <strong style="color: var(--m3-on-surface); font-size: 1rem;">${globalTotal}</strong>
                     </div>
                 </div>
-                <div class="grafico-lateral">
-                    <div class="rede-chart-area">
             `;
             
-            const sortedOlts = [...oltStatsList].sort((a, b) => a.id.localeCompare(b.id));
-            
-            sortedOlts.forEach(stat => {
+            oltStatsList.forEach(stat => {
                 const perc = stat.total > 0 ? ((stat.offline / stat.total) * 100).toFixed(1) : 0;
+                let statusClass = 'ok';
+                let contentHtml = `<span class="material-symbols-rounded" style="pointer-events: none;">check_circle</span>`;
                 
-                let barHeight = stat.offline > 0 ? Math.max(8, perc) : 2;
-                barHeight = Math.min(100, barHeight);
-                
-                let statusClass = 'normal';
-                if (stat.offline >= 15) {
-                    statusClass = 'critico';
-                } else if (stat.offline > 0) {
-                    statusClass = 'warning';
+                if (stat.offline > 0) {
+                    statusClass = stat.offline >= 15 ? 'danger' : 'warning';
+                    contentHtml = `
+                        <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
+                            <span class="material-symbols-rounded" style="font-size: 16px; color: ${statusClass === 'danger' ? 'var(--m3-color-error)' : 'var(--m3-color-warning)'};">wifi_off</span>
+                            <span class="olt-value">${stat.offline}</span>
+                        </div>
+                    `;
                 }
 
                 htmlWidescreen += `
-                    <div class="rede-bar-col ${statusClass}"
+                    <div class="status-card ${statusClass}"
                          data-olt="${stat.id}"
                          data-off="${stat.offline}"
                          data-total="${stat.total}"
                          data-pct="${perc}"
                          onmouseenter="handleNetHover(event)"
                          onmouseleave="handleNetLeave()"
-                         onclick="handleNetClick(event)"
-                         style="cursor: pointer;">
-                        <div class="rede-bar-fill ${statusClass}" style="height: ${barHeight}%;"></div>
-                        <span class="rede-bar-label">${stat.id}</span>
+                         onclick="handleNetClick(event)">
+                        <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
+                            <span class="material-symbols-rounded" style="font-size: 14px; color: var(--m3-on-surface-variant);">dns</span>
+                            <span class="olt-name">${stat.id}</span>
+                        </div>
+                        ${contentHtml}
                     </div>
                 `;
             });
-            
-            htmlWidescreen += `
-                    </div>
-                </div>
-            `;
             
             targetWidescreen.innerHTML = htmlWidescreen;
         }
@@ -415,10 +418,12 @@ window.startOltMonitoring = function(config) {
                 let serialVal = '';
                 let codigoVal = '';
                 
+                // LIMPEZA DA POTÊNCIA: Remove "dBm" (qualquer case) e remove todos os espaços para isolar apenas o número
                 let potenciaVal = String(columns[5] || '').replace(/dbm/ig, '').replace(/\s+/g, '');
                 
                 let statusRefVal = '';
                 
+                // Mapeamento exclusivo: Nokia e Furukawa
                 if (config.type === 'nokia') {
                     serialVal = columns[2] || '';
                     codigoVal = columns[8] || '';
@@ -743,6 +748,7 @@ window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
     const thead = document.getElementById('clients-thead');
     const tbody = document.getElementById('clients-tbody');
     
+    // Título unificado para a linha rica
     thead.innerHTML = `<tr><th style="text-align: left; padding-left: 15px;">Detalhes do Equipamento e Assinante</th></tr>`;
     tbody.innerHTML = '';
 
@@ -768,6 +774,7 @@ window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
             let buttonClass = statusClass === 'filter-online' ? 'status-normal' : 'status-critico';
             if (statusClass === 'filter-unknown') buttonClass = 'status-atencao';
             
+            // Geração da linha rica focada em colunas verticais
             let rowHTML = `
                 <tr class="client-row ${statusClass}" data-serial="${c.serial}" data-codigo="${c.codigo}">
                     <td style="padding: 15px;">
@@ -824,6 +831,7 @@ window.filterClients = function() {
         const serial = (row.dataset.serial || '').toLowerCase();
         const codigo = (row.dataset.codigo || '').toLowerCase();
         
+        // A busca é cirúrgica avaliando exclusivamente as tags
         let matchesSearch = searchText === '' || serial.includes(searchText) || codigo.includes(searchText);
         
         let matchesStatus = true;
@@ -838,6 +846,7 @@ window.filterClients = function() {
     });
 };
 
+// OUVINTE DO MAESTRO CENTRAL (data-store.js)
 window.addEventListener('dadosAtualizados', () => {
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
     

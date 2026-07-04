@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Wallboard da Home - Gráfico de Blocos Horizontais (Stacked Area)
+// Atualização: Wallboard da Home - Resumo Médio + Minicards (Grid Dense) e Ajustes Finos
 // ==============================================================================
 
 window.ENERGY_DATA_STORE = {};
@@ -21,16 +21,8 @@ window.handleEnergyHover = function(event) {
     if (!tooltip) return;
 
     const el = event.currentTarget;
-    let statusTexto = 'Normal';
-    let statusCor = 'var(--m3-color-success)';
-    
-    if (el.classList.contains('danger') || el.classList.contains('critico')) {
-        statusTexto = 'Crítico (Sem Energia)';
-        statusCor = 'var(--m3-color-error)';
-    } else if (el.classList.contains('warning')) {
-        statusTexto = 'Atenção (Sem Energia)';
-        statusCor = 'var(--m3-color-warning)';
-    }
+    let statusTexto = el.classList.contains('warning') ? 'Atenção (Sem Energia)' : 'Normal';
+    let statusCor = el.classList.contains('warning') ? 'var(--m3-color-warning)' : 'var(--m3-color-success)';
 
     tooltip.innerHTML = `
         <div class="smart-tooltip-title">
@@ -69,15 +61,7 @@ window.handleEnergyClick = function(event) {
     if (!modal || !content) return;
 
     const el = event.currentTarget;
-    let statusCor = 'var(--m3-color-success)';
-    let statusTexto = 'Normal';
-    if (el.classList.contains('danger') || el.classList.contains('critico')) {
-        statusCor = 'var(--m3-color-error)';
-        statusTexto = 'Crítico';
-    } else if (el.classList.contains('warning')) {
-        statusCor = 'var(--m3-color-warning)';
-        statusTexto = 'Atenção';
-    }
+    let statusCor = el.classList.contains('warning') ? 'var(--m3-color-warning)' : 'var(--m3-color-success)';
 
     content.innerHTML = `
         <h3 style="margin-top: 0; border-bottom: 1px solid var(--m3-outline); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
@@ -94,7 +78,7 @@ window.handleEnergyClick = function(event) {
             </div>
             <div style="text-align: right;">
                 <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Status</span><br>
-                <strong style="font-size: 1.1rem; color: ${statusCor}; text-transform: uppercase;">${statusTexto}</strong>
+                <strong style="font-size: 1.1rem; color: ${statusCor}; text-transform: uppercase;">${el.classList.contains('warning') ? 'Atenção' : 'Normal'}</strong>
             </div>
         </div>
     `;
@@ -313,114 +297,74 @@ function runEnergyMonitoring() {
         };
 
         // ==============================================================================
-        // INJEÇÃO DA HOME (Wallboard Widescreen com Gráfico de Blocos Horizontais)
+        // INJEÇÃO DA HOME (Wallboard Widescreen com Resumo + Minicards)
         // ==============================================================================
         if (isHomePage) {
+            // Alvo do layout novo de Widescreen (Grid de Minicards e Resumo)
             const targetWidescreen = document.getElementById('target-energia-widescreen');
             
             if (targetWidescreen) {
-                targetWidescreen.className = 'card-body-layout'; // Aplica o novo formato dividido
                 let impactoNosOfflines = globalTotalOffline > 0 ? ((globalPowerOff / globalTotalOffline) * 100).toFixed(1) : 0;
                 
+                // Inicia montando o Card Médio de Resumo Geral
                 let htmlWidescreen = `
-                    <div class="resumo-lateral" style="background: rgba(245, 158, 11, 0.08); border-color: rgba(245, 158, 11, 0.2);">
+                    <div class="resumo-card">
                         <div>
-                            <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:14px;">power_off</span> Sem Energia</div>
+                            <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:16px;">power_off</span> Resumo Global</div>
                             <div class="resumo-main-val" style="color: var(--m3-color-warning);">${globalPowerOff}</div>
-                            <div style="font-size: 0.75rem; color: var(--m3-on-surface-variant); border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">Impacto: <strong style="color:var(--m3-color-warning)">${impactoNosOfflines}%</strong> dos Offlines</div>
+                            <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Sem Energia (Dying Gasp)</div>
+                        </div>
+                        <div class="resumo-sec-val">
+                            <span>Impacto nos Offlines:</span>
+                            <strong style="color: var(--m3-color-warning); font-size: 1.1rem;">${impactoNosOfflines}%</strong>
                         </div>
                     </div>
-                    <div class="grafico-lateral">
-                        <div class="energia-chart-area">
                 `;
 
-                // Filtra as OLTs afetadas e ordena das piores para as melhores
-                let affectedOlts = oltStats.filter(stat => stat.powerOff > 0).sort((a, b) => b.powerOff - a.powerOff);
-                
-                if (affectedOlts.length === 0) {
-                    // Cenário 100% Saudável (Concessionária AC Normal)
-                    htmlWidescreen += `
-                            <div class="energia-row">
-                                <div class="energia-labels">
-                                    <span>Todas as OLTs (Concessionária AC)</span>
-                                    <span style="color: var(--m3-color-success); font-weight: bold;">Normal</span>
-                                </div>
-                                <div class="energia-track">
-                                    <div class="energia-fill" style="width: 100%; background: var(--m3-color-success);"></div>
-                                </div>
-                            </div>
-                    `;
-                } else {
-                    // Exibe o Top 4 de OLTs afetadas para encaixar perfeitamente no Card Vertical
-                    const topOlts = affectedOlts.slice(0, 4);
-                    
-                    topOlts.forEach(stat => {
-                        const total = stat.online + stat.offline;
-                        const perc = total > 0 ? ((stat.powerOff / total) * 100).toFixed(1) : 0;
-                        
-                        let color = 'var(--m3-color-warning)';
-                        let glow = 'rgba(251, 191, 36, 0.4)';
-                        let labelStatus = 'Atenção';
-                        let statusClass = 'warning';
+                // Ordenar pelo maior número de clientes sem energia
+                oltStats.sort((a, b) => b.powerOff - a.powerOff);
 
-                        // Se mais de 30% da OLT estiver sem energia, o card torna-se vermelho (Crítico)
-                        if (perc >= 30 || stat.powerOff >= 50) {
-                            color = 'var(--m3-color-error)';
-                            glow = 'rgba(248, 113, 113, 0.5)';
-                            labelStatus = 'Crítico';
-                            statusClass = 'danger';
-                        }
-
+                // Montar os 17 minicards fluidos
+                oltStats.forEach(stat => {
+                    if (stat.powerOff > 0) {
                         htmlWidescreen += `
-                            <div class="energia-row ${statusClass}" 
-                                 style="cursor: pointer;"
+                            <div class="status-card warning"
                                  data-olt="${stat.id}"
                                  data-poweroff="${stat.powerOff}"
                                  data-offline="${stat.offline}"
                                  onmouseenter="handleEnergyHover(event)"
                                  onmouseleave="handleEnergyLeave()"
                                  onclick="handleEnergyClick(event)">
-                                <div class="energia-labels">
-                                    <span>${stat.id} <span style="opacity: 0.6; font-size: 0.65rem;">(${labelStatus})</span></span>
-                                    <span style="color: ${color}; font-weight: bold; font-family: var(--font-family-mono);">${perc}%</span>
+                                <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
+                                    <span class="material-symbols-rounded" style="font-size: 14px; color: var(--m3-on-surface-variant);">dns</span>
+                                    <span class="olt-name">${stat.id}</span>
                                 </div>
-                                <div class="energia-track">
-                                    <div class="energia-fill" style="width: ${perc}%; background: ${color}; box-shadow: 0 0 8px ${glow};"></div>
+                                <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
+                                    <span class="material-symbols-rounded" style="font-size: 16px; color: var(--m3-color-warning);">power_off</span>
+                                    <span class="olt-value">${stat.powerOff}</span>
                                 </div>
                             </div>
                         `;
-                    });
-
-                    // Caso haja mais OLTs além do Top 4, agrupa o resto na última barra
-                    if (affectedOlts.length > 4) {
-                        const remainingOlts = affectedOlts.slice(4);
-                        const remainingPowerOff = remainingOlts.reduce((sum, stat) => sum + stat.powerOff, 0);
-                        
+                    } else {
                         htmlWidescreen += `
-                            <div class="energia-row warning" style="cursor: pointer;"
-                                 data-olt="Outras (${remainingOlts.length})"
-                                 data-poweroff="${remainingPowerOff}"
-                                 data-offline="${remainingPowerOff}"
+                            <div class="status-card ok"
+                                 data-olt="${stat.id}"
+                                 data-poweroff="0"
+                                 data-offline="${stat.offline}"
                                  onmouseenter="handleEnergyHover(event)"
                                  onmouseleave="handleEnergyLeave()"
                                  onclick="handleEnergyClick(event)">
-                                <div class="energia-labels">
-                                    <span>Outras OLTs (${remainingOlts.length})</span>
-                                    <span style="color: var(--m3-color-warning); font-weight: bold;">${remainingPowerOff} Clientes</span>
+                                <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
+                                    <span class="material-symbols-rounded" style="font-size: 14px; color: var(--m3-on-surface-variant);">dns</span>
+                                    <span class="olt-name">${stat.id}</span>
                                 </div>
-                                <div class="energia-track">
-                                    <div class="energia-fill" style="width: 15%; background: var(--m3-color-warning); box-shadow: 0 0 8px rgba(251, 191, 36, 0.4);"></div>
-                                </div>
+                                <span class="material-symbols-rounded" style="pointer-events: none;">bolt</span>
                             </div>
                         `;
                     }
-                }
+                });
 
-                htmlWidescreen += `
-                        </div>
-                    </div>
-                `;
-                
+                // Injeta o HTML limpo e dinâmico direto no Body do Widescreen
                 targetWidescreen.innerHTML = htmlWidescreen;
             }
         }
