@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor de Fabricantes (Visão por Marca)
-// Atualização: Wallboard da Home - Ajuste de Fluxo Horizontal (Widescreen)
+// Atualização: Inclusão do fabricante ZTE
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -14,7 +14,8 @@ const EQP_MARCAS = [
     { nome: 'MAXPRINT / V-SOL', prefixos: 'GPON, VSOL, DE30' },
     { nome: 'PARKS', prefixos: 'PRKS' },
     { nome: 'TENDA', prefixos: 'TDTC' },
-    { nome: 'SHORELINE', prefixos: 'SHLN' }
+    { nome: 'SHORELINE', prefixos: 'SHLN' },
+    { nome: 'ZTE', prefixos: 'ZTEG' }
 ];
 
 const prefixToMarca = {};
