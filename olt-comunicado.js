@@ -1,18 +1,8 @@
 // ==============================================================================
 // olt-comunicado.js - Gerador de Imagem para Redes Sociais (Formato Stories 9:16)
 // Tema: Material Design Light / Cores do Projeto (Roxo) / Fundo Branco
-// Atualização: Escopo Unificado por POP e Deduplicação Inteligente de Bairros
+// Atualização: Correção de conflito de escopo (POP_MAP) e Deduplicação de Bairros
 // ==============================================================================
-
-const POP_MAP = {
-    'PSV-1': 'POP São Vicente', 'PSV-7': 'POP São Vicente',
-    'SBO-1': 'POP São Bernardo', 'SBO-2': 'POP São Bernardo', 'SBO-3': 'POP São Bernardo', 'SBO-4': 'POP São Bernardo',
-    'HEL-1': 'POP Heliópolis', 'HEL-2': 'POP Heliópolis',
-    'LTXV-1': 'POP Lote XV', 'LTXV-2': 'POP Lote XV',
-    'SB-1': 'POP São Bento', 'SB-2': 'POP São Bento', 'SB-3': 'POP São Bento',
-    'PQA-1': 'POP Parque Amorim', 'PQA-2': 'POP Parque Amorim', 'PQA-3': 'POP Parque Amorim',
-    'MGP': 'POP Piabetá'
-};
 
 window.gerarComunicadoSocialOffscreen = async function(event) {
     if (event) event.stopPropagation();
@@ -25,6 +15,17 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
     }
 
     try {
+        // Dicionário movido para dentro da função para isolar o escopo e evitar conflitos globais
+        const POP_MAP = {
+            'PSV-1': 'POP São Vicente', 'PSV-7': 'POP São Vicente',
+            'SBO-1': 'POP São Bernardo', 'SBO-2': 'POP São Bernardo', 'SBO-3': 'POP São Bernardo', 'SBO-4': 'POP São Bernardo',
+            'HEL-1': 'POP Heliópolis', 'HEL-2': 'POP Heliópolis',
+            'LTXV-1': 'POP Lote XV', 'LTXV-2': 'POP Lote XV',
+            'SB-1': 'POP São Bento', 'SB-2': 'POP São Bento', 'SB-3': 'POP São Bento',
+            'PQA-1': 'POP Parque Amorim', 'PQA-2': 'POP Parque Amorim', 'PQA-3': 'POP Parque Amorim',
+            'MGP': 'POP Piabetá'
+        };
+
         // 1. Descobrir qual OLT está aberta
         const titleEl = document.getElementById('super-modal-title');
         let oltName = 'OLT_Desconhecida';
@@ -142,10 +143,11 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                         nomeLocalidade = buscarLocalidadeExata(rowsLocalidades, targetOltId, pData.placa, pData.porta);
                     }
                     
-                    if (nomeLocalidade && nomeLocalidade.trim() !== "" && nomeLocalidade.trim() !== "-") {
+                    // Proteção extra garantindo conversão para string antes do trim
+                    if (nomeLocalidade && String(nomeLocalidade).trim() !== "" && String(nomeLocalidade).trim() !== "-") {
                         
                         // Fatiador Inteligente
-                        const partes = nomeLocalidade.split(/\s*,\s*|\s*\/\s*|\s+e\s+/gi);
+                        const partes = String(nomeLocalidade).split(/\s*,\s*|\s*\/\s*|\s+e\s+/gi);
                         
                         partes.forEach(parte => {
                             const bairroLimpo = parte.trim();
