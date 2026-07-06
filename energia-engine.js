@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Wallboard da Home - Resumo Médio + Minicards (Grid Dense) e Ajustes Finos
+// Atualização: Wallboard da Home - Barras Verticais (Foco Exclusivo em Sem Energia)
 // ==============================================================================
 
 window.ENERGY_DATA_STORE = {};
@@ -21,8 +21,18 @@ window.handleEnergyHover = function(event) {
     if (!tooltip) return;
 
     const el = event.currentTarget;
-    let statusTexto = el.classList.contains('warning') ? 'Atenção (Sem Energia)' : 'Normal';
-    let statusCor = el.classList.contains('warning') ? 'var(--m3-color-warning)' : 'var(--m3-color-success)';
+    const powerOff = parseInt(el.dataset.poweroff || 0);
+    
+    let statusTexto = 'Normal';
+    let statusCor = 'var(--m3-color-success)';
+    
+    if (powerOff >= 50) {
+        statusTexto = 'Crítico (Sem Energia)';
+        statusCor = 'var(--m3-color-error)';
+    } else if (powerOff > 0) {
+        statusTexto = 'Atenção (Sem Energia)';
+        statusCor = 'var(--m3-color-warning)';
+    }
 
     tooltip.innerHTML = `
         <div class="smart-tooltip-title">
@@ -35,7 +45,7 @@ window.handleEnergyHover = function(event) {
         </div>
         <div class="smart-tooltip-line">
             <span style="color: var(--m3-on-surface-variant);">Sem Energia:</span> 
-            <strong style="color: var(--m3-color-warning);">${el.dataset.poweroff}</strong>
+            <strong style="color: var(--m3-color-warning);">${powerOff}</strong>
         </div>
         <div class="smart-tooltip-line">
             <span style="color: var(--m3-on-surface-variant);">Total Offline:</span> 
@@ -61,7 +71,18 @@ window.handleEnergyClick = function(event) {
     if (!modal || !content) return;
 
     const el = event.currentTarget;
-    let statusCor = el.classList.contains('warning') ? 'var(--m3-color-warning)' : 'var(--m3-color-success)';
+    const powerOff = parseInt(el.dataset.poweroff || 0);
+    
+    let statusCor = 'var(--m3-color-success)';
+    let statusTexto = 'Normal';
+    
+    if (powerOff >= 50) {
+        statusCor = 'var(--m3-color-error)';
+        statusTexto = 'Crítico';
+    } else if (powerOff > 0) {
+        statusCor = 'var(--m3-color-warning)';
+        statusTexto = 'Atenção';
+    }
 
     content.innerHTML = `
         <h3 style="margin-top: 0; border-bottom: 1px solid var(--m3-outline); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
@@ -69,7 +90,7 @@ window.handleEnergyClick = function(event) {
         </h3>
         <div style="margin-bottom: 15px; text-align: center;">
             <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Sem Energia (Dying Gasp)</span><br>
-            <strong style="font-size: 2.5rem; font-family: var(--font-family-mono); color: var(--m3-color-warning); line-height: 1;">${el.dataset.poweroff}</strong>
+            <strong style="font-size: 2.5rem; font-family: var(--font-family-mono); color: var(--m3-color-warning); line-height: 1;">${powerOff}</strong>
         </div>
         <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
             <div>
@@ -78,7 +99,7 @@ window.handleEnergyClick = function(event) {
             </div>
             <div style="text-align: right;">
                 <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Status</span><br>
-                <strong style="font-size: 1.1rem; color: ${statusCor}; text-transform: uppercase;">${el.classList.contains('warning') ? 'Atenção' : 'Normal'}</strong>
+                <strong style="font-size: 1.1rem; color: ${statusCor}; text-transform: uppercase;">${statusTexto}</strong>
             </div>
         </div>
     `;
@@ -297,80 +318,81 @@ function runEnergyMonitoring() {
         };
 
         // ==============================================================================
-        // INJEÇÃO DA HOME (Wallboard Widescreen com Resumo + Minicards)
+        // INJEÇÃO DA HOME (Wallboard Widescreen com Gráfico de Barras Verticais Unicolor)
         // ==============================================================================
         if (isHomePage) {
-            // Alvo do layout novo de Widescreen (Grid de Minicards e Resumo)
             const targetWidescreen = document.getElementById('target-energia-widescreen');
             
             if (targetWidescreen) {
+                targetWidescreen.className = 'card-body-full'; // Aplica o novo formato de linha cheia
                 let impactoNosOfflines = globalTotalOffline > 0 ? ((globalPowerOff / globalTotalOffline) * 100).toFixed(1) : 0;
                 
-                // Inicia montando o Card Médio de Resumo Geral
                 let htmlWidescreen = `
-                    <div class="resumo-card">
+                    <div class="resumo-bloco" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2);">
                         <div>
-                            <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:16px;">power_off</span> Resumo Global</div>
-                            <div class="resumo-main-val" style="color: var(--m3-color-warning);">${globalPowerOff}</div>
-                            <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Sem Energia (Dying Gasp)</div>
+                            <small><span class="material-symbols-rounded" style="font-size:15px;">electrical_services</span> Clientes Sem AC</small>
+                            <div class="valor" style="color: var(--m3-color-warning);">${globalPowerOff}</div>
                         </div>
-                        <div class="resumo-sec-val">
-                            <span>Impacto nos Offlines:</span>
-                            <strong style="color: var(--m3-color-warning); font-size: 1.1rem;">${impactoNosOfflines}%</strong>
+                        <div class="info">Alimentação: <strong>Baterias NOC</strong><br>Fontes Ativas: <strong>17 OLTs</strong></div>
+                    </div>
+                    <div class="grafico-bloco-fluid">
+                        <div class="chart-17-container">
+                `;
+
+                // Identifica o maior valor de powerOff para definir a escala proporcional do gráfico
+                let maxPowerOff = 50; // Base mínima para não distorcer OLTs com quedas pequenas
+                oltStats.forEach(stat => {
+                    if (stat.powerOff > maxPowerOff) maxPowerOff = stat.powerOff;
+                });
+
+                // Ordena alfabeticamente para a apresentação em barras ser padronizada na horizontal
+                const sortedOlts = [...oltStats].sort((a, b) => a.id.localeCompare(b.id));
+
+                sortedOlts.forEach(stat => {
+                    let barHeight = 5; // Altura mínima (toquinho verde indicando OK)
+                    let statusClass = 'ok';
+                    let valColor = 'transparent';
+                    
+                    if (stat.powerOff > 0) {
+                        // Calcula altura proporcionalmente ao máximo encontrado
+                        barHeight = Math.max(12, (stat.powerOff / maxPowerOff) * 100);
+                        statusClass = 'warn'; // Amarelo padrão do projeto
+                        valColor = 'var(--m3-color-warning)';
+                        
+                        if (stat.powerOff >= 50) { 
+                            statusClass = 'crit'; // Vermelho se muito grave
+                            valColor = 'var(--m3-color-error)';
+                        }
+                    }
+
+                    htmlWidescreen += `
+                        <div class="bar-col" 
+                             data-olt="${stat.id}"
+                             data-poweroff="${stat.powerOff}"
+                             data-offline="${stat.offline}"
+                             onmouseenter="handleEnergyHover(event)"
+                             onmouseleave="handleEnergyLeave()"
+                             onclick="handleEnergyClick(event)">
+                            <div class="column-value-top" style="color:${valColor}">${stat.powerOff > 0 ? stat.powerOff : '0'}</div>
+                            <div class="energia-track">
+                                <div class="energia-fill ${statusClass}" style="height: ${barHeight}%;"></div>
+                            </div>
+                            <span class="column-label">${stat.id}</span>
+                        </div>
+                    `;
+                });
+
+                htmlWidescreen += `
                         </div>
                     </div>
                 `;
-
-                // Ordenar pelo maior número de clientes sem energia
-                oltStats.sort((a, b) => b.powerOff - a.powerOff);
-
-                // Montar os 17 minicards fluidos
-                oltStats.forEach(stat => {
-                    if (stat.powerOff > 0) {
-                        htmlWidescreen += `
-                            <div class="status-card warning"
-                                 data-olt="${stat.id}"
-                                 data-poweroff="${stat.powerOff}"
-                                 data-offline="${stat.offline}"
-                                 onmouseenter="handleEnergyHover(event)"
-                                 onmouseleave="handleEnergyLeave()"
-                                 onclick="handleEnergyClick(event)">
-                                <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
-                                    <span class="material-symbols-rounded" style="font-size: 14px; color: var(--m3-on-surface-variant);">dns</span>
-                                    <span class="olt-name">${stat.id}</span>
-                                </div>
-                                <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
-                                    <span class="material-symbols-rounded" style="font-size: 16px; color: var(--m3-color-warning);">power_off</span>
-                                    <span class="olt-value">${stat.powerOff}</span>
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        htmlWidescreen += `
-                            <div class="status-card ok"
-                                 data-olt="${stat.id}"
-                                 data-poweroff="0"
-                                 data-offline="${stat.offline}"
-                                 onmouseenter="handleEnergyHover(event)"
-                                 onmouseleave="handleEnergyLeave()"
-                                 onclick="handleEnergyClick(event)">
-                                <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
-                                    <span class="material-symbols-rounded" style="font-size: 14px; color: var(--m3-on-surface-variant);">dns</span>
-                                    <span class="olt-name">${stat.id}</span>
-                                </div>
-                                <span class="material-symbols-rounded" style="pointer-events: none;">bolt</span>
-                            </div>
-                        `;
-                    }
-                });
-
-                // Injeta o HTML limpo e dinâmico direto no Body do Widescreen
+                
                 targetWidescreen.innerHTML = htmlWidescreen;
             }
         }
 
         // ==============================================================================
-        // INJEÇÃO DA PÁGINA ENERGIA.HTML (Cards individuais mantidos)
+        // INJEÇÃO DA PÁGINA ENERGIA.HTML (Cards individuais mantidos originais)
         // ==============================================================================
         if (isEnergyPage && gridEnergyPage) {
             gridEnergyPage.innerHTML = '';

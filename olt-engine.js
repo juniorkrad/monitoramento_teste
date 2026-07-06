@@ -1,6 +1,6 @@
 // ==============================================================================
 // olt-engine.js - Motor Dedicado de Monitoramento de Rede (Individual e Global)
-// Atualização: Injeção de Dados (Serial, Código, Potência) e Limpeza de dBm
+// Atualização: Wallboard da Home - Barras Verticais Bi-Color (17 OLTs)
 // ==============================================================================
 
 window.OLT_CLIENTS_DATA = {};
@@ -26,7 +26,7 @@ window.handleNetHover = function(event) {
     let statusTexto = 'Normal';
     let statusCor = 'var(--m3-color-success)';
     
-    if (el.classList.contains('danger')) {
+    if (el.classList.contains('danger') || el.classList.contains('critico')) {
         statusTexto = 'Crítico';
         statusCor = 'var(--m3-color-error)';
     } else if (el.classList.contains('warning')) {
@@ -76,7 +76,7 @@ window.handleNetClick = function(event) {
 
     const el = event.currentTarget;
     let statusCor = 'var(--m3-color-success)';
-    if (el.classList.contains('danger')) statusCor = 'var(--m3-color-error)';
+    if (el.classList.contains('danger') || el.classList.contains('critico')) statusCor = 'var(--m3-color-error)';
     else if (el.classList.contains('warning')) statusCor = 'var(--m3-color-warning)';
 
     content.innerHTML = `
@@ -198,7 +198,7 @@ function runGlobalNetworkOverview() {
         }
 
         let total = result.onlineCount + result.offlineCount;
-        oltStatsList.push({ id: result.id, offline: result.offlineCount, total });
+        oltStatsList.push({ id: result.id, online: result.onlineCount, offline: result.offlineCount, total });
 
         let ports100Down = 0;
         let localProblems = []; 
@@ -246,7 +246,7 @@ function runGlobalNetworkOverview() {
         }
     });
 
-    oltStatsList.sort((a, b) => b.offline - a.offline);
+    // Mantendo atualização dos cards antigos por segurança (se existirem)
     updateGlobalNetworkCard(globalOnline, globalOffline, latestUpdateStr);
 
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
@@ -254,58 +254,62 @@ function runGlobalNetworkOverview() {
     if (isHomePage) {
         const targetWidescreen = document.getElementById('target-rede-widescreen');
         if (targetWidescreen) {
+            // Atualiza para o novo layout fluido
+            targetWidescreen.className = 'card-body-full';
             let globalTotal = globalOnline + globalOffline;
 
             let htmlWidescreen = `
-                <div class="resumo-card">
+                <div class="resumo-bloco" style="background:rgba(59,130,246,.08); border:1px solid rgba(59,130,246,.2);">
                     <div>
-                        <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:16px;">router_off</span> Resumo Global</div>
-                        <div class="resumo-main-val" style="color: var(--m3-color-error);">${globalOffline}</div>
-                        <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Clientes Offline no momento</div>
+                        <small><span class="material-symbols-rounded" style="font-size:15px;">router_off</span> Clientes Offline</small>
+                        <div class="valor" style="color:#60a5fa;">${globalOffline}</div>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; margin-top: 8px;">
-                        <span style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Clientes Online:</span>
-                        <strong style="color: var(--m3-color-success); font-size: 1rem;">${globalOnline}</strong>
-                    </div>
-                    <div class="resumo-sec-val">
-                        <span>Total Analisado:</span>
-                        <strong style="color: var(--m3-on-surface); font-size: 1rem;">${globalTotal}</strong>
-                    </div>
+                    <div class="info">Online: <strong style="color:var(--success);">${globalOnline}</strong><br>Analisado: <strong>${globalTotal}</strong></div>
                 </div>
+                <div class="grafico-bloco-fluid">
+                    <div class="chart-17-container">
             `;
             
-            oltStatsList.forEach(stat => {
-                const perc = stat.total > 0 ? ((stat.offline / stat.total) * 100).toFixed(1) : 0;
-                let statusClass = 'ok';
-                let contentHtml = `<span class="material-symbols-rounded" style="pointer-events: none;">check_circle</span>`;
+            // Ordena alfabeticamente para a apresentação em barras ser padronizada na horizontal
+            const sortedOlts = [...oltStatsList].sort((a, b) => a.id.localeCompare(b.id));
+            
+            sortedOlts.forEach(stat => {
+                const percOfflineNum = stat.total > 0 ? (stat.offline / stat.total) * 100 : 0;
+                const percOnlineNum = stat.total > 0 ? (stat.online / stat.total) * 100 : 100;
                 
-                if (stat.offline > 0) {
-                    statusClass = stat.offline >= 15 ? 'danger' : 'warning';
-                    contentHtml = `
-                        <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
-                            <span class="material-symbols-rounded" style="font-size: 16px; color: ${statusClass === 'danger' ? 'var(--m3-color-error)' : 'var(--m3-color-warning)'};">wifi_off</span>
-                            <span class="olt-value">${stat.offline}</span>
-                        </div>
-                    `;
+                let statusClass = 'normal';
+                if (stat.offline >= 15 || percOfflineNum >= 50) {
+                    statusClass = 'danger';
+                } else if (stat.offline > 0) {
+                    statusClass = 'warning';
                 }
 
+                const valColor = percOfflineNum > 0 ? 'var(--danger)' : 'transparent';
+                const percText = percOfflineNum > 0 ? (percOfflineNum < 1 ? '<1%' : Math.round(percOfflineNum) + '%') : '0';
+
                 htmlWidescreen += `
-                    <div class="status-card ${statusClass}"
+                    <div class="bar-col ${statusClass}"
                          data-olt="${stat.id}"
                          data-off="${stat.offline}"
                          data-total="${stat.total}"
-                         data-pct="${perc}"
+                         data-pct="${percOfflineNum.toFixed(1)}"
                          onmouseenter="handleNetHover(event)"
                          onmouseleave="handleNetLeave()"
                          onclick="handleNetClick(event)">
-                        <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
-                            <span class="material-symbols-rounded" style="font-size: 14px; color: var(--m3-on-surface-variant);">dns</span>
-                            <span class="olt-name">${stat.id}</span>
+                        <div class="column-value-top" style="color:${valColor}">${percText}</div>
+                        <div class="rede-track">
+                            <div class="rede-slice-online" style="height: ${percOnlineNum}%;"></div>
+                            <div class="rede-slice-offline" style="height: ${percOfflineNum}%;"></div>
                         </div>
-                        ${contentHtml}
+                        <span class="column-label">${stat.id}</span>
                     </div>
                 `;
             });
+            
+            htmlWidescreen += `
+                    </div>
+                </div>
+            `;
             
             targetWidescreen.innerHTML = htmlWidescreen;
         }
