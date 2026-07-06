@@ -1,6 +1,5 @@
 /* ==========================================================================
    ESTILOS ESPECÍFICOS - DASHBOARD HOME (index.html)
-   Atualização: Layout Wallboard Linha Cheia (100% Width) e Novos Gráficos
    ========================================================================== */
 
 /* Cores de Destaque por Serviço */
@@ -12,18 +11,18 @@
     --color-equipamentos: #06b6d4; /* Ciano (Router) */
 }
 
-/* Grid Exclusivo da Home: 1 coluna ocupando 100% da largura */
+/* Grid Exclusivo da Home para layout de 2 colunas */
 .home-wallboard-grid {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 24px; 
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px; 
     width: 100%;
     padding-bottom: 20px;
 }
 
+/* Garante que o card de equipamentos ocupe a linha inteira */
 #card-fabricantes {
     grid-column: 1 / -1;
-    height: auto;
 }
 
 /* Cores aplicadas aos ícones dos cabeçalhos dos cards */
@@ -34,29 +33,52 @@
 #card-fabricantes .card-header h3 span { color: var(--color-equipamentos); }
 
 /* ==========================================================================
-   CARDS GLOBAIS E ESTRUTURA WALLBOARD
+   TIPOGRAFIA E ÍCONES (PADRONIZAÇÃO MD3)
+   ========================================================================== */
+.primary-value {
+    font-size: 2.5rem;
+    font-family: var(--font-family-mono);
+    font-weight: 700;
+    line-height: 1;
+}
+
+.primary-icon {
+    font-size: 28px !important;
+}
+
+.secondary-value {
+    font-size: 1.2rem;
+    font-family: var(--font-family-mono);
+    font-weight: 700;
+}
+
+.secondary-icon {
+    font-size: 20px !important;
+}
+
+/* ==========================================================================
+   CARDS GLOBAIS E ESTRUTURA WALLBOARD (WIDESCREEN MASONRY)
    ========================================================================== */
 .global-card {
     background-color: var(--m3-surface-container);
     border-radius: 20px; 
     border: 1px solid rgba(255,255,255,0.05);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    margin-bottom: 0; /* Removido margin-bottom pois o grid gap já cuida disso */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     display: flex;
     flex-direction: column;
     overflow: hidden; 
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    height: 360px; /* Altura fixa padrão para as linhas */
-    width: 100%;
 }
 
 .global-card:hover { 
-    transform: translateY(-2px); 
+    transform: translateY(-4px); 
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3); 
 }
 
 .global-card .card-header {
-    height: 60px;
-    background-color: rgba(255, 255, 255, 0.02);
-    padding: 0 24px; 
+    background-color: rgba(234, 208, 255, 0.03);
+    padding: 12px 20px; 
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     justify-content: space-between;
@@ -75,277 +97,129 @@
     letter-spacing: 1px;
 }
 
-/* NOVO LAYOUT FLUIDO 100% WIDTH */
-.card-body-full {
-    padding: 20px;
-    display: flex;
-    gap: 20px;
-    height: calc(100% - 60px); 
-    width: 100%;
-    box-sizing: border-box;
+/* O CORAÇÃO DO NOVO LAYOUT: CSS GRID DENSE */
+.widescreen-body {
+    display: grid;
+    /* Reduzindo o minmax para caber melhor na meia tela */
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); 
+    grid-auto-flow: dense; 
+    gap: 12px;
+    padding: 15px 20px;
 }
 
-/* ==========================================================================
-   BLOCO ESQUERDO: RESUMO GLOBAL
-   ========================================================================== */
-.resumo-bloco {
-    width: 22%;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 16px;
-    padding: 20px;
+/* CARD MÉDIO (RESUMO GERAL) - Tamanho fixo e proporcional */
+.resumo-card {
+    grid-column: span 2; /* Ocupa 2 colunas de largura */
+    grid-row: span 2;    /* Ocupa 2 linhas de altura */
+    background: rgba(103, 7, 159, 0.15);
+    border: 1px solid var(--m3-primary);
+    border-radius: 14px;
+    padding: 15px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    box-sizing: border-box;
+    box-shadow: 4px 4px 10px rgba(0,0,0,0.1);
 }
 
-.resumo-bloco small {
+.resumo-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--m3-on-surface-variant);
+    font-weight: 700;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--m3-on-surface-variant);
-    text-transform: uppercase;
-    letter-spacing: 0.7px;
+    gap: 5px;
 }
 
-.resumo-bloco .valor {
-    font-size: 3rem;
-    font-weight: 700;
+.resumo-main-val {
     font-family: var(--font-family-mono);
+    font-size: 2.2rem;
+    font-weight: 700;
     line-height: 1;
-    margin: 15px 0;
+    margin-bottom: 5px;
 }
 
-.resumo-bloco .info {
-    border-top: 1px solid rgba(255,255,255,0.08);
-    padding-top: 12px;
+.resumo-sec-val {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-size: 0.8rem;
     color: var(--m3-on-surface-variant);
-    line-height: 1.4;
-}
-
-.resumo-bloco .info strong {
-    color: #fff;
-}
-
-/* ==========================================================================
-   BLOCO DIREITO: GRÁFICOS FLUIDOS
-   ========================================================================== */
-.grafico-bloco-fluid {
-    flex: 1;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 16px;
-    border: 1px solid rgba(255,255,255,0.02);
-    padding: 20px;
-    box-sizing: border-box;
-    display: flex;
-    position: relative;
-    height: 100%;
-}
-
-/* ==========================================================================
-   1. GRÁFICO DE REDE: BARRAS VERTICAIS BI-COLOR (17 OLTS)
-   ========================================================================== */
-.chart-17-container {
-    display: flex;
-    width: 100%;
-    height: 100%;
-    align-items: flex-end;
-    justify-content: space-between;
-}
-
-.bar-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    height: 100%;
-    justify-content: flex-end;
-    width: 5%;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.bar-col:hover {
-    transform: translateY(-2px) scale(1.05);
-}
-
-.column-value-top {
-    font-family: var(--font-family-mono);
-    font-size: 0.65rem;
-    font-weight: bold;
-    margin-bottom: 5px;
-    pointer-events: none;
-}
-
-.rede-track {
-    width: 45%;
-    height: 85%;
-    background: rgba(255,255,255,0.03);
-    border-radius: 4px;
-    display: flex;
-    flex-direction: column-reverse;
-    overflow: hidden;
-    pointer-events: none;
-}
-
-.rede-slice-online {
-    background: var(--m3-color-success);
-    width: 100%;
-    transition: height 0.5s ease;
-}
-
-.rede-slice-offline {
-    background: var(--m3-color-error);
-    width: 100%;
-    transition: height 0.5s ease;
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
-}
-
-.column-label {
-    font-family: var(--font-family-mono);
-    font-size: 0.65rem;
-    font-weight: 700;
-    color: var(--m3-on-surface-variant);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 8px;
     margin-top: 8px;
-    pointer-events: none;
 }
 
-/* ==========================================================================
-   2. GRÁFICO DE ENERGIA: BARRAS VERTICAIS UNICOLOR (17 OLTS)
-   ========================================================================== */
-.energia-track {
-    width: 45%;
-    height: 75%;
-    background: rgba(255,255,255,0.03);
-    border-radius: 4px;
-    display: flex;
-    align-items: flex-end;
-    overflow: hidden;
-    pointer-events: none;
-}
-
-.energia-fill {
-    width: 100%;
-    border-radius: 4px;
-    transition: height 0.5s ease;
-}
-
-.energia-fill.ok { 
-    background: var(--m3-color-success); 
-    opacity: 0.2; 
-}
-
-.energia-fill.warn { 
-    background: var(--m3-color-warning); 
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.5); 
-}
-
-.energia-fill.crit { 
-    background: var(--m3-color-error); 
-    box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); 
-}
-
-/* ==========================================================================
-   3 & 4. GRELHAS DE 17 MINI-CARDS (POTÊNCIA E TEMPERATURA)
-   ========================================================================== */
-.grid-17-cards {
-    display: grid;
-    /* Divide 9 colunas para comportar as 17 na linha toda (9 numa linha, 8 na outra) */
-    grid-template-columns: repeat(9, 1fr); 
-    gap: 10px;
-    width: 100%;
-    height: 100%;
-    align-content: center;
-}
-
-.mini-status-card {
+/* MINI-CARDS (AS OLTS) */
+.status-card {
     background: rgba(255,255,255,0.02);
     border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 12px;
-    padding: 10px 5px;
+    border-radius: 14px;
+    padding: 12px 5px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    height: 105px;
-    cursor: pointer;
-    transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
-    box-sizing: border-box;
-}
-
-.mini-status-card:hover {
-    transform: translateY(-2px);
-    background: rgba(255,255,255,0.06);
-}
-
-.mini-card-title {
-    font-size: 0.75rem;
-    font-weight: 700;
-    font-family: var(--font-family-mono);
-    color: #fff;
-    margin-bottom: 4px;
-    pointer-events: none;
-}
-
-.mini-card-value {
-    font-family: var(--font-family-mono);
-    font-size: 1.1rem;
-    font-weight: 700;
-    line-height: 1;
-    pointer-events: none;
-}
-
-/* COMPONENTES SVG INTERNOS (VELOCÍMETRO E HEATMAP) */
-
-/* Velocímetro (Potência) */
-.micro-gauge-svg {
-    width: 45px;
-    height: 26px;
-    margin-top: 4px;
-    pointer-events: none;
-}
-
-.micro-gauge-needle {
-    transition: transform 1.5s cubic-bezier(0.22, 1, 0.36, 1);
-    transform-origin: 50px 50px;
-}
-
-/* Régua Heatmap (Temperatura) */
-.heatmap-cell {
-    width: 80%;
-    height: 12px;
-    border-radius: 10px;
-    position: relative;
-    margin-top: 6px;
-    overflow: hidden;
-    background: rgba(255,255,255,0.05);
-    pointer-events: none;
-}
-
-.heatmap-gradient {
+    gap: 6px;
+    transition: transform 0.2s, background 0.2s;
     height: 100%;
-    width: 100%;
-    background: linear-gradient(90deg, #3b82f6 0%, #22c55e 40%, #f59e0b 70%, #ef4444 100%);
+    box-sizing: border-box;
+    cursor: pointer;
 }
 
-.heatmap-marker {
-    position: absolute;
-    top: -2px;
-    bottom: -2px;
-    width: 6px;
-    background: #fff;
-    border-radius: 2px;
-    border: 1px solid #000;
-    box-shadow: 0 0 6px rgba(255,255,255,0.8);
-    transition: left 0.5s ease;
+.status-card:hover { 
+    transform: translateY(-2px); 
+    background: rgba(255,255,255,0.05); 
+}
+
+.olt-name { 
+    font-size: 0.75rem; /* Levemente menor para caber melhor no grid reduzido */
+    font-weight: 700; 
+    color: var(--m3-on-surface); 
+}
+
+.olt-value { 
+    font-family: var(--font-family-mono); 
+    font-size: 1.1rem; /* Levemente menor para caber melhor no grid reduzido */
+    line-height: 1; 
+}
+
+.olt-label { 
+    font-size: 0.65rem; 
+    color: var(--m3-on-surface-variant); 
+    text-transform: uppercase;
+}
+
+/* CORES DE STATUS DINÂMICAS PARA OS MINICARDS */
+.status-card.ok { 
+    background: rgba(103, 194, 58, 0.05); 
+    border-color: rgba(103, 194, 58, 0.15); 
+}
+.status-card.ok .olt-value, .status-card.ok .material-symbols-rounded { 
+    color: var(--m3-color-success); 
+}
+
+.status-card.danger { 
+    background: rgba(245, 108, 108, 0.15); 
+    border-color: rgba(245, 108, 108, 0.4); 
+    box-shadow: 0 0 8px rgba(245, 108, 108, 0.2); 
+}
+.status-card.danger .olt-value, .status-card.danger .material-symbols-rounded { 
+    color: var(--m3-color-error); 
+}
+
+.status-card.warning { 
+    background: rgba(230, 162, 60, 0.15); 
+    border-color: rgba(230, 162, 60, 0.4); 
+}
+.status-card.warning .olt-value, .status-card.warning .material-symbols-rounded { 
+    color: var(--m3-color-warning); 
 }
 
 /* ==========================================================================
-   ESTRUTURAS ORIGINAIS MANTIDAS (Equipamentos)
+   ESTRUTURAS ORIGINAIS MANTIDAS (Equipamentos e Modais)
    ========================================================================== */
 .card-body {
     padding: 20px; 
@@ -360,16 +234,16 @@
 
 .eqp-badge-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); 
-    gap: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
+    gap: 12px;
     width: 100%;
 }
 
 .eqp-badge-item {
     background-color: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 14px;
-    padding: 18px;
+    border-radius: 12px;
+    padding: 15px 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -409,11 +283,10 @@
 
 .eqp-total-value {
     font-family: var(--font-family-mono);
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     font-weight: 700;
-    color: var(--equip); 
+    color: #60a5fa; 
     line-height: 1;
-    margin-top: 8px;
 }
 
 .eqp-badge-item.disabled .eqp-total-value {
@@ -514,14 +387,8 @@
    AJUSTES RESPONSIVOS (Telas menores)
    ========================================================================== */
 @media (max-width: 1024px) {
-    .resumo-bloco { width: 100%; margin-bottom: 20px; }
-    .card-body-full { flex-direction: column; height: auto; }
-    .global-card { height: auto; }
-    .grafico-bloco-fluid { min-height: 300px; width: 100%; }
-    .grid-17-cards { grid-template-columns: repeat(4, 1fr); }
-}
-@media (max-width: 768px) {
-    .grid-17-cards { grid-template-columns: repeat(3, 1fr); }
-    .chart-17-container { overflow-x: auto; gap: 10px; padding-bottom: 10px; }
-    .bar-col { min-width: 30px; }
+    /* Em tablets e celulares, volta para 1 coluna empilhada para não espremer os dados */
+    .home-wallboard-grid {
+        grid-template-columns: 1fr;
+    }
 }
