@@ -1,6 +1,6 @@
 // ==============================================================================
 // temperatura-engine.js - Motor Dedicado para Análise Térmica das OLTs
-// Atualização: Wallboard da Home - Resumo Médio + Minicards (Grid Dense) e Ajustes Finos
+// Atualização: Wallboard da Home - Substituição do Resumo Global por Heatmaps
 // ==============================================================================
 
 const TAB_TEMPERATURA = 'TEMPERATURA'; 
@@ -258,7 +258,7 @@ function runTemperaturaEngine() {
         });
 
         // ==============================================================================
-        // INJEÇÃO DA HOME (Resumo Fixo e Minicards Wallboard)
+        // INJEÇÃO DA HOME (Mini Cards Wallboard com Heatmap Sparkline)
         // ==============================================================================
         if (isHomePage) {
             // Suporte Legado
@@ -290,25 +290,11 @@ function runTemperaturaEngine() {
                 if (elTime) elTime.textContent = dateParts[1] || '--:--:--';
             }
 
-            // Alvo do layout novo de Widescreen (Grid de Minicards e Resumo)
             const targetWidescreen = document.getElementById('target-temperatura-widescreen');
             if (targetWidescreen) {
-                let totalAlertas = globalCriticos + globalAtencao;
                 
-                // Inicia montando o Card Médio de Resumo Geral
-                let htmlWidescreen = `
-                    <div class="resumo-card">
-                        <div>
-                            <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:16px;">whatshot</span> Pico Térmico</div>
-                            <div class="resumo-main-val" style="color: ${globalTempColor};">${globalMaxTemp}°C</div>
-                            <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Temperatura Máxima Encontrada</div>
-                        </div>
-                        <div class="resumo-sec-val">
-                            <span>Sensores em Alerta:</span>
-                            <strong style="color: var(--m3-color-warning); font-size: 1.1rem;">${totalAlertas}</strong>
-                        </div>
-                    </div>
-                `;
+                // Inicia HTML Vazio (Removido o .resumo-card)
+                let htmlWidescreen = ``;
                 
                 const validOlts = oltStats.filter(o => o.analisados > 0);
                 
@@ -342,19 +328,95 @@ function runTemperaturaEngine() {
                              onmouseenter="handleTempHover(event)"
                              onmouseleave="handleTempLeave()"
                              onclick="handleTempClick(event)">
+                            
                             <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
                                 <span class="material-symbols-rounded" style="font-size: 14px; color: var(--m3-on-surface-variant);">dns</span>
                                 <span class="olt-name">${stat.id}</span>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
-                                <span class="material-symbols-rounded" style="font-size: 16px; color: ${tempColor};">thermometer</span>
+
+                            <div class="heatmap-wrapper">
+                                <canvas id="heatmap-temp-${stat.id}"></canvas>
+                            </div>
+
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 4px; pointer-events: none; line-height: 1.1;">
+                                <span class="material-symbols-rounded" style="font-size: 14px; color: ${tempColor};">thermometer</span>
                                 <span class="olt-value" style="color: ${tempColor};">${stat.maxTemp}°</span>
                             </div>
+
                         </div>
                     `;
                 });
                 
                 targetWidescreen.innerHTML = htmlWidescreen;
+
+                // Inicializar os minigráficos Heatmap para cada OLT
+                if (typeof Chart !== 'undefined') {
+                    if (!window.tempHeatmaps) window.tempHeatmaps = {};
+                    
+                    validOlts.forEach(stat => {
+                        const canvasId = `heatmap-temp-${stat.id}`;
+                        const canvasEl = document.getElementById(canvasId);
+                        if (!canvasEl) return;
+                        
+                        const ctx = canvasEl.getContext('2d');
+                        
+                        if (window.tempHeatmaps[stat.id]) {
+                            window.tempHeatmaps[stat.id].destroy();
+                        }
+
+                        // Extrair as temperaturas de todos os sensores desta OLT
+                        let sensorTemps = [];
+                        let slotsObj = window.TEMP_DATA_STORE[stat.id] || {};
+                        Object.keys(slotsObj).forEach(slot => {
+                            slotsObj[slot].forEach(s => {
+                                sensorTemps.push(s.tempAtual);
+                            });
+                        });
+
+                        // Mapeamento dinâmico de cores para simular o mapa de calor
+                        let bgColors = sensorTemps.map(temp => {
+                            if (temp >= 90) return 'rgba(245, 108, 108, 1)'; // Vermelho
+                            if (temp >= 80) return 'rgba(230, 162, 60, 1)';  // Amarelo
+                            return 'rgba(103, 194, 58, 0.7)';                // Verde
+                        });
+
+                        window.tempHeatmaps[stat.id] = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: sensorTemps.map((_, i) => i), // Rótulos invisíveis
+                                datasets: [{
+                                    data: sensorTemps,
+                                    backgroundColor: bgColors,
+                                    barPercentage: 1.0,
+                                    categoryPercentage: 0.9,
+                                    borderRadius: 2
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: { enabled: false }
+                                },
+                                scales: {
+                                    x: { display: false },
+                                    y: { 
+                                        display: false,
+                                        min: 20, // Ajusta o limite inferior para melhorar o visual das barras
+                                        max: 100 // Ajusta o limite superior
+                                    } 
+                                },
+                                animation: {
+                                    duration: 0 // Impede oscilações nos updates
+                                },
+                                layout: {
+                                    padding: 0
+                                }
+                            }
+                        });
+                    });
+                }
             }
         }
 
