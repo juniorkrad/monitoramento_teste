@@ -4,7 +4,7 @@
 
 /* Cores de Destaque por Serviço */
 :root {
-    --color-rede: #3b82f6;      /* Azul (Network) */
+    --color-rede: #4ade80;      /* Verde (Network) */
     --color-energia: #f59e0b;   /* Laranja/Amarelo (Lightning) */
     --color-potencia: #d946ef;  /* Roxo/Rosa (Insights) */
     --color-temperatura: #ef4444; /* Vermelho (Thermometer) */
