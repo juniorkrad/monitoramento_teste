@@ -1,6 +1,6 @@
 // ==============================================================================
 // energia-engine.js - Motor Dedicado de Monitorização de Energia (Dying Gasp)
-// Atualização: Wallboard da Home - Resumo Médio + Minicards (Grid Dense) e Ajustes Finos
+// Atualização: Wallboard da Home - Resumo Médio + Gráfico de Barras MD3
 // ==============================================================================
 
 window.ENERGY_DATA_STORE = {};
@@ -297,16 +297,15 @@ function runEnergyMonitoring() {
         };
 
         // ==============================================================================
-        // INJEÇÃO DA HOME (Wallboard Widescreen com Resumo + Minicards)
+        // INJEÇÃO DA HOME (Wallboard Widescreen com Resumo + Gráfico)
         // ==============================================================================
         if (isHomePage) {
-            // Alvo do layout novo de Widescreen (Grid de Minicards e Resumo)
             const targetWidescreen = document.getElementById('target-energia-widescreen');
             
             if (targetWidescreen) {
                 let impactoNosOfflines = globalTotalOffline > 0 ? ((globalPowerOff / globalTotalOffline) * 100).toFixed(1) : 0;
                 
-                // Inicia montando o Card Médio de Resumo Geral
+                // Inicia montando o Card Médio de Resumo Geral + Contêiner do Gráfico
                 let htmlWidescreen = `
                     <div class="resumo-card">
                         <div>
@@ -319,53 +318,100 @@ function runEnergyMonitoring() {
                             <strong style="color: var(--m3-color-warning); font-size: 1.1rem;">${impactoNosOfflines}%</strong>
                         </div>
                     </div>
+                    <div class="chart-container">
+                        <canvas id="energiaChart"></canvas>
+                    </div>
                 `;
 
-                // Ordenar pelo maior número de clientes sem energia
-                oltStats.sort((a, b) => b.powerOff - a.powerOff);
-
-                // Montar os 17 minicards fluidos
-                oltStats.forEach(stat => {
-                    if (stat.powerOff > 0) {
-                        htmlWidescreen += `
-                            <div class="status-card warning"
-                                 data-olt="${stat.id}"
-                                 data-poweroff="${stat.powerOff}"
-                                 data-offline="${stat.offline}"
-                                 onmouseenter="handleEnergyHover(event)"
-                                 onmouseleave="handleEnergyLeave()"
-                                 onclick="handleEnergyClick(event)">
-                                <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
-                                    <span class="material-symbols-rounded" style="font-size: 14px; color: var(--m3-on-surface-variant);">dns</span>
-                                    <span class="olt-name">${stat.id}</span>
-                                </div>
-                                <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
-                                    <span class="material-symbols-rounded" style="font-size: 16px; color: var(--m3-color-warning);">power_off</span>
-                                    <span class="olt-value">${stat.powerOff}</span>
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        htmlWidescreen += `
-                            <div class="status-card ok"
-                                 data-olt="${stat.id}"
-                                 data-poweroff="0"
-                                 data-offline="${stat.offline}"
-                                 onmouseenter="handleEnergyHover(event)"
-                                 onmouseleave="handleEnergyLeave()"
-                                 onclick="handleEnergyClick(event)">
-                                <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
-                                    <span class="material-symbols-rounded" style="font-size: 14px; color: var(--m3-on-surface-variant);">dns</span>
-                                    <span class="olt-name">${stat.id}</span>
-                                </div>
-                                <span class="material-symbols-rounded" style="pointer-events: none;">bolt</span>
-                            </div>
-                        `;
-                    }
-                });
-
-                // Injeta o HTML limpo e dinâmico direto no Body do Widescreen
+                // Injeta o HTML
                 targetWidescreen.innerHTML = htmlWidescreen;
+
+                // Inicializar o Gráfico de Energia (Chart.js)
+                if (typeof Chart !== 'undefined') {
+                    const ctx = document.getElementById('energiaChart').getContext('2d');
+                    
+                    if (window.energiaChartInstance) {
+                        window.energiaChartInstance.destroy();
+                    }
+
+                    // Ordenar pelo maior número de clientes sem energia para o gráfico ficar mais intuitivo
+                    oltStats.sort((a, b) => b.powerOff - a.powerOff);
+
+                    const labels = oltStats.map(stat => stat.id);
+                    const dataPowerOff = oltStats.map(stat => stat.powerOff);
+                    const dataOffline = oltStats.map(stat => stat.offline);
+
+                    // Estilização dinâmica (MD3 Warning)
+                    const bgColors = dataPowerOff.map(val => val > 0 ? 'rgba(251, 191, 36, 0.7)' : 'rgba(255, 255, 255, 0.1)');
+                    const borderColors = dataPowerOff.map(val => val > 0 ? 'rgba(251, 191, 36, 1)' : 'rgba(255, 255, 255, 0.2)');
+
+                    window.energiaChartInstance = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Sem Energia',
+                                data: dataPowerOff,
+                                backgroundColor: bgColors,
+                                borderColor: borderColors,
+                                borderWidth: 1,
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false,
+                                    callbacks: {
+                                        title: function(context) {
+                                            return `OLT: ${context[0].label}`;
+                                        },
+                                        label: function(context) {
+                                            const index = context.dataIndex;
+                                            const pOff = dataPowerOff[index];
+                                            const tOff = dataOffline[index];
+                                            return [
+                                                `Sem Energia: ${pOff}`,
+                                                `Total Offline: ${tOff}`
+                                            ];
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.05)'
+                                    },
+                                    ticks: {
+                                        color: 'rgba(255, 255, 255, 0.6)',
+                                        precision: 0 // Força números inteiros no eixo Y
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    },
+                                    ticks: {
+                                        color: 'rgba(255, 255, 255, 0.6)',
+                                        maxRotation: 45,
+                                        minRotation: 0,
+                                        font: {
+                                            size: 10
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
             }
         }
 
