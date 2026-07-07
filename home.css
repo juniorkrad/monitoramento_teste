@@ -11,10 +11,10 @@
     --color-equipamentos: #06b6d4; /* Ciano (Router) */
 }
 
-/* Grid Exclusivo da Home para layout de 2 colunas */
+/* Grid Exclusivo da Home para layout de 1 coluna (Etapa 1) */
 .home-wallboard-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 15px; 
     width: 100%;
     padding-bottom: 20px;
@@ -63,7 +63,7 @@
     background-color: var(--m3-surface-container);
     border-radius: 20px; 
     border: 1px solid rgba(255,255,255,0.05);
-    margin-bottom: 0; /* Removido margin-bottom pois o grid gap já cuida disso */
+    margin-bottom: 0; 
     box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     display: flex;
     flex-direction: column;
@@ -100,7 +100,6 @@
 /* O CORAÇÃO DO NOVO LAYOUT: CSS GRID DENSE */
 .widescreen-body {
     display: grid;
-    /* Reduzindo o minmax para caber melhor na meia tela */
     grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); 
     grid-auto-flow: dense; 
     gap: 12px;
@@ -151,6 +150,23 @@
     margin-top: 8px;
 }
 
+/* NOVO CONTÊINER DE GRÁFICO (Etapa 2) */
+.chart-container {
+    grid-column: 3 / -1; /* Inicia após o resumo-card e vai até o final da linha */
+    grid-row: span 2;
+    background: rgba(255,255,255,0.01);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px;
+    padding: 15px;
+    box-sizing: border-box;
+    min-height: 250px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
 /* MINI-CARDS (AS OLTS) */
 .status-card {
     background: rgba(255,255,255,0.02);
@@ -175,14 +191,14 @@
 }
 
 .olt-name { 
-    font-size: 0.75rem; /* Levemente menor para caber melhor no grid reduzido */
+    font-size: 0.75rem; 
     font-weight: 700; 
     color: var(--m3-on-surface); 
 }
 
 .olt-value { 
     font-family: var(--font-family-mono); 
-    font-size: 1.1rem; /* Levemente menor para caber melhor no grid reduzido */
+    font-size: 1.1rem; 
     line-height: 1; 
 }
 
@@ -387,8 +403,18 @@
    AJUSTES RESPONSIVOS (Telas menores)
    ========================================================================== */
 @media (max-width: 1024px) {
-    /* Em tablets e celulares, volta para 1 coluna empilhada para não espremer os dados */
     .home-wallboard-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .chart-container {
+        grid-column: 1 / -1; /* Gráfico passa para baixo e ocupa 100% da largura em telas menores */
+        grid-row: auto;
+        min-height: 280px;
+    }
+    
+    .resumo-card {
+        grid-column: 1 / -1;
+        grid-row: auto;
     }
 }

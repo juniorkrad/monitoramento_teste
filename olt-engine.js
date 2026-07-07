@@ -272,42 +272,96 @@ function runGlobalNetworkOverview() {
                         <strong style="color: var(--m3-on-surface); font-size: 1rem;">${globalTotal}</strong>
                     </div>
                 </div>
+                <div class="chart-container">
+                    <canvas id="redeChart"></canvas>
+                </div>
             `;
             
-            oltStatsList.forEach(stat => {
-                const perc = stat.total > 0 ? ((stat.offline / stat.total) * 100).toFixed(1) : 0;
-                let statusClass = 'ok';
-                let contentHtml = `<span class="material-symbols-rounded" style="pointer-events: none;">check_circle</span>`;
+            targetWidescreen.innerHTML = htmlWidescreen;
+
+            if (typeof Chart !== 'undefined') {
+                const ctx = document.getElementById('redeChart').getContext('2d');
                 
-                if (stat.offline > 0) {
-                    statusClass = stat.offline >= 15 ? 'danger' : 'warning';
-                    contentHtml = `
-                        <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
-                            <span class="material-symbols-rounded" style="font-size: 16px; color: ${statusClass === 'danger' ? 'var(--m3-color-error)' : 'var(--m3-color-warning)'};">wifi_off</span>
-                            <span class="olt-value">${stat.offline}</span>
-                        </div>
-                    `;
+                if (window.redeChartInstance) {
+                    window.redeChartInstance.destroy();
                 }
 
-                htmlWidescreen += `
-                    <div class="status-card ${statusClass}"
-                         data-olt="${stat.id}"
-                         data-off="${stat.offline}"
-                         data-total="${stat.total}"
-                         data-pct="${perc}"
-                         onmouseenter="handleNetHover(event)"
-                         onmouseleave="handleNetLeave()"
-                         onclick="handleNetClick(event)">
-                        <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
-                            <span class="material-symbols-rounded" style="font-size: 14px; color: var(--m3-on-surface-variant);">dns</span>
-                            <span class="olt-name">${stat.id}</span>
-                        </div>
-                        ${contentHtml}
-                    </div>
-                `;
-            });
-            
-            targetWidescreen.innerHTML = htmlWidescreen;
+                const labels = oltStatsList.map(stat => stat.id);
+                const dataOffline = oltStatsList.map(stat => stat.offline);
+                const dataOnline = oltStatsList.map(stat => stat.total - stat.offline);
+                const dataTotal = oltStatsList.map(stat => stat.total);
+
+                const bgColors = dataOffline.map(off => off >= 15 ? 'rgba(245, 108, 108, 0.7)' : 'rgba(230, 162, 60, 0.7)');
+                const borderColors = dataOffline.map(off => off >= 15 ? 'rgba(245, 108, 108, 1)' : 'rgba(230, 162, 60, 1)');
+
+                window.redeChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Offline',
+                            data: dataOffline,
+                            backgroundColor: bgColors,
+                            borderColor: borderColors,
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    title: function(context) {
+                                        return `OLT: ${context[0].label}`;
+                                    },
+                                    label: function(context) {
+                                        const index = context.dataIndex;
+                                        const off = dataOffline[index];
+                                        const on = dataOnline[index];
+                                        const tot = dataTotal[index];
+                                        return [
+                                            `Offline: ${off}`,
+                                            `Online: ${on}`,
+                                            `Total: ${tot}`
+                                        ];
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.05)'
+                                },
+                                ticks: {
+                                    color: 'rgba(255, 255, 255, 0.6)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    color: 'rgba(255, 255, 255, 0.6)',
+                                    maxRotation: 45,
+                                    minRotation: 0,
+                                    font: {
+                                        size: 10
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
         }
     }
 
