@@ -1,6 +1,6 @@
 // ==============================================================================
 // potencia-engine.js - Motor Dedicado para Análise de Potência Óptica
-// Atualização: Wallboard da Home - Resumo Médio + Minicards (Grid Dense) e Ajustes Finos
+// Atualização: Wallboard da Home - Substituição do Resumo Global por Gauges
 // ==============================================================================
 
 window.POTENCIA_CLIENTS_DATA = {};
@@ -255,7 +255,7 @@ function runPotenciaEngine() {
         });
 
         // ==============================================================================
-        // INJEÇÃO DA HOME (Wallboard Widescreen com Resumo + Minicards)
+        // INJEÇÃO DA HOME (Wallboard Widescreen com Mini Gauges em cada card)
         // ==============================================================================
         if (isHomePage) {
             const globalMedia = globalAnalisados > 0 ? (globalDbmSums / globalAnalisados).toFixed(1) : "0.0";
@@ -288,24 +288,11 @@ function runPotenciaEngine() {
                 if (elTime) elTime.textContent = dateParts[1] || '--:--:--';
             }
 
-            // Alvo do layout novo de Widescreen (Grid de Minicards e Resumo)
             const targetWidescreen = document.getElementById('target-potencia-widescreen');
             
             if (targetWidescreen) {
-                // Inicia montando o Card Médio de Resumo Geral
-                let htmlWidescreen = `
-                    <div class="resumo-card">
-                        <div>
-                            <div class="resumo-title"><span class="material-symbols-rounded" style="font-size:16px;">settings_input_antenna</span> Média de Potência</div>
-                            <div class="resumo-main-val" style="color: ${globalMediaColor};">${globalMedia}</div>
-                            <div style="font-size: 0.8rem; color: var(--m3-on-surface-variant);">Média (dBm) na Rede</div>
-                        </div>
-                        <div class="resumo-sec-val">
-                            <span>Clientes Críticos:</span>
-                            <strong style="color: var(--m3-color-error); font-size: 1.1rem;">${globalCriticos}</strong>
-                        </div>
-                    </div>
-                `;
+                // Inicia HTML Vazio (Removido o .resumo-card)
+                let htmlWidescreen = ``;
                 
                 // Filtra OLTs que tem dados analisados
                 const validOlts = oltStats.filter(o => o.analisados > 0);
@@ -313,7 +300,7 @@ function runPotenciaEngine() {
                 // Ordenar da pior média para a melhor
                 validOlts.sort((a, b) => parseFloat(a.media) - parseFloat(b.media));
 
-                // Montar os minicards fluidos
+                // Montar os minicards fluidos com os contêineres do gauge
                 validOlts.forEach(stat => {
                     let statusClass = 'ok';
                     let mediaColor = 'var(--m3-color-success)';
@@ -338,18 +325,78 @@ function runPotenciaEngine() {
                              onmouseenter="handlePotHover(event)"
                              onmouseleave="handlePotLeave()"
                              onclick="handlePotClick(event)">
+                            
                             <div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">
                                 <span class="material-symbols-rounded" style="font-size: 14px; color: var(--m3-on-surface-variant);">dns</span>
                                 <span class="olt-name">${stat.id}</span>
                             </div>
-                            <span class="olt-value" style="color: ${mediaColor}; pointer-events: none;">${stat.media}</span>
-                            <span class="olt-label" style="pointer-events: none;">dBm</span>
+
+                            <div class="gauge-wrapper">
+                                <canvas id="gauge-pot-${stat.id}"></canvas>
+                            </div>
+
+                            <div style="pointer-events: none; line-height: 1.1;">
+                                <span class="olt-value" style="color: ${mediaColor};">${stat.media}</span>
+                                <span class="olt-label">dBm</span>
+                            </div>
+
                         </div>
                     `;
                 });
                 
-                // Injeta o HTML limpo e dinâmico direto no Body do Widescreen
                 targetWidescreen.innerHTML = htmlWidescreen;
+
+                // Inicializar os minigráficos Gauge para cada OLT
+                if (typeof Chart !== 'undefined') {
+                    if (!window.potenciaGauges) window.potenciaGauges = {};
+                    
+                    validOlts.forEach(stat => {
+                        const canvasId = `gauge-pot-${stat.id}`;
+                        const canvasEl = document.getElementById(canvasId);
+                        if (!canvasEl) return;
+                        
+                        const ctx = canvasEl.getContext('2d');
+                        
+                        if (window.potenciaGauges[stat.id]) {
+                            window.potenciaGauges[stat.id].destroy();
+                        }
+
+                        let mediaVal = parseFloat(stat.media);
+                        let chartColor = 'rgba(103, 194, 58, 1)'; 
+                        if (mediaVal <= -28.00) chartColor = 'rgba(245, 108, 108, 1)';
+                        else if (mediaVal <= -26.00) chartColor = 'rgba(230, 162, 60, 1)';
+                        
+                        // Normalização simples do Gauge (-35 péssimo (0%), -15 excelente (100%))
+                        let perc = ((mediaVal - (-35)) / (-15 - (-35))) * 100;
+                        if (perc < 0) perc = 0;
+                        if (perc > 100) perc = 100;
+
+                        window.potenciaGauges[stat.id] = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                datasets: [{
+                                    data: [perc, 100 - perc],
+                                    backgroundColor: [chartColor, 'rgba(255, 255, 255, 0.08)'],
+                                    borderWidth: 0
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                circumference: 180, // Faz o formato de velocímetro (meia lua)
+                                rotation: 270,      // Inicia da esquerda para direita
+                                cutout: '75%',      // Espessura da linha
+                                plugins: {
+                                    tooltip: { enabled: false },
+                                    legend: { display: false }
+                                },
+                                animation: {
+                                    duration: 0 // Impede que pisque a cada refresh silencioso
+                                }
+                            }
+                        });
+                    });
+                }
             }
         }
 
