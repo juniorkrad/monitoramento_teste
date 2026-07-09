@@ -805,11 +805,11 @@ window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
     // Título em colunas separadas
     thead.innerHTML = `
         <tr>
-            <th style="text-align: left; padding-left: 15px;">Serial</th>
-            <th style="text-align: left;">Código</th>
-            <th style="text-align: left;">OLT</th>
+            <th style="text-align: left; padding-left: 15px;">OLT</th>
             <th style="text-align: center;">Placa/Porta</th>
             <th style="text-align: left;">Circuito</th>
+            <th style="text-align: left;">Serial</th>
+            <th style="text-align: left;">Código</th>
             <th style="text-align: center;">Potência</th>
             <th style="text-align: center;">Status</th>
         </tr>
@@ -840,11 +840,11 @@ window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
             
             let rowHTML = `
                 <tr class="client-row ${statusClass}" data-serial="${c.serial}" data-codigo="${c.codigo}">
-                    <td style="padding: 15px; font-family: var(--font-family-mono); font-weight: 600; color: var(--m3-on-surface);">${c.serial || 'N/A'}</td>
-                    <td style="font-family: var(--font-family-mono);">${c.codigo || 'N/A'}</td>
-                    <td style="color: var(--m3-on-surface-variant);">${c.oltName}</td>
+                    <td style="padding: 15px; color: var(--m3-on-surface-variant);">${c.oltName}</td>
                     <td style="text-align: center; color: var(--m3-on-surface-variant);">${c.placa}/${c.porta}</td>
                     <td style="color: var(--m3-on-surface-variant);">${c.circuito}</td>
+                    <td style="font-family: var(--font-family-mono); font-weight: 600; color: var(--m3-on-surface);">${c.serial || 'N/A'}</td>
+                    <td style="font-family: var(--font-family-mono);">${c.codigo || 'N/A'}</td>
                     <td style="text-align: center; font-family: var(--font-family-mono);">${c.potencia || 'N/A'} dBm</td>
                     <td style="text-align: center;">
                         <span class="status ${buttonClass}">${statusText}</span>
