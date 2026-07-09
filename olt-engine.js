@@ -802,15 +802,25 @@ window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
     const thead = document.getElementById('clients-thead');
     const tbody = document.getElementById('clients-tbody');
     
-    // Título unificado para a linha rica
-    thead.innerHTML = `<tr><th style="text-align: left; padding-left: 15px;">Detalhes do Equipamento e Assinante</th></tr>`;
+    // Título em colunas separadas
+    thead.innerHTML = `
+        <tr>
+            <th style="text-align: left; padding-left: 15px;">Serial</th>
+            <th style="text-align: left;">Código</th>
+            <th style="text-align: left;">OLT</th>
+            <th style="text-align: center;">Placa/Porta</th>
+            <th style="text-align: left;">Circuito</th>
+            <th style="text-align: center;">Potência</th>
+            <th style="text-align: center;">Status</th>
+        </tr>
+    `;
     tbody.innerHTML = '';
 
     const portKey = `${placa}/${porta}`;
     const clients = window.OLT_CLIENTS_DATA[portKey] || [];
 
     if (clients.length === 0) {
-        tbody.innerHTML = `<tr><td style="text-align:center;">Nenhum cliente encontrado.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Nenhum cliente encontrado.</td></tr>`;
     } else {
         clients.forEach(c => {
             let statusRaw = c.statusRef.toLowerCase();
@@ -828,45 +838,16 @@ window.openCircuitClients = function(placa, porta, circuitoNome, oltType) {
             let buttonClass = statusClass === 'filter-online' ? 'status-normal' : 'status-critico';
             if (statusClass === 'filter-unknown') buttonClass = 'status-atencao';
             
-            // Geração da linha rica focada em colunas verticais
             let rowHTML = `
                 <tr class="client-row ${statusClass}" data-serial="${c.serial}" data-codigo="${c.codigo}">
-                    <td style="padding: 15px;">
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                            
-                            <div style="display: flex; align-items: center; gap: 6px;" title="Serial do Equipamento">
-                                <span class="material-symbols-rounded" style="color: var(--m3-color-primary);">barcode</span> 
-                                <strong style="font-family: var(--font-family-mono); font-size: 1.05rem;">${c.serial || 'N/A'}</strong>
-                            </div>
-                            
-                            <div style="display: flex; align-items: center; gap: 6px;" title="Código do Cliente">
-                                <span class="material-symbols-rounded" style="color: var(--m3-color-primary);">deployed_code_account</span> 
-                                <strong style="font-family: var(--font-family-mono); font-size: 1.05rem;">${c.codigo || 'N/A'}</strong>
-                            </div>
-
-                            <div style="display: flex; align-items: center; gap: 6px; color: var(--m3-on-surface-variant);" title="Nome da OLT">
-                                <span class="material-symbols-rounded" style="font-size: 20px;">dns</span> ${c.oltName}
-                            </div>
-
-                            <div style="display: flex; align-items: center; gap: 6px; color: var(--m3-on-surface-variant);" title="Placa/Porta">
-                                <span class="material-symbols-rounded" style="font-size: 20px;">developer_board</span> ${c.placa}/${c.porta}
-                            </div>
-
-                            <div style="display: flex; align-items: center; gap: 6px; color: var(--m3-on-surface-variant);" title="Circuito">
-                                <span class="material-symbols-rounded" style="font-size: 20px;">network_node</span> ${c.circuito}
-                            </div>
-                            
-                            <div style="display: flex; align-items: center; gap: 6px; color: var(--m3-on-surface-variant);" title="Potência (dBm)">
-                                <span class="material-symbols-rounded" style="font-size: 20px;">infrared</span> ${c.potencia || 'N/A'} dBm
-                            </div>
-
-                            <div style="margin-top: 4px;">
-                                <button class="status-btn ${buttonClass}" style="display: inline-flex; align-items: center; gap: 6px; cursor: default; pointer-events: none; border-radius: 8px;">
-                                    <span class="material-symbols-rounded" style="font-size: 20px;">online_prediction</span> ${statusText}
-                                </button>
-                            </div>
-
-                        </div>
+                    <td style="padding: 15px; font-family: var(--font-family-mono); font-weight: 600; color: var(--m3-on-surface);">${c.serial || 'N/A'}</td>
+                    <td style="font-family: var(--font-family-mono);">${c.codigo || 'N/A'}</td>
+                    <td style="color: var(--m3-on-surface-variant);">${c.oltName}</td>
+                    <td style="text-align: center; color: var(--m3-on-surface-variant);">${c.placa}/${c.porta}</td>
+                    <td style="color: var(--m3-on-surface-variant);">${c.circuito}</td>
+                    <td style="text-align: center; font-family: var(--font-family-mono);">${c.potencia || 'N/A'} dBm</td>
+                    <td style="text-align: center;">
+                        <span class="status ${buttonClass}">${statusText}</span>
                     </td>
                 </tr>
             `;
