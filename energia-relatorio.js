@@ -1,0 +1,230 @@
+// ==============================================================================
+// energia-relatorio.js - Gerador de Boletim Visual (PNG Off-screen) para Energia
+// Atualização: Escopo Unificado por POP, exibe portas com >= 50% de clientes sem energia
+// ==============================================================================
+
+const POP_MAP = {
+    'PSV-1': 'POP São Vicente', 'PSV-7': 'POP São Vicente',
+    'SBO-1': 'POP São Bernardo', 'SBO-2': 'POP São Bernardo', 'SBO-3': 'POP São Bernardo', 'SBO-4': 'POP São Bernardo',
+    'HEL-1': 'POP Heliópolis', 'HEL-2': 'POP Heliópolis',
+    'LTXV-1': 'POP Lote XV', 'LTXV-2': 'POP Lote XV',
+    'SB-1': 'POP São Bento', 'SB-2': 'POP São Bento', 'SB-3': 'POP São Bento',
+    'PQA-1': 'POP Parque Amorim', 'PQA-2': 'POP Parque Amorim', 'PQA-3': 'POP Parque Amorim',
+    'MGP': 'POP Piabetá'
+};
+
+window.gerarRelatorioEnergiaOffscreen = async function(event) {
+    if (event) event.stopPropagation();
+
+    const btn = event ? event.currentTarget : null;
+    let originalContent = '';
+    if (btn) {
+        originalContent = btn.innerHTML;
+        btn.innerHTML = `<span class="material-symbols-rounded" style="font-size: 30px;">hourglass_empty</span>`;
+    }
+
+    try {
+        const titleEl = document.getElementById('super-modal-title');
+        let oltName = 'OLT_Desconhecida';
+        if (titleEl) {
+            oltName = titleEl.innerText.replace('dns', '').trim();
+        }
+
+        const popName = POP_MAP[oltName] || oltName;
+        let targetOlts = Object.keys(POP_MAP).filter(key => POP_MAP[key] === popName);
+        
+        if (targetOlts.length === 0) targetOlts.push(oltName);
+
+        const portasCriticas = [];
+        const rowsCircuitos = (window.DATA_STORE && window.DATA_STORE.circuitos) ? window.DATA_STORE.circuitos : [];
+        const rowsLocalidades = window.DATA_STORE.localidades || [];
+
+        targetOlts.forEach(targetOltId => {
+            const oltConfig = typeof GLOBAL_MASTER_OLT_LIST !== 'undefined' ? GLOBAL_MASTER_OLT_LIST.find(o => o.id === targetOltId) : null;
+            if (!oltConfig) return;
+
+            const oltData = window.ENERGY_DATA_STORE.olts[targetOltId];
+            if (!oltData || !oltData.ports) return;
+
+            const portsMap = oltData.ports;
+
+            for (const placa in portsMap) {
+                for (const porta in portsMap[placa]) {
+                    const pData = portsMap[placa][porta];
+                    const calcTotal = pData.total || (pData.online + pData.offline);
+                    
+                    if (calcTotal > 0) {
+                        const percOff = pData.powerOff / calcTotal;
+                        
+                        if (percOff >= 0.5) {
+                            const infoExtra = DataMapper.getCircuitInfo(rowsCircuitos, oltConfig, placa, porta);
+                            const bairroExtra = DataMapper.getBairroInfo(rowsLocalidades, targetOltId, placa, porta, oltConfig.type);
+                            
+                            portasCriticas.push({
+                                olt: targetOltId,
+                                placa: placa,
+                                porta: String(porta).padStart(2, '0'),
+                                circuito: infoExtra,
+                                bairro: bairroExtra && bairroExtra !== '-' ? bairroExtra : 'N/A',
+                                powerOff: pData.powerOff,
+                                perc: Math.round(percOff * 100) + '%',
+                                status: 'SEM ENERGIA'
+                            });
+                        }
+                    }
+                }
+            }
+        });
+
+        let tituloBoletim = "ENERGIA ESTÁVEL";
+        if (portasCriticas.length > 0) {
+            tituloBoletim = "FALHA ELÉTRICA MASSIVA";
+        }
+
+        portasCriticas.sort((a, b) => a.olt.localeCompare(b.olt) || parseInt(a.placa) - parseInt(b.placa) || parseInt(a.porta) - parseInt(b.porta));
+
+        const LIMITE_LINHAS = 12;
+        const totalPaginas = Math.max(1, Math.ceil(portasCriticas.length / LIMITE_LINHAS));
+        const dataHora = new Date().toLocaleString('pt-BR');
+
+        for (let paginaAtual = 1; paginaAtual <= totalPaginas; paginaAtual++) {
+            
+            const wrapperDiv = document.createElement('div');
+            wrapperDiv.id = `offscreen-wrapper-energy-pag-${paginaAtual}`;
+            wrapperDiv.style.position = 'absolute';
+            wrapperDiv.style.left = '-9999px'; 
+            wrapperDiv.style.top = '0';
+            wrapperDiv.style.backgroundColor = 'transparent'; 
+            wrapperDiv.style.padding = '0';
+
+            const offscreenDiv = document.createElement('div');
+            offscreenDiv.style.width = '1000px'; 
+            offscreenDiv.style.height = '750px'; 
+            offscreenDiv.style.backgroundColor = '#2f0e51'; 
+            offscreenDiv.style.color = '#ffffff';
+            offscreenDiv.style.padding = '30px';
+            offscreenDiv.style.borderRadius = '24px'; 
+            offscreenDiv.style.overflow = 'hidden'; 
+            offscreenDiv.style.fontFamily = "'Montserrat', sans-serif";
+            offscreenDiv.style.boxSizing = 'border-box';
+            offscreenDiv.style.display = 'flex'; 
+            offscreenDiv.style.flexDirection = 'column';
+            offscreenDiv.style.justifyContent = 'flex-start';
+
+            let tableHtml = '';
+            
+            if (portasCriticas.length === 0) {
+                tableHtml = `
+                    <div style="text-align: center; padding: 40px; background: rgba(255,255,255,0.05); border-radius: 12px; margin-top: 20px; flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                        <span style="font-family: 'Material Symbols Rounded'; font-size: 64px; color: #4ade80; margin-bottom: 15px; display:block;">bolt</span>
+                        <h2 style="margin: 0; color: #4ade80; font-size: 2rem;">Energia Estável</h2>
+                        <p style="color: #CAC4D0; margin-top: 10px; font-size: 1.1rem;">Nenhum alarme massivo de falta de energia (> 50%) detectado no ${popName} no momento.</p>
+                    </div>
+                `;
+            } else {
+                let rowsHtml = '';
+                
+                const startIndex = (paginaAtual - 1) * LIMITE_LINHAS;
+                const endIndex = startIndex + LIMITE_LINHAS;
+                const fatiaCriticas = portasCriticas.slice(startIndex, endIndex);
+                
+                fatiaCriticas.forEach(p => {
+                    const statusColor = '#fbbf24'; 
+                    const statusBg = 'rgba(251, 191, 36, 0.15)';
+                    
+                    rowsHtml += `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 12px 10px; font-weight: bold; text-align: center; width: 12%; color: #fbbf24;">${p.olt}</td>
+                            <td style="padding: 12px 10px; font-family: 'Roboto Mono', monospace; text-align: center; width: 14%;">${p.placa}/${p.porta}</td>
+                            
+                            <td style="padding: 12px 10px; text-align: center; width: 20%;">
+                                <span style="border: 1px solid rgba(255,255,255,0.2); background-color: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 8px; font-family: 'Roboto Mono', monospace; font-size: 0.9rem;">${p.circuito}</span>
+                            </td>
+                            
+                            <td style="padding: 12px 10px; text-align: center; font-size: 0.85rem; color: #CAC4D0; width: 28%; word-break: break-word;">${p.bairro}</td>
+                            
+                            <td style="padding: 12px 10px; text-align: center; font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight: bold; width: 12%; border-left: 1px solid rgba(255,255,255,0.1); background-color: rgba(251, 191, 36, 0.04); color: #fbbf24;">${p.perc}</td>
+                            <td style="padding: 12px 10px; text-align: center; width: 14%; background-color: rgba(251, 191, 36, 0.04);">
+                                <span style="background: ${statusBg}; color: ${statusColor}; padding: 6px 12px; border-radius: 12px; font-weight: bold; font-size: 0.85rem;">${p.status}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tableHtml = `
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.95rem;">
+                        <thead>
+                            <tr>
+                                <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; border-radius: 8px 0 0 0; width: 12%; color: #fbbf24;">OLT</th>
+                                <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 14%;">PLACA/PORTA</th>
+                                <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 20%;">CIRCUITO</th>
+                                <th style="padding: 12px 10px; background: rgba(0,0,0,0.2); text-align: center; width: 28%;">BAIRRO</th>
+                                <th style="padding: 12px 10px; background: rgba(251, 191, 36, 0.1); text-align: center; border-left: 1px solid rgba(255,255,255,0.1); width: 12%; color: #fbbf24;">IMPACTO</th>
+                                <th style="padding: 12px 10px; background: rgba(251, 191, 36, 0.1); text-align: center; border-radius: 0 8px 0 0; width: 14%; color: #fbbf24;">STATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            let indicadorPaginaHtml = '';
+            if (totalPaginas > 1) {
+                indicadorPaginaHtml = `
+                    <div style="font-size: 0.85rem; color: #fbbf24; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">
+                        Página ${paginaAtual} de ${totalPaginas}
+                    </div>
+                `;
+            }
+
+            offscreenDiv.innerHTML = `
+                <div style="border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <img src="logo-relatorio.png" style="max-height: 60px; width: auto; object-fit: contain;" onerror="this.style.display='none'">
+                        <div>
+                            ${indicadorPaginaHtml}
+                            <h2 style="margin: 0; font-size: 1.6rem; color: #fbbf24; display: flex; align-items: center; gap: 10px;">
+                                ${portasCriticas.length > 0 ? `<span style="font-family: 'Material Symbols Rounded'; font-weight: normal; font-size: 28px;">warning</span>` : ''}
+                                ${tituloBoletim}
+                            </h2>
+                            <h3 style="margin: 5px 0 0 0; font-size: 1.3rem; color: #ffffff; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+                                <span style="font-family: 'Material Symbols Rounded'; font-weight: normal; font-size: 24px;">domain</span> ${popName}
+                            </h3>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 0.85rem; color: #CAC4D0; font-family: 'Roboto Mono', monospace;">Gerado em: ${dataHora}</span>
+                    </div>
+                </div>
+                ${tableHtml}
+            `;
+
+            wrapperDiv.appendChild(offscreenDiv);
+            document.body.appendChild(wrapperDiv);
+
+            const canvas = await html2canvas(wrapperDiv, {
+                backgroundColor: null, 
+                scale: 2, 
+                logging: false
+            });
+
+            let nomeArquivo = `BoletimEnergia_${popName.replace(/[^a-zA-Z0-9-]/g, '_')}_${new Date().getTime()}`;
+            if (totalPaginas > 1) nomeArquivo += `_Pag${paginaAtual}`;
+
+            const link = document.createElement('a');
+            link.download = `${nomeArquivo}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            
+            document.body.removeChild(wrapperDiv);
+        }
+
+    } catch (error) {
+        console.error('Erro ao gerar relatório off-screen de energia:', error);
+        alert('Ocorreu um erro ao gerar o relatório de energia.');
+    } finally {
+        if (btn) btn.innerHTML = originalContent;
+    }
+};

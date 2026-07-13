@@ -39,7 +39,12 @@
                 <h3 id="super-modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
                     <span class="material-symbols-rounded">dns</span> Detalhes da OLT
                 </h3>
-                <button class="close-modal" onclick="closeSuperModal()">&times;</button>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <button id="btn-gerar-boletim-energia" onclick="window.gerarRelatorioEnergiaOffscreen(event)" class="card-header-button" title="Gerar Boletim de Energia" style="display: none;">
+                        <span class="material-symbols-rounded">warning</span>
+                    </button>
+                    <button class="close-modal" onclick="closeSuperModal()">&times;</button>
+                </div>
             </div>
             <div class="modal-body">
                 
@@ -85,6 +90,7 @@
     <script src="notifications.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="energia-engine.js"></script> 
+    <script src="energia-relatorio.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

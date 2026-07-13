@@ -494,6 +494,9 @@ window.openEnergySuperModal = function(id) {
     document.getElementById('energy-view-detalhes').style.display = 'none';
     document.getElementById('energy-view-placas').style.display = 'block';
     
+    const btnBoletim = document.getElementById('btn-gerar-boletim-energia');
+    if (btnBoletim) btnBoletim.style.display = 'inline-block';
+
     modal.style.display = 'flex';
     populateEnergyModal(id);
 }
@@ -548,6 +551,9 @@ window.openEnergyPlacaDetails = function(oltId, placa, type) {
     document.getElementById('energy-view-placas').style.display = 'none';
     document.getElementById('energy-view-detalhes').style.display = 'block';
     
+    const btnBoletim = document.getElementById('btn-gerar-boletim-energia');
+    if (btnBoletim) btnBoletim.style.display = 'none';
+
     const tbody = document.getElementById('energy-detalhes-tbody');
     tbody.innerHTML = '';
     
@@ -660,11 +666,17 @@ window.closeSuperModal = function(event) {
     const modal = document.getElementById('super-modal');
     if (modal) modal.style.display = 'none';
     window.CURRENT_ENERGY_OLT = null;
+
+    const btnBoletim = document.getElementById('btn-gerar-boletim-energia');
+    if (btnBoletim) btnBoletim.style.display = 'none';
 };
 
 window.backToEnergyPlacas = function() {
     document.getElementById('energy-view-detalhes').style.display = 'none';
     document.getElementById('energy-view-placas').style.display = 'block';
+
+    const btnBoletim = document.getElementById('btn-gerar-boletim-energia');
+    if (btnBoletim) btnBoletim.style.display = 'inline-block';
 };
 
 document.addEventListener('DOMContentLoaded', () => {
