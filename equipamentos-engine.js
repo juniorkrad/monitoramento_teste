@@ -1,6 +1,6 @@
 // ==============================================================================
 // equipamentos-engine.js - Motor de Fabricantes (Visão por Marca)
-// Atualização: Inclusão do fabricante ZTE
+// Atualização: Inclusão do fabricante ZTE e Agrupamento Multinível (OLT > Placa > Porta)
 // ==============================================================================
 
 const EQP_MARCAS = [
@@ -190,8 +190,43 @@ function runEquipamentosEngine() {
                 if (isOnline) brandData[marca].online++;
                 else brandData[marca].offline++;
 
-                if (!brandData[marca].olts[olt.id]) brandData[marca].olts[olt.id] = 0;
-                brandData[marca].olts[olt.id]++;
+                // =================================================================
+                // NOVA LÓGICA DE EXTRAÇÃO DE PLACA E PORTA
+                // =================================================================
+                // 1. Removemos todas as letras (ex: "GPON1/1" vira "1/1")
+                let cleanPorta = porta.replace(/[A-Za-z]/g, '').trim(); 
+                
+                // 2. Quebramos pelas barras ignorando strings vazias
+                let parts = cleanPorta.split('/').filter(p => p !== '');
+                
+                let placaStr = "0";
+                let portaStr = "0";
+                
+                if (parts.length >= 2) {
+                    // Pegamos sempre os dois últimos elementos, ignorando rack/shelf se houver
+                    portaStr = parts.pop(); 
+                    placaStr = parts.pop();
+                } else if (parts.length === 1) {
+                    portaStr = parts[0];
+                } else {
+                    portaStr = porta || "-";
+                }
+
+                // 3. Estruturação multinível: OLT > Placa > Porta
+                if (!brandData[marca].olts[olt.id]) {
+                    brandData[marca].olts[olt.id] = { total: 0, placas: {} };
+                }
+                brandData[marca].olts[olt.id].total++;
+
+                if (!brandData[marca].olts[olt.id].placas[placaStr]) {
+                    brandData[marca].olts[olt.id].placas[placaStr] = { total: 0, portas: {} };
+                }
+                brandData[marca].olts[olt.id].placas[placaStr].total++;
+
+                if (!brandData[marca].olts[olt.id].placas[placaStr].portas[portaStr]) {
+                    brandData[marca].olts[olt.id].placas[placaStr].portas[portaStr] = 0;
+                }
+                brandData[marca].olts[olt.id].placas[placaStr].portas[portaStr]++;
             });
         });
 
@@ -255,15 +290,62 @@ function runEquipamentosEngine() {
                     const marcaInfo = EQP_MARCAS.find(em => em.nome === m.nome);
                     const prefixosTxt = marcaInfo ? marcaInfo.prefixos : 'Não Mapeado';
 
-                    let oltListHtml = '';
+                    // =================================================================
+                    // GERAÇÃO DINÂMICA DO ACORDEÃO (HTML Estrutural)
+                    // =================================================================
+                    let oltListHtml = '<div class="distribuicao-container">';
+                    
                     Object.keys(m.olts).sort().forEach(oltId => {
+                        const oltData = m.olts[oltId];
+                        
                         oltListHtml += `
-                            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.9rem;">
-                                <span style="color:var(--m3-on-surface-variant)">${oltId}</span>
-                                <strong style="font-family:var(--font-family-mono)">${m.olts[oltId]}</strong>
-                            </div>
+                            <details class="dist-olt-details">
+                                <summary class="dist-olt-summary">
+                                    <div class="dist-summary-content">
+                                        <span class="dist-title">${oltId}</span>
+                                        <strong class="dist-count">${oltData.total}</strong>
+                                    </div>
+                                </summary>
+                                <div class="dist-olt-body">
+                        `;
+                        
+                        Object.keys(oltData.placas).sort((a,b) => parseInt(a) - parseInt(b)).forEach(placaId => {
+                            const placaData = oltData.placas[placaId];
+                            
+                            oltListHtml += `
+                                <details class="dist-placa-details">
+                                    <summary class="dist-placa-summary">
+                                        <div class="dist-summary-content">
+                                            <span class="dist-title">Placa ${placaId}</span>
+                                            <strong class="dist-count">${placaData.total}</strong>
+                                        </div>
+                                    </summary>
+                                    <div class="dist-placa-body">
+                                        <div class="dist-portas-grid">
+                            `;
+                            
+                            Object.keys(placaData.portas).sort((a,b) => parseInt(a) - parseInt(b)).forEach(portaId => {
+                                oltListHtml += `
+                                            <div class="dist-porta-item">
+                                                <span class="dist-porta-label">Porta ${portaId}</span>
+                                                <span class="dist-porta-count">${placaData.portas[portaId]}</span>
+                                            </div>
+                                `;
+                            });
+                            
+                            oltListHtml += `
+                                        </div>
+                                    </div>
+                                </details>
+                            `;
+                        });
+                        
+                        oltListHtml += `
+                                </div>
+                            </details>
                         `;
                     });
+                    oltListHtml += '</div>';
                     window.BRAND_OLT_HTML[m.nome] = oltListHtml; 
 
                     let headerButtonHtml = '';

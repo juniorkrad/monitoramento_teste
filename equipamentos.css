@@ -9,3 +9,158 @@
    Utilize este arquivo apenas para estilizações estritamente exclusivas
    da página equipamentos.html que não devem afetar outras páginas.
 */
+
+/* ==========================================================================
+   ESTILOS DO ACORDEÃO (MODAL DE DISTRIBUIÇÃO MULTINÍVEL)
+   ========================================================================== */
+
+.distribuicao-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+details > summary {
+    list-style: none;
+    cursor: pointer;
+    outline: none;
+}
+
+details > summary::-webkit-details-marker {
+    display: none;
+}
+
+/* --- ESTILO BASE DO CABEÇALHO (SUMMARY) --- */
+.dist-summary-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: var(--m3-surface-container-high);
+    border: 1px solid var(--m3-outline-variant);
+    border-radius: 8px;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.dist-summary-content:hover {
+    background-color: var(--m3-state-layer-hover);
+    border-color: var(--m3-outline);
+}
+
+details[open] > summary .dist-summary-content {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-color: transparent;
+    background-color: rgba(234, 208, 255, 0.05);
+}
+
+/* --- TIPOGRAFIA DOS TÍTULOS E CONTADORES --- */
+.dist-title {
+    color: var(--m3-on-surface);
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dist-title::before {
+    content: '\e313'; /* Ícone keyboard_arrow_down */
+    font-family: 'Material Symbols Rounded';
+    font-size: 20px;
+    color: var(--m3-on-surface-variant);
+    transition: transform 0.3s ease;
+    transform: rotate(-90deg);
+}
+
+details[open] > summary .dist-title::before {
+    transform: rotate(0deg);
+}
+
+.dist-count {
+    font-family: var(--font-family-mono);
+    color: var(--m3-on-surface);
+    font-size: 1.1rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* --- NÍVEL 1: CORPO DA OLT --- */
+.dist-olt-body {
+    padding: 10px 0 10px 16px;
+    border-left: 2px solid var(--m3-outline-variant);
+    margin-left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* --- NÍVEL 2: CORPO DA PLACA E ESTILO DIFERENCIADO --- */
+.dist-placa-details > summary .dist-summary-content {
+    padding: 10px 14px;
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.dist-placa-details > summary .dist-title {
+    font-size: 0.85rem;
+    color: var(--m3-on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dist-placa-details > summary .dist-count {
+    font-size: 0.95rem;
+    background: transparent;
+    border: none;
+    color: var(--m3-on-surface-variant);
+}
+
+.dist-placa-body {
+    padding: 15px;
+    border-left: 2px solid var(--m3-outline-variant);
+    margin-left: 16px;
+    background: rgba(0, 0, 0, 0.15);
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+/* --- NÍVEL 3: GRID DE PORTAS --- */
+.dist-portas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+}
+
+.dist-porta-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--m3-surface-container);
+    border: 1px solid var(--m3-outline-variant);
+    padding: 10px 14px;
+    border-radius: 8px;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.dist-porta-item:hover {
+    transform: translateY(-2px);
+    border-color: var(--m3-outline);
+    background-color: var(--m3-surface-container-high);
+}
+
+.dist-porta-label {
+    font-size: 0.75rem;
+    color: var(--m3-on-surface-variant);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.dist-porta-count {
+    font-family: var(--font-family-mono);
+    color: var(--m3-on-surface);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
