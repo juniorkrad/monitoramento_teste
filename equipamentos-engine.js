@@ -78,10 +78,6 @@ window.handleEqpHover = function(event) {
             <span style="color: var(--m3-on-surface-variant);">Offline:</span> 
             <strong style="color: var(--m3-color-error);">${el.dataset.offline}</strong>
         </div>
-        <div class="smart-tooltip-line">
-            <span style="color: var(--m3-on-surface-variant);">Saúde:</span> 
-            <strong>${el.dataset.pct}%</strong>
-        </div>
     `;
 
     const rect = el.getBoundingClientRect();
@@ -110,15 +106,9 @@ window.handleEqpClick = function(event) {
             <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Prefixos Mapeados</span><br>
             <strong style="font-family: var(--font-family-mono); font-size: 0.9rem;">${el.dataset.prefixos}</strong>
         </div>
-        <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
-            <div>
-                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Total</span><br>
-                <strong style="font-size: 1.2rem;">${el.dataset.total}</strong>
-            </div>
-            <div style="text-align: right;">
-                <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Saúde</span><br>
-                <strong style="font-size: 1.2rem;">${el.dataset.pct}%</strong>
-            </div>
+        <div style="margin-bottom: 15px; text-align: center;">
+            <span style="color: var(--m3-on-surface-variant); font-size: 0.85rem;">Total</span><br>
+            <strong style="font-size: 1.5rem;">${el.dataset.total}</strong>
         </div>
         <div style="display: flex; gap: 10px;">
             <div style="flex:1; background:rgba(74,222,128,0.1); padding:8px; border-radius:8px; text-align:center;">
@@ -250,7 +240,6 @@ function runEquipamentosEngine() {
                     .forEach(marca => {
                         const color = marca.nome === 'DESCONHECIDOS' ? 'var(--m3-color-error)' : 'var(--m3-on-surface)';
                         const disabledClass = marca.total === 0 ? 'disabled' : '';
-                        const pctOnline = marca.total > 0 ? ((marca.online / marca.total) * 100).toFixed(1) : 0;
                         
                         const marcaInfo = EQP_MARCAS.find(em => em.nome === marca.nome);
                         const prefixosTxt = marcaInfo ? marcaInfo.prefixos : 'Não Mapeado';
@@ -262,7 +251,6 @@ function runEquipamentosEngine() {
                                  data-total="${marca.total}"
                                  data-online="${marca.online}"
                                  data-offline="${marca.offline}"
-                                 data-pct="${pctOnline}"
                                  data-color="${color}"
                                  onmouseenter="handleEqpHover(event)"
                                  onmouseleave="handleEqpLeave()"
@@ -285,8 +273,6 @@ function runEquipamentosEngine() {
                 .filter(m => m.total > 0) 
                 .sort((a, b) => b.total - a.total)
                 .forEach(m => {
-                    const health = ((m.online / m.total) * 100).toFixed(1);
-                    
                     const marcaInfo = EQP_MARCAS.find(em => em.nome === m.nome);
                     const prefixosTxt = marcaInfo ? marcaInfo.prefixos : 'Não Mapeado';
 
@@ -366,14 +352,10 @@ function runEquipamentosEngine() {
                                 ${headerButtonHtml}
                             </div>
                             <div class="card-body" style="flex-direction:column; padding:20px; gap:15px;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                                <div style="display:flex; justify-content:center; align-items:center; width:100%; text-align:center;">
                                     <div style="display:flex; flex-direction:column; gap:4px;">
                                         <span style="font-size:0.75rem; color:var(--m3-on-surface-variant); text-transform:uppercase;">Total</span>
                                         <span style="font-size:1.5rem; font-weight:700; color:var(--m3-on-surface); font-family:var(--font-family-mono); line-height:1;">${m.total}</span>
-                                    </div>
-                                    <div style="text-align:right;">
-                                        <span style="font-size:1.5rem; font-weight:700; color:${health >= 95 ? 'var(--m3-color-success)' : 'var(--m3-color-warning)'}; font-family:var(--font-family-mono);">${health}%</span><br>
-                                        <span style="font-size:0.7rem; color:var(--m3-on-surface-variant); text-transform:uppercase;">Saúde</span>
                                     </div>
                                 </div>
 
