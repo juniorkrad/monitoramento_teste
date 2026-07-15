@@ -1,12 +1,12 @@
 // ==============================================================================
-// relatorio-pdf.js - Gerador de Relatório PDF de Equipamentos por Porta
-// Formato A4, Identidade Visual (Roxo/Branco) e Agrupamento por Fabricante
-// Atualização: Largura controlada, Pílulas blindadas com tabela, Rodapé visível
+// relatorio-pdf.js - Gerador de Relatório de Equipamentos (Exportação PNG A4)
+// Identidade Visual (Roxo/Branco) e Agrupamento por Fabricante
+// Atualização: Conversão para Imagem Contínua (Solução de Estabilidade Total)
 // ==============================================================================
 
 window.RELATORIO_SELECTIONS = [];
 
-// Mapeamento de Fabricantes (Espelhado do equipamentos-engine)
+// Mapeamento de Fabricantes
 const PDF_EQP_MARCAS = [
     { nome: 'NOKIA', prefixos: 'ALCL' },
     { nome: 'CHINA MOBILE', prefixos: 'NBEL' },
@@ -29,32 +29,28 @@ PDF_EQP_MARCAS.forEach(marca => {
     });
 });
 
-// Helper para gerar as logos no PDF (Apenas V-SOL para não quebrar a pílula)
+// Helper para gerar as logos no PNG
 function getPdfLogoHtml(marcaNome) {
     if (marcaNome === 'MAXPRINT / V-SOL') {
-        return `<img src="imagens/logos/v-sol.png" style="max-height: 20px; max-width: 90px; object-fit: contain; display: block;" onerror="this.outerHTML='<span style=\\'font-size:11px; font-weight:bold; color:#ffffff;\\'>V-SOL/MAXPRINT</span>'">`;
+        return `<img src="imagens/logos/v-sol.png" style="max-height: 22px; max-width: 100px; object-fit: contain; display: block;" onerror="this.outerHTML='<span style=\\'font-size:11px; font-weight:bold; color:#ffffff;\\'>V-SOL/MAXPRINT</span>'">`;
     } else {
         let logoFile = marcaNome.toLowerCase().replace(/\s+/g, '-') + '.png';
         if (marcaNome === 'CHINA MOBILE') logoFile = 'china-mobile.png';
         if (marcaNome === 'DESCONHECIDOS') logoFile = 'desconhecidos.png';
-        return `<img src="imagens/logos/${logoFile}" style="max-height: 20px; max-width: 90px; object-fit: contain; display: block;" onerror="this.outerHTML='<span style=\\'font-size:11px; font-weight:bold; color:#ffffff;\\'>${marcaNome}</span>'">`;
+        return `<img src="imagens/logos/${logoFile}" style="max-height: 22px; max-width: 100px; object-fit: contain; display: block;" onerror="this.outerHTML='<span style=\\'font-size:11px; font-weight:bold; color:#ffffff;\\'>${marcaNome}</span>'">`;
     }
 }
 
-// Helper para gerar a "Pílula" blindada contra bugs do html2canvas (Usando tabela)
+// Helper para a Pílula do fabricante (Uso de Flexbox Estável para html2canvas)
 function getPdfPillHtml(marcaNome, count) {
     return `
-        <div style="display: inline-block; width: 31%; background-color: #2f0e51; border-radius: 8px; padding: 10px; margin-right: 1.5%; margin-bottom: 12px; box-sizing: border-box; page-break-inside: avoid; break-inside: avoid; vertical-align: top;">
-            <table style="width: 100%; border: none; padding: 0; margin: 0; background-color: transparent;">
-                <tr>
-                    <td style="text-align: left; vertical-align: middle; border: none; padding: 0;">
-                        ${getPdfLogoHtml(marcaNome)}
-                    </td>
-                    <td style="text-align: right; vertical-align: middle; border: none; padding: 0; font-family: 'Roboto Mono', monospace; font-weight: bold; font-size: 16px; color: #ffffff;">
-                        ${count}
-                    </td>
-                </tr>
-            </table>
+        <div style="display: flex; align-items: center; justify-content: space-between; width: calc(33.333% - 10px); background-color: #2f0e51; border-radius: 8px; padding: 12px 15px; box-sizing: border-box;">
+            <div style="display: flex; align-items: center; justify-content: flex-start; max-width: 70%;">
+                ${getPdfLogoHtml(marcaNome)}
+            </div>
+            <div style="font-family: 'Roboto Mono', monospace; font-weight: bold; font-size: 16px; color: #ffffff;">
+                ${count}
+            </div>
         </div>
     `;
 }
@@ -67,7 +63,7 @@ function injectRelatorioModal() {
         <div class="search-modal-overlay" id="relatorio-pdf-modal" onclick="if(window.closeRelatorioModal) window.closeRelatorioModal(event)">
             <div class="search-modal" onclick="event.stopPropagation()">
                 <div class="search-modal-header">
-                    <h2><span class="material-symbols-rounded">picture_as_pdf</span> Relatório de Equipamentos</h2>
+                    <h2><span class="material-symbols-rounded">receipt_long</span> Relatório de Equipamentos</h2>
                     <button class="search-close-btn" onclick="if(window.closeRelatorioModal) window.closeRelatorioModal()" title="Fechar"><span class="material-symbols-rounded">close</span></button>
                 </div>
                 
@@ -94,8 +90,8 @@ function injectRelatorioModal() {
                 </div>
 
                 <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; margin-top: 10px;">
-                    <button class="search-btn" id="btn-gerar-pdf-final" style="width: 100%; padding: 16px; font-size: 1.1rem; font-weight: bold; background-color: #67079f; gap: 10px; display: none;" onclick="if(window.gerarPDFFinal) window.gerarPDFFinal()">
-                        <span class="material-symbols-rounded">download</span> GERAR PDF
+                    <button class="search-btn" id="btn-gerar-pdf-final" style="width: 100%; padding: 16px; font-size: 1.1rem; font-weight: bold; background-color: #67079f; gap: 10px; display: none;" onclick="if(window.gerarImagemFinal) window.gerarImagemFinal()">
+                        <span class="material-symbols-rounded">image</span> GERAR RELATÓRIO (PNG)
                     </button>
                 </div>
             </div>
@@ -121,7 +117,6 @@ window.openRelatorioModal = function() {
 
     document.getElementById('relatorio-pdf-modal').classList.add('active');
     
-    // Fecha o menu lateral se estiver aberto
     const sidebar = document.getElementById('main-sidebar');
     if (sidebar && sidebar.classList.contains('active')) toggleSidebar();
 };
@@ -132,7 +127,7 @@ window.closeRelatorioModal = function(event) {
     if (modal) modal.classList.remove('active');
 };
 
-// Atualiza o dropdown de Placas baseado na OLT selecionada
+// Atualiza o dropdown de Placas
 window.updateRelatorioPlacas = function() {
     const oltId = document.getElementById('relatorio-select-olt').value;
     const placaSelect = document.getElementById('relatorio-select-placa');
@@ -156,7 +151,7 @@ window.updateRelatorioPlacas = function() {
     }
 };
 
-// Atualiza o dropdown de Portas (Busca portas ativas dinamicamente)
+// Atualiza o dropdown de Portas
 window.updateRelatorioPortas = function() {
     const oltId = document.getElementById('relatorio-select-olt').value;
     const placaId = document.getElementById('relatorio-select-placa').value;
@@ -200,7 +195,6 @@ window.addRelatorioSelection = function() {
         return;
     }
 
-    // Resgata o circuito
     let circuitoNome = "N/A";
     const oltConfig = GLOBAL_MASTER_OLT_LIST.find(o => o.id === oltId);
     if (oltConfig && window.DATA_STORE && window.DATA_STORE.circuitos) {
@@ -208,7 +202,6 @@ window.addRelatorioSelection = function() {
         circuitoNome = DataMapper.getCircuitInfo(window.DATA_STORE.circuitos, pseudoConfig, placaId, portaId);
     }
 
-    // Verifica duplicação
     const existe = window.RELATORIO_SELECTIONS.find(s => s.olt === oltId && s.placa === placaId && s.porta === portaId);
     if (existe) {
         alert('Esta porta já foi adicionada ao relatório.');
@@ -225,7 +218,6 @@ window.addRelatorioSelection = function() {
 
     window.renderRelatorioSelections();
     
-    // Reseta selects para próxima adição
     document.getElementById('relatorio-select-olt').value = '';
     document.getElementById('relatorio-select-placa').innerHTML = '<option value="">2. Placa</option>';
     document.getElementById('relatorio-select-placa').disabled = true;
@@ -267,34 +259,35 @@ window.removeRelatorioSelection = function(index) {
     window.renderRelatorioSelections();
 };
 
-// Gera o arquivo PDF e faz o download
-window.gerarPDFFinal = async function() {
+// Gera a Imagem PNG (A4) contínua
+window.gerarImagemFinal = async function() {
     const btn = document.getElementById('btn-gerar-pdf-final');
     const originalText = btn.innerHTML;
-    btn.innerHTML = `<span class="material-symbols-rounded spinner" style="animation: spin 1s linear infinite;">autorenew</span> GERANDO PDF...`;
+    btn.innerHTML = `<span class="material-symbols-rounded spinner" style="animation: spin 1s linear infinite;">autorenew</span> RENDERIZANDO...`;
     btn.disabled = true;
 
     try {
-        // Acumuladores Globais para o Resumo Geral
         let globalMarcaContagem = {};
         let globalTotalEquipamentos = 0;
 
-        // Div base para gerar o PDF - Largura reduzida para 710px para evitar estouro da margem direita
+        // Container fixo fora da tela para forçar a renderização limpa e aguardar as imagens
         const wrapperDiv = document.createElement('div');
-        wrapperDiv.style.position = 'absolute';
+        wrapperDiv.style.position = 'fixed';
         wrapperDiv.style.left = '-9999px';
         wrapperDiv.style.top = '0';
 
         const a4Div = document.createElement('div');
-        a4Div.style.width = '710px'; 
+        a4Div.style.width = '794px'; // Largura A4 padrão a 96DPI
         a4Div.style.backgroundColor = '#ffffff'; 
         a4Div.style.color = '#1c1b1f'; 
         a4Div.style.fontFamily = "'Montserrat', sans-serif";
         a4Div.style.boxSizing = 'border-box';
+        a4Div.style.border = '10px solid #67079f'; // Borda externa segura
+        a4Div.style.borderRadius = '16px'; 
+        a4Div.style.padding = '30px 40px'; 
 
-        // Cabeçalho com Banner
         const headerHtml = `
-            <div style="display: block; width: 100%; text-align: center; border-bottom: 3px solid #67079f; padding-bottom: 15px; margin-bottom: 25px;">
+            <div style="width: 100%; text-align: center; border-bottom: 3px solid #67079f; padding-bottom: 15px; margin-bottom: 25px;">
                 <img src="imagens/banner_cor.png" style="max-width: 80%; max-height: 120px; object-fit: contain; margin-top: 5px;" onerror="this.style.display='none'">
                 <h1 style="color: #67079f; margin: 10px 0 5px 0; font-size: 24px; text-transform: uppercase;">Relatório de Equipamentos em Campo</h1>
                 <p style="color: #49454f; margin: 0; font-family: 'Roboto Mono', monospace; font-size: 12px;">Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
@@ -303,7 +296,6 @@ window.gerarPDFFinal = async function() {
 
         let contentHtml = '';
 
-        // Agrupa seleções por OLT
         const agrupadoPorOlt = {};
         window.RELATORIO_SELECTIONS.forEach(sel => {
             if (!agrupadoPorOlt[sel.olt]) agrupadoPorOlt[sel.olt] = [];
@@ -315,7 +307,7 @@ window.gerarPDFFinal = async function() {
             const rowsData = window.DATA_STORE.olts[oltId].slice(1);
             
             contentHtml += `
-                <div style="display: block; background-color: #f3edf7; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 6px solid #67079f; page-break-inside: avoid; break-inside: avoid;">
+                <div style="background-color: #f3edf7; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 6px solid #67079f;">
                     <h2 style="margin: 0; color: #67079f; font-size: 20px; display: flex; align-items: center; gap: 8px;">
                         OLT: ${oltId}
                     </h2>
@@ -344,19 +336,17 @@ window.gerarPDFFinal = async function() {
                     let prefix = serial.substring(0, 4);
                     let marca = pdfPrefixToMarca[prefix] || 'DESCONHECIDOS';
 
-                    // Contagem Local
                     if (!marcaContagem[marca]) marcaContagem[marca] = 0;
                     marcaContagem[marca]++;
                     totalEquipamentos++;
 
-                    // Contagem Global
                     if (!globalMarcaContagem[marca]) globalMarcaContagem[marca] = 0;
                     globalMarcaContagem[marca]++;
                     globalTotalEquipamentos++;
                 });
 
                 contentHtml += `
-                    <div style="display: block; margin-bottom: 25px; padding-left: 10px; border-bottom: 1px dashed #cac4d0; padding-bottom: 15px; page-break-inside: avoid; break-inside: avoid;">
+                    <div style="margin-bottom: 25px; padding-left: 10px; border-bottom: 1px dashed #cac4d0; padding-bottom: 15px;">
                         <h3 style="margin: 0 0 5px 0; color: #1c1b1f; font-size: 16px;">
                             Placa ${item.placa} / Porta ${String(item.porta).padStart(2, '0')}
                         </h3>
@@ -368,7 +358,8 @@ window.gerarPDFFinal = async function() {
                 if (totalEquipamentos === 0) {
                     contentHtml += `<p style="color: #f56c6c; font-size: 13px; font-weight: bold;">Nenhum equipamento válido identificado nesta porta.</p>`;
                 } else {
-                    contentHtml += `<div style="display: block; width: 100%;">`;
+                    // Grid flexível perfeitamente legível pelo html2canvas
+                    contentHtml += `<div style="display: flex; flex-wrap: wrap; gap: 15px; width: 100%;">`;
                     
                     Object.keys(marcaContagem).sort((a,b) => marcaContagem[b] - marcaContagem[a]).forEach(marcaNome => {
                         contentHtml += getPdfPillHtml(marcaNome, marcaContagem[marcaNome]);
@@ -383,16 +374,16 @@ window.gerarPDFFinal = async function() {
         }
 
         // ==========================================
-        // RESUMO GERAL (Apenas se >= 2 portas)
+        // RESUMO GERAL
         // ==========================================
         let summaryHtml = '';
         if (window.RELATORIO_SELECTIONS.length >= 2 && globalTotalEquipamentos > 0) {
             summaryHtml += `
-                <div style="display: block; margin-top: 20px; padding-top: 15px; border-top: 2px solid #67079f; page-break-inside: avoid; break-inside: avoid;">
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #67079f;">
                     <h2 style="margin: 0 0 15px 0; color: #67079f; font-size: 20px; text-transform: uppercase;">
                         Resumo Geral (Todas as Portas)
                     </h2>
-                    <div style="display: block; width: 100%;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 15px; width: 100%;">
             `;
             
             Object.keys(globalMarcaContagem).sort((a,b) => globalMarcaContagem[b] - globalMarcaContagem[a]).forEach(marcaNome => {
@@ -408,57 +399,41 @@ window.gerarPDFFinal = async function() {
             `;
         }
 
-        // Rodapé / Nota sobre Maxprint e V-SOL explicitamente posicionado no final do fluxo
         const footnoteHtml = `
-            <div style="display: block; margin-top: 30px; padding-top: 15px; border-top: 1px solid #eaeaea; width: 100%; page-break-inside: avoid; break-inside: avoid;">
+            <div style="margin-top: 40px; padding-top: 15px; border-top: 1px solid #eaeaea; width: 100%;">
                 <p style="margin: 0; font-size: 11px; color: #777; font-style: italic;">* Nota: Os equipamentos Maxprint e V-SOL utilizam o mesmo padrão de prefixo serial. A contagem correspondente abrange ambos os fabricantes.</p>
             </div>
         `;
 
-        // Wrapper interno do conteúdo com padding
-        a4Div.innerHTML = `
-            <div style="padding: 15px;">
-                ${headerHtml}
-                ${contentHtml}
-                ${summaryHtml}
-                ${footnoteHtml}
-            </div>
-        `;
-
+        a4Div.innerHTML = headerHtml + contentHtml + summaryHtml + footnoteHtml;
         wrapperDiv.appendChild(a4Div);
         document.body.appendChild(wrapperDiv);
 
-        if (typeof html2pdf === 'undefined') {
-            throw new Error("Biblioteca html2pdf não encontrada. Verifique as tags script.");
+        if (typeof html2canvas === 'undefined') {
+            throw new Error("Biblioteca html2canvas não encontrada. Verifique as tags script.");
         }
 
-        const opt = {
-            margin:       [0.5, 0.5, 0.5, 0.5], 
-            filename:     `Relatorio_Equipamentos_${new Date().getTime()}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, logging: false },
-            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
-            pagebreak:    { mode: ['css', 'legacy'] }
-        };
+        // Trava para aguardar o carregamento e injeção completa de todas as imagens e logos
+        await new Promise(resolve => setTimeout(resolve, 800));
 
-        // Usa os métodos do jsPDF para desenhar a borda em cada página gerada
-        await html2pdf().set(opt).from(a4Div).toPdf().get('pdf').then(function (pdf) {
-            var totalPages = pdf.internal.getNumberOfPages();
-            for (let i = 1; i <= totalPages; i++) {
-                pdf.setPage(i);
-                pdf.setDrawColor(103, 7, 159); // Cor Roxo #67079f
-                pdf.setLineWidth(0.02); 
-                // x=0.25, y=0.25, largura=7.77, altura=11.19
-                pdf.roundedRect(0.25, 0.25, 7.77, 11.19, 0.15, 0.15); 
-            }
-        }).save();
+        const canvas = await html2canvas(a4Div, {
+            scale: 2, 
+            useCORS: true, 
+            backgroundColor: '#ffffff',
+            logging: false
+        });
+
+        const link = document.createElement('a');
+        link.download = `Relatorio_Equipamentos_${new Date().getTime()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
 
         document.body.removeChild(wrapperDiv);
         window.closeRelatorioModal();
 
     } catch (error) {
-        console.error("Erro na geração do PDF:", error);
-        alert("Ocorreu um erro ao gerar o PDF. Verifique o console.");
+        console.error("Erro na geração da Imagem:", error);
+        alert("Ocorreu um erro ao gerar a imagem. Verifique o console.");
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
