@@ -1,7 +1,7 @@
 // ==============================================================================
 // relatorio-pdf.js - Gerador de Relatório PDF de Equipamentos por Porta
 // Formato A4, Identidade Visual (Roxo/Branco) e Agrupamento por Fabricante
-// Atualização: Borda flutuante, Logos combinadas, Pílulas escuras e Resumo Global
+// Atualização: Correção de margens/quebras de página, logo única V-SOL e rodapé.
 // ==============================================================================
 
 window.RELATORIO_SELECTIONS = [];
@@ -32,13 +32,8 @@ PDF_EQP_MARCAS.forEach(marca => {
 // Helper para gerar as logos no PDF
 function getPdfLogoHtml(marcaNome) {
     if (marcaNome === 'MAXPRINT / V-SOL') {
-        return `
-            <div style="display: flex; gap: 6px; align-items: center; justify-content: flex-start; width: 100%;">
-                <img src="imagens/logos/maxprint.png" style="max-height: 20px; max-width: 45%; object-fit: contain;">
-                <span style="color: rgba(255,255,255,0.5); font-size: 14px; font-weight: bold;">/</span>
-                <img src="imagens/logos/v-sol.png" style="max-height: 20px; max-width: 45%; object-fit: contain;">
-            </div>
-        `;
+        // Exibe apenas V-SOL para não quebrar o layout
+        return `<img src="imagens/logos/v-sol.png" style="max-height: 22px; max-width: 120px; object-fit: contain;" onerror="this.outerHTML='<span style=\\'font-size:12px; font-weight:bold; color:#ffffff;\\'>V-SOL / MAXPRINT</span>'">`;
     } else {
         let logoFile = marcaNome.toLowerCase().replace(/\s+/g, '-') + '.png';
         if (marcaNome === 'CHINA MOBILE') logoFile = 'china-mobile.png';
@@ -50,7 +45,7 @@ function getPdfLogoHtml(marcaNome) {
 // Helper para gerar a "Pílula" escura do fabricante
 function getPdfPillHtml(marcaNome, count) {
     return `
-        <div style="border-radius: 8px; padding: 10px 15px; display: flex; align-items: center; gap: 15px; min-width: 200px; background-color: #2f0e51;">
+        <div style="border-radius: 8px; padding: 10px 15px; display: flex; align-items: center; gap: 15px; min-width: 200px; background-color: #2f0e51; page-break-inside: avoid; break-inside: avoid;">
             <div style="flex: 1; display: flex; justify-content: flex-start; align-items: center;">
                 ${getPdfLogoHtml(marcaNome)}
             </div>
@@ -281,7 +276,7 @@ window.gerarPDFFinal = async function() {
         let globalMarcaContagem = {};
         let globalTotalEquipamentos = 0;
 
-        // Cria a folha A4 em memória (Off-screen)
+        // Cria a folha em memória (Off-screen) sem tamanho forçado fixo que crie páginas extras
         const wrapperDiv = document.createElement('div');
         wrapperDiv.style.position = 'absolute';
         wrapperDiv.style.left = '-9999px';
@@ -289,12 +284,10 @@ window.gerarPDFFinal = async function() {
 
         const a4Div = document.createElement('div');
         a4Div.style.width = '794px'; 
-        a4Div.style.minHeight = '1123px'; 
         a4Div.style.backgroundColor = '#ffffff'; 
-        a4Div.style.padding = '20px'; // Espaçamento para criar a borda flutuante
         a4Div.style.boxSizing = 'border-box';
 
-        // Cabeçalho com Banner (Margem superior ajustada)
+        // Cabeçalho com Banner
         const headerHtml = `
             <div style="width: 100%; text-align: center; border-bottom: 3px solid #67079f; padding-bottom: 15px; margin-bottom: 25px;">
                 <img src="imagens/banner_cor.png" style="max-width: 80%; max-height: 120px; object-fit: contain; margin-top: 5px;" onerror="this.style.display='none'">
@@ -317,7 +310,7 @@ window.gerarPDFFinal = async function() {
             const rowsData = window.DATA_STORE.olts[oltId].slice(1);
             
             contentHtml += `
-                <div style="background-color: #f3edf7; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 6px solid #67079f;">
+                <div style="background-color: #f3edf7; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 6px solid #67079f; page-break-inside: avoid; break-inside: avoid;">
                     <h2 style="margin: 0; color: #67079f; font-size: 20px; display: flex; align-items: center; gap: 8px;">
                         OLT: ${oltId}
                     </h2>
@@ -358,7 +351,7 @@ window.gerarPDFFinal = async function() {
                 });
 
                 contentHtml += `
-                    <div style="margin-bottom: 25px; padding-left: 10px; border-bottom: 1px dashed #cac4d0; padding-bottom: 15px;">
+                    <div style="margin-bottom: 25px; padding-left: 10px; border-bottom: 1px dashed #cac4d0; padding-bottom: 15px; page-break-inside: avoid; break-inside: avoid;">
                         <h3 style="margin: 0 0 5px 0; color: #1c1b1f; font-size: 16px;">
                             Placa ${item.placa} / Porta ${String(item.porta).padStart(2, '0')}
                         </h3>
@@ -390,7 +383,7 @@ window.gerarPDFFinal = async function() {
         let summaryHtml = '';
         if (window.RELATORIO_SELECTIONS.length >= 2 && globalTotalEquipamentos > 0) {
             summaryHtml += `
-                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #67079f;">
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #67079f; page-break-inside: avoid; break-inside: avoid;">
                     <h2 style="margin: 0 0 15px 0; color: #67079f; font-size: 20px; text-transform: uppercase;">
                         Resumo Geral (Todas as Portas)
                     </h2>
@@ -410,14 +403,20 @@ window.gerarPDFFinal = async function() {
             `;
         }
 
-        // Montagem do Container Flutuante com Borda
+        // Rodapé / Nota sobre Maxprint e V-SOL
+        const footnoteHtml = `
+            <div style="margin-top: 40px; padding-top: 10px; border-top: 1px solid #eaeaea; text-align: left; page-break-inside: avoid; break-inside: avoid;">
+                <p style="margin: 0; font-size: 11px; color: #777; font-style: italic;">* Nota: Os equipamentos Maxprint e V-SOL utilizam o mesmo padrão de prefixo serial. A contagem correspondente abrange ambos os fabricantes.</p>
+            </div>
+        `;
+
+        // Montagem Final (Sem borda que gera quebras na página 2)
         a4Div.innerHTML = `
-            <div style="border: 2px solid #67079f; border-radius: 16px; padding: 20px 30px; min-height: 1083px; box-sizing: border-box; background-color: #ffffff;">
+            <div style="padding: 10px 20px;">
                 ${headerHtml}
-                <div style="padding: 0 10px;">
-                    ${contentHtml}
-                    ${summaryHtml}
-                </div>
+                ${contentHtml}
+                ${summaryHtml}
+                ${footnoteHtml}
             </div>
         `;
 
@@ -429,11 +428,12 @@ window.gerarPDFFinal = async function() {
         }
 
         const opt = {
-            margin:       0,
+            margin:       0.3, // Margem nativa do PDF (evita cortes de borda)
             filename:     `Relatorio_Equipamentos_${new Date().getTime()}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true, logging: false },
-            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
+            pagebreak:    { mode: ['css', 'legacy'] }
         };
 
         await html2pdf().set(opt).from(a4Div).save();
