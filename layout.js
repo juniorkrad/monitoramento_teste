@@ -1,6 +1,6 @@
 // ==============================================================================
 // layout.js - Construtor de Layout e Menu Inteligente (Com Busca e Emergência Autenticada)
-// Atualização: Limpeza da formatação de dBm na Busca Global
+// Atualização: Injeção do Modal de Relatório PDF e Inclusão de Botão no Menu
 // ==============================================================================
 
 (function loadIconFont() {
@@ -33,6 +33,7 @@ function loadHeader(config) {
     loadSidebar(currentPage);
     injectSearchModal(); 
     injectEmergencyModal(); 
+    injectRelatorioModal();
 
     headerPlaceholder.innerHTML = `
         <header class="header">
@@ -107,6 +108,11 @@ function loadSidebar(currentPage) {
                 <a href="#" onclick="openSearchModal(); return false;" class="sidebar-link home-highlight" style="margin-top: 5px; font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left; background-color: var(--m3-surface-container-highest);">
                     <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px; color: var(--m3-primary);">manage_search</span>
                     BUSCAR CLIENTE
+                </a>
+
+                <a href="#" onclick="if(window.openRelatorioModal) window.openRelatorioModal(); return false;" class="sidebar-link home-highlight" style="margin-top: 5px; font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left; background-color: var(--m3-surface-container-highest);">
+                    <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px; color: var(--m3-primary);">picture_as_pdf</span>
+                    GERAR RELATÓRIO
                 </a>
 
                 <a href="#" onclick="checkAuthAndOpenEmergency(); return false;" class="sidebar-link home-highlight bg-danger-highlight text-danger" style="margin-top: 5px; font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
@@ -631,6 +637,54 @@ function startEmergencyTimer(oltId, totalSeconds) {
             `;
         }
     }, 1000);
+}
+
+// ==============================================================================
+// SISTEMA DE GERADOR DE RELATÓRIO PDF (MODAL)
+// ==============================================================================
+
+function injectRelatorioModal() {
+    if (document.getElementById('relatorio-pdf-modal')) return;
+
+    const modalHtml = `
+        <div class="search-modal-overlay" id="relatorio-pdf-modal" onclick="if(window.closeRelatorioModal) window.closeRelatorioModal(event)">
+            <div class="search-modal" onclick="event.stopPropagation()">
+                <div class="search-modal-header">
+                    <h2><span class="material-symbols-rounded">picture_as_pdf</span> Relatório de Equipamentos</h2>
+                    <button class="search-close-btn" onclick="if(window.closeRelatorioModal) window.closeRelatorioModal()" title="Fechar"><span class="material-symbols-rounded">close</span></button>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <div style="display: flex; gap: 10px;">
+                        <select id="relatorio-select-olt" class="filter-select" onchange="if(window.updateRelatorioPlacas) window.updateRelatorioPlacas()">
+                            <option value="">1. Selecione a OLT</option>
+                        </select>
+                        <select id="relatorio-select-placa" class="filter-select" onchange="if(window.updateRelatorioPortas) window.updateRelatorioPortas()" disabled>
+                            <option value="">2. Placa</option>
+                        </select>
+                        <select id="relatorio-select-porta" class="filter-select" disabled>
+                            <option value="">3. Porta</option>
+                        </select>
+                    </div>
+                    
+                    <button class="search-btn" style="width: 100%; padding: 12px; font-weight: bold; gap: 8px;" onclick="if(window.addRelatorioSelection) window.addRelatorioSelection()">
+                        <span class="material-symbols-rounded">add_circle</span> ADICIONAR PORTA AO RELATÓRIO
+                    </button>
+                </div>
+
+                <div id="relatorio-selections-area" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto; padding-right: 5px;" class="custom-scroll">
+                    <!-- Seleções aparecerão aqui -->
+                </div>
+
+                <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; margin-top: 10px;">
+                    <button class="search-btn" id="btn-gerar-pdf-final" style="width: 100%; padding: 16px; font-size: 1.1rem; font-weight: bold; background-color: #67079f; gap: 10px; display: none;" onclick="if(window.gerarPDFFinal) window.gerarPDFFinal()">
+                        <span class="material-symbols-rounded">download</span> GERAR PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
 
 // ==============================================================================
