@@ -1,6 +1,7 @@
 // ==============================================================================
 // relatorio-pdf.js - Gerador de Relatório PDF de Equipamentos por Porta
 // Formato A4, Identidade Visual (Roxo/Branco) e Agrupamento por Fabricante
+// Atualização: Borda flutuante, Logos combinadas, Pílulas escuras e Resumo Global
 // ==============================================================================
 
 window.RELATORIO_SELECTIONS = [];
@@ -28,24 +29,56 @@ PDF_EQP_MARCAS.forEach(marca => {
     });
 });
 
+// Helper para gerar as logos no PDF
+function getPdfLogoHtml(marcaNome) {
+    if (marcaNome === 'MAXPRINT / V-SOL') {
+        return `
+            <div style="display: flex; gap: 6px; align-items: center; justify-content: flex-start; width: 100%;">
+                <img src="imagens/logos/maxprint.png" style="max-height: 20px; max-width: 45%; object-fit: contain;">
+                <span style="color: rgba(255,255,255,0.5); font-size: 14px; font-weight: bold;">/</span>
+                <img src="imagens/logos/v-sol.png" style="max-height: 20px; max-width: 45%; object-fit: contain;">
+            </div>
+        `;
+    } else {
+        let logoFile = marcaNome.toLowerCase().replace(/\s+/g, '-') + '.png';
+        if (marcaNome === 'CHINA MOBILE') logoFile = 'china-mobile.png';
+        if (marcaNome === 'DESCONHECIDOS') logoFile = 'desconhecidos.png';
+        return `<img src="imagens/logos/${logoFile}" style="max-height: 22px; max-width: 120px; object-fit: contain;" onerror="this.outerHTML='<span style=\\'font-size:12px; font-weight:bold; color:#ffffff;\\'>${marcaNome}</span>'">`;
+    }
+}
+
+// Helper para gerar a "Pílula" escura do fabricante
+function getPdfPillHtml(marcaNome, count) {
+    return `
+        <div style="border-radius: 8px; padding: 10px 15px; display: flex; align-items: center; gap: 15px; min-width: 200px; background-color: #2f0e51;">
+            <div style="flex: 1; display: flex; justify-content: flex-start; align-items: center;">
+                ${getPdfLogoHtml(marcaNome)}
+            </div>
+            <div style="font-family: 'Roboto Mono', monospace; font-weight: bold; font-size: 18px; color: #ffffff;">
+                ${count}
+            </div>
+        </div>
+    `;
+}
+
 // Injeta o Modal Globalmente
 function injectRelatorioModal() {
     if (document.getElementById('relatorio-pdf-modal')) return;
 
     const modalHtml = `
-        <div class="search-modal-overlay" id="relatorio-pdf-modal" onclick="closeRelatorioModal(event)">
+        <div class="search-modal-overlay" id="relatorio-pdf-modal" onclick="if(window.closeRelatorioModal) window.closeRelatorioModal(event)">
             <div class="search-modal" onclick="event.stopPropagation()">
                 <div class="search-modal-header">
                     <h2><span class="material-symbols-rounded">picture_as_pdf</span> Relatório de Equipamentos</h2>
-                    <button class="search-close-btn" onclick="closeRelatorioModal()" title="Fechar"><span class="material-symbols-rounded">close</span></button>
+                    <button class="search-close-btn" onclick="if(window.closeRelatorioModal) window.closeRelatorioModal()" title="Fechar"><span class="material-symbols-rounded">close</span></button>
                 </div>
                 
                 <div style="display: flex; flex-direction: column; gap: 15px;">
                     <div style="display: flex; gap: 10px;">
-                        <select id="relatorio-select-olt" class="filter-select" onchange="window.updateRelatorioPlacas()">
+                        <select id="relatorio-select-olt" class="filter-select" onchange="if(window.updateRelatorioPlacas) window.updateRelatorioPlacas()">
                             <option value="">1. Selecione a OLT</option>
                         </select>
-                        <select id="relatorio-select-placa" class="filter-select" onchange="window.updateRelatorioPortas()" disabled>
+                        <select id="relatorio-select-placa" class="filter-select" onchange="if(window.updateRelatorioPortas) window.updateRelatorioPortas()" disabled>
                             <option value="">2. Placa</option>
                         </select>
                         <select id="relatorio-select-porta" class="filter-select" disabled>
@@ -53,7 +86,7 @@ function injectRelatorioModal() {
                         </select>
                     </div>
                     
-                    <button class="search-btn" style="width: 100%; padding: 12px; font-weight: bold; gap: 8px;" onclick="window.addRelatorioSelection()">
+                    <button class="search-btn" style="width: 100%; padding: 12px; font-weight: bold; gap: 8px;" onclick="if(window.addRelatorioSelection) window.addRelatorioSelection()">
                         <span class="material-symbols-rounded">add_circle</span> ADICIONAR PORTA AO RELATÓRIO
                     </button>
                 </div>
@@ -63,7 +96,7 @@ function injectRelatorioModal() {
                 </div>
 
                 <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; margin-top: 10px;">
-                    <button class="search-btn" id="btn-gerar-pdf-final" style="width: 100%; padding: 16px; font-size: 1.1rem; font-weight: bold; background-color: #67079f; gap: 10px; display: none;" onclick="window.gerarPDFFinal()">
+                    <button class="search-btn" id="btn-gerar-pdf-final" style="width: 100%; padding: 16px; font-size: 1.1rem; font-weight: bold; background-color: #67079f; gap: 10px; display: none;" onclick="if(window.gerarPDFFinal) window.gerarPDFFinal()">
                         <span class="material-symbols-rounded">download</span> GERAR PDF
                     </button>
                 </div>
@@ -244,6 +277,10 @@ window.gerarPDFFinal = async function() {
     btn.disabled = true;
 
     try {
+        // Acumuladores Globais para o Resumo Geral
+        let globalMarcaContagem = {};
+        let globalTotalEquipamentos = 0;
+
         // Cria a folha A4 em memória (Off-screen)
         const wrapperDiv = document.createElement('div');
         wrapperDiv.style.position = 'absolute';
@@ -253,24 +290,22 @@ window.gerarPDFFinal = async function() {
         const a4Div = document.createElement('div');
         a4Div.style.width = '794px'; 
         a4Div.style.minHeight = '1123px'; 
-        a4Div.style.backgroundColor = '#ffffff'; // Fundo Branco do PDF
-        a4Div.style.color = '#1c1b1f'; 
-        a4Div.style.fontFamily = "'Montserrat', sans-serif";
-        a4Div.style.padding = '0';
+        a4Div.style.backgroundColor = '#ffffff'; 
+        a4Div.style.padding = '20px'; // Espaçamento para criar a borda flutuante
         a4Div.style.boxSizing = 'border-box';
 
-        // Cabeçalho com Banner
+        // Cabeçalho com Banner (Margem superior ajustada)
         const headerHtml = `
-            <div style="width: 100%; text-align: center; border-bottom: 4px solid #67079f; padding-bottom: 20px; margin-bottom: 30px;">
-                <img src="imagens/banner_cor.png" style="max-width: 80%; max-height: 120px; object-fit: contain; margin-top: 20px;" onerror="this.style.display='none'">
-                <h1 style="color: #67079f; margin: 15px 0 5px 0; font-size: 24px; text-transform: uppercase;">Relatório de Equipamentos em Campo</h1>
+            <div style="width: 100%; text-align: center; border-bottom: 3px solid #67079f; padding-bottom: 15px; margin-bottom: 25px;">
+                <img src="imagens/banner_cor.png" style="max-width: 80%; max-height: 120px; object-fit: contain; margin-top: 5px;" onerror="this.style.display='none'">
+                <h1 style="color: #67079f; margin: 10px 0 5px 0; font-size: 24px; text-transform: uppercase;">Relatório de Equipamentos em Campo</h1>
                 <p style="color: #49454f; margin: 0; font-family: 'Roboto Mono', monospace; font-size: 12px;">Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
             </div>
         `;
 
-        let contentHtml = '<div style="padding: 0 40px;">';
+        let contentHtml = '';
 
-        // Agrupa seleções por OLT para organizar o PDF
+        // Agrupa seleções por OLT
         const agrupadoPorOlt = {};
         window.RELATORIO_SELECTIONS.forEach(sel => {
             if (!agrupadoPorOlt[sel.olt]) agrupadoPorOlt[sel.olt] = [];
@@ -290,7 +325,6 @@ window.gerarPDFFinal = async function() {
             `;
 
             for (const item of itens) {
-                // Conta os equipamentos apenas dessa Placa/Porta
                 const marcaContagem = {};
                 let totalEquipamentos = 0;
 
@@ -312,12 +346,17 @@ window.gerarPDFFinal = async function() {
                     let prefix = serial.substring(0, 4);
                     let marca = pdfPrefixToMarca[prefix] || 'DESCONHECIDOS';
 
+                    // Contagem Local
                     if (!marcaContagem[marca]) marcaContagem[marca] = 0;
                     marcaContagem[marca]++;
                     totalEquipamentos++;
+
+                    // Contagem Global
+                    if (!globalMarcaContagem[marca]) globalMarcaContagem[marca] = 0;
+                    globalMarcaContagem[marca]++;
+                    globalTotalEquipamentos++;
                 });
 
-                // Bloco do Circuito/Porta
                 contentHtml += `
                     <div style="margin-bottom: 25px; padding-left: 10px; border-bottom: 1px dashed #cac4d0; padding-bottom: 15px;">
                         <h3 style="margin: 0 0 5px 0; color: #1c1b1f; font-size: 16px;">
@@ -331,54 +370,64 @@ window.gerarPDFFinal = async function() {
                 if (totalEquipamentos === 0) {
                     contentHtml += `<p style="color: #f56c6c; font-size: 13px; font-weight: bold;">Nenhum equipamento válido identificado nesta porta.</p>`;
                 } else {
-                    // Grid de Marcas
                     contentHtml += `<div style="display: flex; flex-wrap: wrap; gap: 15px;">`;
                     
                     Object.keys(marcaContagem).sort((a,b) => marcaContagem[b] - marcaContagem[a]).forEach(marcaNome => {
-                        
-                        // Lógica de Ícones/Logos (Reaproveitada)
-                        let logoHtml = '';
-                        if (marcaNome === 'MAXPRINT / V-SOL') {
-                            logoHtml = `<span style="font-size: 12px; font-weight: bold; color: #67079f;">MAXPRINT / V-SOL</span>`;
-                        } else {
-                            let logoFile = marcaNome.toLowerCase().replace(/\s+/g, '-') + '.png';
-                            if (marcaNome === 'CHINA MOBILE') logoFile = 'china-mobile.png';
-                            if (marcaNome === 'DESCONHECIDOS') logoFile = 'desconhecidos.png';
-                            logoHtml = `<img src="imagens/logos/${logoFile}" style="max-height: 20px; max-width: 100px; object-fit: contain;" onerror="this.outerHTML='<span style=\\'font-size:12px; font-weight:bold; color:#67079f;\\'>${marcaNome}</span>'">`;
-                        }
-
-                        contentHtml += `
-                            <div style="border: 1px solid #eaddff; border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; gap: 15px; min-width: 180px; background-color: #faf8fc;">
-                                <div style="flex: 1; display: flex; justify-content: flex-start;">
-                                    ${logoHtml}
-                                </div>
-                                <div style="font-family: 'Roboto Mono', monospace; font-weight: bold; font-size: 16px; color: #1c1b1f;">
-                                    ${marcaContagem[marcaNome]}
-                                </div>
-                            </div>
-                        `;
+                        contentHtml += getPdfPillHtml(marcaNome, marcaContagem[marcaNome]);
                     });
                     
                     contentHtml += `</div>`;
-                    contentHtml += `<p style="margin: 10px 0 0 0; text-align: right; font-size: 12px; color: #49454f;">Total na porta: <strong>${totalEquipamentos}</strong></p>`;
+                    contentHtml += `<p style="margin: 10px 0 0 0; text-align: right; font-size: 12px; color: #49454f;">Total na porta: <strong style="font-size: 14px;">${totalEquipamentos}</strong></p>`;
                 }
                 
                 contentHtml += `</div>`;
             }
         }
 
-        contentHtml += '</div>'; // Fecha padding
-        a4Div.innerHTML = headerHtml + contentHtml;
+        // ==========================================
+        // RESUMO GERAL (Apenas se >= 2 portas)
+        // ==========================================
+        let summaryHtml = '';
+        if (window.RELATORIO_SELECTIONS.length >= 2 && globalTotalEquipamentos > 0) {
+            summaryHtml += `
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #67079f;">
+                    <h2 style="margin: 0 0 15px 0; color: #67079f; font-size: 20px; text-transform: uppercase;">
+                        Resumo Geral (Todas as Portas)
+                    </h2>
+                    <div style="display: flex; flex-wrap: wrap; gap: 15px;">
+            `;
+            
+            Object.keys(globalMarcaContagem).sort((a,b) => globalMarcaContagem[b] - globalMarcaContagem[a]).forEach(marcaNome => {
+                summaryHtml += getPdfPillHtml(marcaNome, globalMarcaContagem[marcaNome]);
+            });
+            
+            summaryHtml += `
+                    </div>
+                    <p style="margin: 15px 0 0 0; text-align: right; font-size: 14px; color: #1c1b1f;">
+                        Total Geral Selecionado: <strong style="font-size: 18px; color: #67079f;">${globalTotalEquipamentos}</strong>
+                    </p>
+                </div>
+            `;
+        }
+
+        // Montagem do Container Flutuante com Borda
+        a4Div.innerHTML = `
+            <div style="border: 2px solid #67079f; border-radius: 16px; padding: 20px 30px; min-height: 1083px; box-sizing: border-box; background-color: #ffffff;">
+                ${headerHtml}
+                <div style="padding: 0 10px;">
+                    ${contentHtml}
+                    ${summaryHtml}
+                </div>
+            </div>
+        `;
 
         wrapperDiv.appendChild(a4Div);
         document.body.appendChild(wrapperDiv);
 
-        // Certifica de que as bibliotecas estão carregadas
         if (typeof html2pdf === 'undefined') {
             throw new Error("Biblioteca html2pdf não encontrada. Verifique as tags script.");
         }
 
-        // Opções do PDF
         const opt = {
             margin:       0,
             filename:     `Relatorio_Equipamentos_${new Date().getTime()}.pdf`,
@@ -387,7 +436,6 @@ window.gerarPDFFinal = async function() {
             jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
         };
 
-        // Geração do PDF
         await html2pdf().set(opt).from(a4Div).save();
 
         document.body.removeChild(wrapperDiv);
@@ -402,7 +450,6 @@ window.gerarPDFFinal = async function() {
     }
 };
 
-// Injeta CSS para o ícone rodando
 const style = document.createElement('style');
 style.innerHTML = `
 @keyframes spin { 100% { transform: rotate(360deg); } }
