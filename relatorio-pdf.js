@@ -1,7 +1,7 @@
 // ==============================================================================
 // relatorio-pdf.js - Gerador de Relatório PDF de Equipamentos por Porta
 // Formato A4, Identidade Visual (Roxo/Branco) e Agrupamento por Fabricante
-// Atualização: Borda desenhada via jsPDF, Correção de quebras e Ajuste Maxprint/V-SOL
+// Atualização: Largura controlada, Pílulas blindadas com tabela, Rodapé visível
 // ==============================================================================
 
 window.RELATORIO_SELECTIONS = [];
@@ -32,25 +32,29 @@ PDF_EQP_MARCAS.forEach(marca => {
 // Helper para gerar as logos no PDF (Apenas V-SOL para não quebrar a pílula)
 function getPdfLogoHtml(marcaNome) {
     if (marcaNome === 'MAXPRINT / V-SOL') {
-        return `<img src="imagens/logos/v-sol.png" style="max-height: 20px; max-width: 100px; object-fit: contain;" onerror="this.outerHTML='<span style=\\'font-size:11px; font-weight:bold; color:#ffffff;\\'>V-SOL / MAXPRINT</span>'">`;
+        return `<img src="imagens/logos/v-sol.png" style="max-height: 20px; max-width: 90px; object-fit: contain; display: block;" onerror="this.outerHTML='<span style=\\'font-size:11px; font-weight:bold; color:#ffffff;\\'>V-SOL/MAXPRINT</span>'">`;
     } else {
         let logoFile = marcaNome.toLowerCase().replace(/\s+/g, '-') + '.png';
         if (marcaNome === 'CHINA MOBILE') logoFile = 'china-mobile.png';
         if (marcaNome === 'DESCONHECIDOS') logoFile = 'desconhecidos.png';
-        return `<img src="imagens/logos/${logoFile}" style="max-height: 20px; max-width: 100px; object-fit: contain;" onerror="this.outerHTML='<span style=\\'font-size:11px; font-weight:bold; color:#ffffff;\\'>${marcaNome}</span>'">`;
+        return `<img src="imagens/logos/${logoFile}" style="max-height: 20px; max-width: 90px; object-fit: contain; display: block;" onerror="this.outerHTML='<span style=\\'font-size:11px; font-weight:bold; color:#ffffff;\\'>${marcaNome}</span>'">`;
     }
 }
 
-// Helper para gerar a "Pílula" escura do fabricante (Usando inline-flex para wrap limpo)
+// Helper para gerar a "Pílula" blindada contra bugs do html2canvas (Usando tabela)
 function getPdfPillHtml(marcaNome, count) {
     return `
-        <div style="border-radius: 8px; padding: 8px 12px; display: inline-flex; align-items: center; gap: 10px; width: calc(33.33% - 15px); min-width: 140px; background-color: #2f0e51; margin-right: 10px; margin-bottom: 12px; box-sizing: border-box; vertical-align: top;">
-            <div style="flex: 1; display: flex; justify-content: flex-start; align-items: center;">
-                ${getPdfLogoHtml(marcaNome)}
-            </div>
-            <div style="font-family: 'Roboto Mono', monospace; font-weight: bold; font-size: 16px; color: #ffffff;">
-                ${count}
-            </div>
+        <div style="display: inline-block; width: 31%; background-color: #2f0e51; border-radius: 8px; padding: 10px; margin-right: 1.5%; margin-bottom: 12px; box-sizing: border-box; page-break-inside: avoid; break-inside: avoid; vertical-align: top;">
+            <table style="width: 100%; border: none; padding: 0; margin: 0; background-color: transparent;">
+                <tr>
+                    <td style="text-align: left; vertical-align: middle; border: none; padding: 0;">
+                        ${getPdfLogoHtml(marcaNome)}
+                    </td>
+                    <td style="text-align: right; vertical-align: middle; border: none; padding: 0; font-family: 'Roboto Mono', monospace; font-weight: bold; font-size: 16px; color: #ffffff;">
+                        ${count}
+                    </td>
+                </tr>
+            </table>
         </div>
     `;
 }
@@ -275,19 +279,18 @@ window.gerarPDFFinal = async function() {
         let globalMarcaContagem = {};
         let globalTotalEquipamentos = 0;
 
-        // Div base para gerar o PDF - Sem bordas fixas e com blocos sólidos para respeitar quebra de página
+        // Div base para gerar o PDF - Largura reduzida para 710px para evitar estouro da margem direita
         const wrapperDiv = document.createElement('div');
         wrapperDiv.style.position = 'absolute';
         wrapperDiv.style.left = '-9999px';
         wrapperDiv.style.top = '0';
 
         const a4Div = document.createElement('div');
-        a4Div.style.width = '794px'; 
+        a4Div.style.width = '710px'; 
         a4Div.style.backgroundColor = '#ffffff'; 
         a4Div.style.color = '#1c1b1f'; 
         a4Div.style.fontFamily = "'Montserrat', sans-serif";
         a4Div.style.boxSizing = 'border-box';
-        a4Div.style.padding = '10px 20px'; // Padding interno, margem será dada pelo html2pdf
 
         // Cabeçalho com Banner
         const headerHtml = `
@@ -365,8 +368,7 @@ window.gerarPDFFinal = async function() {
                 if (totalEquipamentos === 0) {
                     contentHtml += `<p style="color: #f56c6c; font-size: 13px; font-weight: bold;">Nenhum equipamento válido identificado nesta porta.</p>`;
                 } else {
-                    // Container em bloco para as pílulas inline
-                    contentHtml += `<div style="display: block;">`;
+                    contentHtml += `<div style="display: block; width: 100%;">`;
                     
                     Object.keys(marcaContagem).sort((a,b) => marcaContagem[b] - marcaContagem[a]).forEach(marcaNome => {
                         contentHtml += getPdfPillHtml(marcaNome, marcaContagem[marcaNome]);
@@ -390,7 +392,7 @@ window.gerarPDFFinal = async function() {
                     <h2 style="margin: 0 0 15px 0; color: #67079f; font-size: 20px; text-transform: uppercase;">
                         Resumo Geral (Todas as Portas)
                     </h2>
-                    <div style="display: block;">
+                    <div style="display: block; width: 100%;">
             `;
             
             Object.keys(globalMarcaContagem).sort((a,b) => globalMarcaContagem[b] - globalMarcaContagem[a]).forEach(marcaNome => {
@@ -406,14 +408,22 @@ window.gerarPDFFinal = async function() {
             `;
         }
 
-        // Rodapé / Nota sobre Maxprint e V-SOL com block garantido
+        // Rodapé / Nota sobre Maxprint e V-SOL explicitamente posicionado no final do fluxo
         const footnoteHtml = `
-            <div style="display: block; margin-top: 30px; padding-top: 10px; border-top: 1px solid #eaeaea; text-align: left; page-break-inside: avoid; break-inside: avoid;">
+            <div style="display: block; margin-top: 30px; padding-top: 15px; border-top: 1px solid #eaeaea; width: 100%; page-break-inside: avoid; break-inside: avoid;">
                 <p style="margin: 0; font-size: 11px; color: #777; font-style: italic;">* Nota: Os equipamentos Maxprint e V-SOL utilizam o mesmo padrão de prefixo serial. A contagem correspondente abrange ambos os fabricantes.</p>
             </div>
         `;
 
-        a4Div.innerHTML = headerHtml + contentHtml + summaryHtml + footnoteHtml;
+        // Wrapper interno do conteúdo com padding
+        a4Div.innerHTML = `
+            <div style="padding: 15px;">
+                ${headerHtml}
+                ${contentHtml}
+                ${summaryHtml}
+                ${footnoteHtml}
+            </div>
+        `;
 
         wrapperDiv.appendChild(a4Div);
         document.body.appendChild(wrapperDiv);
@@ -423,7 +433,7 @@ window.gerarPDFFinal = async function() {
         }
 
         const opt = {
-            margin:       [0.5, 0.5, 0.5, 0.5], // Margem de 0.5 polegada para dar espaço à borda desenhada pelo jsPDF
+            margin:       [0.5, 0.5, 0.5, 0.5], 
             filename:     `Relatorio_Equipamentos_${new Date().getTime()}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true, logging: false },
@@ -431,14 +441,13 @@ window.gerarPDFFinal = async function() {
             pagebreak:    { mode: ['css', 'legacy'] }
         };
 
-        // Usa os métodos do html2pdf para desenhar a borda em cada página individualmente
+        // Usa os métodos do jsPDF para desenhar a borda em cada página gerada
         await html2pdf().set(opt).from(a4Div).toPdf().get('pdf').then(function (pdf) {
             var totalPages = pdf.internal.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
                 pdf.setPage(i);
                 pdf.setDrawColor(103, 7, 159); // Cor Roxo #67079f
-                pdf.setLineWidth(0.02); // Espessura da borda
-                // Desenha o retângulo com cantos arredondados baseado no tamanho A4 (8.27 x 11.69 polegadas)
+                pdf.setLineWidth(0.02); 
                 // x=0.25, y=0.25, largura=7.77, altura=11.19
                 pdf.roundedRect(0.25, 0.25, 7.77, 11.19, 0.15, 0.15); 
             }
