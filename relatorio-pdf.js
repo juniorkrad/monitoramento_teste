@@ -1,7 +1,7 @@
 // ==============================================================================
-// relatorio-pdf.js - Gerador de Relatório de Equipamentos (Exportação PNG A4)
+// relatorio-pdf.js - Gerador de Relatório de Equipamentos (Impressão Nativa A4)
 // Identidade Visual (Roxo/Branco) e Agrupamento por Fabricante
-// Atualização: Correção de renderização do html2canvas (Remoção de calc e flex)
+// Atualização: Conversão para window.print() (Solução 100% Estável)
 // ==============================================================================
 
 window.RELATORIO_SELECTIONS = [];
@@ -29,22 +29,25 @@ PDF_EQP_MARCAS.forEach(marca => {
     });
 });
 
-// Helper para gerar as logos no PNG
+// Helper para gerar as logos (Apenas V-SOL para não quebrar a pílula)
 function getPdfLogoHtml(marcaNome) {
+    // Para funcionar corretamente na janela de impressão, o caminho da imagem deve ser absoluto ou relativo à raiz.
+    const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+    
     if (marcaNome === 'MAXPRINT / V-SOL') {
-        return `<img src="imagens/logos/v-sol.png" style="max-height: 22px; max-width: 90px; object-fit: contain; display: block;" onerror="this.outerHTML='<span style=\\'font-size:11px; font-weight:bold; color:#ffffff;\\'>V-SOL/MAXPRINT</span>'">`;
+        return `<img src="${baseUrl}imagens/logos/v-sol.png" style="max-height: 20px; max-width: 90px; object-fit: contain; display: block;" onerror="this.outerHTML='<span style=\\'font-size:11px; font-weight:bold; color:#ffffff;\\'>V-SOL/MAXPRINT</span>'">`;
     } else {
         let logoFile = marcaNome.toLowerCase().replace(/\s+/g, '-') + '.png';
         if (marcaNome === 'CHINA MOBILE') logoFile = 'china-mobile.png';
         if (marcaNome === 'DESCONHECIDOS') logoFile = 'desconhecidos.png';
-        return `<img src="imagens/logos/${logoFile}" style="max-height: 22px; max-width: 90px; object-fit: contain; display: block;" onerror="this.outerHTML='<span style=\\'font-size:11px; font-weight:bold; color:#ffffff;\\'>${marcaNome}</span>'">`;
+        return `<img src="${baseUrl}imagens/logos/${logoFile}" style="max-height: 20px; max-width: 90px; object-fit: contain; display: block;" onerror="this.outerHTML='<span style=\\'font-size:11px; font-weight:bold; color:#ffffff;\\'>${marcaNome}</span>'">`;
     }
 }
 
-// Helper para a Pílula do fabricante (Uso de Tabela e Inline-Block para estabilidade do html2canvas)
+// Helper para a Pílula do fabricante (Uso de Tabela para estabilidade de impressão)
 function getPdfPillHtml(marcaNome, count) {
     return `
-        <div style="display: inline-block; width: 31%; background-color: #2f0e51; border-radius: 8px; padding: 12px; margin-right: 1.5%; margin-bottom: 15px; box-sizing: border-box; vertical-align: top;">
+        <div class="avoid-break" style="display: inline-block; width: 31%; background-color: #2f0e51; border-radius: 8px; padding: 10px; margin-right: 1.5%; margin-bottom: 12px; box-sizing: border-box; vertical-align: top;">
             <table style="width: 100%; border: none; padding: 0; margin: 0; background-color: transparent;">
                 <tr>
                     <td style="text-align: left; vertical-align: middle; border: none; padding: 0;">
@@ -67,7 +70,7 @@ function injectRelatorioModal() {
         <div class="search-modal-overlay" id="relatorio-pdf-modal" onclick="if(window.closeRelatorioModal) window.closeRelatorioModal(event)">
             <div class="search-modal" onclick="event.stopPropagation()">
                 <div class="search-modal-header">
-                    <h2><span class="material-symbols-rounded">receipt_long</span> Relatório de Equipamentos</h2>
+                    <h2><span class="material-symbols-rounded">print</span> Relatório de Equipamentos</h2>
                     <button class="search-close-btn" onclick="if(window.closeRelatorioModal) window.closeRelatorioModal()" title="Fechar"><span class="material-symbols-rounded">close</span></button>
                 </div>
                 
@@ -94,8 +97,8 @@ function injectRelatorioModal() {
                 </div>
 
                 <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; margin-top: 10px;">
-                    <button class="search-btn" id="btn-gerar-pdf-final" style="width: 100%; padding: 16px; font-size: 1.1rem; font-weight: bold; background-color: #67079f; gap: 10px; display: none;" onclick="if(window.gerarImagemFinal) window.gerarImagemFinal()">
-                        <span class="material-symbols-rounded">image</span> GERAR RELATÓRIO (PNG)
+                    <button class="search-btn" id="btn-gerar-pdf-final" style="width: 100%; padding: 16px; font-size: 1.1rem; font-weight: bold; background-color: #67079f; gap: 10px; display: none;" onclick="if(window.gerarImpressaoFinal) window.gerarImpressaoFinal()">
+                        <span class="material-symbols-rounded">print</span> IMPRIMIR / SALVAR PDF
                     </button>
                 </div>
             </div>
@@ -263,190 +266,187 @@ window.removeRelatorioSelection = function(index) {
     window.renderRelatorioSelections();
 };
 
-// Gera a Imagem PNG (A4) contínua
-window.gerarImagemFinal = async function() {
-    const btn = document.getElementById('btn-gerar-pdf-final');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = `<span class="material-symbols-rounded spinner" style="animation: spin 1s linear infinite;">autorenew</span> RENDERIZANDO...`;
-    btn.disabled = true;
+// Gera a Impressão Nativa
+window.gerarImpressaoFinal = function() {
+    const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
 
-    try {
-        let globalMarcaContagem = {};
-        let globalTotalEquipamentos = 0;
+    let globalMarcaContagem = {};
+    let globalTotalEquipamentos = 0;
 
-        // Container posicionado absolutamente fora da tela
-        const wrapperDiv = document.createElement('div');
-        wrapperDiv.style.position = 'absolute';
-        wrapperDiv.style.left = '-9999px';
-        wrapperDiv.style.top = '0';
+    const headerHtml = `
+        <div style="display: block; width: 100%; text-align: center; border-bottom: 3px solid #67079f; padding-bottom: 15px; margin-bottom: 25px;">
+            <img src="${baseUrl}imagens/banner_cor.png" style="max-width: 80%; max-height: 120px; object-fit: contain; margin-top: 5px;" onerror="this.style.display='none'">
+            <h1 style="color: #67079f; margin: 10px 0 5px 0; font-size: 24px; text-transform: uppercase;">Relatório de Equipamentos em Campo</h1>
+            <p style="color: #49454f; margin: 0; font-family: 'Roboto Mono', monospace; font-size: 12px;">Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+        </div>
+    `;
 
-        const a4Div = document.createElement('div');
-        a4Div.style.width = '794px'; 
-        a4Div.style.backgroundColor = '#ffffff'; 
-        a4Div.style.color = '#1c1b1f'; 
-        a4Div.style.fontFamily = "'Montserrat', sans-serif";
-        a4Div.style.boxSizing = 'border-box';
-        a4Div.style.border = '10px solid #67079f'; 
-        a4Div.style.borderRadius = '16px'; 
-        a4Div.style.padding = '30px 40px'; 
+    let contentHtml = '';
 
-        const headerHtml = `
-            <div style="display: block; width: 100%; text-align: center; border-bottom: 3px solid #67079f; padding-bottom: 15px; margin-bottom: 25px;">
-                <img src="imagens/banner_cor.png" style="max-width: 80%; max-height: 120px; object-fit: contain; margin-top: 5px;" onerror="this.style.display='none'">
-                <h1 style="color: #67079f; margin: 10px 0 5px 0; font-size: 24px; text-transform: uppercase;">Relatório de Equipamentos em Campo</h1>
-                <p style="color: #49454f; margin: 0; font-family: 'Roboto Mono', monospace; font-size: 12px;">Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+    const agrupadoPorOlt = {};
+    window.RELATORIO_SELECTIONS.forEach(sel => {
+        if (!agrupadoPorOlt[sel.olt]) agrupadoPorOlt[sel.olt] = [];
+        agrupadoPorOlt[sel.olt].push(sel);
+    });
+
+    for (const oltId of Object.keys(agrupadoPorOlt)) {
+        const itens = agrupadoPorOlt[oltId];
+        const rowsData = window.DATA_STORE.olts[oltId].slice(1);
+        
+        contentHtml += `
+            <div class="avoid-break" style="display: block; background-color: #f3edf7; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 6px solid #67079f;">
+                <h2 style="margin: 0; color: #67079f; font-size: 20px;">
+                    OLT: ${oltId}
+                </h2>
             </div>
         `;
 
-        let contentHtml = '';
+        for (const item of itens) {
+            const marcaContagem = {};
+            let totalEquipamentos = 0;
 
-        const agrupadoPorOlt = {};
-        window.RELATORIO_SELECTIONS.forEach(sel => {
-            if (!agrupadoPorOlt[sel.olt]) agrupadoPorOlt[sel.olt] = [];
-            agrupadoPorOlt[sel.olt].push(sel);
-        });
+            rowsData.forEach(col => {
+                if (col.length === 0) return;
+                
+                const portInfo = DataMapper.extractPort(col[0], item.type);
+                if (!portInfo || String(portInfo.placa) !== String(item.placa) || String(portInfo.porta) !== String(item.porta)) return;
 
-        for (const oltId of Object.keys(agrupadoPorOlt)) {
-            const itens = agrupadoPorOlt[oltId];
-            const rowsData = window.DATA_STORE.olts[oltId].slice(1);
-            
+                let serial = '';
+                if (item.type === 'nokia') {
+                    serial = (col[2] || '').trim().toUpperCase();
+                } else {
+                    serial = (col[3] || '').trim().toUpperCase();
+                }
+
+                if (!serial || serial === '-' || serial === '') return;
+
+                let prefix = serial.substring(0, 4);
+                let marca = pdfPrefixToMarca[prefix] || 'DESCONHECIDOS';
+
+                if (!marcaContagem[marca]) marcaContagem[marca] = 0;
+                marcaContagem[marca]++;
+                totalEquipamentos++;
+
+                if (!globalMarcaContagem[marca]) globalMarcaContagem[marca] = 0;
+                globalMarcaContagem[marca]++;
+                globalTotalEquipamentos++;
+            });
+
             contentHtml += `
-                <div style="display: block; background-color: #f3edf7; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 6px solid #67079f;">
-                    <h2 style="margin: 0; color: #67079f; font-size: 20px; display: flex; align-items: center; gap: 8px;">
-                        OLT: ${oltId}
-                    </h2>
-                </div>
+                <div class="avoid-break" style="display: block; margin-bottom: 25px; padding-left: 10px; border-bottom: 1px dashed #cac4d0; padding-bottom: 15px;">
+                    <h3 style="margin: 0 0 5px 0; color: #1c1b1f; font-size: 16px;">
+                        Placa ${item.placa} / Porta ${String(item.porta).padStart(2, '0')}
+                    </h3>
+                    <p style="margin: 0 0 15px 0; color: #49454f; font-family: 'Roboto Mono', monospace; font-size: 14px; font-weight: bold;">
+                        Circuito: ${item.circuito}
+                    </p>
             `;
 
-            for (const item of itens) {
-                const marcaContagem = {};
-                let totalEquipamentos = 0;
-
-                rowsData.forEach(col => {
-                    if (col.length === 0) return;
-                    
-                    const portInfo = DataMapper.extractPort(col[0], item.type);
-                    if (!portInfo || String(portInfo.placa) !== String(item.placa) || String(portInfo.porta) !== String(item.porta)) return;
-
-                    let serial = '';
-                    if (item.type === 'nokia') {
-                        serial = (col[2] || '').trim().toUpperCase();
-                    } else {
-                        serial = (col[3] || '').trim().toUpperCase();
-                    }
-
-                    if (!serial || serial === '-' || serial === '') return;
-
-                    let prefix = serial.substring(0, 4);
-                    let marca = pdfPrefixToMarca[prefix] || 'DESCONHECIDOS';
-
-                    if (!marcaContagem[marca]) marcaContagem[marca] = 0;
-                    marcaContagem[marca]++;
-                    totalEquipamentos++;
-
-                    if (!globalMarcaContagem[marca]) globalMarcaContagem[marca] = 0;
-                    globalMarcaContagem[marca]++;
-                    globalTotalEquipamentos++;
+            if (totalEquipamentos === 0) {
+                contentHtml += `<p style="color: #f56c6c; font-size: 13px; font-weight: bold;">Nenhum equipamento válido identificado nesta porta.</p>`;
+            } else {
+                contentHtml += `<div style="display: block; width: 100%; text-align: left;">`;
+                
+                Object.keys(marcaContagem).sort((a,b) => marcaContagem[b] - marcaContagem[a]).forEach(marcaNome => {
+                    contentHtml += getPdfPillHtml(marcaNome, marcaContagem[marcaNome]);
                 });
-
-                contentHtml += `
-                    <div style="display: block; margin-bottom: 25px; padding-left: 10px; border-bottom: 1px dashed #cac4d0; padding-bottom: 15px;">
-                        <h3 style="margin: 0 0 5px 0; color: #1c1b1f; font-size: 16px;">
-                            Placa ${item.placa} / Porta ${String(item.porta).padStart(2, '0')}
-                        </h3>
-                        <p style="margin: 0 0 15px 0; color: #49454f; font-family: 'Roboto Mono', monospace; font-size: 14px; font-weight: bold;">
-                            Circuito: ${item.circuito}
-                        </p>
-                `;
-
-                if (totalEquipamentos === 0) {
-                    contentHtml += `<p style="color: #f56c6c; font-size: 13px; font-weight: bold;">Nenhum equipamento válido identificado nesta porta.</p>`;
-                } else {
-                    // Container em bloco para as pílulas inline-block
-                    contentHtml += `<div style="display: block; width: 100%; text-align: left;">`;
-                    
-                    Object.keys(marcaContagem).sort((a,b) => marcaContagem[b] - marcaContagem[a]).forEach(marcaNome => {
-                        contentHtml += getPdfPillHtml(marcaNome, marcaContagem[marcaNome]);
-                    });
-                    
-                    contentHtml += `</div>`;
-                    contentHtml += `<p style="margin: 10px 0 0 0; text-align: right; font-size: 12px; color: #49454f;">Total na porta: <strong style="font-size: 14px;">${totalEquipamentos}</strong></p>`;
-                }
                 
                 contentHtml += `</div>`;
+                contentHtml += `<p style="margin: 10px 0 0 0; text-align: right; font-size: 12px; color: #49454f;">Total na porta: <strong style="font-size: 14px;">${totalEquipamentos}</strong></p>`;
             }
+            
+            contentHtml += `</div>`;
         }
+    }
 
-        // ==========================================
-        // RESUMO GERAL
-        // ==========================================
-        let summaryHtml = '';
-        if (window.RELATORIO_SELECTIONS.length >= 2 && globalTotalEquipamentos > 0) {
-            summaryHtml += `
-                <div style="display: block; margin-top: 30px; padding-top: 20px; border-top: 2px solid #67079f;">
-                    <h2 style="margin: 0 0 15px 0; color: #67079f; font-size: 20px; text-transform: uppercase;">
-                        Resumo Geral (Todas as Portas)
-                    </h2>
-                    <div style="display: block; width: 100%; text-align: left;">
-            `;
-            
-            Object.keys(globalMarcaContagem).sort((a,b) => globalMarcaContagem[b] - globalMarcaContagem[a]).forEach(marcaNome => {
-                summaryHtml += getPdfPillHtml(marcaNome, globalMarcaContagem[marcaNome]);
-            });
-            
-            summaryHtml += `
-                    </div>
-                    <p style="margin: 15px 0 0 0; text-align: right; font-size: 14px; color: #1c1b1f;">
-                        Total Geral Selecionado: <strong style="font-size: 18px; color: #67079f;">${globalTotalEquipamentos}</strong>
-                    </p>
+    let summaryHtml = '';
+    if (window.RELATORIO_SELECTIONS.length >= 2 && globalTotalEquipamentos > 0) {
+        summaryHtml += `
+            <div class="avoid-break" style="display: block; margin-top: 20px; padding-top: 15px; border-top: 2px solid #67079f;">
+                <h2 style="margin: 0 0 15px 0; color: #67079f; font-size: 20px; text-transform: uppercase;">
+                    Resumo Geral (Todas as Portas)
+                </h2>
+                <div style="display: block; width: 100%; text-align: left;">
+        `;
+        
+        Object.keys(globalMarcaContagem).sort((a,b) => globalMarcaContagem[b] - globalMarcaContagem[a]).forEach(marcaNome => {
+            summaryHtml += getPdfPillHtml(marcaNome, globalMarcaContagem[marcaNome]);
+        });
+        
+        summaryHtml += `
                 </div>
-            `;
-        }
-
-        const footnoteHtml = `
-            <div style="display: block; margin-top: 40px; padding-top: 15px; border-top: 1px solid #eaeaea; width: 100%;">
-                <p style="margin: 0; font-size: 11px; color: #777; font-style: italic;">* Nota: Os equipamentos Maxprint e V-SOL utilizam o mesmo padrão de prefixo serial. A contagem correspondente abrange ambos os fabricantes.</p>
+                <p style="margin: 15px 0 0 0; text-align: right; font-size: 14px; color: #1c1b1f;">
+                    Total Geral Selecionado: <strong style="font-size: 18px; color: #67079f;">${globalTotalEquipamentos}</strong>
+                </p>
             </div>
         `;
-
-        a4Div.innerHTML = headerHtml + contentHtml + summaryHtml + footnoteHtml;
-        wrapperDiv.appendChild(a4Div);
-        document.body.appendChild(wrapperDiv);
-
-        if (typeof html2canvas === 'undefined') {
-            throw new Error("Biblioteca html2canvas não encontrada. Verifique as tags script.");
-        }
-
-        // Trava para aguardar o carregamento de imagens
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        const canvas = await html2canvas(a4Div, {
-            scale: 2, 
-            useCORS: true, 
-            backgroundColor: '#ffffff',
-            logging: false
-        });
-
-        const link = document.createElement('a');
-        link.download = `Relatorio_Equipamentos_${new Date().getTime()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-
-        document.body.removeChild(wrapperDiv);
-        window.closeRelatorioModal();
-
-    } catch (error) {
-        console.error("Erro na geração da Imagem:", error);
-        alert("Ocorreu um erro ao gerar a imagem. Verifique o console.");
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
     }
-};
 
-const style = document.createElement('style');
-style.innerHTML = `
-@keyframes spin { 100% { transform: rotate(360deg); } }
-.spinner { display: inline-block; }
-`;
-document.head.appendChild(style);
+    const footnoteHtml = `
+        <div class="avoid-break" style="display: block; margin-top: 40px; padding-top: 15px; border-top: 1px solid #eaeaea; width: 100%;">
+            <p style="margin: 0; font-size: 11px; color: #777; font-style: italic;">* Nota: Os equipamentos Maxprint e V-SOL utilizam o mesmo padrão de prefixo serial. A contagem correspondente abrange ambos os fabricantes.</p>
+        </div>
+    `;
+
+    // Abre a janela para impressão
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+        alert("O navegador bloqueou a abertura da janela. Permita pop-ups para gerar o relatório.");
+        return;
+    }
+
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="pt-br">
+        <head>
+            <meta charset="UTF-8">
+            <title>Relatorio_Equipamentos</title>
+            <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+            <style>
+                @page { 
+                    size: A4 portrait; 
+                    margin: 10mm; 
+                }
+                body { 
+                    font-family: 'Montserrat', sans-serif; 
+                    background-color: #ffffff;
+                    color: #1c1b1f;
+                    margin: 0;
+                    padding: 0;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+                .report-container {
+                    border: 3px solid #67079f;
+                    border-radius: 12px;
+                    padding: 25px 35px;
+                    box-sizing: border-box;
+                    min-height: 95vh;
+                }
+                .avoid-break {
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="report-container">
+                ${headerHtml}
+                ${contentHtml}
+                ${summaryHtml}
+                ${footnoteHtml}
+            </div>
+            <script>
+                window.onload = function() {
+                    setTimeout(function() {
+                        window.print();
+                    }, 500);
+                };
+            </script>
+        </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+    window.closeRelatorioModal();
+};
