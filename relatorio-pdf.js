@@ -1,7 +1,7 @@
 // ==============================================================================
 // relatorio-pdf.js - Gerador de Relatório de Equipamentos (Exportação PNG A4)
 // Identidade Visual (Roxo/Branco) e Agrupamento por Fabricante
-// Atualização: Conversão para Imagem Contínua (Solução de Estabilidade Total)
+// Atualização: Correção de renderização do html2canvas (Remoção de calc e flex)
 // ==============================================================================
 
 window.RELATORIO_SELECTIONS = [];
@@ -32,25 +32,29 @@ PDF_EQP_MARCAS.forEach(marca => {
 // Helper para gerar as logos no PNG
 function getPdfLogoHtml(marcaNome) {
     if (marcaNome === 'MAXPRINT / V-SOL') {
-        return `<img src="imagens/logos/v-sol.png" style="max-height: 22px; max-width: 100px; object-fit: contain; display: block;" onerror="this.outerHTML='<span style=\\'font-size:11px; font-weight:bold; color:#ffffff;\\'>V-SOL/MAXPRINT</span>'">`;
+        return `<img src="imagens/logos/v-sol.png" style="max-height: 22px; max-width: 90px; object-fit: contain; display: block;" onerror="this.outerHTML='<span style=\\'font-size:11px; font-weight:bold; color:#ffffff;\\'>V-SOL/MAXPRINT</span>'">`;
     } else {
         let logoFile = marcaNome.toLowerCase().replace(/\s+/g, '-') + '.png';
         if (marcaNome === 'CHINA MOBILE') logoFile = 'china-mobile.png';
         if (marcaNome === 'DESCONHECIDOS') logoFile = 'desconhecidos.png';
-        return `<img src="imagens/logos/${logoFile}" style="max-height: 22px; max-width: 100px; object-fit: contain; display: block;" onerror="this.outerHTML='<span style=\\'font-size:11px; font-weight:bold; color:#ffffff;\\'>${marcaNome}</span>'">`;
+        return `<img src="imagens/logos/${logoFile}" style="max-height: 22px; max-width: 90px; object-fit: contain; display: block;" onerror="this.outerHTML='<span style=\\'font-size:11px; font-weight:bold; color:#ffffff;\\'>${marcaNome}</span>'">`;
     }
 }
 
-// Helper para a Pílula do fabricante (Uso de Flexbox Estável para html2canvas)
+// Helper para a Pílula do fabricante (Uso de Tabela e Inline-Block para estabilidade do html2canvas)
 function getPdfPillHtml(marcaNome, count) {
     return `
-        <div style="display: flex; align-items: center; justify-content: space-between; width: calc(33.333% - 10px); background-color: #2f0e51; border-radius: 8px; padding: 12px 15px; box-sizing: border-box;">
-            <div style="display: flex; align-items: center; justify-content: flex-start; max-width: 70%;">
-                ${getPdfLogoHtml(marcaNome)}
-            </div>
-            <div style="font-family: 'Roboto Mono', monospace; font-weight: bold; font-size: 16px; color: #ffffff;">
-                ${count}
-            </div>
+        <div style="display: inline-block; width: 31%; background-color: #2f0e51; border-radius: 8px; padding: 12px; margin-right: 1.5%; margin-bottom: 15px; box-sizing: border-box; vertical-align: top;">
+            <table style="width: 100%; border: none; padding: 0; margin: 0; background-color: transparent;">
+                <tr>
+                    <td style="text-align: left; vertical-align: middle; border: none; padding: 0;">
+                        ${getPdfLogoHtml(marcaNome)}
+                    </td>
+                    <td style="text-align: right; vertical-align: middle; border: none; padding: 0; font-family: 'Roboto Mono', monospace; font-weight: bold; font-size: 16px; color: #ffffff;">
+                        ${count}
+                    </td>
+                </tr>
+            </table>
         </div>
     `;
 }
@@ -270,24 +274,24 @@ window.gerarImagemFinal = async function() {
         let globalMarcaContagem = {};
         let globalTotalEquipamentos = 0;
 
-        // Container fixo fora da tela para forçar a renderização limpa e aguardar as imagens
+        // Container posicionado absolutamente fora da tela
         const wrapperDiv = document.createElement('div');
-        wrapperDiv.style.position = 'fixed';
+        wrapperDiv.style.position = 'absolute';
         wrapperDiv.style.left = '-9999px';
         wrapperDiv.style.top = '0';
 
         const a4Div = document.createElement('div');
-        a4Div.style.width = '794px'; // Largura A4 padrão a 96DPI
+        a4Div.style.width = '794px'; 
         a4Div.style.backgroundColor = '#ffffff'; 
         a4Div.style.color = '#1c1b1f'; 
         a4Div.style.fontFamily = "'Montserrat', sans-serif";
         a4Div.style.boxSizing = 'border-box';
-        a4Div.style.border = '10px solid #67079f'; // Borda externa segura
+        a4Div.style.border = '10px solid #67079f'; 
         a4Div.style.borderRadius = '16px'; 
         a4Div.style.padding = '30px 40px'; 
 
         const headerHtml = `
-            <div style="width: 100%; text-align: center; border-bottom: 3px solid #67079f; padding-bottom: 15px; margin-bottom: 25px;">
+            <div style="display: block; width: 100%; text-align: center; border-bottom: 3px solid #67079f; padding-bottom: 15px; margin-bottom: 25px;">
                 <img src="imagens/banner_cor.png" style="max-width: 80%; max-height: 120px; object-fit: contain; margin-top: 5px;" onerror="this.style.display='none'">
                 <h1 style="color: #67079f; margin: 10px 0 5px 0; font-size: 24px; text-transform: uppercase;">Relatório de Equipamentos em Campo</h1>
                 <p style="color: #49454f; margin: 0; font-family: 'Roboto Mono', monospace; font-size: 12px;">Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
@@ -307,7 +311,7 @@ window.gerarImagemFinal = async function() {
             const rowsData = window.DATA_STORE.olts[oltId].slice(1);
             
             contentHtml += `
-                <div style="background-color: #f3edf7; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 6px solid #67079f;">
+                <div style="display: block; background-color: #f3edf7; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 6px solid #67079f;">
                     <h2 style="margin: 0; color: #67079f; font-size: 20px; display: flex; align-items: center; gap: 8px;">
                         OLT: ${oltId}
                     </h2>
@@ -346,7 +350,7 @@ window.gerarImagemFinal = async function() {
                 });
 
                 contentHtml += `
-                    <div style="margin-bottom: 25px; padding-left: 10px; border-bottom: 1px dashed #cac4d0; padding-bottom: 15px;">
+                    <div style="display: block; margin-bottom: 25px; padding-left: 10px; border-bottom: 1px dashed #cac4d0; padding-bottom: 15px;">
                         <h3 style="margin: 0 0 5px 0; color: #1c1b1f; font-size: 16px;">
                             Placa ${item.placa} / Porta ${String(item.porta).padStart(2, '0')}
                         </h3>
@@ -358,8 +362,8 @@ window.gerarImagemFinal = async function() {
                 if (totalEquipamentos === 0) {
                     contentHtml += `<p style="color: #f56c6c; font-size: 13px; font-weight: bold;">Nenhum equipamento válido identificado nesta porta.</p>`;
                 } else {
-                    // Grid flexível perfeitamente legível pelo html2canvas
-                    contentHtml += `<div style="display: flex; flex-wrap: wrap; gap: 15px; width: 100%;">`;
+                    // Container em bloco para as pílulas inline-block
+                    contentHtml += `<div style="display: block; width: 100%; text-align: left;">`;
                     
                     Object.keys(marcaContagem).sort((a,b) => marcaContagem[b] - marcaContagem[a]).forEach(marcaNome => {
                         contentHtml += getPdfPillHtml(marcaNome, marcaContagem[marcaNome]);
@@ -379,11 +383,11 @@ window.gerarImagemFinal = async function() {
         let summaryHtml = '';
         if (window.RELATORIO_SELECTIONS.length >= 2 && globalTotalEquipamentos > 0) {
             summaryHtml += `
-                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #67079f;">
+                <div style="display: block; margin-top: 30px; padding-top: 20px; border-top: 2px solid #67079f;">
                     <h2 style="margin: 0 0 15px 0; color: #67079f; font-size: 20px; text-transform: uppercase;">
                         Resumo Geral (Todas as Portas)
                     </h2>
-                    <div style="display: flex; flex-wrap: wrap; gap: 15px; width: 100%;">
+                    <div style="display: block; width: 100%; text-align: left;">
             `;
             
             Object.keys(globalMarcaContagem).sort((a,b) => globalMarcaContagem[b] - globalMarcaContagem[a]).forEach(marcaNome => {
@@ -400,7 +404,7 @@ window.gerarImagemFinal = async function() {
         }
 
         const footnoteHtml = `
-            <div style="margin-top: 40px; padding-top: 15px; border-top: 1px solid #eaeaea; width: 100%;">
+            <div style="display: block; margin-top: 40px; padding-top: 15px; border-top: 1px solid #eaeaea; width: 100%;">
                 <p style="margin: 0; font-size: 11px; color: #777; font-style: italic;">* Nota: Os equipamentos Maxprint e V-SOL utilizam o mesmo padrão de prefixo serial. A contagem correspondente abrange ambos os fabricantes.</p>
             </div>
         `;
@@ -413,8 +417,8 @@ window.gerarImagemFinal = async function() {
             throw new Error("Biblioteca html2canvas não encontrada. Verifique as tags script.");
         }
 
-        // Trava para aguardar o carregamento e injeção completa de todas as imagens e logos
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Trava para aguardar o carregamento de imagens
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         const canvas = await html2canvas(a4Div, {
             scale: 2, 
