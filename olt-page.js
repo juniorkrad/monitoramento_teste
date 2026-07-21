@@ -127,7 +127,6 @@ window.exportCardToImage = function(event, cardId, oltName) {
         btn.innerHTML = `<span class="material-symbols-rounded">hourglass_empty</span>`;
     }
 
-    // Clone do card para forçar isolamento de tamanho e evitar quebra por scroll ou flex no container global da Home
     const clone = card.cloneNode(true);
     clone.style.position = 'absolute';
     clone.style.top = '-9999px';
@@ -165,9 +164,11 @@ function openSuperModal(id, sheetTab, type, boards) {
 
     const btnBoletim = document.getElementById('btn-gerar-boletim');
     const btnComunicado = document.getElementById('btn-gerar-comunicado');
+    const btnExportTxt = document.getElementById('btn-export-geral-txt');
     
     if (btnBoletim) btnBoletim.style.display = 'inline-block';
     if (btnComunicado) btnComunicado.style.display = 'inline-block';
+    if (btnExportTxt) btnExportTxt.style.display = 'inline-block';
 
     const placasList = document.getElementById('olt-placas-list');
     if (placasList) {
@@ -203,9 +204,11 @@ function closeSuperModal(event) {
 
     const btnBoletim = document.getElementById('btn-gerar-boletim');
     const btnComunicado = document.getElementById('btn-gerar-comunicado');
+    const btnExportTxt = document.getElementById('btn-export-geral-txt');
     
     if (btnBoletim) btnBoletim.style.display = 'none';
     if (btnComunicado) btnComunicado.style.display = 'none';
+    if (btnExportTxt) btnExportTxt.style.display = 'none';
 
     if (typeof stopOltMonitoring === 'function') {
         stopOltMonitoring();

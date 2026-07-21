@@ -1,5 +1,5 @@
 // ==============================================================================
-// olt-relatorio.js - Gerador de Boletim Visual (PNG Off-screen) para OLTs
+// olt-relatorio.js - Gerador de Boletim Visual (PNG Off-screen) e TXT para OLTs
 // Atualização: Escopo Unificado por POP, com coluna de OLT e Placa/Porta unificada
 // ==============================================================================
 
@@ -267,6 +267,134 @@ window.gerarRelatorioOltOffscreen = async function(event) {
         alert('Ocorreu um erro ao gerar o relatório.');
     } finally {
         // Restaurar botão original independentemente de sucesso ou falha
+        if (btn) btn.innerHTML = originalContent;
+    }
+};
+
+window.gerarRelatorioTxtOffscreen = function(event) {
+    if (event) event.stopPropagation();
+
+    const btn = event ? event.currentTarget : null;
+    let originalContent = '';
+    if (btn) {
+        originalContent = btn.innerHTML;
+        btn.innerHTML = `<span class="material-symbols-rounded" style="font-size: 30px;">hourglass_empty</span>`;
+    }
+
+    try {
+        // 1. Descobrir qual OLT está aberta
+        const titleEl = document.getElementById('super-modal-title');
+        let oltName = 'OLT_Desconhecida';
+        if (titleEl) {
+            oltName = titleEl.innerText.replace('dns', '').trim();
+        }
+
+        // 2. Determinar o POP e as OLTs a serem varridas
+        const popName = POP_MAP[oltName] || oltName;
+        let targetOlts = Object.keys(POP_MAP).filter(key => POP_MAP[key] === popName);
+        
+        if (targetOlts.length === 0) targetOlts.push(oltName);
+
+        // 3. Varrer o DATA_STORE para todas as OLTs do POP
+        const portasCriticas = [];
+        const rowsCircuitos = (window.DATA_STORE && window.DATA_STORE.circuitos) ? window.DATA_STORE.circuitos : [];
+        const rowsLocalidades = window.DATA_STORE.localidades || [];
+
+        targetOlts.forEach(targetOltId => {
+            const oltConfig = typeof GLOBAL_MASTER_OLT_LIST !== 'undefined' ? GLOBAL_MASTER_OLT_LIST.find(o => o.id === targetOltId) : null;
+            if (!oltConfig) return;
+
+            const values = window.DATA_STORE.olts[targetOltId] || [];
+            const rows = values.slice(1);
+            const portDataMap = {};
+
+            rows.forEach(columns => {
+                if (columns.length === 0) return;
+                
+                const isOnline = DataMapper.isOnline(columns[oltConfig.type === 'nokia' ? 4 : 2], oltConfig.type);
+                const portInfo = DataMapper.extractPort(columns[0], oltConfig.type);
+                if (!portInfo) return;
+
+                const { placa, porta } = portInfo;
+                const placaNum = parseInt(placa);
+                const portaNum = parseInt(porta);
+                const portKey = `${placaNum}/${portaNum}`;
+
+                if (!portDataMap[portKey]) {
+                    const infoExtra = DataMapper.getCircuitInfo(rowsCircuitos, oltConfig, placa, porta);
+                    const bairroExtra = DataMapper.getBairroInfo(rowsLocalidades, targetOltId, placa, porta, oltConfig.type);
+                    portDataMap[portKey] = { 
+                        online: 0, offline: 0, 
+                        info: infoExtra, bairro: bairroExtra, 
+                        placa: placaNum, porta: portaNum 
+                    };
+                }
+
+                if (isOnline) portDataMap[portKey].online++;
+                else portDataMap[portKey].offline++;
+            });
+
+            // 4. Filtrar apenas as portas com alarmes críticos
+            for (const pk in portDataMap) {
+                const pData = portDataMap[pk];
+                const total = pData.online + pData.offline;
+                
+                if (total >= 5) {
+                    const percOffline = pData.offline / total;
+                    if (percOffline === 1) { 
+                        portasCriticas.push({
+                            olt: targetOltId,
+                            placa: pData.placa,
+                            porta: String(pData.porta).padStart(2, '0'),
+                            circuito: pData.info,
+                            bairro: pData.bairro && pData.bairro !== '-' ? pData.bairro : 'N/A'
+                        });
+                    }
+                }
+            }
+        });
+
+        let tituloBoletim = "REDE ESTÁVEL";
+        if (portasCriticas.length > 1) {
+            tituloBoletim = "ROMPIMENTO BACKBONE";
+        } else if (portasCriticas.length === 1) {
+            tituloBoletim = "ROMPIMENTO CIRCUITO";
+        }
+
+        portasCriticas.sort((a, b) => a.olt.localeCompare(b.olt) || parseInt(a.placa) - parseInt(b.placa) || parseInt(a.porta) - parseInt(b.porta));
+
+        let txtContent = `=================================================\n`;
+        txtContent += `   BOLETIM DE ALARMES - ${popName.toUpperCase()}\n`;
+        txtContent += `   Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+        txtContent += `   Status Geral: ${tituloBoletim}\n`;
+        txtContent += `=================================================\n\n`;
+
+        if (portasCriticas.length === 0) {
+            txtContent += `   Nenhum alarme crítico (100% offline) detectado.\n   A rede encontra-se estável neste POP.\n`;
+        } else {
+            txtContent += `   PORTAS AFETADAS:\n\n`;
+            portasCriticas.forEach(p => {
+                txtContent += `   • OLT: ${p.olt.padEnd(8, ' ')} | Placa/Porta: ${p.placa}/${p.porta}\n`;
+                txtContent += `     Circuito: ${p.circuito}\n`;
+                txtContent += `     Bairro: ${p.bairro}\n`;
+                txtContent += `     Impacto: 100% OFFLINE (CRÍTICO)\n\n`;
+            });
+        }
+
+        txtContent += `=================================================\n`;
+
+        const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `Relatorio_Geral_${popName.replace(/[^a-zA-Z0-9-]/g, '_')}_${new Date().getTime()}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+    } catch (error) {
+        console.error('Erro ao gerar relatório TXT off-screen:', error);
+        alert('Ocorreu um erro ao gerar o relatório TXT.');
+    } finally {
         if (btn) btn.innerHTML = originalContent;
     }
 };

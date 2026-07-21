@@ -576,9 +576,11 @@ window.openOltPlacaDetails = function(placa, oltType) {
 
     const btnBoletim = document.getElementById('btn-gerar-boletim');
     const btnComunicado = document.getElementById('btn-gerar-comunicado');
+    const btnExportTxt = document.getElementById('btn-export-geral-txt');
     
     if (btnBoletim) btnBoletim.style.display = 'none';
     if (btnComunicado) btnComunicado.style.display = 'none';
+    if (btnExportTxt) btnExportTxt.style.display = 'none';
     
     const tbody = document.getElementById('olt-detalhes-tbody');
     tbody.innerHTML = '';
@@ -645,9 +647,11 @@ window.backToOltPlacas = function() {
 
     const btnBoletim = document.getElementById('btn-gerar-boletim');
     const btnComunicado = document.getElementById('btn-gerar-comunicado');
+    const btnExportTxt = document.getElementById('btn-export-geral-txt');
     
     if (btnBoletim) btnBoletim.style.display = 'inline-block';
     if (btnComunicado) btnComunicado.style.display = 'inline-block';
+    if (btnExportTxt) btnExportTxt.style.display = 'inline-block';
 };
 
 window.exportPlacaToTXT = function() {
