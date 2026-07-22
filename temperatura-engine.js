@@ -1,6 +1,6 @@
 // ==============================================================================
 // temperatura-engine.js - Motor Dedicado para Análise Térmica das OLTs
-// Atualização: Wallboard da Home - Substituição do Resumo Global por Heatmaps
+// Atualização: Wallboard da Home - Substituição do Resumo Global por Heatmaps e suporte à página de POPs
 // ==============================================================================
 
 const TAB_TEMPERATURA = 'TEMPERATURA'; 
@@ -168,9 +168,10 @@ function runTemperaturaEngine() {
 
     const gridEl = document.getElementById('temperatura-grid');
     const isTemperaturaPage = window.location.pathname.includes('temperatura.html');
+    const isPopPage = window.location.pathname.includes('pop.html');
     const isHomePage = typeof checkIsHomePage === 'function' ? checkIsHomePage() : (window.location.pathname.includes('index.html') || window.location.pathname === '/' || !window.location.pathname.endsWith('.html'));
 
-    if (!isTemperaturaPage && !isHomePage) return;
+    if (!isTemperaturaPage && !isHomePage && !isPopPage) return;
 
     try {
         let oltStats = [];

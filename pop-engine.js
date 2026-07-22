@@ -163,7 +163,6 @@ window.openPopModal = function(popName) {
 
         const values = window.DATA_STORE.olts[oltId] || [];
         const rows = values.slice(1);
-        const tempRows = window.DATA_STORE.temperatura || [];
         
         let online = 0, offline = 0, semEnergia = 0, potCritica = 0;
         
@@ -194,14 +193,30 @@ window.openPopModal = function(popName) {
 
         const total = online + offline;
         
-        let tempStatus = '<span style="color: var(--m3-color-success);">Normal</span>';
-        if (tempRows.length > 1 && oltConfig.tempCol !== undefined) {
-            const tVal = parseFloat(tempRows[1][oltConfig.tempCol]);
-            if (!isNaN(tVal) && tVal > 65) {
-                tempStatus = '<span style="color: var(--m3-color-error);">Alta</span>';
+        let tempStatus = '<span style="color: var(--m3-on-surface-variant);">N/A</span>';
+        if (window.TEMP_DATA_STORE && window.TEMP_DATA_STORE[oltId]) {
+            let hasCritico = false;
+            let hasAtencao = false;
+            let totalSensores = 0;
+            
+            const slots = window.TEMP_DATA_STORE[oltId];
+            for (const slot in slots) {
+                slots[slot].forEach(sensor => {
+                    totalSensores++;
+                    if (sensor.isCritico) hasCritico = true;
+                    if (sensor.isAtencao) hasAtencao = true;
+                });
             }
-        } else {
-            tempStatus = '<span style="color: var(--m3-on-surface-variant);">N/A</span>';
+            
+            if (totalSensores > 0) {
+                if (hasCritico) {
+                    tempStatus = '<span style="color: var(--m3-color-error); font-weight: bold;">Crítico</span>';
+                } else if (hasAtencao) {
+                    tempStatus = '<span style="color: var(--m3-color-warning); font-weight: bold;">Atenção</span>';
+                } else {
+                    tempStatus = '<span style="color: var(--m3-color-success); font-weight: bold;">Normal</span>';
+                }
+            }
         }
 
         const potDisplay = potCritica > 0 
