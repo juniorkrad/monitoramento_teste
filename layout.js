@@ -78,6 +78,11 @@ function loadSidebar(currentPage) {
                     HOME
                 </a>
 
+                <a href="pop.html" class="sidebar-link home-highlight" style="margin-top: 5px; font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
+                    <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px;">domain</span>
+                    POPS
+                </a>
+
                 <a href="olt.html" class="sidebar-link home-highlight" style="margin-top: 5px; font-size: 1rem; padding: 12px 12px 12px 20px; justify-content: flex-start; text-align: left;">
                     <span class="material-symbols-rounded" style="font-size: 24px; margin-right: 12px;">dns</span>
                     STATUS OLTS

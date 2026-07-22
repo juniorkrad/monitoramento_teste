@@ -1,45 +1,41 @@
 // ==============================================================================
 // olt-relatorio.js - Gerador de Boletim Visual (PNG Off-screen) e TXT para OLTs
-// Atualização: Escopo Unificado por POP, com coluna de OLT e Placa/Porta unificada
+// Atualização: Escopo Unificado por POP e Recebimento Dinâmico de Parâmetros
 // ==============================================================================
 
-const POP_MAP = {
-    'PSV-1': 'POP São Vicente', 'PSV-7': 'POP São Vicente',
-    'SBO-1': 'POP São Bernardo', 'SBO-2': 'POP São Bernardo', 'SBO-3': 'POP São Bernardo', 'SBO-4': 'POP São Bernardo',
-    'HEL-1': 'POP Heliópolis', 'HEL-2': 'POP Heliópolis',
-    'LTXV-1': 'POP Lote XV', 'LTXV-2': 'POP Lote XV',
-    'SB-1': 'POP São Bento', 'SB-2': 'POP São Bento', 'SB-3': 'POP São Bento',
-    'PQA-1': 'POP Parque Amorim', 'PQA-2': 'POP Parque Amorim', 'PQA-3': 'POP Parque Amorim',
-    'MGP': 'POP Piabetá'
-};
-
-window.gerarRelatorioOltOffscreen = async function(event) {
+window.gerarRelatorioOltOffscreen = async function(event, directPopName) {
     if (event) event.stopPropagation();
 
     const btn = event ? event.currentTarget : null;
     let originalContent = '';
     if (btn) {
         originalContent = btn.innerHTML;
-        // Animação de ampulheta enquanto processa
         btn.innerHTML = `<span class="material-symbols-rounded" style="font-size: 30px;">hourglass_empty</span>`;
     }
 
     try {
-        // 1. Descobrir qual OLT está aberta
-        const titleEl = document.getElementById('super-modal-title');
-        let oltName = 'OLT_Desconhecida';
-        if (titleEl) {
-            oltName = titleEl.innerText.replace('dns', '').trim();
+        let popName = directPopName;
+        
+        if (!popName && btn && btn.dataset.pop) {
+            popName = btn.dataset.pop;
         }
 
-        // 2. Determinar o POP e as OLTs a serem varridas
-        const popName = POP_MAP[oltName] || oltName;
-        let targetOlts = Object.keys(POP_MAP).filter(key => POP_MAP[key] === popName);
-        
-        // Se a OLT não estiver no mapeamento, processa apenas ela
-        if (targetOlts.length === 0) targetOlts.push(oltName);
+        if (!popName) {
+            const titleEl = document.getElementById('super-modal-title');
+            let oltName = 'OLT_Desconhecida';
+            if (titleEl) {
+                oltName = titleEl.innerText.replace('dns', '').trim();
+            }
+            popName = (typeof POP_MAP !== 'undefined' && POP_MAP[oltName]) ? POP_MAP[oltName] : oltName;
+        }
 
-        // 3. Varrer o DATA_STORE para todas as OLTs do POP
+        let targetOlts = [];
+        if (typeof POP_MAP !== 'undefined') {
+            targetOlts = Object.keys(POP_MAP).filter(key => POP_MAP[key] === popName);
+        }
+        
+        if (targetOlts.length === 0) targetOlts.push(popName);
+
         const portasCriticas = [];
         const rowsCircuitos = (window.DATA_STORE && window.DATA_STORE.circuitos) ? window.DATA_STORE.circuitos : [];
         const rowsLocalidades = window.DATA_STORE.localidades || [];
@@ -78,12 +74,10 @@ window.gerarRelatorioOltOffscreen = async function(event) {
                 else portDataMap[portKey].offline++;
             });
 
-            // 4. Filtrar apenas as portas com alarmes críticos (100% DOWN)
             for (const pk in portDataMap) {
                 const pData = portDataMap[pk];
                 const total = pData.online + pData.offline;
                 
-                // Focado exclusivamente em situação de 100% da porta down
                 if (total >= 5) {
                     const percOffline = pData.offline / total;
                     if (percOffline === 1) { 
@@ -101,7 +95,6 @@ window.gerarRelatorioOltOffscreen = async function(event) {
             }
         });
 
-        // Título inteligente baseado na quantidade de portas caídas
         let tituloBoletim = "REDE ESTÁVEL";
         if (portasCriticas.length > 1) {
             tituloBoletim = "ROMPIMENTO BACKBONE";
@@ -109,35 +102,30 @@ window.gerarRelatorioOltOffscreen = async function(event) {
             tituloBoletim = "ROMPIMENTO CIRCUITO";
         }
 
-        // Ordena por OLT, depois Placa e depois Porta
         portasCriticas.sort((a, b) => a.olt.localeCompare(b.olt) || parseInt(a.placa) - parseInt(b.placa) || parseInt(a.porta) - parseInt(b.porta));
 
-        // Lógica de Paginação (Limite Seguro: 12)
         const LIMITE_LINHAS = 12;
         const totalPaginas = Math.max(1, Math.ceil(portasCriticas.length / LIMITE_LINHAS));
         const dataHora = new Date().toLocaleString('pt-BR');
 
-        // Loop assíncrono para gerar cada página sequencialmente
         for (let paginaAtual = 1; paginaAtual <= totalPaginas; paginaAtual++) {
             
-            // O TRUQUE: Criar um Wrapper Transparente para evitar quinas brancas
             const wrapperDiv = document.createElement('div');
             wrapperDiv.id = `offscreen-wrapper-pag-${paginaAtual}`;
             wrapperDiv.style.position = 'absolute';
             wrapperDiv.style.left = '-9999px'; 
             wrapperDiv.style.top = '0';
-            wrapperDiv.style.backgroundColor = 'transparent'; // Transparência total na raiz
+            wrapperDiv.style.backgroundColor = 'transparent'; 
             wrapperDiv.style.padding = '0';
 
-            // A Lona Real onde o layout será desenhado
             const offscreenDiv = document.createElement('div');
             offscreenDiv.style.width = '1000px'; 
             offscreenDiv.style.height = '750px'; 
-            offscreenDiv.style.backgroundColor = '#2f0e51'; // Fundo Padrão (M3 Surface)
+            offscreenDiv.style.backgroundColor = '#2f0e51'; 
             offscreenDiv.style.color = '#ffffff';
             offscreenDiv.style.padding = '30px';
-            offscreenDiv.style.borderRadius = '24px'; // Bordas arredondadas fortes
-            offscreenDiv.style.overflow = 'hidden'; // Garante que o conteúdo não vaze as bordas
+            offscreenDiv.style.borderRadius = '24px'; 
+            offscreenDiv.style.overflow = 'hidden'; 
             offscreenDiv.style.fontFamily = "'Montserrat', sans-serif";
             offscreenDiv.style.boxSizing = 'border-box';
             offscreenDiv.style.display = 'flex'; 
@@ -157,7 +145,6 @@ window.gerarRelatorioOltOffscreen = async function(event) {
             } else {
                 let rowsHtml = '';
                 
-                // Fatiamento Inteligente do Array
                 const startIndex = (paginaAtual - 1) * LIMITE_LINHAS;
                 const endIndex = startIndex + LIMITE_LINHAS;
                 const fatiaCriticas = portasCriticas.slice(startIndex, endIndex);
@@ -204,7 +191,6 @@ window.gerarRelatorioOltOffscreen = async function(event) {
                 `;
             }
 
-            // Indicador de Página (Oculto se houver apenas 1 página)
             let indicadorPaginaHtml = '';
             if (totalPaginas > 1) {
                 indicadorPaginaHtml = `
@@ -214,7 +200,6 @@ window.gerarRelatorioOltOffscreen = async function(event) {
                 `;
             }
 
-            // Estrutura principal
             offscreenDiv.innerHTML = `
                 <div style="border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end;">
                     <div style="display: flex; align-items: center; gap: 20px;">
@@ -237,28 +222,23 @@ window.gerarRelatorioOltOffscreen = async function(event) {
                 ${tableHtml}
             `;
 
-            // Adiciona a Lona Colorida para dentro do Wrapper Transparente
             wrapperDiv.appendChild(offscreenDiv);
             document.body.appendChild(wrapperDiv);
 
-            // 5. Acionar o HTML2Canvas NA CAIXA MÃE (Aguardando o render concluir)
             const canvas = await html2canvas(wrapperDiv, {
-                backgroundColor: null, // Assegura que o canvas baseia-se no wrapper transparente
+                backgroundColor: null, 
                 scale: 2, 
                 logging: false
             });
 
-            // Nome do arquivo dinâmico
             let nomeArquivo = `Boletim_${popName.replace(/[^a-zA-Z0-9-]/g, '_')}_${new Date().getTime()}`;
             if (totalPaginas > 1) nomeArquivo += `_Pag${paginaAtual}`;
 
-            // Criar Link de Download
             const link = document.createElement('a');
             link.download = `${nomeArquivo}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
             
-            // Limpar a memória removendo o Wrapper Invisível inteiro
             document.body.removeChild(wrapperDiv);
         }
 
@@ -266,12 +246,12 @@ window.gerarRelatorioOltOffscreen = async function(event) {
         console.error('Erro ao gerar relatório off-screen:', error);
         alert('Ocorreu um erro ao gerar o relatório.');
     } finally {
-        // Restaurar botão original independentemente de sucesso ou falha
         if (btn) btn.innerHTML = originalContent;
     }
 };
 
-window.gerarRelatorioTxtOffscreen = function(event) {
+
+window.gerarRelatorioTxtOffscreen = function(event, directPopName) {
     if (event) event.stopPropagation();
 
     const btn = event ? event.currentTarget : null;
@@ -282,20 +262,28 @@ window.gerarRelatorioTxtOffscreen = function(event) {
     }
 
     try {
-        // 1. Descobrir qual OLT está aberta
-        const titleEl = document.getElementById('super-modal-title');
-        let oltName = 'OLT_Desconhecida';
-        if (titleEl) {
-            oltName = titleEl.innerText.replace('dns', '').trim();
+        let popName = directPopName;
+        
+        if (!popName && btn && btn.dataset.pop) {
+            popName = btn.dataset.pop;
         }
 
-        // 2. Determinar o POP e as OLTs a serem varridas
-        const popName = POP_MAP[oltName] || oltName;
-        let targetOlts = Object.keys(POP_MAP).filter(key => POP_MAP[key] === popName);
-        
-        if (targetOlts.length === 0) targetOlts.push(oltName);
+        if (!popName) {
+            const titleEl = document.getElementById('super-modal-title');
+            let oltName = 'OLT_Desconhecida';
+            if (titleEl) {
+                oltName = titleEl.innerText.replace('dns', '').trim();
+            }
+            popName = (typeof POP_MAP !== 'undefined' && POP_MAP[oltName]) ? POP_MAP[oltName] : oltName;
+        }
 
-        // 3. Varrer o DATA_STORE para todas as OLTs do POP
+        let targetOlts = [];
+        if (typeof POP_MAP !== 'undefined') {
+            targetOlts = Object.keys(POP_MAP).filter(key => POP_MAP[key] === popName);
+        }
+        
+        if (targetOlts.length === 0) targetOlts.push(popName);
+
         const portasCriticas = [];
         const rowsCircuitos = (window.DATA_STORE && window.DATA_STORE.circuitos) ? window.DATA_STORE.circuitos : [];
         const rowsLocalidades = window.DATA_STORE.localidades || [];
@@ -334,7 +322,6 @@ window.gerarRelatorioTxtOffscreen = function(event) {
                 else portDataMap[portKey].offline++;
             });
 
-            // 4. Filtrar apenas as portas com alarmes críticos
             for (const pk in portDataMap) {
                 const pData = portDataMap[pk];
                 const total = pData.online + pData.offline;

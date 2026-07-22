@@ -6,6 +6,16 @@ const GLOBAL_API_KEY = 'AIzaSyA88uPhiRhU3JZwKYjA5B1rX7ndXpfka0I';
 const GLOBAL_SHEET_ID = '1BDx0zd0UGzOr2qqg1nftfe5WLUMh6MkcFO5psAG5GtU';
 const GLOBAL_REFRESH_SECONDS = 300; // 5 minutos padrão para todo o sistema
 
+const POP_MAP = {
+    'PSV-1': 'POP São Vicente', 'PSV-7': 'POP São Vicente',
+    'SBO-1': 'POP São Bernardo', 'SBO-2': 'POP São Bernardo', 'SBO-3': 'POP São Bernardo', 'SBO-4': 'POP São Bernardo',
+    'HEL-1': 'POP Heliópolis', 'HEL-2': 'POP Heliópolis',
+    'LTXV-1': 'POP Lote XV', 'LTXV-2': 'POP Lote XV',
+    'SB-1': 'POP São Bento', 'SB-2': 'POP São Bento', 'SB-3': 'POP São Bento',
+    'PQA-1': 'POP Parque Amorim', 'PQA-2': 'POP Parque Amorim', 'PQA-3': 'POP Parque Amorim',
+    'MGP': 'POP Piabetá'
+};
+
 const GLOBAL_MASTER_OLT_LIST = [
     { id: 'HEL-1',  sheetTab: 'HEL1',  type: 'nokia',       boards: 8,  circuitCol: 1,  energyCol: 0 },
     { id: 'HEL-2',  sheetTab: 'HEL2',  type: 'nokia',       boards: 8,  circuitCol: 3,  energyCol: 4 },

@@ -1,19 +1,9 @@
 // ==============================================================================
 // energia-relatorio.js - Gerador de Boletim Visual (PNG Off-screen) para Energia
-// Atualização: Escopo Unificado por POP, exibe portas com >= 50% de clientes sem energia
+// Atualização: Escopo Unificado por POP e Recebimento Dinâmico de Parâmetros
 // ==============================================================================
 
-const POP_MAP = {
-    'PSV-1': 'POP São Vicente', 'PSV-7': 'POP São Vicente',
-    'SBO-1': 'POP São Bernardo', 'SBO-2': 'POP São Bernardo', 'SBO-3': 'POP São Bernardo', 'SBO-4': 'POP São Bernardo',
-    'HEL-1': 'POP Heliópolis', 'HEL-2': 'POP Heliópolis',
-    'LTXV-1': 'POP Lote XV', 'LTXV-2': 'POP Lote XV',
-    'SB-1': 'POP São Bento', 'SB-2': 'POP São Bento', 'SB-3': 'POP São Bento',
-    'PQA-1': 'POP Parque Amorim', 'PQA-2': 'POP Parque Amorim', 'PQA-3': 'POP Parque Amorim',
-    'MGP': 'POP Piabetá'
-};
-
-window.gerarRelatorioEnergiaOffscreen = async function(event) {
+window.gerarRelatorioEnergiaOffscreen = async function(event, directPopName) {
     if (event) event.stopPropagation();
 
     const btn = event ? event.currentTarget : null;
@@ -24,16 +14,27 @@ window.gerarRelatorioEnergiaOffscreen = async function(event) {
     }
 
     try {
-        const titleEl = document.getElementById('super-modal-title');
-        let oltName = 'OLT_Desconhecida';
-        if (titleEl) {
-            oltName = titleEl.innerText.replace('dns', '').trim();
+        let popName = directPopName;
+        
+        if (!popName && btn && btn.dataset.pop) {
+            popName = btn.dataset.pop;
         }
 
-        const popName = POP_MAP[oltName] || oltName;
-        let targetOlts = Object.keys(POP_MAP).filter(key => POP_MAP[key] === popName);
+        if (!popName) {
+            const titleEl = document.getElementById('super-modal-title');
+            let oltName = 'OLT_Desconhecida';
+            if (titleEl) {
+                oltName = titleEl.innerText.replace('dns', '').trim();
+            }
+            popName = (typeof POP_MAP !== 'undefined' && POP_MAP[oltName]) ? POP_MAP[oltName] : oltName;
+        }
+
+        let targetOlts = [];
+        if (typeof POP_MAP !== 'undefined') {
+            targetOlts = Object.keys(POP_MAP).filter(key => POP_MAP[key] === popName);
+        }
         
-        if (targetOlts.length === 0) targetOlts.push(oltName);
+        if (targetOlts.length === 0) targetOlts.push(popName);
 
         const portasCriticas = [];
         const rowsCircuitos = (window.DATA_STORE && window.DATA_STORE.circuitos) ? window.DATA_STORE.circuitos : [];

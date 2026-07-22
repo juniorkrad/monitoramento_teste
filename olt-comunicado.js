@@ -1,10 +1,10 @@
 // ==============================================================================
 // olt-comunicado.js - Gerador de Imagem para Redes Sociais (Formato Stories 9:16)
 // Tema: Material Design Light / Cores do Projeto (Roxo) / Fundo Branco
-// Atualização: Correção de conflito de escopo (POP_MAP) e Deduplicação de Bairros
+// Atualização: Recebimento Dinâmico de POP e Mapeamento Global via config.js
 // ==============================================================================
 
-window.gerarComunicadoSocialOffscreen = async function(event) {
+window.gerarComunicadoSocialOffscreen = async function(event, directPopName) {
     if (event) event.stopPropagation();
 
     const btn = event ? event.currentTarget : null;
@@ -15,31 +15,33 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
     }
 
     try {
-        // Dicionário movido para dentro da função para isolar o escopo e evitar conflitos globais
-        const POP_MAP = {
-            'PSV-1': 'POP São Vicente', 'PSV-7': 'POP São Vicente',
-            'SBO-1': 'POP São Bernardo', 'SBO-2': 'POP São Bernardo', 'SBO-3': 'POP São Bernardo', 'SBO-4': 'POP São Bernardo',
-            'HEL-1': 'POP Heliópolis', 'HEL-2': 'POP Heliópolis',
-            'LTXV-1': 'POP Lote XV', 'LTXV-2': 'POP Lote XV',
-            'SB-1': 'POP São Bento', 'SB-2': 'POP São Bento', 'SB-3': 'POP São Bento',
-            'PQA-1': 'POP Parque Amorim', 'PQA-2': 'POP Parque Amorim', 'PQA-3': 'POP Parque Amorim',
-            'MGP': 'POP Piabetá'
-        };
-
-        // 1. Descobrir qual OLT está aberta
-        const titleEl = document.getElementById('super-modal-title');
-        let oltName = 'OLT_Desconhecida';
-        if (titleEl) {
-            oltName = titleEl.innerText.replace('dns', '').trim();
+        let popName = directPopName;
+        
+        if (!popName && btn && btn.dataset.pop) {
+            popName = btn.dataset.pop;
         }
 
-        // NOVO: Função interna de PROCV (Busca linha por linha)
+        if (!popName) {
+            const titleEl = document.getElementById('super-modal-title');
+            let oltName = 'OLT_Desconhecida';
+            if (titleEl) {
+                oltName = titleEl.innerText.replace('dns', '').trim();
+            }
+            popName = (typeof POP_MAP !== 'undefined' && POP_MAP[oltName]) ? POP_MAP[oltName] : oltName;
+        }
+
+        let targetOlts = [];
+        if (typeof POP_MAP !== 'undefined') {
+            targetOlts = Object.keys(POP_MAP).filter(key => POP_MAP[key] === popName);
+        }
+        
+        if (targetOlts.length === 0) targetOlts.push(popName);
+
         function buscarLocalidadeExata(rows, oltIdentifier, placa, porta) {
             if (!rows || rows.length === 0) return null;
 
             const cleanOlt = (oltIdentifier || "").toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-            // Mapeamento das colunas da aba LOCALIDADE (p = Porta, l = Localidade)
             const colMap = {
                 'HEL1': { p: 0, l: 1 },
                 'HEL2': { p: 2, l: 3 },
@@ -63,40 +65,29 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             const map = colMap[cleanOlt];
             if (!map) return null;
 
-            const targetPortStr = `${placa}/${porta}`; // Ex: "2/1"
+            const targetPortStr = `${placa}/${porta}`; 
 
-            // Varre a planilha linha por linha buscando a porta exata
             for (let i = 0; i < rows.length; i++) {
                 let rowPort = rows[i][map.p];
                 if (!rowPort) continue;
 
-                // Limpa a string da planilha (remove GPON, espaços, etc)
                 let s = String(rowPort).replace(/gpon/i, '').replace(/\\/g, '/').trim();
                 s = s.replace(/[^0-9/]/g, ''); 
 
-                // Algumas OLTs tem formato 1/1/1/2, pegamos sempre Placa/Porta final
                 let parts = s.split('/');
                 if (parts.length >= 2) {
                     let sl = parseInt(parts[parts.length - 2], 10);
                     let pt = parseInt(parts[parts.length - 1], 10);
                     if (`${sl}/${pt}` === targetPortStr) {
-                        return rows[i][map.l]; // Achou! Retorna a localidade.
+                        return rows[i][map.l]; 
                     }
                 } else if (s === targetPortStr) {
                     return rows[i][map.l];
                 }
             }
-            return null; // Se não achar na coluna inteira, retorna nulo
+            return null;
         }
 
-        // 2. Determinar o POP e as OLTs a serem varridas
-        const popName = POP_MAP[oltName] || oltName;
-        let targetOlts = Object.keys(POP_MAP).filter(key => POP_MAP[key] === popName);
-        
-        // Se a OLT não estiver no mapeamento, processa apenas ela
-        if (targetOlts.length === 0) targetOlts.push(oltName);
-
-        // 3. Extrair EXCLUSIVAMENTE as Localidades (Bairros) das portas 100% caídas do POP inteiro
         const localidadesAfetadasSet = new Set();
         const rowsLocalidades = window.GLOBAL_BAIRROS_DATA || (window.DATA_STORE && window.DATA_STORE.localidades) || [];
 
@@ -108,7 +99,6 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             const rows = values.slice(1);
             const portDataMap = {};
 
-            // Mapeia todas as portas e seus status (online/offline) para a OLT atual
             rows.forEach(columns => {
                 if (columns.length === 0) return;
                 
@@ -129,30 +119,25 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                 else portDataMap[portKey].offline++;
             });
 
-            // Analisa quais portas da OLT atual caíram 100% e resgata seus bairros
             for (const pk in portDataMap) {
                 const pData = portDataMap[pk];
                 const total = pData.online + pData.offline;
                 
-                // Critério de queda: total >= 5 clientes e 100% offline
                 if (total >= 5 && (pData.offline / total) === 1) {
                     let nomeLocalidade = null;
                     
-                    // Cruza os dados EXCLUSIVAMENTE usando o PROCV
                     if (rowsLocalidades.length > 0) {
                         nomeLocalidade = buscarLocalidadeExata(rowsLocalidades, targetOltId, pData.placa, pData.porta);
                     }
                     
-                    // Proteção extra garantindo conversão para string antes do trim
                     if (nomeLocalidade && String(nomeLocalidade).trim() !== "" && String(nomeLocalidade).trim() !== "-") {
                         
-                        // Fatiador Inteligente
                         const partes = String(nomeLocalidade).split(/\s*,\s*|\s*\/\s*|\s+e\s+/gi);
                         
                         partes.forEach(parte => {
                             const bairroLimpo = parte.trim();
                             if (bairroLimpo && bairroLimpo !== "-") {
-                                localidadesAfetadasSet.add(bairroLimpo); // O Set elimina duplicatas em todo o POP
+                                localidadesAfetadasSet.add(bairroLimpo); 
                             }
                         });
                     }
@@ -160,15 +145,12 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             }
         });
 
-        // Converte o Set para um Array e ordena alfabeticamente
         const bairros = Array.from(localidadesAfetadasSet).sort();
 
-        // 4. Paginação (Limite de bairros por "Story")
         const LIMITE_BAIRROS = 7;
         const paginasDeLista = Math.ceil(bairros.length / LIMITE_BAIRROS);
         const totalPaginas = bairros.length > 0 ? paginasDeLista + 1 : 1;
         
-        // Paleta Material Design 3 Light com Roxo do Projeto
         const colorPrimaryPurple = '#67079f'; 
         const colorPrimaryContainer = '#f3edf7'; 
         const colorOnSurface = '#1c1b1f'; 
@@ -210,7 +192,6 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             }
 
             if (bairros.length === 0) {
-                // Cenário Rede Estável
                 conteudoCentralHtml = `
                     <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 80px; text-align: center;">
                         <span style="font-family: 'Material Symbols Rounded'; font-size: 180px; color: #10b981; margin-bottom: 40px;">check_circle</span>
@@ -219,7 +200,6 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                     </div>
                 `;
             } else if (isPaginaFinalMensagens) {
-                // Página Final Exclusiva de Mensagens
                 conteudoCentralHtml = `
                     <div style="flex: 1; padding: 0 80px 40px 80px; display: flex; flex-direction: column;">
                         
@@ -243,7 +223,6 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                     </div>
                 `;
             } else {
-                // Páginas de Lista (Bairros)
                 let bairrosHtml = '';
                 const startIndex = (paginaAtual - 1) * LIMITE_BAIRROS;
                 const endIndex = startIndex + LIMITE_BAIRROS;
@@ -277,7 +256,6 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                 `;
             }
 
-            // Cabeçalho (Área da Logo)
             const headerHtml = `
                 <div style="height: 450px; width: 100%; display: flex; align-items: center; justify-content: center; padding: 60px 0 20px 0; z-index: 10; box-sizing: border-box;">
                     <img id="social-logo-${paginaAtual}" src="logo-comunicado.png" style="max-height: 420px; max-width: 85%; object-fit: contain;" onerror="this.style.display='none';">
@@ -293,7 +271,6 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                 `;
             }
 
-            // Montagem Final do Lado de Fora
             offscreenDiv.innerHTML = `
                 ${innerBorderHtml}
                 ${headerHtml}
@@ -304,7 +281,6 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             wrapperDiv.appendChild(offscreenDiv);
             document.body.appendChild(wrapperDiv);
 
-            // Trava de segurança para carregar imagem
             const imgEl = document.getElementById(`social-logo-${paginaAtual}`);
             if (imgEl && !imgEl.complete && imgEl.style.display !== 'none') {
                 await new Promise((resolve) => {
@@ -314,7 +290,6 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
             }
             await new Promise(resolve => setTimeout(resolve, 200));
 
-            // 5. Gerar a imagem com HTML2Canvas
             const canvas = await html2canvas(wrapperDiv, {
                 backgroundColor: null, 
                 scale: 1, 
@@ -322,21 +297,18 @@ window.gerarComunicadoSocialOffscreen = async function(event) {
                 useCORS: true 
             });
 
-            // Usando o nome do POP unificado no arquivo gerado
             let nomeArquivo = `Story_${popName.replace(/[^a-zA-Z0-9-]/g, '_')}_${new Date().getTime()}`;
             if (totalPaginas > 1) nomeArquivo += `_Pag${paginaAtual}`;
 
-            // Criar Link de Download
             const link = document.createElement('a');
             link.download = `${nomeArquivo}.png`;
             link.href = canvas.toDataURL('image/png');
-            document.body.appendChild(link); // Anexa ao DOM
+            document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link); // Limpa o DOM
+            document.body.removeChild(link);
             
             document.body.removeChild(wrapperDiv);
 
-            // TRAVA ANTI-BLOQUEIO DO NAVEGADOR
             if (paginaAtual < totalPaginas) {
                 await new Promise(resolve => setTimeout(resolve, 1500));
             }
