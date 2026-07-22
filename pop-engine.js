@@ -214,7 +214,7 @@ window.openPopModal = function(popName) {
                 <td style="padding: 12px; font-family: var(--font-family-mono); color: var(--m3-color-success);">${online}</td>
                 <td style="padding: 12px; font-family: var(--font-family-mono); color: var(--m3-color-error);">${offline}</td>
                 <td style="padding: 12px; font-family: var(--font-family-mono); color: #fbbf24;">${semEnergia > 0 ? semEnergia + ' falhas' : 'OK'}</td>
-                <td style="padding: 12px; font-family: var(--font-family-mono);">${potCritica > 0 ? \`<span style="color: var(--m3-color-error);">\${potCritica} alertas</span>\` : '<span style="color: var(--m3-color-success);">OK</span>'}</td>
+                <td style="padding: 12px; font-family: var(--font-family-mono);">${potCritica > 0 ? `<span style="color: var(--m3-color-error);">${potCritica} alertas</span>` : '<span style="color: var(--m3-color-success);">OK</span>'}</td>
                 <td style="padding: 12px;">${tempStatus}</td>
             </tr>
         `;
