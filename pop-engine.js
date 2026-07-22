@@ -12,7 +12,6 @@ const POP_MAP_CONFIG = [
     { name: 'POP São Bernardo', olts: ['SBO-1', 'SBO-2', 'SBO-3', 'SBO-4'] }
 ];
 
-// Utilitário para permitir que os scripts de relatórios funcionem sem modificações imediatas
 window.triggerRelatorio = function(popName, funcName, event) {
     if (event) event.stopPropagation();
     
@@ -24,7 +23,6 @@ window.triggerRelatorio = function(popName, funcName, event) {
         document.body.appendChild(dummyTitle);
     }
     
-    // Olt-relatorio.js espera algo como "<icone> NOME_DA_OLT_OU_POP"
     dummyTitle.innerHTML = `<span class="material-symbols-rounded">dns</span> ${popName}`;
     
     if (typeof window[funcName] === 'function') {
@@ -120,7 +118,7 @@ function updatePopData() {
                 }
             });
 
-            if (window.ENERGY_DATA_STORE && window.ENERGY_DATA_STORE.olts[oltId] && window.ENERGY_DATA_STORE.olts[oltId].ports) {
+            if (window.ENERGY_DATA_STORE && window.ENERGY_DATA_STORE.olts && window.ENERGY_DATA_STORE.olts[oltId] && window.ENERGY_DATA_STORE.olts[oltId].ports) {
                 const portsMap = window.ENERGY_DATA_STORE.olts[oltId].ports;
                 for (const placa in portsMap) {
                     for (const porta in portsMap[placa]) {
@@ -168,8 +166,7 @@ window.openPopModal = function(popName) {
         const tempRows = window.DATA_STORE.temperatura || [];
         
         let online = 0, offline = 0, semEnergia = 0, potCritica = 0;
-        let tempCritica = false;
-
+        
         rows.forEach(columns => {
             if (columns.length === 0) return;
             const isOnline = DataMapper.isOnline(columns[oltConfig.type === 'nokia' ? 4 : 2], oltConfig.type);
@@ -180,14 +177,13 @@ window.openPopModal = function(popName) {
                 offline++;
             }
             
-            // Verificação Simplificada de Potência
             const pwrOpt = DataMapper.parsePowerValue(columns[5]);
             if (DataMapper.isValidPower(pwrOpt) && (pwrOpt < -25.00 || pwrOpt > -15.00)) {
                 potCritica++;
             }
         });
 
-        if (window.ENERGY_DATA_STORE && window.ENERGY_DATA_STORE.olts[oltId] && window.ENERGY_DATA_STORE.olts[oltId].ports) {
+        if (window.ENERGY_DATA_STORE && window.ENERGY_DATA_STORE.olts && window.ENERGY_DATA_STORE.olts[oltId] && window.ENERGY_DATA_STORE.olts[oltId].ports) {
             const portsMap = window.ENERGY_DATA_STORE.olts[oltId].ports;
             for (const placa in portsMap) {
                 for (const porta in portsMap[placa]) {
@@ -198,14 +194,19 @@ window.openPopModal = function(popName) {
 
         const total = online + offline;
         
-        // Verificação Simplificada de Temperatura (Mock ou baseada no OLT config)
         let tempStatus = '<span style="color: var(--m3-color-success);">Normal</span>';
-        if (tempRows.length > 0 && oltConfig.tempCol) {
+        if (tempRows.length > 1 && oltConfig.tempCol !== undefined) {
             const tVal = parseFloat(tempRows[1][oltConfig.tempCol]);
-            if (tVal > 65) tempStatus = '<span style="color: var(--m3-color-error);">Alta</span>';
+            if (!isNaN(tVal) && tVal > 65) {
+                tempStatus = '<span style="color: var(--m3-color-error);">Alta</span>';
+            }
         } else {
             tempStatus = '<span style="color: var(--m3-on-surface-variant);">N/A</span>';
         }
+
+        const potDisplay = potCritica > 0 
+            ? '<span style="color: var(--m3-color-error);">' + potCritica + ' alertas</span>' 
+            : '<span style="color: var(--m3-color-success);">OK</span>';
 
         tbody.innerHTML += `
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
@@ -214,7 +215,7 @@ window.openPopModal = function(popName) {
                 <td style="padding: 12px; font-family: var(--font-family-mono); color: var(--m3-color-success);">${online}</td>
                 <td style="padding: 12px; font-family: var(--font-family-mono); color: var(--m3-color-error);">${offline}</td>
                 <td style="padding: 12px; font-family: var(--font-family-mono); color: #fbbf24;">${semEnergia > 0 ? semEnergia + ' falhas' : 'OK'}</td>
-                <td style="padding: 12px; font-family: var(--font-family-mono);">${potCritica > 0 ? `<span style="color: var(--m3-color-error);">${potCritica} alertas</span>` : '<span style="color: var(--m3-color-success);">OK</span>'}</td>
+                <td style="padding: 12px; font-family: var(--font-family-mono);">${potDisplay}</td>
                 <td style="padding: 12px;">${tempStatus}</td>
             </tr>
         `;
