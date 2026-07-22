@@ -45,7 +45,7 @@ function createPopCards() {
         grid.innerHTML += `
             <div class="pop-card" id="card-${safeId}" style="background-color: var(--m3-surface-container); border-radius: 16px; border: 1px solid var(--m3-outline); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
                 <div class="pop-header" style="background-color: var(--m3-surface-container-high); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--m3-outline);">
-                    <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.2rem; color: var(--m3-primary);">
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.2rem; color: var(--m3-on-surface);">
                         <span class="material-symbols-rounded">domain</span> ${pop.name}
                     </h3>
                 </div>
@@ -71,19 +71,19 @@ function createPopCards() {
                     </div>
                     
                     <div class="pop-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <button style="background-color: var(--m3-surface-container-highest); color: var(--m3-on-surface); border: 1px solid var(--m3-outline); padding: 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem; transition: background 0.2s;" onclick="triggerRelatorio('${pop.name}', 'gerarRelatorioOltOffscreen', event)" onmouseover="this.style.backgroundColor='var(--m3-state-layer-hover)'" onmouseout="this.style.backgroundColor='var(--m3-surface-container-highest)'">
+                        <button style="font-family: inherit; font-weight: 500; background-color: var(--m3-surface-container-highest); color: var(--m3-on-surface); border: 1px solid var(--m3-outline); padding: 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem; transition: background 0.2s;" onclick="triggerRelatorio('${pop.name}', 'gerarRelatorioOltOffscreen', event)" onmouseover="this.style.backgroundColor='var(--m3-state-layer-hover)'" onmouseout="this.style.backgroundColor='var(--m3-surface-container-highest)'">
                             <span class="material-symbols-rounded" style="color: var(--m3-color-error); font-size: 20px;">warning</span> Alarmes
                         </button>
-                        <button style="background-color: var(--m3-surface-container-highest); color: var(--m3-on-surface); border: 1px solid var(--m3-outline); padding: 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem; transition: background 0.2s;" onclick="triggerRelatorio('${pop.name}', 'gerarComunicadoSocialOffscreen', event)" onmouseover="this.style.backgroundColor='var(--m3-state-layer-hover)'" onmouseout="this.style.backgroundColor='var(--m3-surface-container-highest)'">
+                        <button style="font-family: inherit; font-weight: 500; background-color: var(--m3-surface-container-highest); color: var(--m3-on-surface); border: 1px solid var(--m3-outline); padding: 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem; transition: background 0.2s;" onclick="triggerRelatorio('${pop.name}', 'gerarComunicadoSocialOffscreen', event)" onmouseover="this.style.backgroundColor='var(--m3-state-layer-hover)'" onmouseout="this.style.backgroundColor='var(--m3-surface-container-highest)'">
                             <span class="material-symbols-rounded" style="color: var(--m3-primary); font-size: 20px;">campaign</span> Comunicado
                         </button>
-                        <button style="background-color: var(--m3-surface-container-highest); color: var(--m3-on-surface); border: 1px solid var(--m3-outline); padding: 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem; transition: background 0.2s;" onclick="triggerRelatorio('${pop.name}', 'gerarRelatorioEnergiaOffscreen', event)" onmouseover="this.style.backgroundColor='var(--m3-state-layer-hover)'" onmouseout="this.style.backgroundColor='var(--m3-surface-container-highest)'">
+                        <button style="font-family: inherit; font-weight: 500; background-color: var(--m3-surface-container-highest); color: var(--m3-on-surface); border: 1px solid var(--m3-outline); padding: 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem; transition: background 0.2s;" onclick="triggerRelatorio('${pop.name}', 'gerarRelatorioEnergiaOffscreen', event)" onmouseover="this.style.backgroundColor='var(--m3-state-layer-hover)'" onmouseout="this.style.backgroundColor='var(--m3-surface-container-highest)'">
                             <span class="material-symbols-rounded" style="color: #fbbf24; font-size: 20px;">bolt</span> Energia
                         </button>
-                        <button style="background-color: var(--m3-surface-container-highest); color: var(--m3-on-surface); border: 1px solid var(--m3-outline); padding: 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem; transition: background 0.2s;" onclick="triggerRelatorio('${pop.name}', 'gerarRelatorioTxtOffscreen', event)" onmouseover="this.style.backgroundColor='var(--m3-state-layer-hover)'" onmouseout="this.style.backgroundColor='var(--m3-surface-container-highest)'">
+                        <button style="font-family: inherit; font-weight: 500; background-color: var(--m3-surface-container-highest); color: var(--m3-on-surface); border: 1px solid var(--m3-outline); padding: 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem; transition: background 0.2s;" onclick="triggerRelatorio('${pop.name}', 'gerarRelatorioTxtOffscreen', event)" onmouseover="this.style.backgroundColor='var(--m3-state-layer-hover)'" onmouseout="this.style.backgroundColor='var(--m3-surface-container-highest)'">
                             <span class="material-symbols-rounded" style="color: var(--m3-on-surface-variant); font-size: 20px;">description</span> TXT
                         </button>
-                        <button style="grid-column: 1 / -1; background-color: var(--m3-primary); color: var(--m3-on-primary); border: none; padding: 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: bold; transition: opacity 0.2s;" onclick="openPopModal('${pop.name}')" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                        <button style="font-family: inherit; grid-column: 1 / -1; background-color: var(--m3-primary); color: var(--m3-on-primary); border: none; padding: 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: bold; transition: opacity 0.2s;" onclick="openPopModal('${pop.name}')" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
                             <span class="material-symbols-rounded" style="font-size: 22px;">manage_search</span> VER DETALHES
                         </button>
                     </div>
@@ -107,8 +107,6 @@ function updatePopData() {
 
             const values = window.DATA_STORE.olts[oltId] || [];
             const rows = values.slice(1);
-            
-            const energiaRows = window.DATA_STORE.energia || [];
 
             rows.forEach(columns => {
                 if (columns.length === 0) return;
@@ -119,20 +117,17 @@ function updatePopData() {
                     popOnline++;
                 } else {
                     popOffline++;
-                    
-                    // Verificação simplificada de energia
-                    const portInfo = DataMapper.extractPort(columns[0], oltConfig.type);
-                    if (portInfo && energiaRows.length > 0) {
-                        const rowIndex = DataMapper.calculateRowIndex(portInfo.placa, portInfo.porta, oltConfig.type);
-                        if (rowIndex > 0 && rowIndex < energiaRows.length) {
-                            const pwrVal = String(energiaRows[rowIndex][oltConfig.energyCol] || '').toUpperCase();
-                            if (pwrVal.includes('FALHA') || (parseFloat(pwrVal) < 100 && parseFloat(pwrVal) > 0)) {
-                                popSemEnergia++;
-                            }
-                        }
-                    }
                 }
             });
+
+            if (window.ENERGY_DATA_STORE && window.ENERGY_DATA_STORE.olts[oltId] && window.ENERGY_DATA_STORE.olts[oltId].ports) {
+                const portsMap = window.ENERGY_DATA_STORE.olts[oltId].ports;
+                for (const placa in portsMap) {
+                    for (const porta in portsMap[placa]) {
+                        popSemEnergia += portsMap[placa][porta].powerOff || 0;
+                    }
+                }
+            }
         });
 
         const safeId = pop.name.replace(/[^a-zA-Z0-9]/g, '');
@@ -170,7 +165,6 @@ window.openPopModal = function(popName) {
 
         const values = window.DATA_STORE.olts[oltId] || [];
         const rows = values.slice(1);
-        const energiaRows = window.DATA_STORE.energia || [];
         const tempRows = window.DATA_STORE.temperatura || [];
         
         let online = 0, offline = 0, semEnergia = 0, potCritica = 0;
@@ -179,21 +173,11 @@ window.openPopModal = function(popName) {
         rows.forEach(columns => {
             if (columns.length === 0) return;
             const isOnline = DataMapper.isOnline(columns[oltConfig.type === 'nokia' ? 4 : 2], oltConfig.type);
-            const portInfo = DataMapper.extractPort(columns[0], oltConfig.type);
             
             if (isOnline) {
                 online++;
             } else {
                 offline++;
-                if (portInfo && energiaRows.length > 0) {
-                    const rowIndex = DataMapper.calculateRowIndex(portInfo.placa, portInfo.porta, oltConfig.type);
-                    if (rowIndex > 0 && rowIndex < energiaRows.length) {
-                        const pwrVal = String(energiaRows[rowIndex][oltConfig.energyCol] || '').toUpperCase();
-                        if (pwrVal.includes('FALHA') || (parseFloat(pwrVal) < 100 && parseFloat(pwrVal) > 0)) {
-                            semEnergia++;
-                        }
-                    }
-                }
             }
             
             // Verificação Simplificada de Potência
@@ -202,6 +186,15 @@ window.openPopModal = function(popName) {
                 potCritica++;
             }
         });
+
+        if (window.ENERGY_DATA_STORE && window.ENERGY_DATA_STORE.olts[oltId] && window.ENERGY_DATA_STORE.olts[oltId].ports) {
+            const portsMap = window.ENERGY_DATA_STORE.olts[oltId].ports;
+            for (const placa in portsMap) {
+                for (const porta in portsMap[placa]) {
+                    semEnergia += portsMap[placa][porta].powerOff || 0;
+                }
+            }
+        }
 
         const total = online + offline;
         
@@ -221,7 +214,7 @@ window.openPopModal = function(popName) {
                 <td style="padding: 12px; font-family: var(--font-family-mono); color: var(--m3-color-success);">${online}</td>
                 <td style="padding: 12px; font-family: var(--font-family-mono); color: var(--m3-color-error);">${offline}</td>
                 <td style="padding: 12px; font-family: var(--font-family-mono); color: #fbbf24;">${semEnergia > 0 ? semEnergia + ' falhas' : 'OK'}</td>
-                <td style="padding: 12px; font-family: var(--font-family-mono);">${potCritica > 0 ? `<span style="color: var(--m3-color-error);">${potCritica} alertas</span>` : '<span style="color: var(--m3-color-success);">OK</span>'}</td>
+                <td style="padding: 12px; font-family: var(--font-family-mono);">${potCritica > 0 ? \`<span style="color: var(--m3-color-error);">\${potCritica} alertas</span>\` : '<span style="color: var(--m3-color-success);">OK</span>'}</td>
                 <td style="padding: 12px;">${tempStatus}</td>
             </tr>
         `;
